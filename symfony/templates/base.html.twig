@@ -56,26 +56,17 @@
       50%      { box-shadow: 0 0 14px rgba(59,130,246,.9);  transform: scale(1.08); }
     }
 
-    /* ── Command center fixe (dans page-wrapper, à droite de la sidebar) ── */
-    #argos-command-center { position: fixed; top: 0; left: 15rem; right: 0; z-index: 50; background: rgba(30,30,46,.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,.06); padding: .35rem 0; min-height: 32px; }
-    @media (max-width: 991px) { #argos-command-center { left: 0; } }
-
-    /* ── Header fixe (recherche, cloche, profil) sous le command center ── */
-    .page-wrapper { padding-top: 32px; }
-    .page-header:has(#topbar-actions) { position: sticky; top: 32px; z-index: 40; background: rgba(17,17,17,.95); backdrop-filter: blur(12px); margin: 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+    /* ── Header sticky (recherche + profil) ── */
+    .page-header:has(#topbar-actions) { position: sticky; top: 0; z-index: 40; background: rgba(17,17,17,.95); backdrop-filter: blur(12px); margin: 0; border-bottom: 1px solid rgba(255,255,255,.06); }
     .page-header:has(#topbar-actions) .container-xl { padding-top: .5rem; padding-bottom: .5rem; }
     .page-header:has(#topbar-actions) .page-title { margin: 0; padding: 0; line-height: 1; }
     .page-header:has(#topbar-actions) .row { margin: 0; align-items: center; }
     /* ── Mode clair global — plus de profondeur et contraste ── */
-    [data-bs-theme="light"] #argos-command-center { background: rgba(255,255,255,.97); border-bottom: 1px solid rgba(0,0,0,.1); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
     [data-bs-theme="light"] .page-header:has(#topbar-actions) { background: rgba(250,250,252,.97); border-bottom: 1px solid rgba(0,0,0,.1); box-shadow: 0 1px 4px rgba(0,0,0,.05); }
-    [data-bs-theme="light"] .cc-metric-label { color: rgba(0,0,0,.45); }
-    [data-bs-theme="light"] .cc-metric-value { color: #1a1a2e; font-weight: 800; }
     :root[data-bs-theme="light"] .card { border-color: rgba(0,0,0,.1); box-shadow: 0 1px 6px rgba(0,0,0,.06); }
     :root[data-bs-theme="light"] .card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.1); }
     :root[data-bs-theme="light"] .card-header { border-color: rgba(0,0,0,.08); background: rgba(0,0,0,.015); }
     :root[data-bs-theme="light"] .page-wrapper { background: #f0f2f7; }
-    :root[data-bs-theme="light"] body:has(.wp-bg) .page-wrapper { background: transparent !important; }
     :root[data-bs-theme="light"] .page-body { background: transparent; }
     :root[data-bs-theme="light"] .table { --tblr-table-striped-bg: rgba(0,0,0,.02); }
     :root[data-bs-theme="light"] .table thead th { background: rgba(0,0,0,.03); color: #444; font-weight: 600; border-bottom: 2px solid rgba(0,0,0,.1); }
@@ -83,21 +74,9 @@
     :root[data-bs-theme="light"] .badge.bg-secondary-lt { background: rgba(0,0,0,.06) !important; color: #555 !important; }
     :root[data-bs-theme="light"] .text-secondary { color: #5a5a6e !important; }
     :root[data-bs-theme="light"] .btn-ghost-secondary:hover { background: rgba(0,0,0,.05) !important; }
-    .cc-metric { display: flex; align-items: center; gap: .35rem; font-size: .7rem; white-space: nowrap; }
-    .cc-metric-value { font-weight: 700; font-size: .75rem; }
-    .cc-metric-label { color: rgba(255,255,255,.4); }
-    .cc-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-    .cc-dot-ok { background: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,.5); }
-    .cc-dot-warn { background: #f59e0b; box-shadow: 0 0 4px rgba(245,158,11,.5); }
-    .cc-dot-err { background: #ef4444; box-shadow: 0 0 4px rgba(239,68,68,.5); }
   </style>
 
   {# Gestion thème clair/sombre — tout dans le <head> pour survivre aux navigations Turbo #}
-  <script>
-    /* Données Command Center — localStorage pour survivre à Turbo */
-    window._argosCCData = JSON.parse(localStorage.getItem('argos_cc') || '{}');
-    window._argosCCSave = function() { localStorage.setItem('argos_cc', JSON.stringify(window._argosCCData)); };
-  </script>
   <script>
     (function () {
       // 1. Applique le thème immédiatement (avant CSS) pour éviter tout flash
@@ -314,18 +293,9 @@
         </button>
 
         <div class="navbar-brand navbar-brand-autodark">
-          <a href="{{ path('app_dashboard') }}" class="d-flex align-items-center gap-2 text-decoration-none">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
-                 fill="none" stroke="var(--tblr-primary)" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <circle cx="12" cy="12" r="4"/>
-              <line x1="12" y1="2" x2="12" y2="6"/>
-              <line x1="12" y1="18" x2="12" y2="22"/>
-              <line x1="2" y1="12" x2="6" y2="12"/>
-              <line x1="18" y1="12" x2="22" y2="12"/>
-            </svg>
-            <span class="fw-bold fs-4" style="color: var(--tblr-primary)">IH-ARGOS</span>
+          <a href="{{ path('tmdb_index') }}" class="d-flex align-items-center gap-2 text-decoration-none">
+            <img src="{{ asset('img/prismarr/prismarr-icon-512.png') }}" alt="Prismarr" width="28" height="28" style="border-radius:5px;">
+            <span class="fw-bold fs-4" style="color: var(--tblr-primary)">Prismarr</span>
           </a>
         </div>
 
@@ -343,23 +313,77 @@
           </div>
         </div>
 
-        {# Menu principal #}
+        {# Menu principal — Prismarr #}
         <div class="collapse navbar-collapse" id="sidebar-menu">
           <ul class="navbar-nav pt-lg-3">
 
+            {# Découverte TMDb — page d'accueil Prismarr #}
             <li class="nav-item">
-              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_dashboard' ? 'active' }}"
-                 href="{{ path('app_dashboard') }}">
+              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'tmdb_' ? 'active' }}"
+                 href="{{ path('tmdb_index') }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="currentColor" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M5 12l-2 0l9 -9l9 9l-2 0"/>
-                    <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/>
-                    <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                    <path d="M12 2l2.4 7.4h7.6l-6.2 4.5l2.4 7.4l-6.2 -4.6l-6.2 4.6l2.4 -7.4l-6.2 -4.5h7.6z"/>
                   </svg>
                 </span>
-                <span class="nav-link-title">Dashboard</span>
+                <span class="nav-link-title">Découverte</span>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_media_films' or app.request.attributes.get('_route') starts with 'radarr_' ? 'active' }}"
+                 href="{{ path('app_media_films') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <svg width="24" height="24" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" class="icon"><g transform="translate(70 21)"><path d="M105.3 154.9L112.8 869.5C52.7 877 7.5 846.9 7.5 786.8L0 192.6C0 4.5 173-40.6 278.3 34.6L812.3 343C887.5 395.6 902.6 493.4 865 561.1C857.5 508.5 834.9 478.4 789.8 448.3L188 109.8C142.9 79.7 105.3 87.2 105.3 154.9Z" fill="#FFC230"/><path d="M0 376.1C45.1 391.1 90.3 383.6 127.9 361L744.6 0C782.2 52.7 774.7 105.3 729.6 135.4L210.6 436.3C135.4 473.9 37.6 436.3 0 376.1Z" transform="translate(60.2 531)" fill="#FFC230"/><path d="M0 413.7L368.6 203.1L7.5 0L0 413.7Z" transform="translate(240.7 282.8)" fill="#FFC230"/></g></svg>
+                </span>
+                <span class="nav-link-title">Films</span>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_media_series' or app.request.attributes.get('_route') starts with 'sonarr_' ? 'active' }}"
+                 href="{{ path('app_media_series') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <svg width="24" height="24" viewBox="0 0 216.7 216.9" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M194.65 42.5l-22.4 22.4C159.15 78 158 89.4 158 109.5c0 17.93 2.85 34.35 16.2 47.7l19 18.95c-2.5 3.07-5.2 6.07-8.1 9-.7.83-1.48 1.6-2.35 2.3-2.53 2.5-5.17 4.82-7.9 6.95l-17.55-17.55c-15.6-15.6-28-17.1-48.6-17.1-19.77 0-33.22 1.82-47.7 16.3l-18.55 18.6c-3.77-2.87-7.33-6.03-10.7-9.5-2.8-2.8-5.42-5.67-7.85-8.6l19.15-19.2c13.85-13.85 16.1-29.92 16.1-47.85 0-17.5-2.87-33.82-15.6-46.55L22.45 43.85c2.83-3.6 5.92-7.07 9.25-10.4 2.93-2.87 5.93-5.55 9-8.05L61.1 43.85C74.1 56.85 90.77 60.2 108.7 60.2c18.47 0 35.08-3.58 48.6-17.1l19.3-19.25c2.9 2.37 5.73 4.93 8.5 7.7 3.47 3.53 6.65 7.18 9.55 10.95z" fill="#0CF"/><circle cx="108.35" cy="108.45" r="29.5" fill="#0CF" opacity=".8"/></svg>
+                </span>
+                <span class="nav-link-title">Séries</span>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'prowlarr_' ? 'active' }}"
+                 href="{{ path('prowlarr_index') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <svg width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224 224-100.3 224-224S379.7 32 256 32zm0 400c-97 0-176-79-176-176S159 80 256 80s176 79 176 176-79 176-176 176z" fill="#E88D1A"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136-61-136-136-136zm0 224c-48.6 0-88-39.4-88-88s39.4-88 88-88 88 39.4 88 88-39.4 88-88 88z" fill="#E88D1A"/><circle cx="256" cy="256" r="48" fill="#E88D1A"/></svg>
+                </span>
+                <span class="nav-link-title">Prowlarr</span>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'jellyseerr_' ? 'active' }}"
+                 href="{{ path('jellyseerr_index') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <svg width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M256 48C141.1 48 48 141.1 48 256s93.1 208 208 208 208-93.1 208-208S370.9 48 256 48zm0 368c-88.4 0-160-71.6-160-160S167.6 96 256 96s160 71.6 160 160-71.6 160-160 160z" fill="#a259ff"/><circle cx="256" cy="256" r="80" fill="#a259ff"/></svg>
+                </span>
+                <span class="nav-link-title">Jellyseerr</span>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_qbittorrent_' ? 'active' }}"
+                 href="{{ path('app_qbittorrent_index') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                       fill="none" stroke="#2f67ba" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round" class="icon">
+                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/>
+                    <path d="M7 11l5 5l5 -5"/><path d="M12 4l0 12"/>
+                  </svg>
+                </span>
+                <span class="nav-link-title d-flex align-items-center">Téléchargements
+                  <span id="sidebar-qbt-badge" class="sidebar-dl-badge" style="display:none;">0</span>
+                </span>
               </a>
             </li>
 
@@ -377,304 +401,24 @@
               </a>
             </li>
 
-            <li class="nav-item">
-              <a class="nav-link {{ app.request.attributes.get('_route') == 'app_infrastructure_docker' ? 'active' }}"
-                 href="{{ path('app_infrastructure_docker') }}">
-                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M22 12.54c-1.804-.345-2.701-1.08-3.523-2.94c-.487.696-1.317 1.264-2.674 1.4a3.07 3.07 0 0 1-2.984-2c-.85.82-1.758 1-2.485 1c-.728 0-1.635-.18-2.485-1a3.07 3.07 0 0 1-2.984 2c-1.357-.136-2.187-.704-2.674-1.4C1.7 11.46.803 12.195-1 12.54"/>
-                    <path d="M5 12.54V18a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5.46"/>
-                    <path d="M9 18v-3h6v3"/>
-                    <path d="M2 9h20M2 6h20M5 9V6M9 9V6M13 9V6M17 9V6M19 9V6"/>
-                  </svg>
-                </span>
-                <span class="nav-link-title">Docker</span>
-              </a>
-            </li>
-
-            {% set is_infra = app.request.attributes.get('_route') starts with 'app_infrastructure' %}
-            {% set infra_devices = infrastructure_nav_devices() %}
-            {% set current_hostname = app.request.attributes.get('hostname') %}
-
-            <li class="nav-item">
-              <a class="nav-link"
-                 href="#"
-                 data-argos-collapse="infra-submenu"
-                 role="button"
-                 aria-expanded="{{ is_infra ? 'true' : 'false' }}">
-                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="currentColor" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M3 5m0 1a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1z"/>
-                    <path d="M3 13m0 1a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1z"/>
-                    <path d="M7 8v1m0 4v1m4 -5v1m0 4v1m4 -5v1m0 4v1"/>
-                  </svg>
-                </span>
-                <span class="nav-link-title">Infrastructure</span>
-                <span class="nav-link-toggle"></span>
-              </a>
-
-              <div class="nav-collapse collapse {{ is_infra ? 'show' }}" id="infra-submenu">
-                <ul class="navbar-nav">
-                  {% for dev in infra_devices %}
-                    <li class="nav-item">
-                      <a class="nav-link {{ current_hostname == dev.hostname ? 'active' }}"
-                         href="{{ path('app_infrastructure_device', {hostname: dev.hostname}) }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-
-                          {# Icône selon le type du device #}
-                          {% if dev.type == 'server' %}
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-                              <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/>
-                            </svg>
-                          {% elseif dev.type == 'nas' %}
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-                              <path d="M3 5m0 1a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1z"/>
-                              <path d="M3 13m0 1a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1z"/>
-                              <path d="M7 8l.01 0m0 8l.01 0"/>
-                            </svg>
-                          {% elseif dev.type == 'ap' %}
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-                              <path d="M12 18l.01 0"/><path d="M9.172 15.172a4 4 0 0 1 5.656 0"/>
-                              <path d="M6.343 12.343a8 8 0 0 1 11.314 0"/>
-                              <path d="M3.515 9.515a12 12 0 0 1 16.97 0"/>
-                            </svg>
-                          {% else %}
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-                              <path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/>
-                            </svg>
-                          {% endif %}
-
-                        </span>
-                        <span class="nav-link-title d-flex align-items-center justify-content-between">
-                          <span>— {{ dev.name }}</span>
-                          <span class="status-dot ms-2 flex-shrink-0 {% if dev.status == 'online' %}status-dot-animated bg-success{% else %}bg-danger{% endif %}"></span>
-                        </span>
-                      </a>
-                    </li>
-                  {% endfor %}
-                </ul>
-              </div>
-            </li>
-
-            {% set alert_count = alert_active_count() %}
-
-            <li class="nav-item">
-              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_weather' ? 'active' }}"
-                 href="{{ path('app_weather') }}">
-                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="currentColor" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M3 17h1m16 0h1m-9 -13v1m-6.364 2.636l.707 .707m11.314 -.707l-.707 .707"/>
-                    <path d="M9 17a3 3 0 1 1 6 0"/>
-                    <path d="M4 17a5 5 0 0 1 9.9 -1"/>
-                    <path d="M12 9a3 3 0 0 1 2.83 4"/>
-                    <path d="M17 17a5 5 0 0 0 -4.9 -6"/>
-                  </svg>
-                </span>
-                <span class="nav-link-title">Météo</span>
-              </a>
-            </li>
-
-            {% set is_media = app.request.attributes.get('_route') starts with 'app_media' or app.request.attributes.get('_route') starts with 'radarr_' or app.request.attributes.get('_route') starts with 'sonarr_' or app.request.attributes.get('_route') starts with 'prowlarr_' or app.request.attributes.get('_route') starts with 'jellyseerr_' or app.request.attributes.get('_route') starts with 'app_qbittorrent_' or app.request.attributes.get('_route') starts with 'tmdb_' %}
-            <li class="nav-item">
-              <a class="nav-link"
-                 href="#"
-                 data-argos-collapse="media-submenu"
-                 role="button"
-                 aria-expanded="{{ is_media ? 'true' : 'false' }}">
-                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="currentColor" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M7 4v16l13 -8z"/>
-                  </svg>
-                </span>
-                <span class="nav-link-title">Médias
-                  <span id="sidebar-media-badge" class="sidebar-dl-badge" style="display:none;">0</span>
-                </span>
-                <span class="nav-link-toggle"></span>
-              </a>
-              <div class="nav-collapse collapse {{ is_media ? 'show' }}" id="media-submenu">
-                <ul class="navbar-nav">
-                  <li class="nav-item">
-                    <a class="nav-link {{ app.request.attributes.get('_route') starts with 'tmdb_' ? 'active' }}"
-                       href="{{ path('tmdb_index') }}">
-                      <span class="nav-link-icon d-md-none d-lg-inline-block">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 2l2.4 7.4h7.6l-6.2 4.5l2.4 7.4l-6.2 -4.6l-6.2 4.6l2.4 -7.4l-6.2 -4.5h7.6z"/></svg>
-                      </span>
-                      <span class="nav-link-title d-flex align-items-center">— Découverte</span>
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_media_films' or app.request.attributes.get('_route') starts with 'radarr_' or app.request.attributes.get('_route') starts with 'app_media_radarr' ? 'active' }}"
-                       href="{{ path('app_media_films') }}">
-                      <span class="nav-link-icon d-md-none d-lg-inline-block">
-                        <svg width="20" height="20" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><g transform="translate(70 21)"><path d="M105.3 154.9L112.8 869.5C52.7 877 7.5 846.9 7.5 786.8L0 192.6C0 4.5 173-40.6 278.3 34.6L812.3 343C887.5 395.6 902.6 493.4 865 561.1C857.5 508.5 834.9 478.4 789.8 448.3L188 109.8C142.9 79.7 105.3 87.2 105.3 154.9Z" fill="#FFC230"/><path d="M0 376.1C45.1 391.1 90.3 383.6 127.9 361L744.6 0C782.2 52.7 774.7 105.3 729.6 135.4L210.6 436.3C135.4 473.9 37.6 436.3 0 376.1Z" transform="translate(60.2 531)" fill="#FFC230"/><path d="M0 413.7L368.6 203.1L7.5 0L0 413.7Z" transform="translate(240.7 282.8)" fill="#FFC230"/></g></svg>
-                      </span>
-                      <span class="nav-link-title d-flex align-items-center">— Films</span>
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_media_series' or app.request.attributes.get('_route') starts with 'sonarr_' ? 'active' }}"
-                       href="{{ path('app_media_series') }}">
-                      <span class="nav-link-icon d-md-none d-lg-inline-block">
-                        <svg width="20" height="20" viewBox="0 0 216.7 216.9" xmlns="http://www.w3.org/2000/svg"><path d="M194.65 42.5l-22.4 22.4C159.15 78 158 89.4 158 109.5c0 17.93 2.85 34.35 16.2 47.7l19 18.95c-2.5 3.07-5.2 6.07-8.1 9-.7.83-1.48 1.6-2.35 2.3-2.53 2.5-5.17 4.82-7.9 6.95l-17.55-17.55c-15.6-15.6-28-17.1-48.6-17.1-19.77 0-33.22 1.82-47.7 16.3l-18.55 18.6c-3.77-2.87-7.33-6.03-10.7-9.5-2.8-2.8-5.42-5.67-7.85-8.6l19.15-19.2c13.85-13.85 16.1-29.92 16.1-47.85 0-17.5-2.87-33.82-15.6-46.55L22.45 43.85c2.83-3.6 5.92-7.07 9.25-10.4 2.93-2.87 5.93-5.55 9-8.05L61.1 43.85C74.1 56.85 90.77 60.2 108.7 60.2c18.47 0 35.08-3.58 48.6-17.1l19.3-19.25c2.9 2.37 5.73 4.93 8.5 7.7 3.47 3.53 6.65 7.18 9.55 10.95z" fill="#0CF"/><circle cx="108.35" cy="108.45" r="29.5" fill="#0CF" opacity=".8"/></svg>
-                      </span>
-                      <span class="nav-link-title d-flex align-items-center">— Séries</span>
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link {{ app.request.attributes.get('_route') starts with 'prowlarr_' ? 'active' }}"
-                       href="{{ path('prowlarr_index') }}">
-                      <span class="nav-link-icon d-md-none d-lg-inline-block">
-                        <svg width="20" height="20" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224 224-100.3 224-224S379.7 32 256 32zm0 400c-97 0-176-79-176-176S159 80 256 80s176 79 176 176-79 176-176 176z" fill="#E88D1A"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136-61-136-136-136zm0 224c-48.6 0-88-39.4-88-88s39.4-88 88-88 88 39.4 88 88-39.4 88-88 88z" fill="#E88D1A"/><circle cx="256" cy="256" r="48" fill="#E88D1A"/></svg>
-                      </span>
-                      <span class="nav-link-title d-flex align-items-center">— Prowlarr</span>
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link {{ app.request.attributes.get('_route') starts with 'jellyseerr_' ? 'active' }}"
-                       href="{{ path('jellyseerr_index') }}">
-                      <span class="nav-link-icon d-md-none d-lg-inline-block">
-                        <svg width="20" height="20" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 48C141.1 48 48 141.1 48 256s93.1 208 208 208 208-93.1 208-208S370.9 48 256 48zm0 368c-88.4 0-160-71.6-160-160S167.6 96 256 96s160 71.6 160 160-71.6 160-160 160z" fill="#a259ff"/><circle cx="256" cy="256" r="80" fill="#a259ff"/><path d="M256 176c-44.2 0-80 35.8-80 80s35.8 80 80 80 80-35.8 80-80-35.8-80-80-80zm0 120c-22.1 0-40-17.9-40-40s17.9-40 40-40 40 17.9 40 40-17.9 40-40 40z" fill="#c084fc" opacity=".6"/></svg>
-                      </span>
-                      <span class="nav-link-title d-flex align-items-center">— Jellyseerr</span>
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_qbittorrent_' ? 'active' }}"
-                       href="{{ path('app_qbittorrent_index') }}">
-                      <span class="nav-link-icon d-md-none d-lg-inline-block">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                             fill="none" stroke="#2f67ba" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round" class="icon">
-                          <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/>
-                          <path d="M7 11l5 5l5 -5"/><path d="M12 4l0 12"/>
-                        </svg>
-                      </span>
-                      <span class="nav-link-title d-flex align-items-center">— Téléchargements
-                        <span id="sidebar-qbt-badge" class="sidebar-dl-badge" style="display:none;">0</span>
-                      </span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-
-            <li class="nav-item">
-              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_notif' ? 'active' }}"
-                 href="#">
-                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="currentColor" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/>
-                    <path d="M9 17v1a3 3 0 0 0 6 0v-1"/>
-                  </svg>
-                </span>
-                <span class="nav-link-title">Notifications</span>
-              </a>
-            </li>
-
-            <li class="nav-item">
-              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_todo' ? 'active' }}"
-                 href="#">
-                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="currentColor" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/>
-                    <path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/>
-                    <path d="M9 12l.01 0"/><path d="M13 12l2 0"/>
-                    <path d="M9 16l.01 0"/><path d="M13 16l2 0"/>
-                  </svg>
-                </span>
-                <span class="nav-link-title">Productivité</span>
-              </a>
-            </li>
-
           </ul>
 
-          <div class="mt-auto">
+          {# ── Pied sidebar : logout desktop ── #}
+          <div class="mt-auto d-none d-lg-block">
             <ul class="navbar-nav">
-
               <li class="nav-item">
-                <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_tasks' ? 'active' }}"
-                   href="{{ path('app_tasks') }}">
+                <a class="nav-link" href="{{ path('app_logout') }}">
                   <span class="nav-link-icon d-md-none d-lg-inline-block">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" class="icon">
-                      <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>
-                      <path d="M12 7a5 5 0 1 0 5 5"/>
-                      <path d="M15 3.223a9 9 0 1 1 -8.408 14.84"/>
-                      <path d="M15 8v-5h5"/>
+                      <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/>
+                      <path d="M9 12h12l-3 -3m0 6l3 -3"/>
                     </svg>
                   </span>
-                  <span class="nav-link-title">Tâches</span>
+                  <span class="nav-link-title">Déconnexion</span>
                 </a>
               </li>
-
-              <li class="nav-item">
-                <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_alertes' ? 'active' }}"
-                   href="{{ path('app_alertes') }}">
-                  <span class="nav-link-icon d-md-none d-lg-inline-block">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor" stroke-width="2"
-                         stroke-linecap="round" stroke-linejoin="round" class="icon">
-                      <path d="M12 9v4m0 4l.01 0"/>
-                      <path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.871l-8.106 -13.534a1.914 1.914 0 0 0 -3.274 0z"/>
-                    </svg>
-                  </span>
-                  <span class="nav-link-title d-flex align-items-center justify-content-between">
-                    Alertes
-                    <span id="sse-alert-badge" class="badge bg-danger ms-auto{% if alert_count == 0 %} d-none{% endif %}">{{ alert_count > 0 ? alert_count : '' }}</span>
-                  </span>
-                </a>
-              </li>
-
-              <li class="nav-item">
-                <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_integrity' ? 'active' }}"
-                   href="{{ path('app_integrity') }}">
-                  <span class="nav-link-icon d-md-none d-lg-inline-block">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor" stroke-width="2"
-                         stroke-linecap="round" stroke-linejoin="round" class="icon">
-                      <path d="M12 3l9 4-9 4-9-4 9-4z"/>
-                      <path d="M3 12l9 4 9-4"/>
-                      <path d="M3 17l9 4 9-4"/>
-                    </svg>
-                  </span>
-                  <span class="nav-link-title">Intégrité</span>
-                </a>
-              </li>
-
-              {% if is_granted('ROLE_ADMIN') %}
-              <li class="nav-item">
-                <a class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_db' ? 'active' }}"
-                   href="{{ path('admin_db_index') }}">
-                  <span class="nav-link-icon d-md-none d-lg-inline-block">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor" stroke-width="2"
-                         stroke-linecap="round" stroke-linejoin="round" class="icon">
-                      <ellipse cx="12" cy="6" rx="8" ry="3"/>
-                      <path d="M4 6v6a8 3 0 0 0 16 0v-6"/>
-                      <path d="M4 12v6a8 3 0 0 0 16 0v-6"/>
-                    </svg>
-                  </span>
-                  <span class="nav-link-title">Base de données</span>
-                </a>
-              </li>
-              {% endif %}
-
             </ul>
           </div>
         </div>
@@ -685,44 +429,7 @@
     {# ===================== CONTENU PRINCIPAL ===================== #}
     <div class="page-wrapper">
 
-      {# ── Command Center fixe ── #}
-      <div id="argos-command-center">
-        <div class="container-xl px-3">
-          <div class="d-flex align-items-center gap-3 flex-wrap" style="min-height:26px;">
-            <div class="cc-metric">
-              <span class="cc-dot cc-dot-ok" id="cc-status-dot"></span>
-              <span class="cc-metric-label">Argos</span>
-            </div>
-            <div class="cc-metric">
-              <span class="cc-metric-label">CPU</span>
-              <span class="cc-metric-value" id="cc-mac-cpu">—</span>
-            </div>
-            <div class="cc-metric">
-              <span class="cc-metric-label">RAM</span>
-              <span class="cc-metric-value" id="cc-mac-ram">—</span>
-            </div>
-            <div class="cc-metric">
-              <span class="cc-metric-label">Disque</span>
-              <span class="cc-metric-value" id="cc-mac-disk">—</span>
-            </div>
-            <div class="cc-metric">
-              <span class="cc-metric-label">NAS</span>
-              <span class="cc-metric-value" id="cc-nas-temp">—</span>
-            </div>
-            <div class="cc-metric">
-              <span class="cc-metric-label">Docker</span>
-              <span class="cc-metric-value" id="cc-docker">—</span>
-            </div>
-            <div class="cc-metric">
-              <span class="cc-metric-label">Réseau</span>
-              <span class="cc-metric-value" id="cc-clients">—</span>
-            </div>
-            <div class="cc-metric ms-auto">
-              <span class="cc-metric-label" id="cc-alerts">0 alertes</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      {# Command Center Argos supprimé pour Prismarr — un command center médias light pourra être ajouté plus tard si besoin #}
 
       <div class="page-header d-print-none">
         <div class="container-xl">
@@ -765,53 +472,6 @@
                     <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
                   </svg>
                 </a>
-
-                {# Cloche alertes #}
-                <div class="dropdown" style="position:relative;">
-                  <button type="button" class="btn btn-icon btn-ghost-secondary position-relative" data-argos-dropdown="bell-menu">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/>
-                      <path d="M9 17v1a3 3 0 0 0 6 0v-1"/>
-                    </svg>
-                    <span id="sse-alert-badge-top" class="badge bg-danger{% if alert_count == 0 %} d-none{% endif %}"
-                          style="position:absolute;top:2px;right:2px;font-size:0.6rem;min-width:1.1em;padding:0.15em 0.3em;line-height:1;">
-                      {{ alert_count > 0 ? alert_count : '' }}
-                    </span>
-                  </button>
-                  <div class="dropdown-menu" id="bell-menu" style="min-width:300px;position:absolute;right:0;left:auto;top:100%;">
-                    <div class="dropdown-header d-flex align-items-center justify-content-between">
-                      <span class="fw-semibold">Alertes actives</span>
-                      {% if alert_count > 0 %}
-                        <span class="badge bg-danger">{{ alert_count }}</span>
-                      {% endif %}
-                    </div>
-                    {% set latest_alerts = alert_latest() %}
-                    {% if latest_alerts is empty %}
-                      <div class="py-3 text-center text-secondary small">Aucune alerte active</div>
-                    {% else %}
-                      {% for alert in latest_alerts %}
-                        <a href="{{ path('app_alertes') }}" class="dropdown-item py-2">
-                          <div class="d-flex gap-2 align-items-start">
-                            <span class="badge {{ alert.severity == 'critical' ? 'bg-danger' : 'bg-warning text-dark' }} flex-shrink-0" style="margin-top:2px;">
-                              {{ alert.severity == 'critical' ? '!' : '▲' }}
-                            </span>
-                            <div class="overflow-hidden flex-grow-1">
-                              <div class="small fw-medium text-truncate">{{ alert.message }}</div>
-                              <div class="text-secondary" style="font-size:0.7rem;">
-                                {{ alert.device ? alert.device.name : '—' }} · {{ alert.createdAt|date('H:i') }}
-                              </div>
-                            </div>
-                          </div>
-                        </a>
-                      {% endfor %}
-                    {% endif %}
-                    <div class="dropdown-divider"></div>
-                    <a href="{{ path('app_alertes') }}" class="dropdown-item text-center small text-secondary">
-                      Voir toutes les alertes →
-                    </a>
-                  </div>
-                </div>
 
                 {# Profil #}
                 <div class="dropdown" style="position:relative;">
@@ -880,7 +540,7 @@
             <div class="col-12 col-lg-auto mt-3 mt-lg-0">
               <ul class="list-inline list-inline-dots mb-0">
                 <li class="list-inline-item text-secondary">
-                  IH-ARGOS &copy; {{ "now"|date("Y") }}
+                  Prismarr &copy; {{ "now"|date("Y") }}
                 </li>
               </ul>
             </div>
@@ -1006,93 +666,6 @@
   {% block javascripts %}{% endblock %}
   <script>
   (function () {
-    function initAlertSSE() {
-      if (window._argosAlertSrc) { window._argosAlertSrc.close(); window._argosAlertSrc = null; }
-      var u = new URL('/.well-known/mercure', window.location.origin);
-      u.searchParams.append('topic', '/argos/alerts');
-      window._argosAlertSrc = new EventSource(u.toString());
-      window._argosAlertSrc.onmessage = function (e) {
-        var d = JSON.parse(e.data);
-        [document.getElementById('sse-alert-badge'), document.getElementById('sse-alert-badge-top')].forEach(function (b) {
-          if (!b) return;
-          if (d.count > 0) { b.textContent = d.count; b.classList.remove('d-none'); }
-          else { b.textContent = ''; b.classList.add('d-none'); }
-        });
-        var pageBadge = document.getElementById('sse-alert-page-badge');
-        if (pageBadge) { pageBadge.textContent = d.count > 0 ? d.count : '0'; }
-        document.dispatchEvent(new CustomEvent('argos:alerts', { detail: d }));
-      };
-    }
-    window._argosResolveAlert = function (e, id, token, btn) {
-      e.stopPropagation();
-      // Mise à jour optimiste : retire la ligne immédiatement
-      var row = btn.closest('.dropdown-item');
-      if (row) row.remove();
-      [document.getElementById('sse-alert-badge'), document.getElementById('sse-alert-badge-top')].forEach(function (b) {
-        if (!b) return;
-        var n = Math.max(0, (parseInt(b.textContent, 10) || 0) - 1);
-        if (n > 0) { b.textContent = n; } else { b.textContent = ''; b.classList.add('d-none'); }
-      });
-      // Confirmation serveur en arrière-plan
-      fetch('/alertes/' + id + '/resolve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: '_token=' + encodeURIComponent(token),
-      }).then(function () {
-        window._argosRefreshBell();
-      });
-    };
-
-    window._argosRefreshBell = function () {
-      var menu = document.getElementById('bell-menu');
-      if (!menu) return;
-      fetch('/alertes/latest')
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          var alerts = data.alerts;
-          var count  = data.count;
-          [document.getElementById('sse-alert-badge'), document.getElementById('sse-alert-badge-top')].forEach(function (b) {
-            if (!b) return;
-            if (count > 0) { b.textContent = count; b.classList.remove('d-none'); }
-            else { b.textContent = ''; b.classList.add('d-none'); }
-          });
-          var header = '<div class="dropdown-header d-flex align-items-center justify-content-between">'
-            + '<span class="fw-semibold">Alertes actives</span>'
-            + (count > 0 ? '<span class="badge bg-danger">' + count + '</span>' : '')
-            + '</div>';
-          var body = alerts.length === 0
-            ? '<div class="py-3 text-center text-secondary small">Aucune alerte active</div>'
-            : alerts.map(function (a) {
-                return '<div class="dropdown-item py-2 d-flex gap-2 align-items-start">'
-                  + '<a href="/alertes" class="d-flex gap-2 align-items-start flex-grow-1 overflow-hidden text-decoration-none">'
-                  + '<span class="badge ' + (a.severity === 'critical' ? 'bg-danger' : 'bg-warning text-dark') + ' flex-shrink-0" style="margin-top:2px;">'
-                  + (a.severity === 'critical' ? '!' : '▲') + '</span>'
-                  + '<div class="overflow-hidden flex-grow-1">'
-                  + '<div class="small fw-medium text-truncate">' + a.message + '</div>'
-                  + '<div class="text-secondary" style="font-size:0.7rem;">' + (a.device || '—') + ' · ' + a.date + '</div>'
-                  + '</div></a>'
-                  + '<button class="btn btn-sm btn-ghost-secondary p-0 ms-1 flex-shrink-0" style="width:1.25rem;height:1.25rem;line-height:1;" '
-                  + 'onclick="window._argosResolveAlert(event,' + a.id + ',\'' + a.token + '\',this)" title="Résoudre">'
-                  + '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6l-12 12m0 -12l12 12"/></svg>'
-                  + '</button>'
-                  + '</div>';
-              }).join('');
-          var footer = '<div class="dropdown-divider"></div>'
-            + '<a href="/alertes" class="dropdown-item text-center small text-secondary">Voir toutes les alertes →</a>';
-          menu.innerHTML = header + body + footer;
-        });
-    }
-
-    if (!window._argosAlertListeners) {
-      window._argosAlertListeners = true;
-      document.addEventListener('turbo:load', initAlertSSE);
-      document.addEventListener('DOMContentLoaded', initAlertSSE);
-      document.addEventListener('turbo:before-cache', function () {
-        if (window._argosAlertSrc) { window._argosAlertSrc.close(); window._argosAlertSrc = null; }
-      });
-    }
-    initAlertSSE();
-
     function initAutohide() {
       document.querySelectorAll('.js-autohide').forEach(function (el) {
         if (el.dataset.autohideInit) return;
@@ -1438,7 +1011,6 @@
           document.querySelectorAll('.dropdown-menu.show').forEach(function (m) { m.classList.remove('show'); });
           if (!open) {
             menu.classList.add('show');
-            if (menuId === 'bell-menu' && window._argosRefreshBell) { window._argosRefreshBell(); }
             e.stopPropagation();
           }
           return;
@@ -1556,77 +1128,8 @@
       }, duration || 4000);
     };
 
-    /* ── 3. Command Center — SSE global ── */
-    /* _argosCCData déclaré dans le <head> pour survivre à Turbo */
-
-    function restoreCCData() {
-      var d = window._argosCCData;
-      if (d.cpu !== undefined) { var el = document.getElementById('cc-mac-cpu'); if (el) { el.textContent = d.cpu.toFixed(1) + '%'; el.style.color = d.cpu > 85 ? '#ef4444' : (d.cpu > 70 ? '#f59e0b' : '#22c55e'); } }
-      if (d.mem_percent !== undefined) { var el = document.getElementById('cc-mac-ram'); if (el) { el.textContent = d.mem_percent.toFixed(1) + '%'; el.style.color = d.mem_percent > 85 ? '#ef4444' : (d.mem_percent > 70 ? '#f59e0b' : '#6366f1'); } }
-      if (d.disk_percent !== undefined) { var el = document.getElementById('cc-mac-disk'); if (el) { el.textContent = d.disk_percent.toFixed(1) + '%'; el.style.color = d.disk_percent > 90 ? '#ef4444' : (d.disk_percent > 75 ? '#f59e0b' : '#22c55e'); } }
-      if (d.docker_up !== undefined) { var el = document.getElementById('cc-docker'); if (el) { el.textContent = d.docker_up + '/' + d.docker_total; el.style.color = d.docker_up === d.docker_total ? '#22c55e' : '#f59e0b'; } }
-      if (d.nas_temp !== undefined) { var el = document.getElementById('cc-nas-temp'); if (el) { el.textContent = d.nas_temp.toFixed(1) + '°C'; el.style.color = d.nas_temp > 70 ? '#ef4444' : (d.nas_temp > 55 ? '#f59e0b' : '#22c55e'); } }
-      if (d.clients_total !== undefined) { var el = document.getElementById('cc-clients'); if (el) el.textContent = d.clients_total + ' clients'; }
-      if (d.alert_count !== undefined) { var el = document.getElementById('cc-alerts'); if (el) { el.textContent = d.alert_count + ' alerte' + (d.alert_count > 1 ? 's' : ''); el.style.color = d.alert_critical > 0 ? '#ef4444' : (d.alert_count > 0 ? '#f59e0b' : 'rgba(255,255,255,.4)'); } var dot = document.getElementById('cc-status-dot'); if (dot) dot.className = 'cc-dot ' + (d.alert_critical > 0 ? 'cc-dot-err' : (d.alert_count > 0 ? 'cc-dot-warn' : 'cc-dot-ok')); }
-    }
-
-    function initCommandCenter() {
-      // Restaurer les dernières valeurs
-      restoreCCData();
-
-      if (window._argosCCSrc) return; // SSE déjà connecté, pas besoin de reconnecter
-      var u = new URL('/.well-known/mercure', window.location.origin);
-      ['/argos/metrics/mac', '/argos/containers', '/argos/metrics/nas', '/argos/alerts', '/argos/metrics/unifi'].forEach(function (t) {
-        u.searchParams.append('topic', t);
-      });
-      var es = new EventSource(u.toString());
-      window._argosCCSrc = es;
-
-      es.onmessage = function (e) {
-        var d = JSON.parse(e.data);
-        var cc = window._argosCCData;
-        // Mac metrics
-        if ('mem_percent' in d) {
-          if (d.cpu !== undefined) cc.cpu = d.cpu;
-          if (d.mem_percent !== undefined) cc.mem_percent = d.mem_percent;
-          if (d.disk_percent !== undefined) cc.disk_percent = d.disk_percent;
-        }
-        // Docker
-        if ('containers' in d || ('up' in d && 'total' in d)) {
-          cc.docker_up = d.up; cc.docker_total = d.total;
-        }
-        // NAS
-        if ('temp' in d) {
-          if (d.temp !== undefined) cc.nas_temp = d.temp;
-        }
-        // Alertes
-        if ('critical' in d || ('count' in d && !('clients_total' in d))) {
-          cc.alert_count = d.count || 0;
-          cc.alert_critical = d.critical || 0;
-          // Toast pour nouvelles alertes critiques
-          if (cc.alert_critical > 0 && cc._lastCritical !== cc.alert_critical) {
-            window._argosToast(cc.alert_critical + ' alerte' + (cc.alert_critical > 1 ? 's' : '') + ' critique' + (cc.alert_critical > 1 ? 's' : ''), 'danger', 6000);
-          }
-          cc._lastCritical = cc.alert_critical;
-        }
-        // UniFi
-        if ('clients_total' in d) {
-          cc.clients_total = d.clients_total || 0;
-        }
-        // Sauvegarder + mettre à jour l'UI
-        window._argosCCSave();
-        restoreCCData();
-      };
-    }
-
-    // Restaurer immédiatement + après chaque render Turbo
-    restoreCCData();
-    if (!window._argosCCSrc) initCommandCenter();
-    if (!window._argosCCRenderBound) {
-      window._argosCCRenderBound = true;
-      document.addEventListener('turbo:render', function () { setTimeout(restoreCCData, 0); });
-      document.addEventListener('turbo:load', function () { setTimeout(restoreCCData, 0); });
-    }
+    /* Command Center + SSE multi-topics Argos supprimés pour Prismarr.
+       Seul le poll qBit (badge sidebar + toasts fin DL) reste dans le bloc plus bas. */
 
   })();
   </script>
