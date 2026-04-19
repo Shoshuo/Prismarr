@@ -4,7 +4,8 @@ symfony/var/
 symfony/public/bundles/
 
 # Env secrets — jamais dans git
-.env
+# (symfony/.env = valeurs par défaut partageables, versionnées)
+/.env
 .env.local
 .env.*.local
 

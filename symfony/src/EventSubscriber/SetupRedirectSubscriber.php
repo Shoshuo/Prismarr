@@ -26,6 +26,7 @@ class SetupRedirectSubscriber implements EventSubscriberInterface, ResetInterfac
         '/setup',
         '/login',
         '/logout',
+        '/api/health',
         '/_profiler',
         '/_wdt',
         '/_error',

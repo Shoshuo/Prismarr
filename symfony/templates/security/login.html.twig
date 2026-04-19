@@ -52,7 +52,7 @@
       text-align: center;
       margin-bottom: 1.75rem;
     }
-    .login-logo img { height: 52px; }
+    .login-logo img { height: 96px; display: block; margin: 0 auto; }
 
     .login-card {
       background: #1c1c1c;
@@ -102,8 +102,53 @@
       color: inherit;
     }
 
-    .input-group-flat .form-control { border-right: 0; }
-    .input-group-flat .input-group-text { border-left: 0; }
+    .input-group.input-group-flat .form-control { border-right: 0 !important; }
+    .input-group.input-group-flat .input-group-text {
+      border-left: 0 !important;
+      background: rgba(255, 255, 255, .03) !important;
+      border-color: rgba(255, 255, 255, .09) !important;
+      color: inherit;
+    }
+    [data-bs-theme="light"] .input-group.input-group-flat .input-group-text {
+      background: rgba(0, 0, 0, .02) !important;
+      border-color: rgba(0, 0, 0, .1) !important;
+    }
+    .input-group.input-group-flat .form-control:focus {
+      box-shadow: none;
+    }
+    .input-group.input-group-flat:focus-within {
+      border-radius: 8px;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12) !important;
+    }
+    .input-group.input-group-flat:focus-within .form-control,
+    .input-group.input-group-flat:focus-within .input-group-text {
+      border-color: rgba(99, 102, 241, 0.55) !important;
+    }
+    .password-toggle,
+    .password-toggle:hover,
+    .password-toggle:focus,
+    .password-toggle:active,
+    .password-toggle:visited {
+      color: rgba(255, 255, 255, .75) !important;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      background: transparent !important;
+      background-color: transparent !important;
+      box-shadow: none !important;
+      outline: none !important;
+      transition: color .15s ease;
+    }
+    .password-toggle:hover { color: #ffffff !important; }
+    .password-toggle svg { stroke: currentColor; }
+    [data-bs-theme="light"] .password-toggle,
+    [data-bs-theme="light"] .password-toggle:focus,
+    [data-bs-theme="light"] .password-toggle:active {
+      color: rgba(0, 0, 0, .65) !important;
+    }
+    [data-bs-theme="light"] .password-toggle:hover {
+      color: #000000 !important;
+    }
 
     .btn-login {
       background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
@@ -209,7 +254,7 @@
               <input type="password" id="password" name="_password" class="form-control"
                      placeholder="••••••••" autocomplete="current-password" required/>
               <span class="input-group-text">
-                <a href="#" class="link-secondary" id="toggle-password" title="Afficher le mot de passe">
+                <a href="#" class="password-toggle" id="toggle-password" title="Afficher le mot de passe">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>

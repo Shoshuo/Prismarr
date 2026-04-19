@@ -62,8 +62,8 @@ WORKDIR /var/www/html
 COPY symfony/ .
 
 # Dependencies + assets
-RUN composer install --no-dev --optimize-autoloader --no-scripts || true
-RUN php bin/console importmap:install 2>/dev/null || true
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+RUN php bin/console importmap:install --no-interaction
 
 # Permissions
 RUN mkdir -p var/data var/cache var/log && \
@@ -71,7 +71,7 @@ RUN mkdir -p var/data var/cache var/log && \
 
 # ── Healthcheck ─────────────────────────────────────────────────────────
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD curl -f http://localhost:7070/login || exit 1
+    CMD curl -fsS http://localhost:7070/api/health || exit 1
 
 EXPOSE 7070
 

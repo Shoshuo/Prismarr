@@ -1,0 +1,5 @@
+profiler:
+    access_denied_remote: |
+        Les outils de debug Symfony (/_profiler, /_wdt) ne sont accessibles qu'en local (127.0.0.1).
+        Si vous voyez ce message en production, votre instance Prismarr tourne en mode dev par erreur —
+        passez APP_ENV=prod dans votre .env.local et redémarrez le container.

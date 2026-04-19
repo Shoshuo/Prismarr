@@ -58,14 +58,21 @@ if [ ! -e "$ENV_LINK" ]; then
   ln -s "$ENV_STORED" "$ENV_LINK"
 fi
 
-# ── 3. Database schema on first boot ────────────────────────────────────────
+# ── 3. Database schema + migrations ─────────────────────────────────────────
+# Runs every boot. On first boot: creates the DB file and applies all
+# migrations (baseline + any later ones). On subsequent boots: applies
+# only migrations released since the last boot, or no-op if up to date.
+cd "$APP_DIR"
 if [ ! -f "$DB_FILE" ] || [ ! -s "$DB_FILE" ]; then
-  cd "$APP_DIR"
-  php bin/console doctrine:schema:create --no-interaction >/dev/null 2>&1 || \
-    php bin/console doctrine:schema:update --force --no-interaction >/dev/null 2>&1
-  chown www-data:www-data "$DB_FILE" 2>/dev/null || true
-  schema_action="created"
+  schema_action="creating database + applying migrations"
+else
+  schema_action="migrations up to date"
 fi
+migrate_output=$(php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration 2>&1)
+if echo "$migrate_output" | grep -qE "Migrating up to|executed"; then
+  schema_action="migrations applied"
+fi
+chown www-data:www-data "$DB_FILE" 2>/dev/null || true
 
 # ── Startup banner ──────────────────────────────────────────────────────────
 cat <<BANNER

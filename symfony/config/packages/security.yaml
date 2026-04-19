@@ -22,6 +22,9 @@ security:
                 password_parameter: _password
                 default_target_path: app_home
                 enable_csrf: true
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
             logout:
                 path: app_logout
                 target: app_login
@@ -31,6 +34,7 @@ security:
                 path: /
 
     access_control:
+        - { path: ^/api/health, roles: PUBLIC_ACCESS }
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/setup, roles: PUBLIC_ACCESS }
         - { path: ^/admin, roles: ROLE_ADMIN }

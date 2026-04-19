@@ -2,6 +2,15 @@
 framework:
     secret: '%env(APP_SECRET)%'
 
+    # Reverse-proxy awareness (Traefik, nginx, Caddy external, Cloudflare Tunnel)
+    trusted_proxies: '%env(TRUSTED_PROXIES)%'
+    trusted_headers:
+        - x-forwarded-for
+        - x-forwarded-proto
+        - x-forwarded-host
+        - x-forwarded-port
+        - x-forwarded-prefix
+
     # Persistent sessions in var/sessions (survive FrankenPHP restarts)
     # Dedicated cookie name to coexist with other apps on the same domain (e.g. Argos)
     session:
