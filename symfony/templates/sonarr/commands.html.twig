@@ -122,17 +122,15 @@ function showFeedback(msg, type) {
 
 function bindCancelButtons() {
   document.querySelectorAll('.btn-cmd-cancel').forEach(function(btn) {
-    btn.addEventListener('click', async function() {
+    btn.onclick = function() {
       var cmdId = btn.dataset.id;
       if (!confirm('Annuler la commande #' + cmdId + ' ?')) return;
       btn.disabled = true;
-      try {
-        var r = await fetch('/sonarr/command/' + cmdId + '/annuler', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-          body: '{}',
-        });
-        var data = await r.json();
+      fetch('/sonarr/command/' + cmdId + '/annuler', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+        body: '{}'
+      }).then(function(r){ return r.json(); }).then(function(data){
         if (data.ok) {
           showFeedback('Commande #' + cmdId + ' annulée.');
           setTimeout(function(){ location.reload(); }, 800);
@@ -140,20 +138,21 @@ function bindCancelButtons() {
           showFeedback('Erreur lors de l\'annulation.', 'danger');
           btn.disabled = false;
         }
-      } catch(e) {
+      }).catch(function(){
         showFeedback('Erreur réseau.', 'danger');
         btn.disabled = false;
-      }
-    });
+      });
+    };
   });
 }
 bindCancelButtons();
 
-setInterval(async function() {
-  try {
-    var r = await fetch(window.location.href, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
-    if (!r.ok) return;
-    var html = await r.text();
+var refreshTimer = setInterval(function() {
+  fetch(window.location.href, {headers: {'X-Requested-With': 'XMLHttpRequest'}}).then(function(r){
+    if (!r.ok) return null;
+    return r.text();
+  }).then(function(html){
+    if (!html) return;
     var parser = new DOMParser();
     var doc = parser.parseFromString(html, 'text/html');
     var newTbody = doc.getElementById('commands-tbody');
@@ -165,8 +164,17 @@ setInterval(async function() {
     if (newCount) {
       document.getElementById('cmd-count').textContent = newCount.textContent;
     }
-  } catch(e) { /* silencieux */ }
+  }).catch(function(){ /* silencieux */ });
 }, 5000);
+window._prismarrSonarrCmdTimer = refreshTimer;
+
+document.addEventListener('turbo:before-render', function cleanup() {
+  if (window._prismarrSonarrCmdTimer) {
+    clearInterval(window._prismarrSonarrCmdTimer);
+    window._prismarrSonarrCmdTimer = null;
+  }
+  document.removeEventListener('turbo:before-render', cleanup);
+});
 })();
 </script>
 {% endblock %}

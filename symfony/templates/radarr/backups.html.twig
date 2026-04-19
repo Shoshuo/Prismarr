@@ -129,91 +129,118 @@
 {% block javascripts %}
 <script>
 (function(){
-let pendingRestoreId = null;
+var pendingRestoreId = null;
 
 // Créer une sauvegarde
-document.getElementById('btn-create-backup').addEventListener('click', async () => {
-  const progress = document.getElementById('backup-progress');
-  const msg = document.getElementById('backup-msg');
-  document.getElementById('btn-create-backup').disabled = true;
-  progress.classList.remove('d-none');
-  msg.textContent = 'Lancement de la sauvegarde...';
+var btnCreate = document.getElementById('btn-create-backup');
+if (btnCreate) {
+  btnCreate.onclick = function() {
+    var progress = document.getElementById('backup-progress');
+    var msg = document.getElementById('backup-msg');
+    btnCreate.disabled = true;
+    progress.classList.remove('d-none');
+    msg.textContent = 'Lancement de la sauvegarde...';
 
-  try {
-    const r = await fetch('{{ path('radarr_backup_create') }}', {
+    fetch('{{ path('radarr_backup_create') }}', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-      body: '{}',
-    });
-    const data = await r.json();
-    if (!data.ok) { msg.textContent = 'Erreur.'; return; }
+      body: '{}'
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if (!data.ok) { msg.textContent = 'Erreur.'; return; }
 
-    const cmdId = data.cmdId;
-    const poll = setInterval(async () => {
-      const sr = await fetch(`{{ path('radarr_command_status', {cmdId: '__ID__'}) }}`.replace('__ID__', cmdId));
-      const s = await sr.json();
-      msg.textContent = `Sauvegarde : ${s.status ?? '?'}`;
-      if (s.status === 'completed' || s.status === 'failed') {
-        clearInterval(poll);
-        if (s.status === 'completed') {
-          msg.textContent = 'Sauvegarde créée ! Rechargement...';
-          setTimeout(() => location.reload(), 2000);
-        } else {
-          msg.textContent = 'Echec de la sauvegarde.';
-        }
-      }
-    }, 3000);
-  } catch(e) {
-    msg.textContent = 'Erreur réseau.';
-  }
-});
+      var cmdId = data.cmdId;
+      var poll = setInterval(function() {
+        fetch('{{ path('radarr_command_status', {cmdId: '__ID__'}) }}'.replace('__ID__', cmdId)).then(function(sr){ return sr.json(); }).then(function(s){
+          msg.textContent = 'Sauvegarde : ' + (s.status != null ? s.status : '?');
+          if (s.status === 'completed' || s.status === 'failed') {
+            clearInterval(poll);
+            if (window._prismarrRadarrBackupsTimer === poll) window._prismarrRadarrBackupsTimer = null;
+            if (s.status === 'completed') {
+              msg.textContent = 'Sauvegarde créée ! Rechargement...';
+              setTimeout(function(){ location.reload(); }, 2000);
+            } else {
+              msg.textContent = 'Echec de la sauvegarde.';
+            }
+          }
+        }).catch(function(){ /* silencieux */ });
+      }, 3000);
+      window._prismarrRadarrBackupsTimer = poll;
+    }).catch(function(){
+      msg.textContent = 'Erreur réseau.';
+    });
+  };
+}
 
 // Supprimer
-document.querySelectorAll('.btn-backup-delete').forEach(btn => {
-  btn.addEventListener('click', async () => {
+document.querySelectorAll('.btn-backup-delete').forEach(function(btn) {
+  btn.onclick = function() {
     if (!confirm('Supprimer cette sauvegarde ?')) return;
-    const id = btn.dataset.id;
-    const r = await fetch(`/radarr/sauvegardes/${id}/supprimer`, {
+    var id = btn.dataset.id;
+    fetch('/radarr/sauvegardes/' + id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-      body: '{}',
+      body: '{}'
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if (data.ok) location.reload();
+      else alert('Erreur lors de la suppression.');
+    }).catch(function(){
+      alert('Erreur lors de la suppression.');
     });
-    const data = await r.json();
-    if (data.ok) location.reload();
-    else alert('Erreur lors de la suppression.');
-  });
+  };
 });
 
 // Restaurer — écouter l'événement show.bs.modal pour récupérer les données
-document.getElementById('modal-restore').addEventListener('show.bs.modal', (e) => {
-  const btn = e.relatedTarget;
+var modalRestore = document.getElementById('modal-restore');
+function onRestoreModalShow(e) {
+  var btn = e.relatedTarget;
   if (btn) {
     pendingRestoreId = btn.dataset.id;
     document.getElementById('restore-name').textContent = btn.dataset.name;
   }
-});
+}
+if (modalRestore) {
+  modalRestore.addEventListener('show.bs.modal', onRestoreModalShow);
+}
 
-document.getElementById('confirm-restore').addEventListener('click', async () => {
-  const alert = document.getElementById('restore-alert');
-  const msg = document.getElementById('restore-msg');
-  alert.classList.remove('d-none');
-  msg.textContent = 'Restauration en cours...';
+var btnConfirmRestore = document.getElementById('confirm-restore');
+if (btnConfirmRestore) {
+  btnConfirmRestore.onclick = function() {
+    var alertEl = document.getElementById('restore-alert');
+    var msg = document.getElementById('restore-msg');
+    alertEl.classList.remove('d-none');
+    msg.textContent = 'Restauration en cours...';
 
-  const r = await fetch(`/radarr/sauvegardes/${pendingRestoreId}/restaurer`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-    body: '{}',
-  });
-  const data = await r.json();
-  if (data.ok) {
-    msg.textContent = 'Restauration lancée. Radarr va redémarrer.';
-    alert.classList.remove('alert-warning');
-    alert.classList.add('alert-success');
-  } else {
-    msg.textContent = 'Erreur lors de la restauration.';
-    alert.classList.remove('alert-warning');
-    alert.classList.add('alert-danger');
+    fetch('/radarr/sauvegardes/' + pendingRestoreId + '/restaurer', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+      body: '{}'
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if (data.ok) {
+        msg.textContent = 'Restauration lancée. Radarr va redémarrer.';
+        alertEl.classList.remove('alert-warning');
+        alertEl.classList.add('alert-success');
+      } else {
+        msg.textContent = 'Erreur lors de la restauration.';
+        alertEl.classList.remove('alert-warning');
+        alertEl.classList.add('alert-danger');
+      }
+    }).catch(function(){
+      msg.textContent = 'Erreur lors de la restauration.';
+      alertEl.classList.remove('alert-warning');
+      alertEl.classList.add('alert-danger');
+    });
+  };
+}
+
+document.addEventListener('turbo:before-render', function cleanup() {
+  if (window._prismarrRadarrBackupsTimer) {
+    clearInterval(window._prismarrRadarrBackupsTimer);
+    window._prismarrRadarrBackupsTimer = null;
   }
+  if (modalRestore) {
+    modalRestore.removeEventListener('show.bs.modal', onRestoreModalShow);
+  }
+  document.removeEventListener('turbo:before-render', cleanup);
 });
 })();
 </script>

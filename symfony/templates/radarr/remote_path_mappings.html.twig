@@ -36,6 +36,8 @@
               <td class="font-monospace small">{{ m.localPath ?? '—' }}</td>
               <td class="text-end">
                 <button class="btn btn-ghost-primary btn-sm btn-rpm-edit"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modal-rpm"
                         data-id="{{ m.id }}"
                         data-host="{{ m.host ?? '' }}"
                         data-remote="{{ m.remotePath ?? '' }}"
@@ -99,6 +101,9 @@
 (function(){
   var feedback = document.getElementById('rpm-feedback');
   var mfb = document.getElementById('rpm-modal-feedback');
+  var modalEl = document.getElementById('modal-rpm');
+  if (!modalEl) return;
+
   function showFeedback(msg, type) {
     feedback.className = 'alert alert-' + (type || 'success') + ' mb-3';
     feedback.textContent = msg;
@@ -111,31 +116,29 @@
     mfb.classList.remove('d-none');
   }
 
-  var modalEl = document.getElementById('modal-rpm');
-  var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-
-  document.getElementById('btn-rpm-add').addEventListener('click', function() {
-    document.getElementById('rpm-modal-title').textContent = 'Ajouter un chemin distant';
-    document.getElementById('rpm-edit-id').value = '';
-    document.getElementById('rpm-host').value = '';
-    document.getElementById('rpm-remote').value = '';
-    document.getElementById('rpm-local').value = '';
+  // Turbo-safe: Bootstrap opens the modal declaratively via data-bs-toggle
+  // on each trigger button. show.bs.modal populates the form based on the
+  // relatedTarget (add vs edit), avoiding programmatic modal.show() calls.
+  modalEl.onshow = null;
+  modalEl.addEventListener('show.bs.modal', function(e) {
+    var btn = e.relatedTarget;
     mfb.classList.add('d-none');
-  });
-
-  document.querySelectorAll('.btn-rpm-edit').forEach(function(btn) {
-    btn.addEventListener('click', function() {
+    if (!btn || btn.id === 'btn-rpm-add') {
+      document.getElementById('rpm-modal-title').textContent = 'Ajouter un chemin distant';
+      document.getElementById('rpm-edit-id').value = '';
+      document.getElementById('rpm-host').value = '';
+      document.getElementById('rpm-remote').value = '';
+      document.getElementById('rpm-local').value = '';
+    } else {
       document.getElementById('rpm-modal-title').textContent = 'Modifier le chemin distant';
-      document.getElementById('rpm-edit-id').value = btn.dataset.id;
-      document.getElementById('rpm-host').value = btn.dataset.host;
-      document.getElementById('rpm-remote').value = btn.dataset.remote;
-      document.getElementById('rpm-local').value = btn.dataset.local;
-      mfb.classList.add('d-none');
-      modal.show();
-    });
+      document.getElementById('rpm-edit-id').value = btn.dataset.id || '';
+      document.getElementById('rpm-host').value = btn.dataset.host || '';
+      document.getElementById('rpm-remote').value = btn.dataset.remote || '';
+      document.getElementById('rpm-local').value = btn.dataset.local || '';
+    }
   });
 
-  document.getElementById('btn-rpm-save').addEventListener('click', async function() {
+  document.getElementById('btn-rpm-save').onclick = function() {
     var id = document.getElementById('rpm-edit-id').value;
     var host = document.getElementById('rpm-host').value.trim();
     var remotePath = document.getElementById('rpm-remote').value.trim();
@@ -147,28 +150,28 @@
     var payload = {host: host, remotePath: remotePath, localPath: localPath};
     var url = id ? '/radarr/chemins-distants/' + id + '/modifier' : '{{ path("radarr_remote_path_mapping_add") }}';
     if (id) payload.id = parseInt(id, 10);
-    var r = await fetch(url, {
+    fetch(url, {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: JSON.stringify(payload),
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if (data.ok !== false) { location.reload(); }
+      else { showModalFeedback(data.error || 'Erreur lors de l\'enregistrement.', 'danger'); }
     });
-    var data = await r.json();
-    if (data.ok !== false) { location.reload(); }
-    else { showModalFeedback(data.error || 'Erreur lors de l\'enregistrement.', 'danger'); }
-  });
+  };
 
   document.querySelectorAll('.btn-rpm-delete').forEach(function(btn) {
-    btn.addEventListener('click', async function() {
+    btn.onclick = function() {
       if (!confirm('Supprimer le mapping pour "' + btn.dataset.host + '" ?')) return;
-      var r = await fetch('/radarr/chemins-distants/' + btn.dataset.id + '/supprimer', {
+      fetch('/radarr/chemins-distants/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}',
+      }).then(function(r){ return r.json(); }).then(function(data){
+        if (data.ok) location.reload();
+        else showFeedback('Erreur lors de la suppression.', 'danger');
       });
-      var data = await r.json();
-      if (data.ok) location.reload();
-      else showFeedback('Erreur lors de la suppression.', 'danger');
-    });
+    };
   });
 })();
 </script>

@@ -44,6 +44,8 @@
               </td>
               <td class="text-end">
                 <button class="btn btn-ghost-primary btn-sm btn-cf-edit"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modal-cf"
                         data-id="{{ f.id }}"
                         data-payload='{{ f|json_encode }}'
                         title="Modifier">
@@ -109,6 +111,9 @@
 (function(){
   var feedback = document.getElementById('cf-feedback');
   var mfb = document.getElementById('cf-modal-feedback');
+  var modalEl = document.getElementById('modal-cf');
+  if (!modalEl) return;
+
   function showFeedback(msg, type) {
     feedback.className = 'alert alert-' + (type || 'success') + ' mb-3';
     feedback.textContent = msg;
@@ -121,32 +126,31 @@
     mfb.classList.remove('d-none');
   }
 
-  var modalEl = document.getElementById('modal-cf');
-  var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-
-  document.getElementById('btn-cf-add').addEventListener('click', function() {
-    document.getElementById('cf-modal-title').textContent = 'Ajouter un filtre';
-    document.getElementById('cf-edit-id').value = '';
-    document.getElementById('cf-label').value = '';
-    document.getElementById('cf-type').value = 'movie';
-    document.getElementById('cf-filters').value = '[]';
+  // Turbo-safe: Bootstrap opens the modal declaratively via data-bs-toggle
+  // on each trigger button. show.bs.modal populates the form based on the
+  // relatedTarget (add vs edit), avoiding programmatic modal.show() calls.
+  modalEl.onshow = null;
+  modalEl.addEventListener('show.bs.modal', function(e) {
+    var btn = e.relatedTarget;
     mfb.classList.add('d-none');
-  });
-
-  document.querySelectorAll('.btn-cf-edit').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var data = JSON.parse(btn.dataset.payload);
+    if (!btn || btn.id === 'btn-cf-add') {
+      document.getElementById('cf-modal-title').textContent = 'Ajouter un filtre';
+      document.getElementById('cf-edit-id').value = '';
+      document.getElementById('cf-label').value = '';
+      document.getElementById('cf-type').value = 'movie';
+      document.getElementById('cf-filters').value = '[]';
+    } else {
+      var data = {};
+      try { data = JSON.parse(btn.dataset.payload || '{}'); } catch (err) {}
       document.getElementById('cf-modal-title').textContent = 'Modifier le filtre';
-      document.getElementById('cf-edit-id').value = data.id;
+      document.getElementById('cf-edit-id').value = data.id || '';
       document.getElementById('cf-label').value = data.label || data.name || '';
       document.getElementById('cf-type').value = data.type || 'movie';
       document.getElementById('cf-filters').value = JSON.stringify(data.filters || [], null, 2);
-      mfb.classList.add('d-none');
-      modal.show();
-    });
+    }
   });
 
-  document.getElementById('btn-cf-save').addEventListener('click', async function() {
+  document.getElementById('btn-cf-save').onclick = function() {
     var id = document.getElementById('cf-edit-id').value;
     var label = document.getElementById('cf-label').value.trim();
     var type = document.getElementById('cf-type').value;
@@ -157,28 +161,28 @@
     var payload = {label: label, type: type, filters: filters};
     var url = id ? '/sonarr/filtres-personnalises/' + id + '/modifier' : '{{ path("sonarr_custom_filter_add") }}';
     if (id) payload.id = parseInt(id, 10);
-    var r = await fetch(url, {
+    fetch(url, {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: JSON.stringify(payload),
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if (data.ok !== false) { location.reload(); }
+      else { showModalFeedback(data.error || 'Erreur lors de l\'enregistrement.', 'danger'); }
     });
-    var data = await r.json();
-    if (data.ok !== false) { location.reload(); }
-    else { showModalFeedback(data.error || 'Erreur lors de l\'enregistrement.', 'danger'); }
-  });
+  };
 
   document.querySelectorAll('.btn-cf-delete').forEach(function(btn) {
-    btn.addEventListener('click', async function() {
+    btn.onclick = function() {
       if (!confirm('Supprimer le filtre "' + btn.dataset.label + '" ?')) return;
-      var r = await fetch('/sonarr/filtres-personnalises/' + btn.dataset.id + '/supprimer', {
+      fetch('/sonarr/filtres-personnalises/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}',
+      }).then(function(r){ return r.json(); }).then(function(data){
+        if (data.ok) location.reload();
+        else showFeedback('Erreur lors de la suppression.', 'danger');
       });
-      var data = await r.json();
-      if (data.ok) location.reload();
-      else showFeedback('Erreur lors de la suppression.', 'danger');
-    });
+    };
   });
 })();
 </script>

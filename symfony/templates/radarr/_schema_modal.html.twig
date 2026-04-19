@@ -91,108 +91,111 @@
 
 <script>
 (function () {
-  const MID        = {{ modal_id|json_encode|raw }};
-  const SCHEMA_URL = {{ schema_url|json_encode|raw }};
-  const SAVE_ADD   = {{ save_url_add|json_encode|raw }};
-  const SAVE_EDIT  = {{ save_url_edit|json_encode|raw }};
-  const TEST_URL   = {{ (test_url ?? '')|json_encode|raw }};
-  const MODE       = {{ (mode ?? 'default')|json_encode|raw }};
+  var MID        = {{ modal_id|json_encode|raw }};
+  var SCHEMA_URL = {{ schema_url|json_encode|raw }};
+  var SAVE_ADD   = {{ save_url_add|json_encode|raw }};
+  var SAVE_EDIT  = {{ save_url_edit|json_encode|raw }};
+  var TEST_URL   = {{ (test_url ?? '')|json_encode|raw }};
+  var MODE       = {{ (mode ?? 'default')|json_encode|raw }};
+  var TITLE_ADD  = {{ modal_title_add|json_encode|raw }};
+  var TITLE_EDIT = {{ modal_title_edit|json_encode|raw }};
 
-  let schemaCache = null;
-  let currentImpl = null;
-  let editingItem = null;
+  var modalEl = document.getElementById(MID);
+  if (!modalEl) return;
 
-  const el = id => document.getElementById(MID + '-' + id);
-  const modal = () => bootstrap.Modal.getOrCreateInstance(document.getElementById(MID));
+  var schemaCache = null;
+  var currentImpl = null;
+  var editingItem = null;
+
+  function el(id) { return document.getElementById(MID + '-' + id); }
 
   // Mapping Newznab standard (catégories indexeurs Prowlarr/Torznab)
-  const NEWZNAB_CATS = {
+  var NEWZNAB_CATS = {
     1000:'TV',2000:'Films',3000:'Audio',4000:'PC',5000:'TV-Sport',6000:'XXX',7000:'Livres',8000:'Autre',
     2010:'Films/Étranger',2020:'Films/Autre',2030:'Films/SD',2040:'Films/HD',2045:'Films/UHD',
     2050:'Films/Blu-Ray',2060:'Films/3D',2070:'Films/DVD',2080:'Films/WEB-DL',
     5070:'Anime',5080:'Documentaire',
-    1010:'TV/WEB-DL',1020:'TV/Étranger',1030:'TV/SD',1040:'TV/HD',1045:'TV/UHD',1050:'TV/Autre',1060:'TV/Sport',1070:'TV/Anime',1080:'TV/Documentaire',
+    1010:'TV/WEB-DL',1020:'TV/Étranger',1030:'TV/SD',1040:'TV/HD',1045:'TV/UHD',1050:'TV/Autre',1060:'TV/Sport',1070:'TV/Anime',1080:'TV/Documentaire'
   };
 
   // ── Rendu d'un champ ────────────────────────────────────────────────────
   function renderField(field, existingFields) {
     if (field.hidden) return '';
-    const id  = MID + '-f-' + field.name;
-    const existing = existingFields ? existingFields.find(f => f.name === field.name) : null;
-    let val = existing !== undefined && existing !== null ? (existing.value ?? field.value ?? '') : (field.value ?? '');
-    const isArray = Array.isArray(val);
-    const options = field.selectOptions ?? [];
+    var id  = MID + '-f-' + field.name;
+    var existing = existingFields ? existingFields.find(function(f){ return f.name === field.name; }) : null;
+    var val = existing !== undefined && existing !== null ? (existing.value != null ? existing.value : (field.value != null ? field.value : '')) : (field.value != null ? field.value : '');
+    var isArray = Array.isArray(val);
+    var options = field.selectOptions || [];
 
-    let input = '';
+    var input = '';
     switch (field.type) {
       case 'checkbox':
-        return `<div class="mb-3 d-flex align-items-center gap-2">
-          <input class="form-check-input schema-field" type="checkbox" id="${id}" data-name="${field.name}" data-field-type="checkbox"${val ? ' checked' : ''}>
-          <label class="form-check-label" for="${id}">${field.label ?? field.name}</label>
-          ${field.helpText ? `<small class="text-muted ms-2">${field.helpText}</small>` : ''}
-        </div>`;
+        return '<div class="mb-3 d-flex align-items-center gap-2">' +
+          '<input class="form-check-input schema-field" type="checkbox" id="' + id + '" data-name="' + field.name + '" data-field-type="checkbox"' + (val ? ' checked' : '') + '>' +
+          '<label class="form-check-label" for="' + id + '">' + (field.label != null ? field.label : field.name) + '</label>' +
+          (field.helpText ? '<small class="text-muted ms-2">' + field.helpText + '</small>' : '') +
+          '</div>';
 
       case 'select': {
         // Déterminer les options effectives : schema options ou Newznab mapping
-        let effectiveOpts = options;
+        var effectiveOpts = options;
         if (isArray && options.length > 0) {
           // Vérifier si les options matchent les valeurs existantes
-          const optValues = new Set(options.map(o => o.value));
-          const anyMatch = val.some(v => optValues.has(v));
-          if (!anyMatch && val.some(v => NEWZNAB_CATS[v])) {
+          var optValues = new Set(options.map(function(o){ return o.value; }));
+          var anyMatch = val.some(function(v){ return optValues.has(v); });
+          if (!anyMatch && val.some(function(v){ return NEWZNAB_CATS[v]; })) {
             // Les options du schéma ne matchent pas → utiliser le mapping Newznab
-            effectiveOpts = val.map(v => ({value: v, name: NEWZNAB_CATS[v] || `#${v}`}));
+            effectiveOpts = val.map(function(v){ return {value: v, name: NEWZNAB_CATS[v] || ('#' + v)}; });
           }
         }
 
         if (isArray && effectiveOpts.length > 0) {
           // Multi-select → grille de checkboxes alignées
-          const allOpts = effectiveOpts.length > val.length ? effectiveOpts : effectiveOpts;
           // Si on a des options connues du schéma, les montrer toutes ; sinon juste celles cochées + les Newznab courants
-          let displayOpts = effectiveOpts;
+          var displayOpts = effectiveOpts;
           if (effectiveOpts === options && options.length > 0) {
             displayOpts = options;
-          } else if (val.some(v => NEWZNAB_CATS[v])) {
+          } else if (val.some(function(v){ return NEWZNAB_CATS[v]; })) {
             // Afficher toutes les catégories Newznab connues pour permettre la sélection
-            const allNewznab = Object.entries(NEWZNAB_CATS)
-              .filter(([k]) => Math.floor(k/1000) === Math.floor(val[0]/1000) || val.includes(Number(k)))
-              .map(([k,v]) => ({value: Number(k), name: v}))
-              .sort((a,b) => a.value - b.value);
+            var allNewznab = Object.entries(NEWZNAB_CATS)
+              .filter(function(entry){ var k = entry[0]; return Math.floor(k/1000) === Math.floor(val[0]/1000) || val.indexOf(Number(k)) !== -1; })
+              .map(function(entry){ return {value: Number(entry[0]), name: entry[1]}; })
+              .sort(function(a,b){ return a.value - b.value; });
             displayOpts = allNewznab.length > 0 ? allNewznab : effectiveOpts;
           }
-          const checks = displayOpts.map(o => {
-            const checked = val.includes(o.value) ? ' checked' : '';
-            return `<div class="form-check" style="min-width:180px;">
-              <input class="form-check-input schema-multi" type="checkbox" id="${id}-${o.value}" data-val="${o.value}"${checked}>
-              <label class="form-check-label" for="${id}-${o.value}">${o.name} <small class="text-muted">(${o.value})</small></label>
-            </div>`;
+          var checks = displayOpts.map(function(o){
+            var checked = val.indexOf(o.value) !== -1 ? ' checked' : '';
+            return '<div class="form-check" style="min-width:180px;">' +
+              '<input class="form-check-input schema-multi" type="checkbox" id="' + id + '-' + o.value + '" data-val="' + o.value + '"' + checked + '>' +
+              '<label class="form-check-label" for="' + id + '-' + o.value + '">' + o.name + ' <small class="text-muted">(' + o.value + ')</small></label>' +
+              '</div>';
           }).join('');
-          input = `<div class="schema-field d-flex flex-wrap gap-1" data-name="${field.name}" data-field-type="multicheck" id="${id}">${checks}</div>`;
-        } else if (isArray && val.some(v => NEWZNAB_CATS[v])) {
+          input = '<div class="schema-field d-flex flex-wrap gap-1" data-name="' + field.name + '" data-field-type="multicheck" id="' + id + '">' + checks + '</div>';
+        } else if (isArray && val.some(function(v){ return NEWZNAB_CATS[v]; })) {
           // Multi-select sans options schema mais valeurs Newznab connues → checkboxes Newznab
-          const mainCat = val.length > 0 ? Math.floor(val[0] / 1000) * 1000 : 2000;
-          const allNewznab = Object.entries(NEWZNAB_CATS)
-            .map(([k,v]) => ({value: Number(k), name: v}))
-            .filter(o => Math.floor(o.value / 1000) * 1000 === mainCat || val.includes(o.value))
-            .sort((a,b) => a.value - b.value);
-          const checks = allNewznab.map(o => {
-            const checked = val.includes(o.value) ? ' checked' : '';
-            return `<div class="form-check" style="min-width:180px;">
-              <input class="form-check-input schema-multi" type="checkbox" id="${id}-${o.value}" data-val="${o.value}"${checked}>
-              <label class="form-check-label" for="${id}-${o.value}">${o.name} <small class="text-muted">(${o.value})</small></label>
-            </div>`;
+          var mainCat = val.length > 0 ? Math.floor(val[0] / 1000) * 1000 : 2000;
+          var allNewznab2 = Object.entries(NEWZNAB_CATS)
+            .map(function(entry){ return {value: Number(entry[0]), name: entry[1]}; })
+            .filter(function(o){ return Math.floor(o.value / 1000) * 1000 === mainCat || val.indexOf(o.value) !== -1; })
+            .sort(function(a,b){ return a.value - b.value; });
+          var checks2 = allNewznab2.map(function(o){
+            var checked = val.indexOf(o.value) !== -1 ? ' checked' : '';
+            return '<div class="form-check" style="min-width:180px;">' +
+              '<input class="form-check-input schema-multi" type="checkbox" id="' + id + '-' + o.value + '" data-val="' + o.value + '"' + checked + '>' +
+              '<label class="form-check-label" for="' + id + '-' + o.value + '">' + o.name + ' <small class="text-muted">(' + o.value + ')</small></label>' +
+              '</div>';
           }).join('');
-          input = `<div class="schema-field d-flex flex-wrap gap-1" data-name="${field.name}" data-field-type="multicheck" id="${id}">${checks}</div>`;
+          input = '<div class="schema-field d-flex flex-wrap gap-1" data-name="' + field.name + '" data-field-type="multicheck" id="' + id + '">' + checks2 + '</div>';
         } else if (isArray) {
-          input = `<input class="form-control schema-field" type="text" id="${id}" data-name="${field.name}" data-field-type="csv" value="${val.join(', ')}" placeholder="Ex: 2000, 2010, 2030">`;
+          input = '<input class="form-control schema-field" type="text" id="' + id + '" data-name="' + field.name + '" data-field-type="csv" value="' + val.join(', ') + '" placeholder="Ex: 2000, 2010, 2030">';
           if (!field.helpText) field.helpText = 'Entrez les valeurs séparées par des virgules';
         } else if (options.length > 0) {
-          const opts = options.map(o =>
-            `<option value="${o.value}"${o.value == val ? ' selected' : ''}>${o.name}${o.hint ? ' ' + o.hint : ''}</option>`
-          ).join('');
-          input = `<select class="form-select schema-field" id="${id}" data-name="${field.name}" data-field-type="select">${opts}</select>`;
+          var opts = options.map(function(o){
+            return '<option value="' + o.value + '"' + (o.value == val ? ' selected' : '') + '>' + o.name + (o.hint ? ' ' + o.hint : '') + '</option>';
+          }).join('');
+          input = '<select class="form-select schema-field" id="' + id + '" data-name="' + field.name + '" data-field-type="select">' + opts + '</select>';
         } else {
-          input = `<input class="form-control schema-field" type="text" id="${id}" data-name="${field.name}" data-field-type="text" value="${val ?? ''}">`;
+          input = '<input class="form-control schema-field" type="text" id="' + id + '" data-name="' + field.name + '" data-field-type="text" value="' + (val != null ? val : '') + '">';
         }
         break;
       }
@@ -200,59 +203,62 @@
       case 'tag':
       case 'tagSelect':
         if (isArray) val = val.join(', ');
-        input = `<input class="form-control schema-field" type="text" id="${id}" data-name="${field.name}" data-field-type="csv" value="${val ?? ''}" placeholder="Valeurs séparées par des virgules">`;
+        input = '<input class="form-control schema-field" type="text" id="' + id + '" data-name="' + field.name + '" data-field-type="csv" value="' + (val != null ? val : '') + '" placeholder="Valeurs séparées par des virgules">';
         if (!field.helpText) field.helpText = 'Entrez les valeurs séparées par des virgules';
         break;
 
       case 'number':
-        input = `<input class="form-control schema-field" type="number" id="${id}" data-name="${field.name}" data-field-type="number" value="${isArray ? '' : (val ?? '')}">`;
+        input = '<input class="form-control schema-field" type="number" id="' + id + '" data-name="' + field.name + '" data-field-type="number" value="' + (isArray ? '' : (val != null ? val : '')) + '">';
         break;
 
       case 'password':
-        input = `<input class="form-control schema-field" type="password" id="${id}" data-name="${field.name}" data-field-type="password" value="${isArray ? '' : (val ?? '')}" autocomplete="new-password">`;
+        input = '<input class="form-control schema-field" type="password" id="' + id + '" data-name="' + field.name + '" data-field-type="password" value="' + (isArray ? '' : (val != null ? val : '')) + '" autocomplete="new-password">';
         break;
 
       case 'path':
-        input = `<input class="form-control schema-field" type="text" id="${id}" data-name="${field.name}" data-field-type="text" value="${isArray ? '' : (val ?? '')}" placeholder="/chemin/vers/dossier">`;
+        input = '<input class="form-control schema-field" type="text" id="' + id + '" data-name="' + field.name + '" data-field-type="text" value="' + (isArray ? '' : (val != null ? val : '')) + '" placeholder="/chemin/vers/dossier">';
         break;
 
       case 'url':
-        input = `<input class="form-control schema-field" type="url" id="${id}" data-name="${field.name}" data-field-type="text" value="${isArray ? '' : (val ?? '')}" placeholder="https://...">`;
+        input = '<input class="form-control schema-field" type="url" id="' + id + '" data-name="' + field.name + '" data-field-type="text" value="' + (isArray ? '' : (val != null ? val : '')) + '" placeholder="https://...">';
         break;
 
       default:
-        input = `<input class="form-control schema-field" type="text" id="${id}" data-name="${field.name}" data-field-type="text" value="${isArray ? val.join(', ') : (val ?? '')}">`;
+        input = '<input class="form-control schema-field" type="text" id="' + id + '" data-name="' + field.name + '" data-field-type="text" value="' + (isArray ? val.join(', ') : (val != null ? val : '')) + '">';
     }
 
-    return `<div class="mb-3">
-      <label class="form-label" for="${id}">${field.label ?? field.name}${field.required ? ' <span class="text-danger">*</span>' : ''}</label>
-      ${input}
-      ${field.helpText ? `<small class="text-muted">${field.helpText}</small>` : ''}
-    </div>`;
+    return '<div class="mb-3">' +
+      '<label class="form-label" for="' + id + '">' + (field.label != null ? field.label : field.name) + (field.required ? ' <span class="text-danger">*</span>' : '') + '</label>' +
+      input +
+      (field.helpText ? '<small class="text-muted">' + field.helpText + '</small>' : '') +
+      '</div>';
   }
 
   // ── Populate select implémentations ─────────────────────────────────────
-  async function loadSchema() {
-    if (schemaCache) return schemaCache;
-    try {
-      const r = await fetch(SCHEMA_URL, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
-      if (!r.ok) { showFeedback(`Erreur chargement schéma (HTTP ${r.status})`, 'danger'); return []; }
-      const data = await r.json();
-      schemaCache = Array.isArray(data) ? data : [];
-      if (!schemaCache.length) showFeedback('Aucun type disponible — vérifiez la connexion à Radarr.', 'warning');
-      return schemaCache;
-    } catch (err) {
-      console.error('loadSchema error:', err);
-      showFeedback('Impossible de charger le schéma.', 'danger');
-      return [];
-    }
+  function loadSchema() {
+    if (schemaCache) return Promise.resolve(schemaCache);
+    return fetch(SCHEMA_URL, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+      .then(function(r){
+        if (!r.ok) { showFeedback('Erreur chargement schéma (HTTP ' + r.status + ')', 'danger'); return []; }
+        return r.json();
+      })
+      .then(function(data){
+        schemaCache = Array.isArray(data) ? data : [];
+        if (!schemaCache.length) showFeedback('Aucun type disponible — vérifiez la connexion à Radarr.', 'warning');
+        return schemaCache;
+      })
+      .catch(function(err){
+        console.error('loadSchema error:', err);
+        showFeedback('Impossible de charger le schéma.', 'danger');
+        return [];
+      });
   }
 
   function populateImplSelect(schemas) {
-    const sel = el('impl-select');
+    var sel = el('impl-select');
     sel.innerHTML = '<option value="">— Choisir un type —</option>';
-    schemas.forEach((s, i) => {
-      const opt = document.createElement('option');
+    schemas.forEach(function(s, i){
+      var opt = document.createElement('option');
       opt.value = i;
       opt.textContent = s.name || s.implementationName || s.implementation || '?';
       sel.appendChild(opt);
@@ -260,28 +266,30 @@
   }
 
   // Notification trigger labels
-  const TRIGGER_LABELS = {
+  var TRIGGER_LABELS = {
     onGrab: 'Récupération', onDownload: 'Téléchargement', onUpgrade: 'Mise à niveau',
     onRename: 'Renommage', onMovieAdded: 'Film ajouté', onMovieDelete: 'Film supprimé',
     onMovieFileDelete: 'Fichier supprimé', onMovieFileDeleteForUpgrade: 'Fichier supprimé (upgrade)',
     onHealthIssue: 'Problème de santé', onHealthRestored: 'Santé rétablie',
     onApplicationUpdate: 'Mise à jour appli', onManualInteractionRequired: 'Interaction manuelle',
-    includeHealthWarnings: 'Inclure avertissements',
+    includeHealthWarnings: 'Inclure avertissements'
   };
 
   function renderTriggers(schema, existingItem) {
-    const wrap = el('triggers-list');
+    var wrap = el('triggers-list');
     if (!wrap) return;
     wrap.innerHTML = '';
-    Object.entries(TRIGGER_LABELS).forEach(([key, label]) => {
-      const supportsKey = 'supports' + key.charAt(0).toUpperCase() + key.slice(1);
+    Object.entries(TRIGGER_LABELS).forEach(function(entry){
+      var key = entry[0];
+      var label = entry[1];
+      var supportsKey = 'supports' + key.charAt(0).toUpperCase() + key.slice(1);
       // Show if schema supports it, or always show includeHealthWarnings
       if (key !== 'includeHealthWarnings' && schema[supportsKey] === false) return;
-      const checked = existingItem ? (existingItem[key] ?? false) : false;
-      const col = document.createElement('div');
+      var checked = existingItem ? (existingItem[key] != null ? existingItem[key] : false) : false;
+      var col = document.createElement('div');
       col.className = 'col-6';
-      col.innerHTML = `<div class="form-check"><input class="form-check-input notif-trigger" type="checkbox" id="${MID}-t-${key}" data-trigger="${key}"${checked ? ' checked' : ''}>
-        <label class="form-check-label small" for="${MID}-t-${key}">${label}</label></div>`;
+      col.innerHTML = '<div class="form-check"><input class="form-check-input notif-trigger" type="checkbox" id="' + MID + '-t-' + key + '" data-trigger="' + key + '"' + (checked ? ' checked' : '') + '>' +
+        '<label class="form-check-label small" for="' + MID + '-t-' + key + '">' + label + '</label></div>';
       wrap.appendChild(col);
     });
     el('triggers').classList.remove('d-none');
@@ -289,10 +297,10 @@
 
   function renderFields(schema, existingFields) {
     currentImpl = schema;
-    const container = el('fields');
-    container.innerHTML = (schema.fields ?? [])
-      .filter(f => !f.hidden)
-      .map(f => renderField(f, existingFields))
+    var container = el('fields');
+    container.innerHTML = (schema.fields || [])
+      .filter(function(f){ return !f.hidden; })
+      .map(function(f){ return renderField(f, existingFields); })
       .join('');
     el('save').disabled = false;
     if (el('test')) el('test').disabled = false;
@@ -306,36 +314,36 @@
   // ── Collecte des valeurs — inclut TOUS les champs (y compris cachés) ───
   function collectPayload() {
     if (!currentImpl) return null;
-    const name = el('name').value.trim();
+    var name = el('name').value.trim();
     if (!name) { showFeedback('Le nom est obligatoire.', 'warning'); return null; }
 
     // Collecter les valeurs des champs visibles depuis le DOM
-    const visibleValues = {};
-    document.querySelectorAll(`#${MID} .schema-field`).forEach(input => {
-      const ft = input.dataset.fieldType;
+    var visibleValues = {};
+    document.querySelectorAll('#' + MID + ' .schema-field').forEach(function(input){
+      var ft = input.dataset.fieldType;
       if (ft === 'checkbox') {
         visibleValues[input.dataset.name] = input.checked;
       } else if (ft === 'number') {
         visibleValues[input.dataset.name] = input.value !== '' ? Number(input.value) : null;
       } else if (ft === 'csv') {
-        const raw = input.value.trim();
+        var raw = input.value.trim();
         if (!raw) { visibleValues[input.dataset.name] = []; }
         else {
-          const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
-          visibleValues[input.dataset.name] = parts.every(p => /^\d+$/.test(p))
+          var parts = raw.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+          visibleValues[input.dataset.name] = parts.every(function(p){ return /^\d+$/.test(p); })
             ? parts.map(Number)
             : parts;
         }
       } else if (ft === 'multicheck') {
         // Checkboxes multi-sélection → tableau de valeurs cochées
-        const checked = [];
-        input.querySelectorAll('.schema-multi:checked').forEach(cb => {
-          const v = cb.dataset.val;
+        var checked = [];
+        input.querySelectorAll('.schema-multi:checked').forEach(function(cb){
+          var v = cb.dataset.val;
           checked.push(/^\d+$/.test(v) ? Number(v) : v);
         });
         visibleValues[input.dataset.name] = checked;
       } else if (ft === 'select') {
-        const v = input.value;
+        var v = input.value;
         visibleValues[input.dataset.name] = /^\d+$/.test(v) ? Number(v) : v;
       } else {
         visibleValues[input.dataset.name] = input.value;
@@ -343,34 +351,34 @@
     });
 
     // Construire le tableau fields complet (visibles + cachés avec valeurs par défaut)
-    const fields = (currentImpl.fields ?? []).map(f => {
-      const editField = editingItem?.fields?.find(ef => ef.name === f.name);
+    var fields = (currentImpl.fields || []).map(function(f){
+      var editField = editingItem && editingItem.fields ? editingItem.fields.find(function(ef){ return ef.name === f.name; }) : null;
       return {
         name: f.name,
-        value: f.name in visibleValues ? visibleValues[f.name] : (editField?.value ?? f.value ?? null),
+        value: f.name in visibleValues ? visibleValues[f.name] : ((editField && editField.value != null) ? editField.value : (f.value != null ? f.value : null))
       };
     });
 
     // Payload complet avec toutes les métadonnées du schéma
-    const payload = {
-      name,
+    var payload = {
+      name: name,
       implementation: currentImpl.implementation,
-      implementationName: currentImpl.implementationName ?? currentImpl.implementation,
+      implementationName: currentImpl.implementationName != null ? currentImpl.implementationName : currentImpl.implementation,
       configContract: currentImpl.configContract,
-      tags: editingItem?.tags ?? [],
-      fields,
+      tags: editingItem && editingItem.tags ? editingItem.tags : [],
+      fields: fields
     };
 
     if (MODE === 'notification') {
       // Collecter les triggers depuis les checkboxes
-      document.querySelectorAll(`#${MID} .notif-trigger`).forEach(cb => {
+      document.querySelectorAll('#' + MID + ' .notif-trigger').forEach(function(cb){
         payload[cb.dataset.trigger] = cb.checked;
       });
     } else {
       payload.enableRss = el('enableRss').checked;
       payload.enableAutomaticSearch = el('enableAutoSearch').checked;
       payload.enableInteractiveSearch = el('enableInteractive').checked;
-      payload.protocol = currentImpl.protocol ?? editingItem?.protocol ?? 'torrent';
+      payload.protocol = currentImpl.protocol != null ? currentImpl.protocol : (editingItem && editingItem.protocol ? editingItem.protocol : 'torrent');
       payload.priority = parseInt(el('priority').value) || 25;
     }
 
@@ -380,53 +388,54 @@
   }
 
   // ── Feedback ────────────────────────────────────────────────────────────
-  function showFeedback(msg, type = 'danger') {
-    const fb = el('feedback');
-    fb.className = `alert alert-${type} mt-3`;
+  function showFeedback(msg, type) {
+    if (!type) type = 'danger';
+    var fb = el('feedback');
+    fb.className = 'alert alert-' + type + ' mt-3';
     fb.textContent = msg;
     fb.classList.remove('d-none');
   }
 
   // ── Initialisation via événements ────────────────────────────────────────
-  document.getElementById(MID).addEventListener('show.bs.modal', async (e) => {
+  modalEl.addEventListener('show.bs.modal', function(e){
     try {
-      const _raw = e.relatedTarget?.dataset?.editItem;
+      var _raw = e.relatedTarget && e.relatedTarget.dataset ? e.relatedTarget.dataset.editItem : null;
       editingItem = _raw ? JSON.parse(_raw) : null;
       el('feedback').classList.add('d-none');
       el('save').disabled = true;
       if (el('test')) el('test').disabled = true;
 
-      const schemas = await loadSchema();
-
-      if (editingItem) {
-        document.getElementById(MID + '-title').textContent = {{ modal_title_edit|json_encode|raw }};
-        el('impl-wrap').classList.add('d-none');
-        el('name').value = editingItem.name ?? '';
-        if (MODE !== 'notification') {
-          el('enableRss').checked = editingItem.enableRss ?? true;
-          el('enableAutoSearch').checked = editingItem.enableAutomaticSearch ?? true;
-          el('enableInteractive').checked = editingItem.enableInteractiveSearch ?? true;
-          el('priority').value = editingItem.priority ?? 25;
-        }
-        const schema = schemas.find(s => s.implementation === editingItem.implementation) ?? schemas[0];
-        if (schema) renderFields(schema, editingItem.fields ?? []);
-        else showFeedback('Type d\'implémentation introuvable dans le schéma.', 'warning');
-      } else {
-        document.getElementById(MID + '-title').textContent = {{ modal_title_add|json_encode|raw }};
-        el('impl-wrap').classList.remove('d-none');
-        el('name').value = '';
-        el('fields').innerHTML = '';
-        if (MODE === 'notification') {
-          if (el('triggers')) el('triggers').classList.add('d-none');
+      loadSchema().then(function(schemas){
+        if (editingItem) {
+          document.getElementById(MID + '-title').textContent = TITLE_EDIT;
+          el('impl-wrap').classList.add('d-none');
+          el('name').value = editingItem.name != null ? editingItem.name : '';
+          if (MODE !== 'notification') {
+            el('enableRss').checked = editingItem.enableRss != null ? editingItem.enableRss : true;
+            el('enableAutoSearch').checked = editingItem.enableAutomaticSearch != null ? editingItem.enableAutomaticSearch : true;
+            el('enableInteractive').checked = editingItem.enableInteractiveSearch != null ? editingItem.enableInteractiveSearch : true;
+            el('priority').value = editingItem.priority != null ? editingItem.priority : 25;
+          }
+          var schema = schemas.find(function(s){ return s.implementation === editingItem.implementation; }) || schemas[0];
+          if (schema) renderFields(schema, editingItem.fields || []);
+          else showFeedback('Type d\'implémentation introuvable dans le schéma.', 'warning');
         } else {
-          el('global-opts').classList.add('d-none');
-          el('enableRss').checked = true;
-          el('enableAutoSearch').checked = true;
-          el('enableInteractive').checked = true;
-          el('priority').value = 25;
+          document.getElementById(MID + '-title').textContent = TITLE_ADD;
+          el('impl-wrap').classList.remove('d-none');
+          el('name').value = '';
+          el('fields').innerHTML = '';
+          if (MODE === 'notification') {
+            if (el('triggers')) el('triggers').classList.add('d-none');
+          } else {
+            el('global-opts').classList.add('d-none');
+            el('enableRss').checked = true;
+            el('enableAutoSearch').checked = true;
+            el('enableInteractive').checked = true;
+            el('priority').value = 25;
+          }
+          populateImplSelect(schemas);
         }
-        populateImplSelect(schemas);
-      }
+      });
     } catch (err) {
       console.error('show.bs.modal error:', err);
       showFeedback('Erreur lors de l\'initialisation du formulaire.', 'danger');
@@ -434,82 +443,77 @@
   });
 
   // Changement d'implémentation → re-render des champs
-  document.getElementById(MID).addEventListener('change', async (e) => {
+  modalEl.addEventListener('change', function(e){
     if (e.target.id !== MID + '-impl-select') return;
-    const idx = parseInt(e.target.value);
+    var idx = parseInt(e.target.value);
     if (isNaN(idx)) { el('fields').innerHTML = ''; el('save').disabled = true; return; }
-    const schemas = await loadSchema();
-    renderFields(schemas[idx], null);
+    loadSchema().then(function(schemas){ renderFields(schemas[idx], null); });
   });
 
   // Sauvegarde
-  el('save').addEventListener('click', async () => {
-    const payload = collectPayload();
+  el('save').onclick = function(){
+    var payload = collectPayload();
     if (!payload) return;
 
-    const spinner = el('spinner');
+    var spinner = el('spinner');
     el('save').disabled = true;
     spinner.classList.remove('d-none');
 
-    const url = editingItem
+    var url = editingItem
       ? SAVE_EDIT.replace('__ID__', editingItem.id)
       : SAVE_ADD;
 
-    try {
-      const r = await fetch(url, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-        body: JSON.stringify(payload),
-      });
-      const data = await r.json();
+    fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+      body: JSON.stringify(payload)
+    }).then(function(r){ return r.json(); }).then(function(data){
       if (data.ok) {
         // Succès : recharger la page immédiatement
         location.reload();
-        return;
       } else {
         showFeedback(data.error || 'Erreur lors de l\'enregistrement.', 'danger');
         el('save').disabled = false;
       }
-    } catch (err) {
+      spinner.classList.add('d-none');
+    }).catch(function(err){
       console.error('Save error:', err);
       showFeedback('Erreur réseau : ' + (err.message || err), 'danger');
       el('save').disabled = false;
-    } finally {
       spinner.classList.add('d-none');
-    }
-  });
+    });
+  };
 
   // Tester (si test_url fourni)
   if (TEST_URL && el('test')) {
-    el('test').addEventListener('click', async () => {
-      const payload = collectPayload();
+    el('test').onclick = function(){
+      var payload = collectPayload();
       if (!payload) return;
 
-      const testBtn = el('test');
-      const spinner = el('test-spinner');
+      var testBtn = el('test');
+      var spinner = el('test-spinner');
       testBtn.disabled = true;
       spinner.classList.remove('d-none');
 
-      try {
-        // Pour un item existant, on teste via son ID ; sinon on envoie le payload complet
-        const url = editingItem
-          ? TEST_URL.replace('__ID__', editingItem.id)
-          : TEST_URL.replace('__ID__', '0');
+      // Pour un item existant, on teste via son ID ; sinon on envoie le payload complet
+      var url = editingItem
+        ? TEST_URL.replace('__ID__', editingItem.id)
+        : TEST_URL.replace('__ID__', '0');
 
-        const r = await fetch(url, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-          body: JSON.stringify(payload),
-        });
-        const data = await r.json();
+      fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+        body: JSON.stringify(payload)
+      }).then(function(r){ return r.json(); }).then(function(data){
         showFeedback(data.ok ? 'Test réussi ✓' : (data.error || 'Échec du test.'), data.ok ? 'success' : 'danger');
-      } catch {
-        showFeedback('Erreur réseau lors du test.', 'danger');
-      } finally {
         testBtn.disabled = false;
         spinner.classList.add('d-none');
-      }
-    });
+      }).catch(function(){
+        showFeedback('Erreur réseau lors du test.', 'danger');
+        testBtn.disabled = false;
+        spinner.classList.add('d-none');
+      });
+    };
   }
 })();
 </script>

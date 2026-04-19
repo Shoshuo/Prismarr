@@ -75,81 +75,99 @@
 {% block javascripts %}
 <script>
 (function(){
-let currentMovieId = null;
+var currentMovieId = null;
 
-document.getElementById('movie-select').addEventListener('change', async (e) => {
-  const id = e.target.value;
-  if (!id) {
-    document.getElementById('proposals-container').innerHTML = '<div class="text-muted text-center py-5">Sélectionnez un film pour voir les propositions.</div>';
-    document.getElementById('btn-rename-all').classList.add('d-none');
-    currentMovieId = null;
-    return;
-  }
-  currentMovieId = parseInt(id);
-  document.getElementById('proposals-loading').classList.remove('d-none');
-  document.getElementById('btn-rename-all').classList.add('d-none');
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, function(c){
+    return c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;';
+  });
+}
 
-  try {
-    const r = await fetch(`/radarr/renommer/${id}/propositions`, {
-      headers: {'X-Requested-With': 'XMLHttpRequest'},
-    });
-    const proposals = await r.json();
-    document.getElementById('proposals-loading').classList.add('d-none');
-
-    if (!proposals || proposals.length === 0) {
-      document.getElementById('proposals-container').innerHTML = '<div class="text-muted text-center py-5">Aucun renommage nécessaire.</div>';
+var movieSelect = document.getElementById('movie-select');
+if (movieSelect) {
+  movieSelect.onchange = function(e) {
+    var id = e.target.value;
+    if (!id) {
+      document.getElementById('proposals-container').innerHTML = '<div class="text-muted text-center py-5">Sélectionnez un film pour voir les propositions.</div>';
+      document.getElementById('btn-rename-all').classList.add('d-none');
+      currentMovieId = null;
       return;
     }
+    currentMovieId = parseInt(id);
+    document.getElementById('proposals-loading').classList.remove('d-none');
+    document.getElementById('btn-rename-all').classList.add('d-none');
 
-    document.getElementById('btn-rename-all').classList.remove('d-none');
-    let html = '<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Chemin actuel</th><th>Nouveau chemin</th></tr></thead><tbody>';
-    proposals.forEach(p => {
-      const current = p.existingPath ?? '—';
-      const newPath = p.newPath ?? '—';
-      const changed = current !== newPath;
-      html += `<tr class="${changed ? '' : 'text-muted'}">
-        <td class="small text-muted" style="word-break:break-all;max-width:300px">${current}</td>
-        <td class="small fw-medium" style="word-break:break-all;max-width:300px">${newPath}</td>
-      </tr>`;
+    fetch('/radarr/renommer/' + id + '/propositions', {
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    }).then(function(r){ return r.json(); }).then(function(proposals){
+      document.getElementById('proposals-loading').classList.add('d-none');
+
+      if (!proposals || proposals.length === 0) {
+        document.getElementById('proposals-container').innerHTML = '<div class="text-muted text-center py-5">Aucun renommage nécessaire.</div>';
+        return;
+      }
+
+      document.getElementById('btn-rename-all').classList.remove('d-none');
+      var html = '<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Chemin actuel</th><th>Nouveau chemin</th></tr></thead><tbody>';
+      proposals.forEach(function(p) {
+        var current = p.existingPath != null ? p.existingPath : '—';
+        var newPath = p.newPath != null ? p.newPath : '—';
+        var changed = current !== newPath;
+        html += '<tr class="' + (changed ? '' : 'text-muted') + '">'
+          + '<td class="small text-muted" style="word-break:break-all;max-width:300px">' + escapeHtml(current) + '</td>'
+          + '<td class="small fw-medium" style="word-break:break-all;max-width:300px">' + escapeHtml(newPath) + '</td>'
+          + '</tr>';
+      });
+      html += '</tbody></table></div>';
+      document.getElementById('proposals-container').innerHTML = html;
+    }).catch(function(){
+      document.getElementById('proposals-loading').classList.add('d-none');
+      document.getElementById('proposals-container').innerHTML = '<div class="alert alert-danger">Erreur lors du chargement.</div>';
     });
-    html += '</tbody></table></div>';
-    document.getElementById('proposals-container').innerHTML = html;
-  } catch(e) {
-    document.getElementById('proposals-loading').classList.add('d-none');
-    document.getElementById('proposals-container').innerHTML = '<div class="alert alert-danger">Erreur lors du chargement.</div>';
-  }
-});
+  };
+}
 
-document.getElementById('btn-rename-all').addEventListener('click', async () => {
-  if (!currentMovieId) return;
-  document.getElementById('btn-rename-all').disabled = true;
-  const progress = document.getElementById('rename-progress');
-  const msg = document.getElementById('rename-msg');
-  progress.classList.remove('d-none');
-  msg.textContent = 'Lancement du renommage...';
+var btnRenameAll = document.getElementById('btn-rename-all');
+if (btnRenameAll) {
+  btnRenameAll.onclick = function() {
+    if (!currentMovieId) return;
+    btnRenameAll.disabled = true;
+    var progress = document.getElementById('rename-progress');
+    var msg = document.getElementById('rename-msg');
+    progress.classList.remove('d-none');
+    msg.textContent = 'Lancement du renommage...';
 
-  try {
-    const r = await fetch(`/radarr/renommer/${currentMovieId}/executer`, {
+    fetch('/radarr/renommer/' + currentMovieId + '/executer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-      body: '{}',
-    });
-    const data = await r.json();
-    if (!data.ok || !data.cmdId) { msg.textContent = 'Erreur.'; return; }
+      body: '{}'
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if (!data.ok || !data.cmdId) { msg.textContent = 'Erreur.'; return; }
 
-    const poll = setInterval(async () => {
-      const sr = await fetch(`{{ path('radarr_command_status', {cmdId: '__ID__'}) }}`.replace('__ID__', data.cmdId));
-      const s = await sr.json();
-      msg.textContent = `Renommage : ${s.status ?? '?'}`;
-      if (s.status === 'completed' || s.status === 'failed') {
-        clearInterval(poll);
-        document.getElementById('btn-rename-all').disabled = false;
-        if (s.status === 'completed') msg.textContent = 'Renommage terminé.';
-      }
-    }, 3000);
-  } catch(e) {
-    msg.textContent = 'Erreur réseau.';
+      var poll = setInterval(function() {
+        fetch('{{ path('radarr_command_status', {cmdId: '__ID__'}) }}'.replace('__ID__', data.cmdId)).then(function(sr){ return sr.json(); }).then(function(s){
+          msg.textContent = 'Renommage : ' + (s.status != null ? s.status : '?');
+          if (s.status === 'completed' || s.status === 'failed') {
+            clearInterval(poll);
+            if (window._prismarrRadarrRenameTimer === poll) window._prismarrRadarrRenameTimer = null;
+            btnRenameAll.disabled = false;
+            if (s.status === 'completed') msg.textContent = 'Renommage terminé.';
+          }
+        }).catch(function(){ /* silencieux */ });
+      }, 3000);
+      window._prismarrRadarrRenameTimer = poll;
+    }).catch(function(){
+      msg.textContent = 'Erreur réseau.';
+    });
+  };
+}
+
+document.addEventListener('turbo:before-render', function cleanup() {
+  if (window._prismarrRadarrRenameTimer) {
+    clearInterval(window._prismarrRadarrRenameTimer);
+    window._prismarrRadarrRenameTimer = null;
   }
+  document.removeEventListener('turbo:before-render', cleanup);
 });
 })();
 </script>
