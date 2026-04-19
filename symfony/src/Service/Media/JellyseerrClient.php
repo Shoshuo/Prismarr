@@ -478,6 +478,9 @@ class JellyseerrClient
             CURLOPT_TIMEOUT        => 10,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS      => 3,
+            // Only follow redirects within http(s) — blocks file:// / gopher:// / dict:// SSRF.
+            CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
             CURLOPT_HTTPHEADER     => ['Accept: application/vnd.github+json', 'User-Agent: IH-ARGOS'],
         ]);
         $body = curl_exec($ch);

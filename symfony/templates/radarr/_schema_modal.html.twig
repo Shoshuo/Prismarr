@@ -8,7 +8,6 @@
     save_url_add   : URL POST pour créer (ex: path('radarr_indexer_add'))
     save_url_edit  : URL POST pour modifier — __ID__ sera remplacé par l'id (ex: '/radarr/indexeurs/__ID__/modifier')
     test_url       : (optionnel) URL POST pour tester (ex: '/radarr/indexeurs/__ID__/tester')
-    extra_fields   : HTML supplémentaire avant les champs dynamiques (optionnel)
     mode           : 'default' | 'notification' — notifications affichent des triggers au lieu des options RSS/search
 #}
 <div class="modal modal-blur fade" id="{{ modal_id }}" tabindex="-1">
@@ -35,8 +34,6 @@
           <label class="form-label fw-medium">Nom <span class="text-danger">*</span></label>
           <input type="text" id="{{ modal_id }}-name" class="form-control" placeholder="Mon indexeur...">
         </div>
-
-        {% if extra_fields is defined %}{{ extra_fields|raw }}{% endif %}
 
         {% if (mode ?? 'default') == 'notification' %}
         {# Triggers de notification (remplis dynamiquement depuis le schema supportsOn*) #}

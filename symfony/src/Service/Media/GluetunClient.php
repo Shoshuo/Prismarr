@@ -158,6 +158,9 @@ class GluetunClient
             CURLOPT_TIMEOUT        => 4,
             CURLOPT_CONNECTTIMEOUT => 2,
             CURLOPT_FOLLOWLOCATION => true, // /v1/openvpn/portforwarded redirects to /v1/portforward
+            // Only follow redirects within http(s) — blocks file:// / gopher:// / dict:// SSRF.
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
         ];
         if ($this->apiKey !== '') {
             $opts[CURLOPT_HTTPHEADER] = ['Authorization: Bearer ' . $this->apiKey];
