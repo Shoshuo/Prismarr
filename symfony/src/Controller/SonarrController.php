@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Service\Media\SonarrClient;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,6 +17,7 @@ class SonarrController extends AbstractController
 {
     public function __construct(
         private readonly SonarrClient $sonarr,
+        private readonly LoggerInterface $logger,
     ) {}
 
     // ── Updates ───────────────────────────────────────────────────────────────
@@ -29,7 +31,8 @@ class SonarrController extends AbstractController
         try {
             $updates = $this->sonarr->getUpdates();
             $status = $this->sonarr->getSystemStatus();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr updates failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/updates.html.twig', ['updates' => $updates, 'status' => $status, 'error' => $error]);
@@ -41,7 +44,8 @@ class SonarrController extends AbstractController
         try {
             $cmdId = $this->sonarr->installUpdate();
             return $this->json(['ok' => true, 'cmdId' => $cmdId]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr installUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -55,7 +59,8 @@ class SonarrController extends AbstractController
         $error   = false;
         try {
             $backups = $this->sonarr->getBackups();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr backups failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/backups.html.twig', ['backups' => $backups, 'error' => $error]);
@@ -67,7 +72,8 @@ class SonarrController extends AbstractController
         try {
             $cmdId = $this->sonarr->createBackup();
             return $this->json(['ok' => true, 'cmdId' => $cmdId]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr backupCreate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -77,7 +83,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteBackup($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr backupDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -87,7 +94,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->restoreBackup($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr backupRestore failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -101,7 +109,8 @@ class SonarrController extends AbstractController
         $error         = false;
         try {
             $notifications = $this->sonarr->getNotifications();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr notifications failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/notifications.html.twig', ['notifications' => $notifications, 'error' => $error]);
@@ -112,7 +121,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteNotification($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr notificationDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -122,7 +132,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->testNotification($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr notificationTest failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -132,7 +143,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json($this->sonarr->getNotificationSchema());
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr notificationsSchema failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json([]);
         }
     }
@@ -144,6 +156,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->createNotification($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr notificationAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -155,6 +168,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->updateNotification($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr notificationUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -166,6 +180,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->testNotificationPayload($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr notificationTestPayload failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -180,7 +195,8 @@ class SonarrController extends AbstractController
         $error      = false;
         try {
             $exclusions = $this->sonarr->getImportListExclusionsPaged($page, 50);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr exclusions failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/exclusions.html.twig', [
@@ -197,7 +213,8 @@ class SonarrController extends AbstractController
             $data      = $request->toArray();
             $exclusion = $this->sonarr->createImportListExclusion($data);
             return $this->json(['ok' => ($exclusion['ok'] ?? false), 'exclusion' => $exclusion]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr exclusionAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -207,7 +224,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteImportListExclusion($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr exclusionDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -218,7 +236,8 @@ class SonarrController extends AbstractController
         try {
             $ids = $request->toArray()['ids'] ?? [];
             return $this->json(['ok' => $this->sonarr->bulkDeleteImportListExclusions($ids)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr exclusionBulkDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -235,7 +254,8 @@ class SonarrController extends AbstractController
         try {
             $rootFolders = $this->sonarr->getRootFolders();
             $qualityProfiles = $this->sonarr->getQualityProfiles();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr libraryImport failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/library_import.html.twig', [
@@ -272,6 +292,7 @@ class SonarrController extends AbstractController
 
             return $this->json(['ok' => true, 'folders' => $unmatched]);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr libraryImportScan failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -293,7 +314,8 @@ class SonarrController extends AbstractController
             $customFormats = $this->sonarr->getCustomFormats();
             $languages     = $this->sonarr->getLanguages();
             $limits        = $this->sonarr->getQualityDefinitionLimits();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr quality failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/quality.html.twig', [
@@ -313,6 +335,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->createQualityProfile($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr qualityProfileCreate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -324,6 +347,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->updateQualityProfile($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr qualityProfileUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -333,7 +357,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteQualityProfile($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr qualityProfileDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -344,7 +369,8 @@ class SonarrController extends AbstractController
         try {
             $definitions = $request->toArray();
             return $this->json(['ok' => $this->sonarr->bulkUpdateQualityDefinitions($definitions)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr qualityDefinitionsSave failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -365,7 +391,8 @@ class SonarrController extends AbstractController
         $error    = false;
         try {
             $profiles = $this->sonarr->getDelayProfiles();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr delayProfiles failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/delay_profiles.html.twig', ['profiles' => $profiles, 'error' => $error]);
@@ -376,7 +403,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteDelayProfile($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr delayProfileDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -387,7 +415,8 @@ class SonarrController extends AbstractController
         try {
             $result = $this->sonarr->createDelayProfile($request->toArray());
             return $this->json($result);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr delayProfileAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -398,7 +427,8 @@ class SonarrController extends AbstractController
         try {
             $result = $this->sonarr->updateDelayProfile($id, $request->toArray());
             return $this->json($result);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr delayProfileUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -412,7 +442,8 @@ class SonarrController extends AbstractController
         $error   = false;
         try {
             $formats = $this->sonarr->getCustomFormats();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr customFormats failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/custom_formats.html.twig', ['formats' => $formats, 'error' => $error]);
@@ -423,7 +454,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json($this->sonarr->getCustomFormatSchema());
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr customFormatSchema failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json([]);
         }
     }
@@ -434,7 +466,8 @@ class SonarrController extends AbstractController
         try {
             $result = $this->sonarr->createCustomFormat($request->toArray());
             return $this->json($result);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr customFormatAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -445,7 +478,8 @@ class SonarrController extends AbstractController
         try {
             $result = $this->sonarr->updateCustomFormat($id, $request->toArray());
             return $this->json($result);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr customFormatUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -455,7 +489,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteCustomFormat($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr customFormatDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -469,7 +504,8 @@ class SonarrController extends AbstractController
         $error = false;
         try {
             $tags = $this->sonarr->getAutoTags();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr autoTags failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/auto_tags.html.twig', ['tags' => $tags, 'error' => $error]);
@@ -480,7 +516,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteAutoTag($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr autoTagDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -491,7 +528,8 @@ class SonarrController extends AbstractController
         try {
             $result = $this->sonarr->createAutoTag($request->toArray());
             return $this->json($result);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr autoTagAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -502,7 +540,8 @@ class SonarrController extends AbstractController
         try {
             $result = $this->sonarr->updateAutoTag($id, $request->toArray());
             return $this->json($result);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr autoTagUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -516,7 +555,8 @@ class SonarrController extends AbstractController
         $error = false;
         try {
             $tags = $this->sonarr->getTags();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr tags failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/tags.html.twig', ['tags' => $tags, 'error' => $error]);
@@ -529,7 +569,8 @@ class SonarrController extends AbstractController
             $label = $request->toArray()['label'] ?? '';
             $tag   = $this->sonarr->createTag(['label' => $label]);
             return $this->json($tag);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr tagAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -539,7 +580,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteTag($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr tagDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -554,7 +596,8 @@ class SonarrController extends AbstractController
             }
             $tag = $this->sonarr->updateTag($id, ['id' => $id, 'label' => $label]);
             return $this->json($tag);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr tagRename failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -574,7 +617,8 @@ class SonarrController extends AbstractController
             $indexerConfig        = $this->sonarr->getIndexerConfig();
             $downloadClientConfig = $this->sonarr->getDownloadClientConfig();
             $importListConfig     = $this->sonarr->getImportListConfig();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr settings failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/settings.html.twig', [
@@ -597,7 +641,8 @@ class SonarrController extends AbstractController
             $merged = array_merge($current, $request->toArray());
             $config = $this->sonarr->updateHostConfig($merged);
             return $this->json(['ok' => $config !== null, 'config' => $config]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr settingsHostSave failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -613,7 +658,8 @@ class SonarrController extends AbstractController
         try {
             $uiConfig  = $this->sonarr->getUiConfig();
             $languages = $this->sonarr->getLanguages();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr ui failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/ui.html.twig', [
@@ -635,6 +681,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->updateUiConfig($merged);
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr uiSave failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -648,7 +695,8 @@ class SonarrController extends AbstractController
         $error    = false;
         try {
             $indexers = $this->sonarr->getIndexers();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr indexers failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/indexers.html.twig', ['indexers' => $indexers, 'error' => $error]);
@@ -659,7 +707,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json($this->sonarr->getIndexerSchema());
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr indexersSchema failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json([]);
         }
     }
@@ -671,6 +720,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->createIndexer($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr indexerAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -682,6 +732,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->updateIndexer($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr indexerUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -691,7 +742,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteIndexer($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr indexerDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -703,6 +755,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->testIndexer($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr indexerTest failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -716,7 +769,8 @@ class SonarrController extends AbstractController
         $error   = false;
         try {
             $clients = $this->sonarr->getDownloadClients();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr downloadClients failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/download_clients.html.twig', ['clients' => $clients, 'error' => $error]);
@@ -727,7 +781,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json($this->sonarr->getDownloadClientSchema());
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr downloadClientSchema failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json([]);
         }
     }
@@ -739,6 +794,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->createDownloadClient($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr downloadClientAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -750,6 +806,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->updateDownloadClient($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr downloadClientUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -759,7 +816,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteDownloadClient($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr downloadClientDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -771,6 +829,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->testDownloadClient($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr downloadClientTest failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -784,7 +843,8 @@ class SonarrController extends AbstractController
         $error = false;
         try {
             $lists = $this->sonarr->getImportLists();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr importLists failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/import_lists.html.twig', ['lists' => $lists, 'error' => $error]);
@@ -795,7 +855,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json($this->sonarr->getImportListSchema());
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr importListSchema failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json([]);
         }
     }
@@ -807,6 +868,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->createImportList($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr importListAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -818,6 +880,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->updateImportList($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr importListUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -827,7 +890,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteImportList($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr importListDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -841,7 +905,8 @@ class SonarrController extends AbstractController
         $error    = false;
         try {
             $commands = $this->sonarr->getCommands();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr commands failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/commands.html.twig', ['commands' => $commands, 'error' => $error]);
@@ -852,7 +917,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json($this->sonarr->getCommandStatus($cmdId) ?? ['status' => 'unknown']);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr commandStatus failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['status' => 'unknown']);
         }
     }
@@ -862,7 +928,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->cancelCommand($cmdId)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr commandCancel failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -876,7 +943,8 @@ class SonarrController extends AbstractController
         $error = false;
         try {
             $tasks = $this->sonarr->getTasks();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr tasks failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/tasks.html.twig', ['tasks' => $tasks, 'error' => $error]);
@@ -892,7 +960,8 @@ class SonarrController extends AbstractController
             }
             $result = $this->sonarr->sendCommand($commandName);
             return $this->json(['ok' => $result !== null, 'command' => $result]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr taskRun failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -913,7 +982,8 @@ class SonarrController extends AbstractController
             $logsData = $this->sonarr->getLogs($page, $pageSize);
             $logs     = $logsData['records'] ?? $logsData;
             $total    = $logsData['totalRecords'] ?? count($logs);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr logs failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/logs.html.twig', [
@@ -971,7 +1041,8 @@ class SonarrController extends AbstractController
                 'genres'     => $genres,
                 'networks'   => $networks,
             ];
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr stats failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/stats.html.twig', ['stats' => $stats, 'error' => $error]);
@@ -988,7 +1059,8 @@ class SonarrController extends AbstractController
         if ($title !== '') {
             try {
                 $result = $this->sonarr->parseTitle($title);
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
+                $this->logger->warning('Sonarr parse failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
                 $error = true;
             }
         }
@@ -1004,7 +1076,8 @@ class SonarrController extends AbstractController
         $error   = false;
         try {
             $folders = $this->sonarr->getRootFolders();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr rootFolders failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/root_folders.html.twig', ['folders' => $folders, 'error' => $error]);
@@ -1016,7 +1089,8 @@ class SonarrController extends AbstractController
         try {
             $result = $this->sonarr->addRootFolder($request->toArray()['path'] ?? '');
             return $this->json(['ok' => $result !== null, 'folder' => $result]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr rootFolderAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -1026,7 +1100,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteRootFolder($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr rootFolderDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -1042,7 +1117,8 @@ class SonarrController extends AbstractController
         try {
             $namingConfig = $this->sonarr->getNamingConfig();
             $mmConfig     = $this->sonarr->getMediaManagementConfig();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr mediaManagement failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/media_management.html.twig', [
@@ -1064,6 +1140,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->updateNamingConfig($merged);
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr mediaManagementNamingSave failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1087,6 +1164,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->updateMediaManagementConfig($merged);
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr mediaManagementMmSave failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1100,7 +1178,8 @@ class SonarrController extends AbstractController
         $error    = false;
         try {
             $mappings = $this->sonarr->getRemotePathMappings();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr remotePathMappings failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/remote_path_mappings.html.twig', ['mappings' => $mappings, 'error' => $error]);
@@ -1113,6 +1192,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->createRemotePathMapping($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr remotePathMappingAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1124,6 +1204,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->updateRemotePathMapping($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr remotePathMappingUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1133,7 +1214,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteRemotePathMapping($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr remotePathMappingDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -1147,7 +1229,8 @@ class SonarrController extends AbstractController
         $error    = false;
         try {
             $metadata = $this->sonarr->getMetadata();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr metadata failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/metadata.html.twig', ['metadata' => $metadata, 'error' => $error]);
@@ -1160,6 +1243,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->updateMetadata($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr metadataUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1169,7 +1253,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteMetadata($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr metadataDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -1183,7 +1268,8 @@ class SonarrController extends AbstractController
         $error   = false;
         try {
             $filters = $this->sonarr->getCustomFilters();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr customFilters failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/custom_filters.html.twig', ['filters' => $filters, 'error' => $error]);
@@ -1196,6 +1282,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->createCustomFilter($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr customFilterAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1207,6 +1294,7 @@ class SonarrController extends AbstractController
             $result = $this->sonarr->updateCustomFilter($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr customFilterUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1216,7 +1304,8 @@ class SonarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->sonarr->deleteCustomFilter($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr customFilterDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -1234,7 +1323,8 @@ class SonarrController extends AbstractController
             $data    = $this->sonarr->getHistory($page, 50);
             $history = $data['records'] ?? $data;
             $total   = $data['totalRecords'] ?? count($history);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr history failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/commands.html.twig', [
@@ -1254,7 +1344,8 @@ class SonarrController extends AbstractController
             $data      = $this->sonarr->getBlocklist($page, 50);
             $blocklist = $data['records'] ?? $data;
             $total     = $data['totalRecords'] ?? count($blocklist);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr blocklist failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/commands.html.twig', [
@@ -1276,7 +1367,8 @@ class SonarrController extends AbstractController
             $data    = $this->sonarr->getMissing($page, 50);
             $missing = $data['records'] ?? $data;
             $total   = $data['totalRecords'] ?? count($missing);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr missing failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/commands.html.twig', [
@@ -1296,7 +1388,8 @@ class SonarrController extends AbstractController
             $data   = $this->sonarr->getCutoff($page, 50);
             $cutoff = $data['records'] ?? $data;
             $total  = $data['totalRecords'] ?? count($cutoff);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr cutoff failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/commands.html.twig', [
@@ -1314,7 +1407,8 @@ class SonarrController extends AbstractController
         $error    = false;
         try {
             $calendar = $this->sonarr->getCalendar(30);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr calendar failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('sonarr/commands.html.twig', [

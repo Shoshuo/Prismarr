@@ -40,7 +40,8 @@ class QBittorrentClient
     {
         try {
             return $this->getVersion() !== null;
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('QBittorrent ping failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return false;
         }
     }

@@ -4,12 +4,17 @@ namespace App\Service;
 
 use App\Exception\ServiceNotConfiguredException;
 use App\Repository\SettingRepository;
+use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * Provides access to settings stored in DB (table `setting`).
- * Memory cache for the duration of the request.
+ *
+ * Memory cache scoped to the request. Implements ResetInterface so the
+ * cache is cleared between requests in FrankenPHP worker mode, where the
+ * container is kept alive across requests and services would otherwise
+ * retain stale state.
  */
-class ConfigService
+class ConfigService implements ResetInterface
 {
     /** @var array<string, ?string>|null */
     private ?array $cache = null;
@@ -17,6 +22,11 @@ class ConfigService
     public function __construct(
         private readonly SettingRepository $settings,
     ) {}
+
+    public function reset(): void
+    {
+        $this->cache = null;
+    }
 
     public function get(string $key): ?string
     {

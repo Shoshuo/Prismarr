@@ -33,7 +33,8 @@ class JellyseerrClient
     {
         try {
             return $this->getAbout() !== null;
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Jellyseerr ping failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return false;
         }
     }

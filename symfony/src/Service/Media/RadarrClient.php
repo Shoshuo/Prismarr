@@ -30,7 +30,8 @@ class RadarrClient
     {
         try {
             return $this->getSystemStatus() !== null;
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr ping failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return false;
         }
     }

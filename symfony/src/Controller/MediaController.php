@@ -7,6 +7,7 @@ use App\Service\Media\ProwlarrClient;
 use App\Service\Media\QBittorrentClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,6 +28,7 @@ class MediaController extends AbstractController
         private readonly QBittorrentClient $qbittorrent,
         private readonly CacheInterface    $cache,
         private readonly ConfigService     $config,
+        private readonly LoggerInterface $logger,
     ) {}
 
     #[Route('/films', name: 'films')]
@@ -63,7 +65,9 @@ class MediaController extends AbstractController
                 foreach ($health as $h) {
                     $warnings[] = ($h['source'] ?? 'Radarr') . ' : ' . ($h['message'] ?? '?');
                 }
-            } catch (\Throwable) {}
+            } catch (\Throwable $e) {
+                $this->logger->warning('Media films failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            }
 
             // Check for blocked items in the queue
             $blocked = array_filter($queue, fn($q) => ($q['trackedState'] ?? '') === 'importBlocked');
@@ -71,7 +75,8 @@ class MediaController extends AbstractController
                 $warnings[] = count($blocked) . ' import(s) bloqué(s) — intervention manuelle nécessaire.';
             }
             } // end if (!$error)
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Media films failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
 
@@ -109,7 +114,8 @@ class MediaController extends AbstractController
                 $queue    = $this->sonarr->getQueue();
                 $calendar = $this->sonarr->getCalendar(14);
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Media series failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
 
@@ -153,7 +159,8 @@ class MediaController extends AbstractController
             if ($blocked > 0) {
                 $warnings[] = $blocked . ' import(s) bloqué(s) — intervention manuelle nécessaire.';
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Media filmWarnings failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $warnings[] = 'Impossible de contacter Radarr.';
         }
         return $this->json($warnings);
@@ -344,7 +351,8 @@ class MediaController extends AbstractController
         try {
             $missing         = $this->radarr->getMissing($page, 50);
             $qualityProfiles = $this->radarr->getQualityProfiles();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Media filmsMissing failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
 
@@ -364,7 +372,8 @@ class MediaController extends AbstractController
         $error  = false;
         try {
             $cutoff = $this->radarr->getCutoff($page, 50);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Media filmsCutoff failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
 
@@ -386,7 +395,8 @@ class MediaController extends AbstractController
         $error     = false;
         try {
             $history = $this->radarr->getHistory($page, 50, $eventType);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Media filmsHistory failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
 
@@ -488,6 +498,7 @@ class MediaController extends AbstractController
             $result = $this->radarr->sendCommand('RefreshMovie', ['movieIds' => $ids]);
             return $this->json(['ok' => $result !== null, 'cmdId' => $result['id'] ?? null]);
         } catch (\Throwable $e) {
+            $this->logger->warning('Media filmsBulkRefresh failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -501,6 +512,7 @@ class MediaController extends AbstractController
             $result = $this->radarr->sendCommand('MoviesSearch', ['movieIds' => $ids]);
             return $this->json(['ok' => $result !== null, 'cmdId' => $result['id'] ?? null]);
         } catch (\Throwable $e) {
+            $this->logger->warning('Media filmsBulkSearch failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -540,7 +552,8 @@ class MediaController extends AbstractController
         try {
             $data = $this->radarr->sendCommand('RefreshMonitoredDownloads');
             return $this->json(['ok' => $data !== null]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Media refreshDownloads failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false]);
         }
     }
@@ -654,7 +667,9 @@ class MediaController extends AbstractController
             if ($blocked > 0) {
                 $warnings[] = $blocked . ' import(s) bloqué(s) — intervention manuelle nécessaire.';
             }
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {
+            $this->logger->warning('Media seriesWarnings failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
         return $this->json($warnings);
     }
 
@@ -804,6 +819,7 @@ class MediaController extends AbstractController
             $result = $this->radarr->manualImport($files);
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Media filmQueueImport failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1110,7 +1126,8 @@ class MediaController extends AbstractController
         try {
             $serie    = $this->sonarr->getSerie($id);
             $episodes = $this->sonarr->getEpisodes($id);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Media serieDetail failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         if (!$serie) {
@@ -1643,7 +1660,8 @@ class MediaController extends AbstractController
                     'hasFile'       => (bool) ($m['hasFile'] ?? false),
                     'poster'        => $this->extractPoster($m),
                 ], $raw);
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
+                $this->logger->warning('Media globalSearch failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
                 $item->expiresAfter(5);
                 return [];
             }
@@ -1662,7 +1680,8 @@ class MediaController extends AbstractController
                     'hasFile'       => true,
                     'poster'        => $this->extractPoster($s),
                 ], $raw);
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
+                $this->logger->warning('Media globalSearch failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
                 $item->expiresAfter(5);
                 return [];
             }
@@ -1733,7 +1752,9 @@ class MediaController extends AbstractController
                     'inLibrary' => $id > 0 && in_array($id, $localMovieIds),
                 ];
             }
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {
+            $this->logger->warning('Media globalSearchOnline failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
 
         try {
             $series = $this->sonarr->lookupSeries($term);
@@ -1749,7 +1770,9 @@ class MediaController extends AbstractController
                     'inLibrary' => $id > 0 && in_array($id, $localSeriesIds),
                 ];
             }
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {
+            $this->logger->warning('Media globalSearchOnline failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
 
         return $this->json($results);
     }

@@ -30,7 +30,8 @@ class SonarrClient
     {
         try {
             return $this->getSystemStatus() !== null;
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr ping failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return false;
         }
     }

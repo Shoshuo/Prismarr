@@ -6,6 +6,7 @@ use App\Service\ConfigService;
 use App\Service\Media\GluetunClient;
 use App\Service\Media\QBittorrentClient;
 use App\Service\Media\TorrentResolverService;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,6 +23,7 @@ class QBittorrentController extends AbstractController
         private readonly GluetunClient $gluetun,
         private readonly TorrentResolverService $resolver,
         private readonly ConfigService $config,
+        private readonly LoggerInterface $logger,
     ) {}
 
     /**
@@ -50,6 +52,7 @@ class QBittorrentController extends AbstractController
             }
             return $this->json(['active' => $active, 'items' => $items]);
         } catch (\Throwable $e) {
+            $this->logger->warning('QBittorrent poll-summary failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -59,7 +62,9 @@ class QBittorrentController extends AbstractController
     {
         $summary    = $this->gluetun->getSummary();
         $listenPort = null;
-        try { $listenPort = $this->qbt->getListenPort(); } catch (\Throwable) {}
+        try { $listenPort = $this->qbt->getListenPort(); } catch (\Throwable $e) {
+            $this->logger->warning('QBittorrent getListenPort failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
 
         $fwdPort  = $summary['forwarded_port'] ?? null;
         $portSync = null; // null = unknown, true = match, false = out-of-sync
@@ -98,8 +103,9 @@ class QBittorrentController extends AbstractController
                 $categories = $this->qbt->getCategories();
                 $tags       = $this->qbt->getTags();
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             $error = true;
+            $this->logger->warning('QBittorrent index failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
         }
 
         // VPN (Gluetun) + qBit port — non-blocking, graceful failure
@@ -107,14 +113,18 @@ class QBittorrentController extends AbstractController
         try {
             $summary = $this->gluetun->getSummary();
             $listenPort = null;
-            try { $listenPort = $this->qbt->getListenPort(); } catch (\Throwable) {}
+            try { $listenPort = $this->qbt->getListenPort(); } catch (\Throwable $e) {
+                $this->logger->warning('QBittorrent getListenPort failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            }
             $vpn = array_merge($summary, [
                 'qbt_port'  => $listenPort,
                 'port_sync' => ($summary['forwarded_port'] ?? null) !== null && $listenPort !== null
                     ? ($summary['forwarded_port'] === $listenPort)
                     : null,
             ]);
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {
+            $this->logger->warning('Gluetun summary failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
 
         return $this->render('qbittorrent/index.html.twig', [
             'torrents'   => $torrents,
@@ -207,6 +217,7 @@ class QBittorrentController extends AbstractController
                 ],
             ]);
         } catch (\Throwable $e) {
+            $this->logger->warning('QBittorrent torrents listing failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -227,6 +238,7 @@ class QBittorrentController extends AbstractController
 
             return $this->json($this->resolver->resolve($pipeline, $torrent['name'] ?? ''));
         } catch (\Throwable $e) {
+            $this->logger->warning('Torrent resolve failed', ['pipeline' => $pipeline, 'hash' => $hash, 'exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -247,6 +259,7 @@ class QBittorrentController extends AbstractController
                 'peers'      => $peers,
             ]);
         } catch (\Throwable $e) {
+            $this->logger->warning('QBittorrent torrent detail failed', ['hash' => $hash, 'exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['error' => $e->getMessage()], 500);
         }
     }

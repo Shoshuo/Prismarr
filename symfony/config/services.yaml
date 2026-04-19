@@ -11,3 +11,16 @@ services:
 
     App\:
         resource: '../src/'
+
+    # Lower the Symfony minimalist logger to WARNING so that $logger->warning()
+    # calls (used by our silent-catch handlers in the Media clients and
+    # controllers) are actually emitted to stderr. Default is ERROR, which
+    # silently drops everything below.
+    logger:
+        class: Symfony\Component\HttpKernel\Log\Logger
+        arguments:
+            $minLevel: 'warning'
+            $output: 'php://stderr'
+            $formatter: null
+            $requestStack: '@request_stack'
+            $debug: '%env(bool:default::key:web:default:kernel.runtime_mode:)%'

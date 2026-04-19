@@ -9,12 +9,18 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * Redirects to the setup wizard until it has been finalized
  * (empty `user` table or missing `setup.completed` flag).
+ *
+ * Implements ResetInterface so that, in FrankenPHP worker mode, the
+ * cached setup flag is re-read from DB between requests (the container
+ * is otherwise kept alive for minutes and would miss a just-finished
+ * wizard until the worker recycles).
  */
-class SetupRedirectSubscriber implements EventSubscriberInterface
+class SetupRedirectSubscriber implements EventSubscriberInterface, ResetInterface
 {
     private const PATH_WHITELIST_PREFIXES = [
         '/setup',
@@ -41,6 +47,11 @@ class SetupRedirectSubscriber implements EventSubscriberInterface
         return [
             KernelEvents::REQUEST => ['onKernelRequest', 20],
         ];
+    }
+
+    public function reset(): void
+    {
+        $this->setupDone = null;
     }
 
     public function onKernelRequest(RequestEvent $event): void

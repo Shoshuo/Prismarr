@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Service\ConfigService;
 use App\Service\Media\ProwlarrClient;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,6 +19,7 @@ class ProwlarrController extends AbstractController
     public function __construct(
         private readonly ProwlarrClient $prowlarr,
         private readonly ConfigService $config,
+        private readonly LoggerInterface $logger,
     ) {}
 
     // ── Page principale — Indexeurs ───────────────────────────────────────────
@@ -48,7 +50,8 @@ class ProwlarrController extends AbstractController
                     $idxStats[$s['indexerId']] = $s;
                 }
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr index failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
 
@@ -158,7 +161,10 @@ class ProwlarrController extends AbstractController
         try {
             $apps = $this->prowlarr->getApplications();
             $schema = $this->prowlarr->getApplicationSchema();
-        } catch (\Throwable) { $error = true; }
+        } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr appsPage failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
 
         return $this->render('prowlarr/apps.html.twig', [
             'apps' => $apps,
@@ -306,7 +312,10 @@ class ProwlarrController extends AbstractController
                 $records = $history['records'] ?? [];
                 $total = $history['totalRecords'] ?? 0;
             }
-        } catch (\Throwable) { $error = true; }
+        } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr historyPage failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
 
         return $this->render('prowlarr/history.html.twig', [
             'records' => $records,
@@ -326,7 +335,10 @@ class ProwlarrController extends AbstractController
         try {
             $status = $this->prowlarr->getSystemStatus();
             $health = $this->prowlarr->getHealth();
-        } catch (\Throwable) { $error = true; }
+        } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr systemPage failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
 
         return $this->render('prowlarr/system.html.twig', [
             'status' => $status,
@@ -345,7 +357,10 @@ class ProwlarrController extends AbstractController
         $error = false;
         try {
             $logs = $this->prowlarr->getLogs($page, 100);
-        } catch (\Throwable) { $error = true; }
+        } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr logsPage failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
 
         return $this->render('prowlarr/logs.html.twig', [
             'records' => $logs['records'] ?? [],
@@ -366,7 +381,10 @@ class ProwlarrController extends AbstractController
         try {
             $clients = $this->prowlarr->getDownloadClients();
             $dlConfig = $this->prowlarr->getDownloadClientConfig();
-        } catch (\Throwable) { $error = true; }
+        } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr downloadClientsPage failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
         return $this->render('prowlarr/download_clients.html.twig', ['clients' => $clients, 'dlConfig' => $dlConfig, 'error' => $error]);
     }
 
@@ -377,7 +395,10 @@ class ProwlarrController extends AbstractController
     {
         $notifs = [];
         $error = false;
-        try { $notifs = $this->prowlarr->getNotifications(); } catch (\Throwable) { $error = true; }
+        try { $notifs = $this->prowlarr->getNotifications(); } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr notificationsPage failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
         return $this->render('prowlarr/notifications.html.twig', ['notifications' => $notifs, 'error' => $error]);
     }
 
@@ -395,7 +416,10 @@ class ProwlarrController extends AbstractController
             foreach ($detail as $d) {
                 $tagsDetail[$d['id']] = $d;
             }
-        } catch (\Throwable) { $error = true; }
+        } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr tagsPage failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
         return $this->render('prowlarr/tags.html.twig', ['tags' => $tags, 'tagsDetail' => $tagsDetail, 'error' => $error]);
     }
 
@@ -406,7 +430,10 @@ class ProwlarrController extends AbstractController
     {
         $config = null;
         $error = false;
-        try { $config = $this->prowlarr->getGeneralConfig(); } catch (\Throwable) { $error = true; }
+        try { $config = $this->prowlarr->getGeneralConfig(); } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr generalPage failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
         return $this->render('prowlarr/general.html.twig', ['config' => $config, 'error' => $error]);
     }
 
@@ -425,7 +452,10 @@ class ProwlarrController extends AbstractController
     {
         $config = null;
         $error = false;
-        try { $config = $this->prowlarr->getUiConfig(); } catch (\Throwable) { $error = true; }
+        try { $config = $this->prowlarr->getUiConfig(); } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr uiPage failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
         return $this->render('prowlarr/ui.html.twig', ['config' => $config, 'error' => $error]);
     }
 
@@ -443,7 +473,10 @@ class ProwlarrController extends AbstractController
     {
         $tasks = [];
         $error = false;
-        try { $tasks = $this->prowlarr->getTasks(); } catch (\Throwable) { $error = true; }
+        try { $tasks = $this->prowlarr->getTasks(); } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr tasksPage failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
         return $this->render('prowlarr/tasks.html.twig', ['tasks' => $tasks, 'error' => $error]);
     }
 
@@ -454,7 +487,10 @@ class ProwlarrController extends AbstractController
     {
         $backups = [];
         $error = false;
-        try { $backups = $this->prowlarr->getBackups(); } catch (\Throwable) { $error = true; }
+        try { $backups = $this->prowlarr->getBackups(); } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr backupsPage failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
         return $this->render('prowlarr/backups.html.twig', ['backups' => $backups, 'error' => $error]);
     }
 
@@ -466,7 +502,10 @@ class ProwlarrController extends AbstractController
         $updates = [];
         $status = null;
         $error = false;
-        try { $updates = $this->prowlarr->getUpdates(); $status = $this->prowlarr->getSystemStatus(); } catch (\Throwable) { $error = true; }
+        try { $updates = $this->prowlarr->getUpdates(); $status = $this->prowlarr->getSystemStatus(); } catch (\Throwable $e) {
+            $this->logger->warning('Prowlarr updatesPage failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
         return $this->render('prowlarr/updates.html.twig', ['updates' => $updates, 'status' => $status, 'error' => $error]);
     }
 

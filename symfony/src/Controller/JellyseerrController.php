@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Service\ConfigService;
 use App\Service\Media\JellyseerrClient;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,6 +21,7 @@ class JellyseerrController extends AbstractController
     public function __construct(
         private readonly JellyseerrClient $jellyseerr,
         private readonly ConfigService $config,
+        private readonly LoggerInterface $logger,
     ) {}
 
     // ── Main page — Requests ─────────────────────────────────────────────────
@@ -92,7 +94,8 @@ class JellyseerrController extends AbstractController
                 }
                 unset($req);
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Jellyseerr index failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
 
@@ -129,7 +132,8 @@ class JellyseerrController extends AbstractController
                 $u['_permList'] = $this->decodePermissions($u['permissions'] ?? 0);
             }
             unset($u);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Jellyseerr users failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
 
@@ -807,7 +811,8 @@ class JellyseerrController extends AbstractController
                         'genres'       => array_map(fn($g) => $g['name'] ?? $g, $tmdb['genres'] ?? []),
                     ];
                 }
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
+                $this->logger->warning('Jellyseerr enrichRequest failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
                 // No big deal, render without enrichment
             }
         }

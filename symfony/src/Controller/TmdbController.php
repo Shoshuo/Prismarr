@@ -9,6 +9,7 @@ use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TmdbClient;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,6 +27,7 @@ class TmdbController extends AbstractController
         private readonly WatchlistItemRepository   $watchlistRepo,
         private readonly EntityManagerInterface     $em,
         private readonly ConfigService             $config,
+        private readonly LoggerInterface $logger,
     ) {}
 
     #[Route('/decouverte', name: 'tmdb_index')]
@@ -53,7 +55,8 @@ class TmdbController extends AbstractController
                 $topMovies      = $this->enrich($this->tmdb->getTopRatedMovies()['results'] ?? [],       $library, 'movie');
                 $topTv          = $this->enrich($this->tmdb->getTopRatedTv()['results'] ?? [],           $library, 'tv');
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('TMDb index failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
 
@@ -114,7 +117,9 @@ class TmdbController extends AbstractController
             foreach (array_slice($movies, 0, 8) as $m) {
                 if (!empty($m['tmdbId'])) $seeds[] = ['type' => 'movie', 'id' => (int) $m['tmdbId']];
             }
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {
+            $this->logger->warning('TMDb myRecommendations failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
 
         // Series seeds: the 8 most recently added
         try {
@@ -123,7 +128,9 @@ class TmdbController extends AbstractController
             foreach (array_slice($series, 0, 8) as $s) {
                 if (!empty($s['tmdbId'])) $seeds[] = ['type' => 'tv', 'id' => (int) $s['tmdbId']];
             }
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {
+            $this->logger->warning('TMDb myRecommendations failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
 
         if (empty($seeds)) {
             return $this->json(['results' => [], 'seeds' => 0]);
@@ -902,7 +909,8 @@ class TmdbController extends AbstractController
                     ];
                 }
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('TMDb buildLibraryIndex failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             // Radarr down → carry on without the badge
         }
 
@@ -941,7 +949,8 @@ class TmdbController extends AbstractController
                     if ($resolved) $tvIds['tmdb_' . $resolved] = $info;
                 }
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('TMDb buildLibraryIndex failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             // Sonarr down → same
         }
 

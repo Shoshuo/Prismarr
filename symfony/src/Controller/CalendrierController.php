@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -15,6 +16,7 @@ class CalendrierController extends AbstractController
     public function __construct(
         private readonly RadarrClient $radarr,
         private readonly SonarrClient $sonarr,
+        private readonly LoggerInterface $logger,
     ) {}
 
     #[Route('/calendrier', name: 'app_calendrier')]
@@ -55,7 +57,9 @@ class CalendrierController extends AbstractController
                     $radarrCal[] = array_merge($base, ['date' => null, 'releaseType' => 'unknown']);
                 }
             }
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr calendar failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
 
         try {
             $sonarrEpisodes = $this->sonarr->getCalendar(90, 90);
@@ -79,7 +83,9 @@ class CalendrierController extends AbstractController
                     'releaseType' => 'episode',
                 ];
             }
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {
+            $this->logger->warning('Sonarr calendar failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
 
         // Merge and sort by date
         $events = [];

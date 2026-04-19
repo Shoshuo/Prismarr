@@ -10,12 +10,18 @@ use App\Service\Media\SonarrClient;
 use App\Service\Media\TmdbClient;
 
 /**
- * Tests third-party service availability. Per-process memory cache:
- * one HTTP check per FrankenPHP worker (which lasts a few minutes).
+ * Tests third-party service availability.
+ *
+ * Short TTL memory cache (CACHE_TTL seconds): amortize HTTP checks within
+ * a request burst but still notice a service coming back online within a
+ * few seconds, instead of staying stuck for the whole FrankenPHP worker
+ * lifetime (10–30 minutes).
  */
 class HealthService
 {
-    /** @var array<string, bool> */
+    private const CACHE_TTL = 10;
+
+    /** @var array<string, array{ok: bool, at: int}> */
     private array $cache = [];
 
     public function __construct(
@@ -29,8 +35,9 @@ class HealthService
 
     public function isHealthy(string $service): bool
     {
-        if (isset($this->cache[$service])) {
-            return $this->cache[$service];
+        $now = time();
+        if (isset($this->cache[$service]) && ($now - $this->cache[$service]['at']) < self::CACHE_TTL) {
+            return $this->cache[$service]['ok'];
         }
 
         $ok = match ($service) {
@@ -43,7 +50,8 @@ class HealthService
             default       => true,
         };
 
-        return $this->cache[$service] = $ok;
+        $this->cache[$service] = ['ok' => $ok, 'at' => $now];
+        return $ok;
     }
 
     /** Invalidate the cache — useful after a reconfiguration via admin. */

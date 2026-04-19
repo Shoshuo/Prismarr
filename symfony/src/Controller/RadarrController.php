@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Service\Media\RadarrClient;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,6 +17,7 @@ class RadarrController extends AbstractController
 {
     public function __construct(
         private readonly RadarrClient $radarr,
+        private readonly LoggerInterface $logger,
     ) {}
 
     // ── Updates ───────────────────────────────────────────────────────────────
@@ -29,7 +31,8 @@ class RadarrController extends AbstractController
         try {
             $updates = $this->radarr->getUpdates();
             $status = $this->radarr->getSystemStatus();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr updates failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/updates.html.twig', ['updates' => $updates, 'status' => $status, 'error' => $error]);
@@ -41,7 +44,8 @@ class RadarrController extends AbstractController
         try {
             $cmdId = $this->radarr->installUpdate();
             return $this->json(['ok' => true, 'cmdId' => $cmdId]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr installUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -55,7 +59,8 @@ class RadarrController extends AbstractController
         $error   = false;
         try {
             $backups = $this->radarr->getBackups();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr backups failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/backups.html.twig', ['backups' => $backups, 'error' => $error]);
@@ -67,7 +72,8 @@ class RadarrController extends AbstractController
         try {
             $cmdId = $this->radarr->createBackup();
             return $this->json(['ok' => true, 'cmdId' => $cmdId]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr backupCreate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -77,7 +83,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteBackup($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr backupDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -87,7 +94,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->restoreBackup($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr backupRestore failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -101,7 +109,8 @@ class RadarrController extends AbstractController
         $error         = false;
         try {
             $notifications = $this->radarr->getNotifications();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr notifications failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/notifications.html.twig', ['notifications' => $notifications, 'error' => $error]);
@@ -112,7 +121,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteNotification($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr notificationDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -122,7 +132,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->testNotification($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr notificationTest failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -132,7 +143,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json($this->radarr->getNotificationSchema());
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr notificationsSchema failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json([]);
         }
     }
@@ -144,6 +156,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->createNotificationWithError($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr notificationAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -155,6 +168,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->updateNotificationWithError($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr notificationUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -166,6 +180,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->testNotificationPayload($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr notificationTestPayload failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -180,7 +195,8 @@ class RadarrController extends AbstractController
         $error      = false;
         try {
             $exclusions = $this->radarr->getImportListExclusions($page, 50);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr exclusions failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/exclusions.html.twig', [
@@ -201,7 +217,8 @@ class RadarrController extends AbstractController
                 (int) ($data['year'] ?? 0),
             );
             return $this->json(['ok' => $exclusion !== null, 'exclusion' => $exclusion]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr exclusionAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -211,7 +228,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteImportListExclusion($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr exclusionDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -222,7 +240,8 @@ class RadarrController extends AbstractController
         try {
             $ids = $request->toArray()['ids'] ?? [];
             return $this->json(['ok' => $this->radarr->bulkDeleteImportListExclusions($ids)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr exclusionBulkDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -240,7 +259,8 @@ class RadarrController extends AbstractController
             $movies          = $this->radarr->getImportListMoviesWithRecommendations();
             $qualityProfiles = $this->radarr->getQualityProfiles();
             $rootFolders     = $this->radarr->getRootFolders();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr suggestions failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/suggestions.html.twig', [
@@ -262,7 +282,8 @@ class RadarrController extends AbstractController
         try {
             $rootFolders     = $this->radarr->getRootFolders();
             $qualityProfiles = $this->radarr->getQualityProfiles();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr libraryImport failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/library_import.html.twig', [
@@ -304,6 +325,7 @@ class RadarrController extends AbstractController
 
             return $this->json(['ok' => true, 'folders' => $unmatched]);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr libraryImportScan failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -320,7 +342,8 @@ class RadarrController extends AbstractController
             // Just title + id for the select
             $movies = array_map(fn($m) => ['id' => $m['id'], 'title' => $m['title'], 'year' => $m['year']], $allMovies);
             usort($movies, fn($a, $b) => strcmp($a['title'] ?? '', $b['title'] ?? ''));
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr rename failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/rename.html.twig', ['movies' => $movies, 'error' => $error]);
@@ -331,7 +354,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json($this->radarr->getRenameProposals($movieId));
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr renameProposals failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json([]);
         }
     }
@@ -342,7 +366,8 @@ class RadarrController extends AbstractController
         try {
             $cmdId = $this->radarr->executeRename($movieId);
             return $this->json(['ok' => true, 'cmdId' => $cmdId]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr renameExecute failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -364,7 +389,8 @@ class RadarrController extends AbstractController
             $customFormats = $this->radarr->getCustomFormats();
             $languages     = $this->radarr->getLanguages();
             $limits        = $this->radarr->getQualityDefinitionLimits();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr quality failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/quality.html.twig', [
@@ -384,6 +410,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->createQualityProfileWithError($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr qualityProfileCreate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -395,6 +422,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->updateQualityProfileWithError($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr qualityProfileUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -404,7 +432,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteQualityProfile($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr qualityProfileDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -415,7 +444,8 @@ class RadarrController extends AbstractController
         try {
             $definitions = $request->toArray();
             return $this->json(['ok' => $this->radarr->bulkUpdateQualityDefinitions($definitions)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr qualityDefinitionsSave failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -436,7 +466,8 @@ class RadarrController extends AbstractController
         $error    = false;
         try {
             $profiles = $this->radarr->getDelayProfiles();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr delayProfiles failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/delay_profiles.html.twig', ['profiles' => $profiles, 'error' => $error]);
@@ -447,7 +478,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteDelayProfile($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr delayProfileDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -458,7 +490,8 @@ class RadarrController extends AbstractController
         try {
             $result = $this->radarr->createDelayProfile($request->toArray());
             return $this->json(['ok' => $result !== null, 'profile' => $result]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr delayProfileAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -469,7 +502,8 @@ class RadarrController extends AbstractController
         try {
             $result = $this->radarr->updateDelayProfile($id, $request->toArray());
             return $this->json(['ok' => $result !== null, 'profile' => $result]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr delayProfileUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -483,7 +517,8 @@ class RadarrController extends AbstractController
         $error   = false;
         try {
             $formats = $this->radarr->getCustomFormats();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr customFormats failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/custom_formats.html.twig', ['formats' => $formats, 'error' => $error]);
@@ -494,7 +529,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json($this->radarr->getCustomFormatSchema());
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr customFormatSchema failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json([]);
         }
     }
@@ -505,7 +541,8 @@ class RadarrController extends AbstractController
         try {
             $result = $this->radarr->createCustomFormat($request->toArray());
             return $this->json(['ok' => $result !== null, 'format' => $result]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr customFormatAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -516,7 +553,8 @@ class RadarrController extends AbstractController
         try {
             $result = $this->radarr->updateCustomFormat($id, $request->toArray());
             return $this->json(['ok' => $result !== null, 'format' => $result]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr customFormatUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -526,7 +564,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteCustomFormat($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr customFormatDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -540,7 +579,8 @@ class RadarrController extends AbstractController
         $error = false;
         try {
             $tags = $this->radarr->getAutoTags();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr autoTags failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/auto_tags.html.twig', ['tags' => $tags, 'error' => $error]);
@@ -551,7 +591,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteAutoTag($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr autoTagDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -562,7 +603,8 @@ class RadarrController extends AbstractController
         try {
             $result = $this->radarr->createAutoTag($request->toArray());
             return $this->json(['ok' => $result !== null, 'autoTag' => $result]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr autoTagAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -573,7 +615,8 @@ class RadarrController extends AbstractController
         try {
             $result = $this->radarr->updateAutoTag($id, $request->toArray());
             return $this->json(['ok' => $result !== null, 'autoTag' => $result]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr autoTagUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -587,7 +630,8 @@ class RadarrController extends AbstractController
         $error = false;
         try {
             $tags = $this->radarr->getTags();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr tags failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/tags.html.twig', ['tags' => $tags, 'error' => $error]);
@@ -600,7 +644,8 @@ class RadarrController extends AbstractController
             $label = $request->toArray()['label'] ?? '';
             $tag   = $this->radarr->createTag($label);
             return $this->json(['ok' => $tag !== null, 'tag' => $tag]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr tagAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -615,6 +660,7 @@ class RadarrController extends AbstractController
             }
             return $this->json(['ok' => true]);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr tagDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $msg = $e->getMessage();
             if (str_contains($msg, 'still in use') || str_contains($msg, 'cannot be deleted')) {
                 return $this->json(['ok' => false, 'error' => 'Ce tag est encore utilisé. Retirez-le de tous les films avant de le supprimer.']);
@@ -633,7 +679,8 @@ class RadarrController extends AbstractController
             }
             $tag = $this->radarr->updateTag($id, $label);
             return $this->json(['ok' => $tag !== null, 'tag' => $tag]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr tagRename failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -653,7 +700,8 @@ class RadarrController extends AbstractController
             $indexerConfig        = $this->radarr->getIndexerConfig();
             $downloadClientConfig = $this->radarr->getDownloadClientConfig();
             $importListConfig     = $this->radarr->getImportListConfig();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr settings failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/settings.html.twig', [
@@ -676,7 +724,8 @@ class RadarrController extends AbstractController
             $merged = array_merge($current, $request->toArray());
             $config = $this->radarr->updateHostConfig($merged);
             return $this->json(['ok' => $config !== null, 'config' => $config]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr settingsHostSave failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -691,7 +740,8 @@ class RadarrController extends AbstractController
         try {
             $uiConfig  = $this->radarr->getUiConfig();
             $languages = $this->radarr->getLanguages();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr ui failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/ui.html.twig', [
@@ -713,6 +763,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->updateUiConfig($merged);
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr uiSave failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -726,7 +777,8 @@ class RadarrController extends AbstractController
         $error    = false;
         try {
             $indexers = $this->radarr->getRadarrIndexers();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr indexers failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/indexers.html.twig', ['indexers' => $indexers, 'error' => $error]);
@@ -737,7 +789,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json($this->radarr->getIndexerSchema());
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr indexersSchema failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json([]);
         }
     }
@@ -749,6 +802,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->createIndexer($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr indexerAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -760,6 +814,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->updateIndexer($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr indexerUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -769,7 +824,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteIndexer($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr indexerDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -781,6 +837,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->testIndexer($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr indexerTest failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -794,7 +851,8 @@ class RadarrController extends AbstractController
         $error   = false;
         try {
             $clients = $this->radarr->getDownloadClients();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr downloadClients failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/download_clients.html.twig', ['clients' => $clients, 'error' => $error]);
@@ -805,7 +863,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json($this->radarr->getDownloadClientSchema());
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr downloadClientSchema failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json([]);
         }
     }
@@ -817,6 +876,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->createDownloadClient($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr downloadClientAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -828,6 +888,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->updateDownloadClient($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr downloadClientUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -837,7 +898,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteDownloadClient($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr downloadClientDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -849,6 +911,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->testDownloadClient($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr downloadClientTest failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -862,7 +925,8 @@ class RadarrController extends AbstractController
         $error = false;
         try {
             $lists = $this->radarr->getImportLists();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr importLists failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/import_lists.html.twig', ['lists' => $lists, 'error' => $error]);
@@ -873,7 +937,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json($this->radarr->getImportListSchema());
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr importListSchema failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json([]);
         }
     }
@@ -885,6 +950,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->createImportList($request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr importListAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -896,6 +962,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->updateImportList($id, $request->toArray());
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr importListUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -905,7 +972,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteImportList($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr importListDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -919,7 +987,8 @@ class RadarrController extends AbstractController
         $error    = false;
         try {
             $commands = $this->radarr->getAllCommands();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr commands failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/commands.html.twig', ['commands' => $commands, 'error' => $error]);
@@ -930,7 +999,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json($this->radarr->getCommandStatus($cmdId) ?? ['status' => 'unknown']);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr commandStatus failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['status' => 'unknown']);
         }
     }
@@ -940,7 +1010,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->cancelCommand($cmdId)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr commandCancel failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -954,7 +1025,8 @@ class RadarrController extends AbstractController
         $error = false;
         try {
             $tasks = $this->radarr->getSystemTasks();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr tasks failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/tasks.html.twig', ['tasks' => $tasks, 'error' => $error]);
@@ -970,7 +1042,8 @@ class RadarrController extends AbstractController
             }
             $result = $this->radarr->sendCommand($commandName);
             return $this->json(['ok' => $result !== null, 'command' => $result]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr taskRun failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -991,7 +1064,8 @@ class RadarrController extends AbstractController
             $logsData = $this->radarr->getLogs($page, $pageSize);
             $logs     = $logsData['records'] ?? $logsData;
             $total    = $logsData['totalRecords'] ?? count($logs);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr logs failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/logs.html.twig', [
@@ -1067,7 +1141,8 @@ class RadarrController extends AbstractController
                 'genres'     => $genres,
                 'years'      => $years,
             ];
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr stats failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/stats.html.twig', ['stats' => $stats, 'error' => $error]);
@@ -1084,7 +1159,8 @@ class RadarrController extends AbstractController
         if ($title !== '') {
             try {
                 $result = $this->radarr->parseTitle($title);
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
+                $this->logger->warning('Radarr parse failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
                 $error = true;
             }
         }
@@ -1100,7 +1176,8 @@ class RadarrController extends AbstractController
         $error   = false;
         try {
             $folders = $this->radarr->getRootFolders();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr rootFolders failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/root_folders.html.twig', ['folders' => $folders, 'error' => $error]);
@@ -1112,7 +1189,8 @@ class RadarrController extends AbstractController
         try {
             $result = $this->radarr->addRootFolder($request->toArray()['path'] ?? '');
             return $this->json(['ok' => $result !== null, 'folder' => $result]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr rootFolderAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -1122,7 +1200,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteRootFolder($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr rootFolderDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -1138,7 +1217,8 @@ class RadarrController extends AbstractController
         try {
             $namingConfig = $this->radarr->getNamingConfig();
             $mmConfig     = $this->radarr->getMediaManagementConfig();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr mediaManagement failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/media_management.html.twig', [
@@ -1160,6 +1240,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->updateNamingConfig($merged);
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr mediaManagementNamingSave failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1176,6 +1257,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->updateMediaManagementConfig($merged);
             return $this->json($result);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr mediaManagementMmSave failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1197,7 +1279,8 @@ class RadarrController extends AbstractController
             $ids  = $data['movieIds'] ?? [];
             unset($data['movieIds']);
             return $this->json(['ok' => $this->radarr->bulkUpdateMovies($ids, $data)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr moviesBulkUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -1211,7 +1294,8 @@ class RadarrController extends AbstractController
         $error    = false;
         try {
             $mappings = $this->radarr->getRemotePathMappings();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr remotePathMappings failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/remote_path_mappings.html.twig', ['mappings' => $mappings, 'error' => $error]);
@@ -1224,6 +1308,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->createRemotePathMapping($request->toArray());
             return $this->json(['ok' => $result !== null, 'mapping' => $result]);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr remotePathMappingAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1236,6 +1321,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->updateRemotePathMapping($id, $data);
             return $this->json(['ok' => $result !== null, 'mapping' => $result]);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr remotePathMappingUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1245,7 +1331,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteRemotePathMapping($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr remotePathMappingDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -1259,7 +1346,8 @@ class RadarrController extends AbstractController
         $error    = false;
         try {
             $metadata = $this->radarr->getMetadata();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr metadata failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/metadata.html.twig', ['metadata' => $metadata, 'error' => $error]);
@@ -1272,6 +1360,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->updateMetadata($id, $request->toArray());
             return $this->json(['ok' => $result !== null, 'metadata' => $result]);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr metadataUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1281,7 +1370,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteMetadata($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr metadataDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }
@@ -1307,6 +1397,7 @@ class RadarrController extends AbstractController
             $merged = array_merge($current, $request->toArray());
             return $this->json($this->radarr->updateMetadataConfig($merged));
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr metadataConfigSave failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1320,7 +1411,8 @@ class RadarrController extends AbstractController
         $error   = false;
         try {
             $filters = $this->radarr->getCustomFilters();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr customFilters failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             $error = true;
         }
         return $this->render('radarr/custom_filters.html.twig', ['filters' => $filters, 'error' => $error]);
@@ -1333,6 +1425,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->createCustomFilter($request->toArray());
             return $this->json(['ok' => $result !== null, 'filter' => $result]);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr customFilterAdd failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1344,6 +1437,7 @@ class RadarrController extends AbstractController
             $result = $this->radarr->updateCustomFilter($id, $request->toArray());
             return $this->json(['ok' => $result !== null, 'filter' => $result]);
         } catch (\Throwable $e) {
+            $this->logger->warning('Radarr customFilterUpdate failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -1353,7 +1447,8 @@ class RadarrController extends AbstractController
     {
         try {
             return $this->json(['ok' => $this->radarr->deleteCustomFilter($id)]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('Radarr customFilterDelete failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['ok' => false], 500);
         }
     }

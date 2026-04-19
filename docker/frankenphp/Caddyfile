@@ -15,6 +15,10 @@
 	root * /var/www/html/public
 
 	# Access log on stdout — compact: method, uri, status, duration.
+	# level WARN: only logs genuine HTTP issues (Caddy warnings/errors).
+	# Successful 2xx/3xx access logs are suppressed to keep the signal/noise
+	# ratio usable in Portainer/docker logs. Change to INFO if you need
+	# full request telemetry.
 	log {
 		output stdout
 		format filter {
@@ -33,7 +37,7 @@
 				logger delete
 			}
 		}
-		level INFO
+		level WARN
 	}
 
 	# Compression

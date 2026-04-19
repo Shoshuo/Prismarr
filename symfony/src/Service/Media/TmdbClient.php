@@ -37,7 +37,8 @@ class TmdbClient
     {
         try {
             return $this->request('/genre/movie/list') !== null;
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->logger->warning('TMDb ping failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return false;
         }
     }
