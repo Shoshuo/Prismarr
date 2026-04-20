@@ -50,8 +50,9 @@ Out of scope:
   — report those upstream
 - Misconfigurations by the user (e.g. exposing Prismarr to the public
   internet without a reverse-proxy + TLS)
-- `APP_ENV=dev` accidentally left on in production (see the ProfilerGuard
-  warning in `CLAUDE.md`)
+- `APP_ENV=dev` accidentally left on in production (the built-in
+  ProfilerGuard blocks remote access to `/_profiler` but this does not
+  replace a proper prod configuration)
 - Physical or social-engineering attacks
 
 ## Known considerations

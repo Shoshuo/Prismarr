@@ -63,10 +63,11 @@ the process — "we'll fix it later" becomes a user-reported bug in v1.x.
 
 ## 📚 6. Docs & Git
 
-- [ ] Commit message in **French**, format: `Feature|Fix|Docs : description courte`.
-- [ ] **Zero** `Co-Authored-By: Claude` in the commit message.
-- [ ] `CLAUDE.md` / `PROGRESSION.md` updated if the session is wrapping up.
+- [ ] Commit message is clear and self-contained (one or two lines describing
+      the change and its motivation).
+- [ ] No AI-assistant `Co-Authored-By` trailers in the commit message.
 - [ ] `README.md` updated if the feature changes user-facing behaviour.
+- [ ] `CHANGELOG.md` updated under `[Unreleased]` with a one-liner entry.
 - [ ] `git push` immediately after the commit (no local-only commits).
 
 ---
