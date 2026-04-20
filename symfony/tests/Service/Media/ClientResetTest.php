@@ -6,6 +6,7 @@ use App\Service\ConfigService;
 use App\Service\Media\GluetunClient;
 use App\Service\Media\JellyseerrClient;
 use App\Service\Media\ProwlarrClient;
+use App\Service\Media\QBittorrentClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TmdbClient;
@@ -37,6 +38,7 @@ class ClientResetTest extends TestCase
             [ProwlarrClient::class],
             [JellyseerrClient::class],
             [GluetunClient::class],
+            [QBittorrentClient::class],
         ];
     }
 
@@ -105,6 +107,47 @@ class ClientResetTest extends TestCase
         $client->reset();
         $this->assertSame('', $baseUrl->getValue($client));
         $this->assertSame('', $apiKey->getValue($client));
+    }
+
+    public function testQBittorrentClientResetClearsSessionAndCaches(): void
+    {
+        $config = $this->createMock(ConfigService::class);
+        $config->method('require')->willReturn('dummy');
+
+        $client = new QBittorrentClient(
+            $config,
+            $this->createMock(LoggerInterface::class),
+        );
+
+        $ref = new \ReflectionClass($client);
+        $load = $ref->getMethod('ensureConfig');
+        $load->setAccessible(true);
+        $load->invoke($client);
+
+        // Prime session + server state cache to simulate a worker that
+        // already served several requests.
+        $sid = $ref->getProperty('sid');
+        $sid->setAccessible(true);
+        $sid->setValue($client, 'SID=abc123');
+
+        $stateCache = $ref->getProperty('serverStateCache');
+        $stateCache->setAccessible(true);
+        $stateCache->setValue($client, ['alltime_dl' => 123]);
+
+        $stateCacheAt = $ref->getProperty('serverStateCacheAt');
+        $stateCacheAt->setAccessible(true);
+        $stateCacheAt->setValue($client, microtime(true));
+
+        $baseUrl = $ref->getProperty('baseUrl');
+        $baseUrl->setAccessible(true);
+        $this->assertNotSame('', $baseUrl->getValue($client));
+
+        $client->reset();
+
+        $this->assertSame('', $baseUrl->getValue($client));
+        $this->assertNull($sid->getValue($client));
+        $this->assertNull($stateCache->getValue($client));
+        $this->assertSame(0.0, $stateCacheAt->getValue($client));
     }
 
     public function testGluetunClientResetDropsAllCaches(): void

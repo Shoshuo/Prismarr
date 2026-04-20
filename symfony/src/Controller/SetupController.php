@@ -9,6 +9,7 @@ use App\Service\ConfigService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -115,7 +116,9 @@ class SetupController extends AbstractController
     #[Route('/tmdb', name: 'app_setup_tmdb', methods: ['GET', 'POST'])]
     public function tmdb(Request $request): Response
     {
-        $this->guardAdminExists();
+        if ($redirect = $this->guardAdminExists()) {
+            return $redirect;
+        }
 
         $fields = ['tmdb_api_key' => ''];
         $this->prefill($fields);
@@ -145,7 +148,9 @@ class SetupController extends AbstractController
     #[Route('/managers', name: 'app_setup_managers', methods: ['GET', 'POST'])]
     public function managers(Request $request): Response
     {
-        $this->guardAdminExists();
+        if ($redirect = $this->guardAdminExists()) {
+            return $redirect;
+        }
 
         $fields = [
             'radarr_url' => 'http://host.docker.internal:7878',
@@ -182,7 +187,9 @@ class SetupController extends AbstractController
     #[Route('/indexers', name: 'app_setup_indexers', methods: ['GET', 'POST'])]
     public function indexers(Request $request): Response
     {
-        $this->guardAdminExists();
+        if ($redirect = $this->guardAdminExists()) {
+            return $redirect;
+        }
 
         $fields = [
             'prowlarr_url' => 'http://host.docker.internal:9696',
@@ -219,7 +226,9 @@ class SetupController extends AbstractController
     #[Route('/downloads', name: 'app_setup_downloads', methods: ['GET', 'POST'])]
     public function downloads(Request $request): Response
     {
-        $this->guardAdminExists();
+        if ($redirect = $this->guardAdminExists()) {
+            return $redirect;
+        }
 
         $fields = [
             'qbittorrent_url' => 'http://host.docker.internal:8080',
@@ -258,7 +267,9 @@ class SetupController extends AbstractController
     #[Route('/finish', name: 'app_setup_finish', methods: ['GET', 'POST'])]
     public function finish(Request $request): Response
     {
-        $this->guardAdminExists();
+        if ($redirect = $this->guardAdminExists()) {
+            return $redirect;
+        }
 
         if ($request->isMethod('POST')) {
             if (!$this->isCsrfTokenValid('setup_finish', (string) $request->request->get('_csrf_token'))) {
@@ -279,11 +290,13 @@ class SetupController extends AbstractController
 
     // ─── Helpers ───────────────────────────────────────────────────────────
 
-    private function guardAdminExists(): void
+    private function guardAdminExists(): ?RedirectResponse
     {
         if ($this->users->count([]) === 0) {
-            $this->redirectToRoute('app_setup_admin');
+            return $this->redirectToRoute('app_setup_admin');
         }
+
+        return null;
     }
 
     /**

@@ -371,6 +371,19 @@
       color: #6366f1;
     }
 
+    /* ── Secret input (password/API key show/hide toggle) ── */
+    .secret-wrapper { position: relative; }
+    .secret-wrapper .form-control { padding-right: 2.4rem; }
+    .secret-toggle {
+      position: absolute; right: .55rem; top: 50%; transform: translateY(-50%);
+      background: transparent; border: 0; padding: 0;
+      cursor: pointer; color: inherit; opacity: .5;
+      display: inline-flex; align-items: center;
+      transition: opacity .15s ease;
+    }
+    .secret-toggle:hover { opacity: .95; }
+    .secret-toggle svg { width: 16px; height: 16px; }
+
     {% block extra_css %}{% endblock %}
   </style>
 </head>
@@ -443,6 +456,14 @@
       var next = current === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-bs-theme', next);
       localStorage.setItem('tablerTheme', next);
+    });
+
+    document.querySelectorAll('.secret-toggle').forEach(function (btn) {
+      btn.onclick = function () {
+        var input = document.getElementById(btn.dataset.toggleFor);
+        if (!input) return;
+        input.type = input.type === 'password' ? 'text' : 'password';
+      };
     });
   </script>
   {% block extra_js %}{% endblock %}

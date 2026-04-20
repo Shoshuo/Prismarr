@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{#
+  Fallback error page. Symfony looks up error{404,403,500,...}.html.twig
+  first, then error{4xx,5xx}.html.twig, then falls back to this file.
+  We render a single template and switch by status_code so every error
+  gets the Prismarr chrome (sidebar, theme) instead of the plain default.
+  The upstream exception message is never shown to the user — only the
+  status code, a friendly title, and a CTA back to safety.
+#}
+
+{% set code  = status_code|default(500) %}
+{% set meta  = {
+  403: { title: 'Accès refusé',            subtitle: 'Vous n\'avez pas les droits nécessaires pour accéder à cette page.' },
+  404: { title: 'Page introuvable',         subtitle: 'La page demandée n\'existe pas ou a été déplacée.' },
+  500: { title: 'Erreur interne',           subtitle: 'Quelque chose s\'est mal passé côté serveur. L\'incident a été enregistré.' },
+  503: { title: 'Service momentanément indisponible', subtitle: 'Prismarr est temporairement hors service. Réessayez dans quelques instants.' },
+} %}
+{% set current = meta[code]|default({ title: 'Une erreur est survenue', subtitle: 'Merci de réessayer, ou revenez à l\'accueil.' }) %}
+
+{% block title %}{{ code }} — {{ current.title }}{% endblock %}
+
+{% block body %}
+  <div class="page-body">
+    <div class="container-xl">
+      <div class="empty">
+        <div class="empty-header" style="font-size: 6rem; font-weight: 700; color: #6366f1; line-height: 1;">
+          {{ code }}
+        </div>
+        <p class="empty-title">{{ current.title }}</p>
+        <p class="empty-subtitle text-muted">{{ current.subtitle }}</p>
+        <div class="empty-action">
+          <a href="{{ path('app_home') }}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
+              <path d="M5 12l-2 0l9 -9l9 9l-2 0"/>
+              <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/>
+              <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/>
+            </svg>
+            Retour à l'accueil
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -38,9 +38,12 @@ init:
 	docker exec prismarr mkdir -p var/data
 	docker exec prismarr php bin/console doctrine:schema:create --no-interaction
 
-# Run the PHPUnit test suite (full suite — no args)
+# Run the PHPUnit test suite (full suite — no args).
+# APP_ENV=test is passed explicitly because the container default is
+# prod (or dev with the override file), and the `<server>` directive in
+# phpunit.dist.xml is not always honored before the kernel boots.
 test:
-	docker exec prismarr vendor/bin/phpunit
+	docker exec -e APP_ENV=test prismarr vendor/bin/phpunit
 
 # Lint all PHP sources (syntax errors only — fast)
 lint:

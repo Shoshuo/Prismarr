@@ -28,7 +28,15 @@ class HealthControllerTest extends TestCase
 
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('{"status":"ok"}', $response->getContent());
+
+        $payload = json_decode((string) $response->getContent(), true);
+        $this->assertSame('ok', $payload['status']);
+        $this->assertSame('ok', $payload['db']);
+        $this->assertArrayHasKey('timestamp', $payload);
+        $this->assertMatchesRegularExpression(
+            '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/',
+            $payload['timestamp']
+        );
     }
 
     public function testReturns503WhenDbThrows(): void

@@ -50,13 +50,16 @@ class GluetunClient implements ResetInterface
 
     public function reset(): void
     {
-        $this->configLoaded  = false;
-        $this->baseUrl       = null;
-        $this->apiKey        = '';
-        $this->protocol      = '';
-        $this->publicIpCache = null;
-        $this->statusCache   = null;
-        $this->portCache     = null;
+        $this->configLoaded    = false;
+        $this->baseUrl         = null;
+        $this->apiKey          = '';
+        $this->protocol        = '';
+        $this->publicIpCache   = null;
+        $this->publicIpCacheAt = 0.0;
+        $this->statusCache     = null;
+        $this->statusCacheAt   = 0.0;
+        $this->portCache       = null;
+        $this->portCacheAt     = 0.0;
     }
 
     /**
@@ -167,8 +170,8 @@ class GluetunClient implements ResetInterface
         $url = rtrim($this->baseUrl, '/') . $path;
         $opts = [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 4,
-            CURLOPT_CONNECTTIMEOUT => 2,
+            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_CONNECTTIMEOUT => 3,
             CURLOPT_FOLLOWLOCATION => true, // /v1/openvpn/portforwarded redirects to /v1/portforward
             // Only follow redirects within http(s) — blocks file:// / gopher:// / dict:// SSRF.
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS,

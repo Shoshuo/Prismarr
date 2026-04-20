@@ -4,8 +4,9 @@ namespace App\Service\Media;
 
 use App\Service\ConfigService;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
-class QBittorrentClient
+class QBittorrentClient implements ResetInterface
 {
     private const SERVICE = 'qBittorrent';
 
@@ -33,6 +34,16 @@ class QBittorrentClient
             $this->user     = $this->config->require('qbittorrent_user', self::SERVICE);
             $this->password = $this->config->require('qbittorrent_password', self::SERVICE);
         }
+    }
+
+    public function reset(): void
+    {
+        $this->baseUrl = '';
+        $this->user = '';
+        $this->password = '';
+        $this->sid = null;
+        $this->serverStateCache = null;
+        $this->serverStateCacheAt = 0.0;
     }
 
     /** Light ping — true if qBit responds and accepts the credentials. */

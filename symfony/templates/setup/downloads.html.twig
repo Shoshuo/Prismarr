@@ -32,9 +32,17 @@
         </div>
         <div class="col-md-6">
           <label class="form-label" for="qbittorrent_password">Mot de passe</label>
-          <input type="password" id="qbittorrent_password" name="qbittorrent_password" class="form-control"
-                 placeholder="••••••••" value="{{ values.qbittorrent_password }}"
-                 autocomplete="new-password"/>
+          <div class="secret-wrapper">
+            <input type="password" id="qbittorrent_password" name="qbittorrent_password" class="form-control"
+                   placeholder="••••••••" value="{{ values.qbittorrent_password }}"
+                   autocomplete="new-password"/>
+            <button type="button" class="secret-toggle" aria-label="Afficher/masquer" data-toggle-for="qbittorrent_password">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>
+                <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>

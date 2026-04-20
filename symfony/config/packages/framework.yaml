@@ -11,16 +11,18 @@ framework:
         - x-forwarded-port
         - x-forwarded-prefix
 
-    # Persistent sessions in var/sessions (survive FrankenPHP restarts)
+    # Persistent sessions in var/data/sessions so they survive container
+    # recreations (the var/data path is the one volume mounted in production).
     # Dedicated cookie name to coexist with other apps on the same domain (e.g. Argos)
     session:
         handler_id: ~
         name: PRISMARR_SESSION
         cookie_secure: auto
         cookie_samesite: lax
+        cookie_httponly: true
         cookie_lifetime: 604800       # 7 days
         gc_maxlifetime: 604800        # 7 days of inactivity before expiration
-        save_path: '%kernel.project_dir%/var/sessions'
+        save_path: '%kernel.project_dir%/var/data/sessions'
 
     #esi: true
     #fragments: true

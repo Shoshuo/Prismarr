@@ -1,5 +1,14 @@
 FROM dunglas/frankenphp:1.3.6-php8.4-alpine
 
+# ── OCI metadata (surfaced on Docker Hub and `docker inspect`) ──────────
+LABEL org.opencontainers.image.title="Prismarr" \
+      org.opencontainers.image.description="Self-hosted media stack dashboard — Radarr, Sonarr, Prowlarr, Jellyseerr, qBittorrent, TMDb in one Symfony UI." \
+      org.opencontainers.image.licenses="AGPL-3.0-or-later" \
+      org.opencontainers.image.source="https://github.com/joshuabv2005/prismarr" \
+      org.opencontainers.image.url="https://github.com/joshuabv2005/prismarr" \
+      org.opencontainers.image.documentation="https://github.com/joshuabv2005/prismarr#readme" \
+      org.opencontainers.image.vendor="Prismarr"
+
 # ── s6-overlay (multi-process init system) ──────────────────────────────
 ARG S6_OVERLAY_VERSION=3.2.0.2
 ARG TARGETARCH
@@ -15,18 +24,20 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
     tar -C / -Jxpf /tmp/s6-overlay-arch.tar.xz && \
     rm /tmp/s6-overlay-*.tar.xz
 
-# ── System libs + extensions (build-time deps purged after compilation) ──
+# ── System libs + extensions ────────────────────────────────────────────
+# Runtime libs stay; build-time deps (including git/zip used only by
+# Composer) are purged after `composer install` further down.
 RUN apk add --no-cache \
         bash \
         curl \
-        git \
         unzip \
-        zip \
         icu-libs \
         libzip \
         oniguruma \
         sqlite-libs \
     && apk add --no-cache --virtual .build-deps \
+        git \
+        zip \
         icu-dev \
         libzip-dev \
         oniguruma-dev \
@@ -40,11 +51,10 @@ RUN apk add --no-cache \
         opcache \
         pcntl \
         sockets \
-        mbstring \
-    && apk del --purge .build-deps
+        mbstring
 
-# ── Composer ────────────────────────────────────────────────────────────
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# ── Composer (pinned to avoid drift across rebuilds) ───────────────────
+COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
 # ── PHP config ──────────────────────────────────────────────────────────
 COPY docker/frankenphp/php.ini $PHP_INI_DIR/conf.d/prismarr.ini
@@ -65,9 +75,11 @@ RUN chmod +x /usr/local/bin/prismarr-init
 WORKDIR /var/www/html
 COPY symfony/ .
 
-# Dependencies + assets
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
-RUN php bin/console importmap:install --no-interaction
+# Dependencies + assets. Once Composer finishes we purge the build-deps
+# virtual group (git, zip, dev headers) — shaves ~10 MB off the final image.
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction \
+    && php bin/console importmap:install --no-interaction \
+    && apk del --purge .build-deps
 
 # Permissions
 RUN mkdir -p var/data var/cache var/log && \

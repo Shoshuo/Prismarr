@@ -12,15 +12,20 @@ class HealthController extends AbstractController
     #[Route('/api/health', name: 'api_health', methods: ['GET'])]
     public function health(Connection $db): JsonResponse
     {
+        $timestamp = (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM);
+
         try {
             $db->executeQuery('SELECT 1');
         } catch (\Throwable) {
             return new JsonResponse(
-                ['status' => 'error', 'db' => 'unreachable'],
+                ['status' => 'error', 'db' => 'unreachable', 'timestamp' => $timestamp],
                 503
             );
         }
 
-        return new JsonResponse(['status' => 'ok'], 200);
+        return new JsonResponse(
+            ['status' => 'ok', 'db' => 'ok', 'timestamp' => $timestamp],
+            200
+        );
     }
 }

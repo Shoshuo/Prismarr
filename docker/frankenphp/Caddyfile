@@ -64,11 +64,16 @@
 	# Security headers
 	# CSP is emitted dynamically from PHP (CspHeaderSubscriber) so that
 	# user-configured service hosts (Jellyseerr avatars, etc.) are included.
+	# HSTS is a no-op over plain HTTP (ignored by browsers) but is picked
+	# up downstream when Prismarr sits behind an HTTPS reverse proxy that
+	# forwards response headers (Traefik, nginx, Caddy upstream, Cloudflare).
 	header {
 		X-Frame-Options "SAMEORIGIN"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		X-XSS-Protection "1; mode=block"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
 		-Server
 	}
 
