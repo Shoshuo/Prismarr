@@ -323,7 +323,7 @@
           <ul class="navbar-nav pt-lg-3">
 
             {# Découverte TMDb — page d'accueil Prismarr #}
-            {% if service_configured('tmdb') %}
+            {% if service_visible_in_sidebar('tmdb') %}
             <li class="nav-item">
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'tmdb_' ? 'active' }}"
                  href="{{ path('tmdb_index') }}">
@@ -337,7 +337,7 @@
             </li>
             {% endif %}
 
-            {% if service_configured('radarr') %}
+            {% if service_visible_in_sidebar('radarr') %}
             <li class="nav-item">
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_media_films' or app.request.attributes.get('_route') starts with 'radarr_' ? 'active' }}"
                  href="{{ path('app_media_films') }}">
@@ -349,7 +349,7 @@
             </li>
             {% endif %}
 
-            {% if service_configured('sonarr') %}
+            {% if service_visible_in_sidebar('sonarr') %}
             <li class="nav-item">
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_media_series' or app.request.attributes.get('_route') starts with 'sonarr_' ? 'active' }}"
                  href="{{ path('app_media_series') }}">
@@ -361,7 +361,7 @@
             </li>
             {% endif %}
 
-            {% if service_configured('prowlarr') %}
+            {% if service_visible_in_sidebar('prowlarr') %}
             <li class="nav-item">
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'prowlarr_' ? 'active' }}"
                  href="{{ path('prowlarr_index') }}">
@@ -373,7 +373,7 @@
             </li>
             {% endif %}
 
-            {% if service_configured('jellyseerr') %}
+            {% if service_visible_in_sidebar('jellyseerr') %}
             <li class="nav-item">
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'jellyseerr_' ? 'active' }}"
                  href="{{ path('jellyseerr_index') }}">
@@ -385,7 +385,7 @@
             </li>
             {% endif %}
 
-            {% if service_configured('qbittorrent') %}
+            {% if service_visible_in_sidebar('qbittorrent') %}
             <li class="nav-item">
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_qbittorrent_' ? 'active' }}"
                  href="{{ path('app_qbittorrent_index') }}">
@@ -404,7 +404,7 @@
             </li>
             {% endif %}
 
-            {% if service_configured('radarr') or service_configured('sonarr') %}
+            {% if (service_configured('radarr') or service_configured('sonarr')) and feature_visible_in_sidebar('calendar') %}
             <li class="nav-item">
               <a class="nav-link {{ app.request.attributes.get('_route') == 'app_calendrier' ? 'active' }}"
                  href="{{ path('app_calendrier') }}">
@@ -420,27 +420,27 @@
             </li>
             {% endif %}
 
-            {# Lien permanent vers le wizard de configuration #}
-            <li class="nav-item mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,.06);">
-              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_setup_' ? 'active' }}"
-                 href="{{ path('app_setup_root') }}">
-                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="currentColor" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37c1 .608 2.296.07 2.572-1.065z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                </span>
-                <span class="nav-link-title">Configuration</span>
-              </a>
-            </li>
-
           </ul>
 
-          {# ── Pied sidebar : logout desktop ── #}
+          {# ── Pied sidebar : paramètres admin + logout desktop ── #}
           <div class="mt-auto d-none d-lg-block">
             <ul class="navbar-nav">
+              {% if is_granted('ROLE_ADMIN') %}
+              <li class="nav-item">
+                <a class="nav-link {{ app.request.attributes.get('_route') starts with 'admin_settings_' ? 'active' }}"
+                   href="{{ path('admin_settings_index') }}">
+                  <span class="nav-link-icon d-md-none d-lg-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" class="icon">
+                      <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37c1 .608 2.296.07 2.572-1.065z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </span>
+                  <span class="nav-link-title">Paramètres</span>
+                </a>
+              </li>
+              {% endif %}
               <li class="nav-item">
                 <a class="nav-link" href="{{ path('app_logout') }}">
                   <span class="nav-link-icon d-md-none d-lg-inline-block">

@@ -75,4 +75,64 @@ class ConfigExtensionTest extends TestCase
             );
         }
     }
+
+    // ── isServiceVisibleInSidebar ────────────────────────────────────────
+
+    private function extensionWithHideFlag(array $configuredKeys, array $hiddenServices): ConfigExtension
+    {
+        $config = $this->createMock(ConfigService::class);
+        $config->method('has')->willReturnCallback(
+            fn(string $key) => in_array($key, $configuredKeys, true)
+        );
+        $config->method('get')->willReturnCallback(function (string $key) use ($hiddenServices) {
+            foreach ($hiddenServices as $service) {
+                if ($key === 'sidebar_hide_' . $service) {
+                    return '1';
+                }
+            }
+            return null;
+        });
+        return new ConfigExtension($config);
+    }
+
+    public function testVisibleInSidebarWhenConfiguredAndNotHidden(): void
+    {
+        $ext = $this->extensionWithHideFlag(['radarr_api_key'], []);
+        $this->assertTrue($ext->isServiceVisibleInSidebar('radarr'));
+    }
+
+    public function testNotVisibleInSidebarWhenNotConfigured(): void
+    {
+        // Hide flag is irrelevant — not configured = not visible.
+        $ext = $this->extensionWithHideFlag([], []);
+        $this->assertFalse($ext->isServiceVisibleInSidebar('radarr'));
+    }
+
+    public function testNotVisibleInSidebarWhenExplicitlyHidden(): void
+    {
+        // Configured but admin hid it from the sidebar.
+        $ext = $this->extensionWithHideFlag(['radarr_api_key'], ['radarr']);
+        $this->assertFalse($ext->isServiceVisibleInSidebar('radarr'));
+    }
+
+    public function testSidebarFunctionRegistered(): void
+    {
+        $names = array_map(fn($fn) => $fn->getName(), ($this->extension([]))->getFunctions());
+        $this->assertContains('service_visible_in_sidebar', $names);
+        $this->assertContains('feature_visible_in_sidebar', $names);
+    }
+
+    // ── isFeatureVisibleInSidebar ────────────────────────────────────────
+
+    public function testFeatureVisibleByDefault(): void
+    {
+        $ext = $this->extensionWithHideFlag([], []);
+        $this->assertTrue($ext->isFeatureVisibleInSidebar('calendar'));
+    }
+
+    public function testFeatureHiddenWhenFlagSet(): void
+    {
+        $ext = $this->extensionWithHideFlag([], ['calendar']);
+        $this->assertFalse($ext->isFeatureVisibleInSidebar('calendar'));
+    }
 }

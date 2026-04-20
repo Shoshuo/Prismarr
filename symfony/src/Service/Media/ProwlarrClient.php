@@ -4,8 +4,9 @@ namespace App\Service\Media;
 
 use App\Service\ConfigService;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
-class ProwlarrClient
+class ProwlarrClient implements ResetInterface
 {
     private const SERVICE = 'Prowlarr';
 
@@ -23,6 +24,12 @@ class ProwlarrClient
             $this->baseUrl = $this->config->require('prowlarr_url', self::SERVICE);
             $this->apiKey  = $this->config->require('prowlarr_api_key', self::SERVICE);
         }
+    }
+
+    public function reset(): void
+    {
+        $this->baseUrl = '';
+        $this->apiKey  = '';
     }
 
     /** Light ping — true if the API responds and accepts the key. */

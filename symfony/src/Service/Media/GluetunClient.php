@@ -4,6 +4,7 @@ namespace App\Service\Media;
 
 use App\Service\ConfigService;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * Client for the Gluetun control API (HTTP Control Server).
@@ -11,7 +12,7 @@ use Psr\Log\LoggerInterface;
  * without exception (Gluetun is not required to use Prismarr).
  * Docs: https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/control-server.md
  */
-class GluetunClient
+class GluetunClient implements ResetInterface
 {
     /** Short cache for /publicip/ip (rarely changes, but it's a light call). */
     private ?array $publicIpCache = null;
@@ -45,6 +46,17 @@ class GluetunClient
         $this->apiKey   = $this->config->get('gluetun_api_key') ?? '';
         $this->protocol = $this->config->get('gluetun_protocol') ?? '';
         $this->configLoaded = true;
+    }
+
+    public function reset(): void
+    {
+        $this->configLoaded  = false;
+        $this->baseUrl       = null;
+        $this->apiKey        = '';
+        $this->protocol      = '';
+        $this->publicIpCache = null;
+        $this->statusCache   = null;
+        $this->portCache     = null;
     }
 
     /**

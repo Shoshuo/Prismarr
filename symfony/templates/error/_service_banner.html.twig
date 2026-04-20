@@ -53,7 +53,8 @@
         {% endif %}
       </div>
       <div class="d-flex gap-2">
-        <a href="{{ path(wizard_route) }}" class="btn btn-sm {{ _is_config ? 'btn-primary' : 'btn-outline-danger' }}">
+        {% set _target_route = _is_config ? wizard_route : 'admin_settings_index' %}
+        <a href="{{ path(_target_route) }}" class="btn btn-sm {{ _is_config ? 'btn-primary' : 'btn-outline-danger' }}">
           {{ _is_config ? 'Configurer ' ~ service : 'Modifier la configuration' }}
         </a>
         {% if not _is_config %}

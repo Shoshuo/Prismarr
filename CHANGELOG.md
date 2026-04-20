@@ -11,6 +11,11 @@ Work toward the first public release of Prismarr. Entries here will be rolled
 into `[1.0.0]` at publication time.
 
 ### Added
+- **Admin settings page** at `/admin/settings` — edit service URLs and API keys
+  without replaying the setup wizard. Per-service "test connection" button,
+  live status pill, show/hide toggle for each service in the sidebar, and
+  show/hide toggle for internal features (Calendar). Two-column layout with
+  sticky section nav, designed to host future preference sections.
 - Initial Prismarr application forked from IH-Argos (April 2026).
 - FrankenPHP 1.3.6 single-container deployment with s6-overlay supervising
   the web server and the Symfony Messenger worker.
@@ -58,6 +63,20 @@ into `[1.0.0]` at publication time.
 - Final image trimmed from 577 MB to 282 MB.
 - Settings live in the `setting` DB table, not in `.env.local` — managed by
   the wizard, persistent across container recreations.
+- Home page chooses the first configured service (TMDb → Radarr → Sonarr → qBit
+  → welcome fallback) instead of hardcoding `/decouverte`.
+- Sidebar "Paramètres" link moved to the footer area next to logout (admin-only).
+- "Modifier la configuration" banner button points to `/admin/settings` now
+  rather than replaying the setup wizard.
+
+### Fixed
+- Media clients (Radarr, Sonarr, Prowlarr, Jellyseerr, qBittorrent, TMDb,
+  Gluetun) implement `ResetInterface` so FrankenPHP worker instances
+  reload the API key/URL between requests. Previously, an admin updating
+  a service via `/admin/settings` had to wait for the worker to recycle
+  (10–30 min) before the new value was picked up.
+- `AdminSettings::save()` also clears `cache.app` so stale TMDb responses
+  aren't served after a key change.
 
 ### Contributor
 

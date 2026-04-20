@@ -4,8 +4,9 @@ namespace App\Service\Media;
 
 use App\Service\ConfigService;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
-class SonarrClient
+class SonarrClient implements ResetInterface
 {
     private const SERVICE = 'Sonarr';
 
@@ -23,6 +24,12 @@ class SonarrClient
             $this->baseUrl = $this->config->require('sonarr_url', self::SERVICE);
             $this->apiKey  = $this->config->require('sonarr_api_key', self::SERVICE);
         }
+    }
+
+    public function reset(): void
+    {
+        $this->baseUrl = '';
+        $this->apiKey  = '';
     }
 
     /** Light ping — true if the API responds and accepts the key. */

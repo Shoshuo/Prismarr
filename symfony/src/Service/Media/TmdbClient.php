@@ -6,8 +6,9 @@ use App\Service\ConfigService;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
-class TmdbClient
+class TmdbClient implements ResetInterface
 {
     private const SERVICE    = 'TMDb';
     private const BASE_URL   = 'https://api.themoviedb.org/3';
@@ -30,6 +31,15 @@ class TmdbClient
         if ($this->apiKey === '') {
             $this->apiKey = $this->config->require('tmdb_api_key', self::SERVICE);
         }
+    }
+
+    /**
+     * Drop the cached API key between FrankenPHP worker requests so an
+     * admin-triggered config change (/admin/settings) is picked up immediately.
+     */
+    public function reset(): void
+    {
+        $this->apiKey = '';
     }
 
     /** Light ping — true if TMDb responds with a valid key. Bypasses cache. */

@@ -4,8 +4,9 @@ namespace App\Service\Media;
 
 use App\Service\ConfigService;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
-class JellyseerrClient
+class JellyseerrClient implements ResetInterface
 {
     private const SERVICE = 'Jellyseerr';
 
@@ -23,6 +24,12 @@ class JellyseerrClient
             $this->baseUrl = $this->config->require('jellyseerr_url', self::SERVICE);
             $this->apiKey  = $this->config->require('jellyseerr_api_key', self::SERVICE);
         }
+    }
+
+    public function reset(): void
+    {
+        $this->baseUrl = '';
+        $this->apiKey  = '';
     }
 
     /**

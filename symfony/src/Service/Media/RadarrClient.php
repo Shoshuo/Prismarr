@@ -4,8 +4,9 @@ namespace App\Service\Media;
 
 use App\Service\ConfigService;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
-class RadarrClient
+class RadarrClient implements ResetInterface
 {
     private const SERVICE = 'Radarr';
 
@@ -23,6 +24,12 @@ class RadarrClient
             $this->baseUrl = $this->config->require('radarr_url', self::SERVICE);
             $this->apiKey  = $this->config->require('radarr_api_key', self::SERVICE);
         }
+    }
+
+    public function reset(): void
+    {
+        $this->baseUrl = '';
+        $this->apiKey  = '';
     }
 
     /** Light ping — true if the API responds and accepts the key. */

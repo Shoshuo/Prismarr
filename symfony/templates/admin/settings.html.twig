@@ -1,0 +1,503 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Paramètres{% endblock %}
+
+{% block stylesheets %}
+<style>
+  .settings-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 2.5rem;
+    align-items: start;
+  }
+  @media (max-width: 960px) {
+    .settings-page { grid-template-columns: 1fr; gap: 1rem; }
+  }
+
+  .settings-nav {
+    position: sticky;
+    top: calc(var(--tblr-navbar-height, 3.5rem) + 1rem);
+    align-self: start;
+    max-height: calc(100vh - 5rem);
+    overflow-y: auto;
+    padding: .25rem 0;
+  }
+  @media (max-width: 960px) {
+    .settings-nav {
+      position: static;
+      max-height: none;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      padding-bottom: 1rem;
+      margin-bottom: .5rem;
+    }
+  }
+
+  .settings-nav-title {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--tblr-secondary);
+    padding: 0 .75rem;
+    margin-bottom: .5rem;
+  }
+
+  .settings-nav a {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .5rem .75rem;
+    border-radius: 6px;
+    font-size: .88rem;
+    color: var(--tblr-body-color);
+    text-decoration: none;
+    transition: background .15s ease, color .15s ease;
+  }
+  .settings-nav a:hover { background: rgba(99,102,241,.08); color: inherit; }
+  .settings-nav a.active {
+    background: rgba(99,102,241,.15);
+    color: #818cf8;
+    font-weight: 600;
+  }
+  .settings-nav a.disabled {
+    color: rgba(128,128,128,.55);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .settings-nav a .coming-badge {
+    margin-left: auto;
+    font-size: .65rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    background: rgba(148,163,184,.15);
+    color: var(--tblr-secondary);
+    padding: .1rem .4rem;
+    border-radius: 4px;
+  }
+  .settings-nav a svg {
+    width: 16px; height: 16px; flex-shrink: 0;
+    opacity: .7;
+  }
+
+  .settings-content { min-width: 0; }
+
+  .settings-header { margin-bottom: 1.5rem; }
+  .settings-header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: .35rem;
+  }
+  .settings-header .text-secondary { font-size: .9rem; }
+
+  .settings-group { margin-bottom: 2.5rem; scroll-margin-top: 5rem; }
+  .settings-group-title {
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--tblr-secondary);
+    margin-bottom: .35rem;
+    padding-bottom: .35rem;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .settings-group-desc {
+    font-size: .82rem;
+    color: var(--tblr-secondary);
+    margin-bottom: 1rem;
+  }
+  [data-bs-theme="light"] .settings-group-title {
+    border-bottom-color: rgba(0,0,0,.08);
+  }
+
+  .service-card {
+    background: rgba(255,255,255,.02);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+    transition: border-color .15s ease;
+  }
+  [data-bs-theme="light"] .service-card {
+    background: #ffffff;
+    border-color: rgba(0,0,0,.08);
+    box-shadow: 0 1px 3px rgba(0,0,0,.03);
+  }
+  .service-card + .service-card { margin-top: 1rem; }
+  .service-card:focus-within { border-color: rgba(99,102,241,.55); }
+
+  .service-card-head {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    margin-bottom: .9rem;
+  }
+  .service-card-icon {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex: 0 0 34px;
+    color: #fff;
+  }
+  .service-card-title { font-weight: 600; font-size: 1rem; margin: 0; line-height: 1.2; }
+  .service-card-sub { font-size: .78rem; color: var(--tblr-secondary); margin: .1rem 0 0 0; }
+  .service-card-actions { margin-left: auto; display: flex; align-items: center; gap: .5rem; }
+
+  .status-pill {
+    font-size: .7rem; font-weight: 500;
+    padding: .2rem .55rem; border-radius: 999px;
+    background: rgba(255,255,255,.06); color: var(--tblr-secondary); white-space: nowrap;
+  }
+  .status-pill.ok      { background: rgba(34,197,94,.15);   color: #22c55e; }
+  .status-pill.ko      { background: rgba(239,68,68,.15);   color: #ef4444; }
+  .status-pill.testing { background: rgba(99,102,241,.15);  color: #6366f1; }
+
+  .field-row { margin-bottom: .75rem; }
+  .field-row:last-child { margin-bottom: 0; }
+  .field-row label {
+    display: block;
+    font-size: .78rem; font-weight: 500; letter-spacing: .02em; opacity: .75;
+    margin-bottom: .3rem;
+  }
+
+  .secret-wrapper { position: relative; }
+  .secret-wrapper input {
+    padding-right: 2.4rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    font-size: .85rem;
+  }
+  .secret-toggle {
+    position: absolute; right: .55rem; top: 50%; transform: translateY(-50%);
+    background: transparent; border: 0; padding: 0;
+    cursor: pointer; color: inherit; opacity: .5;
+    display: inline-flex; align-items: center;
+    transition: opacity .15s ease;
+  }
+  .secret-toggle:hover { opacity: .95; }
+  .secret-toggle svg { width: 16px; height: 16px; }
+
+  .settings-footer {
+    position: sticky; bottom: 0;
+    padding: 1rem 0 1.5rem;
+    background: linear-gradient(to top, var(--tblr-body-bg) 65%, transparent);
+    display: flex; justify-content: flex-end; gap: .5rem;
+    margin-top: 1rem;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+  <div class="container-xl py-4">
+    <div class="settings-page">
+
+      {# ── Nav left (sticky on desktop, collapsed on mobile) ───────── #}
+      <nav class="settings-nav" aria-label="Sections des paramètres">
+        <div class="settings-nav-title">Paramètres</div>
+        <a href="#section-services" data-settings-nav="section-services">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="6" height="6" rx="1"/>
+            <rect x="14" y="4" width="6" height="6" rx="1"/>
+            <rect x="4" y="14" width="6" height="6" rx="1"/>
+            <rect x="14" y="14" width="6" height="6" rx="1"/>
+          </svg>
+          Services externes
+        </a>
+        <a href="#section-display" data-settings-nav="section-display">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="12" rx="1"/>
+            <line x1="8" y1="20" x2="16" y2="20"/>
+            <line x1="12" y1="16" x2="12" y2="20"/>
+          </svg>
+          Affichage
+        </a>
+
+        <div class="settings-nav-title" style="margin-top: 1.25rem;">Bientôt</div>
+        <a class="disabled">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+          </svg>
+          Profil utilisateur
+          <span class="coming-badge">v1.1</span>
+        </a>
+        <a class="disabled">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2l3 7h7l-5.5 4l2 7l-6.5 -4l-6.5 4l2 -7l-5.5 -4h7z"/>
+          </svg>
+          Thème
+          <span class="coming-badge">v1.1</span>
+        </a>
+        <a class="disabled">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/>
+            <path d="M9 17v1a3 3 0 0 0 6 0v-1"/>
+          </svg>
+          Notifications
+          <span class="coming-badge">v1.x</span>
+        </a>
+      </nav>
+
+      {# ── Content ───────────────────────────────────────────────── #}
+      <div class="settings-content">
+
+        <div class="settings-header">
+          <h1>Paramètres</h1>
+          <div class="text-secondary">
+            Configuration des services et de l'interface. Les modifications
+            prennent effet immédiatement — aucun redémarrage requis.
+          </div>
+        </div>
+
+        {% for flash in app.flashes('success') %}
+          <div class="alert alert-success mb-3">{{ flash }}</div>
+        {% endfor %}
+        {% for error in errors %}
+          <div class="alert alert-danger mb-3">{{ error }}</div>
+        {% endfor %}
+
+        <form method="post" action="{{ path('admin_settings_index') }}" autocomplete="off" novalidate>
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_settings') }}"/>
+
+          {% set service_meta = {
+            'tmdb':        { icon_bg: '#0d253f', subtitle: 'Découverte films & séries, watchlist' },
+            'radarr':      { icon_bg: '#ffc230', subtitle: 'Gestionnaire de films' },
+            'sonarr':      { icon_bg: '#35c5f0', subtitle: 'Gestionnaire de séries' },
+            'prowlarr':    { icon_bg: '#e86100', subtitle: 'Agrégateur d\'indexeurs' },
+            'jellyseerr':  { icon_bg: '#6366f1', subtitle: 'Plateforme de requêtes' },
+            'qbittorrent': { icon_bg: '#2f67ba', subtitle: 'Client torrent' },
+            'gluetun':     { icon_bg: '#10b981', subtitle: 'VPN / port forwarding' },
+          } %}
+
+          {% set groupings = {
+            'Découverte':           ['tmdb'],
+            'Gestionnaires':        ['radarr', 'sonarr'],
+            'Indexeurs & requêtes': ['prowlarr', 'jellyseerr'],
+            'Téléchargements':      ['qbittorrent', 'gluetun'],
+          } %}
+
+          {# ─── Section 1 : Services externes ─────────────────────── #}
+          <section id="section-services" class="settings-group" data-section>
+            <div class="settings-group-title">Services externes</div>
+            <p class="settings-group-desc">
+              URLs et clés API des services que Prismarr pilote. Utilisez
+              <em>Tester</em> pour valider la connectivité après modification.
+            </p>
+
+            {% for group_label, service_ids in groupings %}
+              <div style="font-size:.75rem; color:var(--tblr-secondary); font-weight:600; margin: 1.25rem 0 .6rem;">
+                {{ group_label }}
+              </div>
+
+              {% for service_id in service_ids %}
+                {% set fields = groups[service_id] %}
+                {% set meta = service_meta[service_id] %}
+                <div class="service-card" data-service-card="{{ service_id }}">
+                  <div class="service-card-head">
+                    <div class="service-card-icon" style="background: {{ meta.icon_bg }};">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                           fill="none" stroke="currentColor" stroke-width="2"
+                           stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83a2 2 0 0 1 -2.83 0l-.06 -.06a1.65 1.65 0 0 0 -1.82 -.33a1.65 1.65 0 0 0 -1 1.51v.17a2 2 0 0 1 -2 2a2 2 0 0 1 -2 -2v-.09a1.65 1.65 0 0 0 -1 -1.51a1.65 1.65 0 0 0 -1.82 .33l-.06 .06a2 2 0 0 1 -2.83 0a2 2 0 0 1 0 -2.83l.06 -.06a1.65 1.65 0 0 0 .33 -1.82a1.65 1.65 0 0 0 -1.51 -1H3a2 2 0 0 1 -2 -2a2 2 0 0 1 2 -2h.09a1.65 1.65 0 0 0 1.51 -1a1.65 1.65 0 0 0 -.33 -1.82l-.06 -.06a2 2 0 0 1 0 -2.83a2 2 0 0 1 2.83 0l.06 .06a1.65 1.65 0 0 0 1.82 .33h.05a1.65 1.65 0 0 0 1 -1.51V3a2 2 0 0 1 2 -2a2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51h.05a1.65 1.65 0 0 0 1.82 -.33l.06 -.06a2 2 0 0 1 2.83 0a2 2 0 0 1 0 2.83l-.06 .06a1.65 1.65 0 0 0 -.33 1.82v.05a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-.09a1.65 1.65 0 0 0 -1.51 1z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="service-card-title">{{ service_labels[service_id] }}</p>
+                      <p class="service-card-sub">{{ meta.subtitle }}</p>
+                    </div>
+                    <div class="service-card-actions">
+                      <label class="form-check form-switch mb-0 me-1" title="Afficher dans le menu latéral">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               name="sidebar_visible_{{ service_id }}"
+                               value="1"
+                               {% if sidebar_visibility[service_id] ?? true %}checked{% endif %}/>
+                        <span class="form-check-label small text-secondary">Menu</span>
+                      </label>
+                      <span class="status-pill" data-service-result="{{ service_id }}">Non testé</span>
+                      <button type="button"
+                              class="btn btn-sm btn-outline-secondary admin-settings-test"
+                              data-service="{{ service_id }}">
+                        Tester
+                      </button>
+                    </div>
+                  </div>
+
+                  {% for field in fields %}
+                    <div class="field-row">
+                      <label for="{{ field.key }}">{{ field.label }}</label>
+                      {% if field.type == 'password' %}
+                        <div class="secret-wrapper">
+                          <input type="password"
+                                 id="{{ field.key }}"
+                                 name="{{ field.key }}"
+                                 class="form-control"
+                                 value="{{ values[field.key] ?? '' }}"
+                                 autocomplete="off"
+                                 spellcheck="false"
+                                 {% if field.placeholder is defined %}placeholder="{{ field.placeholder }}"{% endif %}/>
+                          <button type="button" class="secret-toggle" aria-label="Afficher/masquer"
+                                  data-toggle-for="{{ field.key }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>
+                              <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/>
+                            </svg>
+                          </button>
+                        </div>
+                      {% else %}
+                        <input type="text"
+                               id="{{ field.key }}"
+                               name="{{ field.key }}"
+                               class="form-control"
+                               value="{{ values[field.key] ?? '' }}"
+                               autocomplete="off"
+                               spellcheck="false"
+                               {% if field.placeholder is defined %}placeholder="{{ field.placeholder }}"{% endif %}/>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endfor %}
+            {% endfor %}
+          </section>
+
+          {# ─── Section 2 : Affichage / features internes ─────────── #}
+          <section id="section-display" class="settings-group" data-section>
+            <div class="settings-group-title">Affichage</div>
+            <p class="settings-group-desc">
+              Contrôle de la visibilité des sections dans le menu latéral.
+              Désactiver un toggle masque l'entrée sans supprimer sa configuration.
+            </p>
+
+            {% for feature_id, meta in internal_features|default([]) %}
+              <div class="service-card">
+                <div class="service-card-head" style="margin-bottom: 0;">
+                  <div class="service-card-icon" style="background: #64748b;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="service-card-title">{{ meta.label }}</p>
+                    <p class="service-card-sub">{{ meta.subtitle }}</p>
+                  </div>
+                  <div class="service-card-actions">
+                    <label class="form-check form-switch mb-0" title="Afficher dans le menu latéral">
+                      <input class="form-check-input"
+                             type="checkbox"
+                             name="sidebar_visible_{{ feature_id }}"
+                             value="1"
+                             {% if sidebar_visibility[feature_id] ?? true %}checked{% endif %}/>
+                      <span class="form-check-label small text-secondary">Menu</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </section>
+
+          <div class="settings-footer">
+            <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // Turbo-safe: IIFE + var + .then()
+
+      // ── Toggle secret visibility ────────────────────────────────────
+      document.querySelectorAll('.secret-toggle').forEach(function (btn) {
+        btn.onclick = function () {
+          var input = document.getElementById(btn.dataset.toggleFor);
+          if (!input) return;
+          input.type = input.type === 'password' ? 'text' : 'password';
+        };
+      });
+
+      // ── Test connection per service ─────────────────────────────────
+      document.querySelectorAll('.admin-settings-test').forEach(function (btn) {
+        btn.onclick = function () {
+          var service = btn.dataset.service;
+          var pill = document.querySelector('[data-service-result="' + service + '"]');
+          pill.textContent = 'Test…';
+          pill.className = 'status-pill testing';
+
+          fetch('{{ path('admin_settings_index') }}/test/' + encodeURIComponent(service), {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin',
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (data.ok) {
+                pill.textContent = 'Connecté';
+                pill.className = 'status-pill ok';
+              } else {
+                pill.textContent = 'Injoignable';
+                pill.className = 'status-pill ko';
+              }
+            })
+            .catch(function () {
+              pill.textContent = 'Erreur';
+              pill.className = 'status-pill ko';
+            });
+        };
+      });
+
+      // ── Scroll-spy : highlight active nav entry ─────────────────────
+      var navLinks = document.querySelectorAll('.settings-nav a[data-settings-nav]');
+      var sections = Array.prototype.map.call(navLinks, function (a) {
+        return document.getElementById(a.dataset.settingsNav);
+      }).filter(Boolean);
+
+      function setActive(id) {
+        navLinks.forEach(function (a) {
+          a.classList.toggle('active', a.dataset.settingsNav === id);
+        });
+      }
+
+      if ('IntersectionObserver' in window && sections.length) {
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) setActive(e.target.id);
+          });
+        }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+        sections.forEach(function (s) { observer.observe(s); });
+      }
+
+      // Smooth scroll on click (fallback for older browsers)
+      navLinks.forEach(function (a) {
+        if (a.classList.contains('disabled')) return;
+        a.onclick = function (e) {
+          var target = document.getElementById(a.dataset.settingsNav);
+          if (!target) return;
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setActive(a.dataset.settingsNav);
+          history.replaceState(null, '', '#' + a.dataset.settingsNav);
+        };
+      });
+
+      // Initial highlight based on hash or first section
+      var initial = window.location.hash.slice(1) || (sections[0] && sections[0].id);
+      if (initial) setActive(initial);
+    })();
+  </script>
+{% endblock %}
