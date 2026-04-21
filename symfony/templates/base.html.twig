@@ -10,6 +10,19 @@
   <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('img/prismarr/favicon-192.png') }}"/>
   <link rel="apple-touch-icon" href="{{ asset('img/prismarr/prismarr-icon-512.png') }}"/>
 
+  <script>
+    // Pre-apply sidebar-collapsed state from localStorage before the body
+    // renders, so users don't see a flash of the expanded sidebar on every
+    // page load when they've chosen to keep it collapsed.
+    (function () {
+      try {
+        if (localStorage.getItem('prismarrSidebarCollapsed') === '1') {
+          document.documentElement.classList.add('sidebar-collapsed');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   {% block head_meta %}{% endblock %}
 
   <style>
@@ -275,6 +288,106 @@
       background-color: var(--tblr-primary);
       border-radius: 0 3px 3px 0;
     }
+
+    /* ── Sidebar collapsible (toggle bouton en bas) ── */
+    .sidebar-toggle-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.5rem;
+      background: transparent;
+      border: none;
+      border-top: 1px solid rgba(var(--tblr-primary-rgb), 0.08);
+      color: inherit;
+      opacity: 0.5;
+      cursor: pointer;
+      transition: opacity 0.15s ease, background 0.15s ease;
+    }
+    .sidebar-toggle-btn:hover {
+      opacity: 1;
+      background: rgba(var(--tblr-primary-rgb), 0.06);
+    }
+    .sidebar-toggle-btn svg {
+      transition: transform 0.2s ease;
+    }
+    html.sidebar-collapsed .sidebar-toggle-btn svg {
+      transform: rotate(180deg);
+    }
+
+    /* Collapsed state — width reduced, labels hidden, icons centered.
+       overflow-x: hidden on both the sidebar and the body prevents the
+       labels (still laid out but hidden) from pushing a horizontal
+       scrollbar when the user shift-scrolls or two-finger swipes. */
+    html.sidebar-collapsed { overflow-x: hidden; }
+    html.sidebar-collapsed body { overflow-x: hidden; }
+    html.sidebar-collapsed aside.navbar-vertical {
+      width: 4rem !important;
+      min-width: 4rem !important;
+      overflow-x: hidden;
+    }
+    html.sidebar-collapsed aside.navbar-vertical .navbar-brand span.fw-bold,
+    html.sidebar-collapsed aside.navbar-vertical .nav-link-title,
+    html.sidebar-collapsed aside.navbar-vertical #sidebar-qbt-badge {
+      display: none !important;
+    }
+    html.sidebar-collapsed aside.navbar-vertical .nav-link {
+      justify-content: center !important;
+      padding: 0.6rem !important;
+    }
+    html.sidebar-collapsed aside.navbar-vertical .nav-link-icon {
+      margin: 0 !important;
+    }
+    html.sidebar-collapsed aside.navbar-vertical .navbar-brand {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    /* Tabler applique margin-left: 15rem sur .page-wrapper via le sibling
+       selector `.navbar-vertical~.page-wrapper` — on l'override pour coller
+       à la nouvelle largeur de la sidebar. */
+    html.sidebar-collapsed .navbar-vertical ~ .page-wrapper,
+    html.sidebar-collapsed .navbar-vertical ~ .navbar {
+      margin-left: 4rem !important;
+    }
+
+    /* Tooltip CSS pur qui s'affiche au hover quand la sidebar est repliée.
+       Le data-tooltip est peuplé par le script sidebar-init en bas de page. */
+    html.sidebar-collapsed aside.navbar-vertical .nav-link {
+      position: relative;
+    }
+    html.sidebar-collapsed aside.navbar-vertical .nav-link[data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: calc(100% + 0.5rem);
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.92);
+      color: #fff;
+      padding: 0.35rem 0.65rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 1100;
+      transition: opacity 0.12s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    html.sidebar-collapsed aside.navbar-vertical .nav-link:hover[data-tooltip]::after {
+      opacity: 1;
+    }
+
+    /* Transition douce entre les 2 états */
+    aside.navbar-vertical {
+      transition: width 0.2s ease, min-width 0.2s ease;
+    }
+    .navbar-vertical ~ .page-wrapper,
+    .navbar-vertical ~ .navbar {
+      transition: margin-left 0.2s ease;
+    }
   </style>
 
   {% block stylesheets %}{% endblock %}
@@ -455,6 +568,16 @@
                 </a>
               </li>
             </ul>
+
+            {# Toggle replier/déplier la sidebar — persist via localStorage #}
+            <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle-btn"
+                    aria-label="Replier ou déplier le menu latéral">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 6 9 12 15 18"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -1234,11 +1357,39 @@
       });
     }
 
+    // Circuit breaker: when qBit is unreachable we back off exponentially
+    // from 15s up to 2min between polls instead of hammering the NAS every
+    // 15s. A single successful poll resets the backoff to the base interval.
+    var QBT_POLL_INTERVAL_MAX = 120000; // 2 min
+    window._prismarrQbtFailCount = 0;
+
+    function qbtNextDelay() {
+      if (window._prismarrQbtFailCount === 0) return QBT_POLL_INTERVAL;
+      var scaled = QBT_POLL_INTERVAL * Math.pow(2, window._prismarrQbtFailCount - 1);
+      return Math.min(scaled, QBT_POLL_INTERVAL_MAX);
+    }
+
+    function schedulePoll() {
+      if (window._prismarrQbtPollTimer) clearTimeout(window._prismarrQbtPollTimer);
+      window._prismarrQbtPollTimer = setTimeout(pollQbt, qbtNextDelay());
+    }
+
     function pollQbt() {
       fetch(QBT_POLL_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
         .then(function (d) {
-          if (!d || d.error) return;
+          if (!d || d.error) {
+            // Server says qBit is unreachable — count it as a failure.
+            window._prismarrQbtFailCount++;
+            schedulePoll();
+            return;
+          }
+
+          // Success: reset backoff and resume base interval.
+          window._prismarrQbtFailCount = 0;
           updateBadge(d.active || 0);
 
           // Détection transitions (vs snapshot précédent)
@@ -1249,11 +1400,9 @@
           (d.items || []).forEach(function (it) {
             next[it.hash] = it.state;
             var was = prev[it.hash];
-            // downloading → completed/seeding = DL terminé
             if (was === 'downloading' && (it.state === 'completed' || it.state === 'seeding')) {
               justCompleted.push(it);
             }
-            // any → error = nouvelle erreur
             if (was && was !== 'error' && it.state === 'error') {
               justErrored.push(it);
             }
@@ -1261,7 +1410,7 @@
 
           if (window._prismarrToast) {
             justCompleted.forEach(function (it) {
-              if (alreadyNotified(it.hash)) return;  // dédup cross-tab
+              if (alreadyNotified(it.hash)) return;
               var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
               window._prismarrToast('✅ ' + truncated + ' — ' + fmtGo(it.size), 'success', 6000);
               markNotified(it.hash);
@@ -1275,30 +1424,71 @@
           }
 
           savePrev(next);
+          schedulePoll();
         })
-        .catch(function () {});
+        .catch(function () {
+          // Network error / fetch rejected → back off.
+          window._prismarrQbtFailCount++;
+          schedulePoll();
+        });
     }
 
     // Pattern singleton Turbo-safe : un seul poll global même avec re-exec
-    if (window._prismarrQbtPollTimer) clearInterval(window._prismarrQbtPollTimer);
+    if (window._prismarrQbtPollTimer) clearTimeout(window._prismarrQbtPollTimer);
     pollQbt();
-    window._prismarrQbtPollTimer = setInterval(pollQbt, QBT_POLL_INTERVAL);
 
     // Pause quand onglet caché, reprise au retour
     if (!window._prismarrQbtVisibilityBound) {
       window._prismarrQbtVisibilityBound = true;
       document.addEventListener('visibilitychange', function () {
         if (document.hidden) {
-          if (window._prismarrQbtPollTimer) { clearInterval(window._prismarrQbtPollTimer); window._prismarrQbtPollTimer = null; }
+          if (window._prismarrQbtPollTimer) { clearTimeout(window._prismarrQbtPollTimer); window._prismarrQbtPollTimer = null; }
         } else {
           pollQbt();
-          window._prismarrQbtPollTimer = setInterval(pollQbt, QBT_POLL_INTERVAL);
         }
       });
     }
   })();
   </script>
   {% endif %}
+
+  <script>
+    // Sidebar collapsible toggle + tooltip setup (Turbo-safe).
+    // - Click sur #sidebar-toggle-btn → toggle `html.sidebar-collapsed` + persist
+    // - Au load/après nav Turbo : copie .nav-link-title → data-tooltip sur chaque
+    //   lien pour alimenter le CSS tooltip qui s'affiche uniquement en collapsed.
+    (function () {
+      function setupSidebarTooltips() {
+        document.querySelectorAll('aside.navbar-vertical .nav-link').forEach(function (a) {
+          var title = a.querySelector('.nav-link-title');
+          if (title && !a.dataset.tooltip) {
+            a.dataset.tooltip = title.textContent.trim();
+          }
+        });
+      }
+
+      function bindToggle() {
+        var btn = document.getElementById('sidebar-toggle-btn');
+        if (!btn || btn.dataset.init) return;
+        btn.dataset.init = '1';
+        btn.addEventListener('click', function () {
+          var isCollapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+          try {
+            localStorage.setItem('prismarrSidebarCollapsed', isCollapsed ? '1' : '0');
+          } catch (e) {}
+        });
+      }
+
+      function init() {
+        setupSidebarTooltips();
+        bindToggle();
+      }
+
+      init();
+      document.addEventListener('turbo:load', init);
+      document.addEventListener('turbo:render', setupSidebarTooltips);
+    })();
+  </script>
 
 </body>
 </html>

@@ -86,6 +86,109 @@ class AdminSettingsController extends AbstractController
         ],
     ];
 
+    /**
+     * Display preferences — stored in DB under `display_*` keys, surfaced as
+     * selects/switches/swatches in the "Affichage" section. Source of truth
+     * for defaults and allowed values — DisplayPreferencesService reads the
+     * same constants at runtime to validate incoming values.
+     *
+     * @var array<string, array{label: string, type: string, default: string, options?: array<string, string>, help?: string}>
+     */
+    public const DISPLAY_OPTIONS = [
+        'display_home_page' => [
+            'label'   => 'Page d\'accueil par défaut',
+            'type'    => 'select',
+            'default' => 'dashboard',
+            'options' => [
+                'dashboard'   => 'Tableau de bord',
+                'discovery'   => 'Découverte (TMDb)',
+                'films'       => 'Films',
+                'series'      => 'Séries',
+                'qbittorrent' => 'Téléchargements',
+                'last'        => 'Dernière page visitée',
+            ],
+            'help' => 'La page que Prismarr affiche quand vous vous connectez.',
+        ],
+        'display_toasts' => [
+            'label'   => 'Notifications (toasts)',
+            'type'    => 'switch',
+            'default' => '1',
+            'help'    => 'Afficher les bulles fugaces en bas d\'écran (fin de téléchargement, erreurs).',
+        ],
+        'display_timezone' => [
+            'label'   => 'Fuseau horaire',
+            'type'    => 'timezone',
+            'default' => 'Europe/Paris',
+            'help'    => 'Utilisé pour afficher toutes les dates/heures.',
+        ],
+        'display_date_format' => [
+            'label'   => 'Format de date',
+            'type'    => 'select',
+            'default' => 'fr',
+            'options' => [
+                'fr'  => 'Français (21/04/2026)',
+                'us'  => 'Américain (Apr 21, 2026)',
+                'iso' => 'ISO (2026-04-21)',
+            ],
+        ],
+        'display_time_format' => [
+            'label'   => 'Format d\'heure',
+            'type'    => 'select',
+            'default' => '24h',
+            'options' => [
+                '24h' => '24h (14:30)',
+                '12h' => '12h (2:30 PM)',
+            ],
+        ],
+        'display_theme_color' => [
+            'label'   => 'Couleur principale',
+            'type'    => 'color',
+            'default' => 'indigo',
+            'options' => [
+                'indigo' => '#6366f1',
+                'red'    => '#ef4444',
+                'green'  => '#22c55e',
+                'orange' => '#f59e0b',
+                'pink'   => '#ec4899',
+                'blue'   => '#3b82f6',
+            ],
+        ],
+        'display_default_view' => [
+            'label'   => 'Vue par défaut (Films / Séries)',
+            'type'    => 'select',
+            'default' => 'poster',
+            'options' => [
+                'poster'  => 'Affiches',
+                'list'    => 'Liste',
+                'grid'    => 'Grille',
+                'compact' => 'Compact',
+                'table'   => 'Tableau',
+            ],
+        ],
+        'display_qbit_refresh' => [
+            'label'   => 'Rafraîchissement qBittorrent',
+            'type'    => 'select',
+            'default' => '2',
+            'options' => [
+                '1'  => '1 seconde (temps réel)',
+                '2'  => '2 secondes (défaut)',
+                '5'  => '5 secondes',
+                '10' => '10 secondes (économe)',
+                '0'  => 'Désactivé',
+            ],
+            'help' => 'Fréquence du polling automatique sur la page Téléchargements.',
+        ],
+        'display_ui_density' => [
+            'label'   => 'Densité de l\'interface',
+            'type'    => 'select',
+            'default' => 'comfortable',
+            'options' => [
+                'comfortable' => 'Confortable (défaut)',
+                'compact'     => 'Compacte',
+            ],
+        ],
+    ];
+
     public function __construct(
         private readonly SettingRepository $settings,
         private readonly ConfigService $config,
@@ -118,6 +221,9 @@ class AdminSettingsController extends AbstractController
             'values'             => $this->loadValues(),
             'sidebar_visibility' => $this->loadSidebarVisibility(),
             'internal_features'  => self::INTERNAL_FEATURES,
+            'display_options'    => self::DISPLAY_OPTIONS,
+            'display_values'     => $this->loadDisplayValues(),
+            'timezones'          => \DateTimeZone::listIdentifiers(),
             'errors'             => $errors,
         ]);
     }
@@ -173,6 +279,19 @@ class AdminSettingsController extends AbstractController
         return $out;
     }
 
+    /**
+     * @return array<string, string>  display_* key => current or default value
+     */
+    private function loadDisplayValues(): array
+    {
+        $out = [];
+        foreach (self::DISPLAY_OPTIONS as $key => $spec) {
+            $stored = $this->config->get($key);
+            $out[$key] = $stored !== null && $stored !== '' ? $stored : $spec['default'];
+        }
+        return $out;
+    }
+
     private function saveSubmitted(Request $request): void
     {
         $payload = [];
@@ -192,6 +311,14 @@ class AdminSettingsController extends AbstractController
             $payload['sidebar_hide_' . $id] = $visible ? null : '1';
         }
 
+        // Display preferences — only accept values from the declared allow-list
+        // (selects/colors) or '1'/'0' for switches. Anything else is dropped
+        // silently and the default kicks back in on next read.
+        foreach (self::DISPLAY_OPTIONS as $key => $spec) {
+            $raw = trim((string) $request->request->get($key, ''));
+            $payload[$key] = $this->normalizeDisplayValue($spec, $raw);
+        }
+
         $this->settings->setMany($payload);
         $this->config->invalidate();
         $this->health->invalidate();
@@ -199,5 +326,26 @@ class AdminSettingsController extends AbstractController
         // the previous config doesn't linger up to an hour.
         $this->appCache->clear();
         $this->addFlash('success', 'Configuration enregistrée.');
+    }
+
+    /**
+     * @param array{label: string, type: string, default: string, options?: array<string, string>, help?: string} $spec
+     */
+    private function normalizeDisplayValue(array $spec, string $raw): ?string
+    {
+        if ($spec['type'] === 'switch') {
+            return $raw === '1' ? '1' : '0';
+        }
+
+        if ($spec['type'] === 'timezone') {
+            return in_array($raw, \DateTimeZone::listIdentifiers(), true) ? $raw : null;
+        }
+
+        if (isset($spec['options']) && isset($spec['options'][$raw])) {
+            return $raw;
+        }
+
+        // Unknown / blanked value → null so loadDisplayValues() falls back to default.
+        return null;
     }
 }

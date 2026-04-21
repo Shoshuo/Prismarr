@@ -327,7 +327,9 @@ class QBittorrentClient implements ResetInterface
             $ch = curl_init($url);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CONNECTTIMEOUT => 3,
                 CURLOPT_TIMEOUT        => 15,
+                CURLOPT_NOSIGNAL       => 1,
                 CURLOPT_POST           => true,
                 CURLOPT_POSTFIELDS     => $postFields,
                 CURLOPT_HTTPHEADER     => ['Cookie: SID=' . $sid],
@@ -626,7 +628,14 @@ class QBittorrentClient implements ResetInterface
         $ch  = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 3,
             CURLOPT_TIMEOUT        => 8,
+            // NOSIGNAL is critical in PHP worker mode on Alpine: without it
+            // libcurl falls back to SIGALRM for DNS resolution, which PHP
+            // masks → the actual timeout balloons to 30s+ and trips
+            // max_execution_time. With NOSIGNAL, libcurl honors the explicit
+            // timeouts above even on slow/unreachable hosts.
+            CURLOPT_NOSIGNAL       => 1,
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => http_build_query(['username' => $this->user, 'password' => $this->password]),
             CURLOPT_HEADER         => true,
@@ -674,7 +683,9 @@ class QBittorrentClient implements ResetInterface
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 3,
             CURLOPT_TIMEOUT        => 8,
+            CURLOPT_NOSIGNAL       => 1,
             CURLOPT_HTTPHEADER     => $headers,
         ]);
 
@@ -712,7 +723,9 @@ class QBittorrentClient implements ResetInterface
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 3,
             CURLOPT_TIMEOUT        => 10,
+            CURLOPT_NOSIGNAL       => 1,
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => http_build_query($params),
             CURLOPT_HTTPHEADER     => $headers,

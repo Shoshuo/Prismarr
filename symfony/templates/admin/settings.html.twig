@@ -92,7 +92,10 @@
   }
   .settings-header .text-secondary { font-size: .9rem; }
 
-  .settings-group { margin-bottom: 2.5rem; scroll-margin-top: 5rem; }
+  /* Sections work as tabs: only the active one is visible. Click on a
+     .settings-nav link swaps which section has `.is-active`. */
+  .settings-group { display: none; margin-bottom: 2.5rem; }
+  .settings-group.is-active { display: block; }
   .settings-group-title {
     font-size: .75rem;
     font-weight: 600;
@@ -183,6 +186,36 @@
     background: linear-gradient(to top, var(--tblr-body-bg) 65%, transparent);
     display: flex; justify-content: flex-end; gap: .5rem;
     margin-top: 1rem;
+  }
+
+  /* Display preferences grid inside the "Affichage" card */
+  .display-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.1rem;
+  }
+  @media (min-width: 768px) {
+    .display-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .display-row { display: flex; flex-direction: column; gap: .35rem; }
+  .display-label {
+    font-size: .8rem; font-weight: 500; opacity: .85;
+    margin-bottom: 0;
+  }
+  .display-help { font-size: .72rem; opacity: .55; margin: .1rem 0 0; }
+
+  /* Color swatches — 6 clickable circles */
+  .color-swatches { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .color-swatch {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid transparent; cursor: pointer;
+    padding: 0; transition: transform .1s ease, border-color .15s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,.15);
+  }
+  .color-swatch:hover { transform: scale(1.08); }
+  .color-swatch.is-active {
+    border-color: currentColor;
+    box-shadow: 0 0 0 2px var(--tblr-body-bg) inset, 0 2px 6px rgba(0,0,0,.25);
   }
 </style>
 {% endblock %}
@@ -369,14 +402,83 @@
             {% endfor %}
           </section>
 
-          {# ─── Section 2 : Affichage / features internes ─────────── #}
+          {# ─── Section 2 : Affichage / préférences utilisateur ──── #}
           <section id="section-display" class="settings-group" data-section>
             <div class="settings-group-title">Affichage</div>
             <p class="settings-group-desc">
-              Contrôle de la visibilité des sections dans le menu latéral.
-              Désactiver un toggle masque l'entrée sans supprimer sa configuration.
+              Préférences d'affichage personnelles (fuseau horaire, format de date,
+              thème, densité) et visibilité des sections du menu latéral.
             </p>
 
+            {# --- Préférences ----------------------------------------- #}
+            <div class="service-card">
+              <div class="service-card-head" style="margin-bottom: .75rem;">
+                <div class="service-card-icon" style="background: #6366f1;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                       fill="none" stroke="currentColor" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M3.6 9h16.8M3.6 15h16.8M11.5 3a17 17 0 0 0 0 18M12.5 3a17 17 0 0 1 0 18"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="service-card-title">Préférences</p>
+                  <p class="service-card-sub">Comportement par défaut de l'interface</p>
+                </div>
+              </div>
+
+              <div class="display-grid">
+                {% for key, spec in display_options %}
+                  <div class="display-row">
+                    <label class="display-label" for="{{ key }}">{{ spec.label }}</label>
+
+                    {% if spec.type == 'switch' %}
+                      <label class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox"
+                               id="{{ key }}" name="{{ key }}" value="1"
+                               {% if display_values[key] == '1' %}checked{% endif %}/>
+                        <span class="form-check-label small text-secondary">
+                          {{ display_values[key] == '1' ? 'Activées' : 'Désactivées' }}
+                        </span>
+                      </label>
+
+                    {% elseif spec.type == 'timezone' %}
+                      <select id="{{ key }}" name="{{ key }}" class="form-select form-select-sm">
+                        {% for tz in timezones %}
+                          <option value="{{ tz }}" {% if display_values[key] == tz %}selected{% endif %}>{{ tz }}</option>
+                        {% endfor %}
+                      </select>
+
+                    {% elseif spec.type == 'color' %}
+                      <input type="hidden" id="{{ key }}" name="{{ key }}" value="{{ display_values[key] }}"/>
+                      <div class="color-swatches" data-color-target="{{ key }}">
+                        {% for color_id, hex in spec.options %}
+                          <button type="button"
+                                  class="color-swatch {% if display_values[key] == color_id %}is-active{% endif %}"
+                                  data-color-value="{{ color_id }}"
+                                  style="background: {{ hex }};"
+                                  aria-label="{{ color_id }}"
+                                  title="{{ color_id }}"></button>
+                        {% endfor %}
+                      </div>
+
+                    {% else %}{# select #}
+                      <select id="{{ key }}" name="{{ key }}" class="form-select form-select-sm">
+                        {% for value, label in spec.options %}
+                          <option value="{{ value }}" {% if display_values[key] == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                    {% endif %}
+
+                    {% if spec.help is defined %}
+                      <p class="display-help">{{ spec.help }}</p>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            {# --- Visibilité des features internes -------------------- #}
             {% for feature_id, meta in internal_features|default([]) %}
               <div class="service-card">
                 <div class="service-card-head" style="margin-bottom: 0;">
@@ -431,6 +533,23 @@
         };
       });
 
+      // ── Color swatches picker ───────────────────────────────────────
+      document.querySelectorAll('.color-swatches').forEach(function (group) {
+        var hiddenId = group.dataset.colorTarget;
+        var hidden = document.getElementById(hiddenId);
+        if (!hidden) return;
+
+        group.querySelectorAll('.color-swatch').forEach(function (sw) {
+          sw.onclick = function () {
+            hidden.value = sw.dataset.colorValue;
+            group.querySelectorAll('.color-swatch').forEach(function (s) {
+              s.classList.remove('is-active');
+            });
+            sw.classList.add('is-active');
+          };
+        });
+      });
+
       // ── Test connection per service ─────────────────────────────────
       document.querySelectorAll('.admin-settings-test').forEach(function (btn) {
         btn.onclick = function () {
@@ -461,43 +580,43 @@
         };
       });
 
-      // ── Scroll-spy : highlight active nav entry ─────────────────────
+      // ── Tabs navigation ─────────────────────────────────────────────
+      // The sections are hidden via CSS and swapped in/out on click. We
+      // persist the active tab in sessionStorage so POST/Redirect cycles
+      // (the form submits and the server redirects back) land on the
+      // same section the user was editing.
       var navLinks = document.querySelectorAll('.settings-nav a[data-settings-nav]');
-      var sections = Array.prototype.map.call(navLinks, function (a) {
-        return document.getElementById(a.dataset.settingsNav);
-      }).filter(Boolean);
+      var sections = document.querySelectorAll('.settings-group[data-section]');
+      var STORAGE_KEY = 'prismarrSettingsActiveSection';
 
-      function setActive(id) {
+      function activate(id) {
+        if (!id) return;
+        sections.forEach(function (s) {
+          s.classList.toggle('is-active', s.id === id);
+        });
         navLinks.forEach(function (a) {
           a.classList.toggle('active', a.dataset.settingsNav === id);
         });
+        try { sessionStorage.setItem(STORAGE_KEY, id); } catch (e) {}
       }
 
-      if ('IntersectionObserver' in window && sections.length) {
-        var observer = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) {
-            if (e.isIntersecting) setActive(e.target.id);
-          });
-        }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
-        sections.forEach(function (s) { observer.observe(s); });
-      }
-
-      // Smooth scroll on click (fallback for older browsers)
       navLinks.forEach(function (a) {
         if (a.classList.contains('disabled')) return;
         a.onclick = function (e) {
-          var target = document.getElementById(a.dataset.settingsNav);
-          if (!target) return;
           e.preventDefault();
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          setActive(a.dataset.settingsNav);
-          history.replaceState(null, '', '#' + a.dataset.settingsNav);
+          var id = a.dataset.settingsNav;
+          activate(id);
+          history.replaceState(null, '', '#' + id);
         };
       });
 
-      // Initial highlight based on hash or first section
-      var initial = window.location.hash.slice(1) || (sections[0] && sections[0].id);
-      if (initial) setActive(initial);
+      // Initial activation: URL hash wins, then last stored, then first section
+      var initial = window.location.hash.slice(1);
+      if (!initial) {
+        try { initial = sessionStorage.getItem(STORAGE_KEY) || ''; } catch (e) {}
+      }
+      if (!initial && sections.length) initial = sections[0].id;
+      activate(initial);
     })();
   </script>
 {% endblock %}
