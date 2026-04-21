@@ -435,6 +435,24 @@
         <div class="collapse navbar-collapse" id="sidebar-menu">
           <ul class="navbar-nav pt-lg-3">
 
+            {# Tableau de bord — homepage par défaut depuis Session 9b #}
+            <li class="nav-item">
+              <a class="nav-link {{ app.request.attributes.get('_route') == 'app_dashboard' ? 'active' }}"
+                 href="{{ path('app_dashboard') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                       fill="none" stroke="#6366f1" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round" class="icon">
+                    <rect x="4" y="4" width="6" height="6" rx="1"/>
+                    <rect x="14" y="4" width="6" height="6" rx="1"/>
+                    <rect x="4" y="14" width="6" height="6" rx="1"/>
+                    <rect x="14" y="14" width="6" height="6" rx="1"/>
+                  </svg>
+                </span>
+                <span class="nav-link-title">Tableau de bord</span>
+              </a>
+            </li>
+
             {# Découverte TMDb — page d'accueil Prismarr #}
             {% if service_visible_in_sidebar('tmdb') %}
             <li class="nav-item">

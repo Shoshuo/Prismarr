@@ -4,6 +4,7 @@ namespace App\Tests\Controller;
 
 use App\Controller\HomeController;
 use App\Service\ConfigService;
+use App\Service\DisplayPreferencesService;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -11,13 +12,14 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
- * Covers the smart redirect logic added in Session 8c that replaced the
- * hardcoded `redirect tmdb_index` with a chain of `has(key)` checks.
- * Regression test for the /setup/tmdb loop after a wizard skip.
+ * Covers the landing page redirect logic. Since Session 9b the admin can
+ * choose a `display_home_page` preference (dashboard by default) and we
+ * only fall back to the legacy service-availability chain when the chosen
+ * target isn't reachable.
  */
 class HomeControllerTest extends TestCase
 {
-    private function newController(array $hasKeys): HomeController
+    private function newController(): HomeController
     {
         $controller = new HomeController();
 
@@ -48,59 +50,77 @@ class HomeControllerTest extends TestCase
         return $config;
     }
 
-    public function testRedirectsToTmdbWhenConfigured(): void
+    private function prefs(string $homePage): DisplayPreferencesService
     {
-        $controller = $this->newController([]);
-        $response = $controller->index($this->config(['tmdb_api_key']));
+        $prefs = $this->createMock(DisplayPreferencesService::class);
+        $prefs->method('getHomePage')->willReturn($homePage);
+        return $prefs;
+    }
+
+    public function testDashboardIsTheDefaultLanding(): void
+    {
+        // Default preference = 'dashboard' → always redirects to dashboard,
+        // regardless of which services are configured.
+        $response = $this->newController()->index($this->config([]), $this->prefs('dashboard'));
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertStringContainsString('app_dashboard', $response->getTargetUrl());
+    }
+
+    public function testDiscoveryPreferenceRedirectsToTmdbWhenConfigured(): void
+    {
+        $response = $this->newController()->index($this->config(['tmdb_api_key']), $this->prefs('discovery'));
+
         $this->assertStringContainsString('tmdb_index', $response->getTargetUrl());
     }
 
-    public function testFallsBackToRadarrIfNoTmdb(): void
+    public function testFilmsPreferenceRedirectsToRadarrWhenConfigured(): void
     {
-        $controller = $this->newController([]);
-        $response = $controller->index($this->config(['radarr_api_key']));
+        $response = $this->newController()->index($this->config(['radarr_api_key']), $this->prefs('films'));
 
-        $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertStringContainsString('app_media_films', $response->getTargetUrl());
     }
 
-    public function testFallsBackToSonarrIfOnlySonarr(): void
+    public function testSeriesPreferenceRedirectsToSonarrWhenConfigured(): void
     {
-        $controller = $this->newController([]);
-        $response = $controller->index($this->config(['sonarr_api_key']));
+        $response = $this->newController()->index($this->config(['sonarr_api_key']), $this->prefs('series'));
 
-        $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertStringContainsString('app_media_series', $response->getTargetUrl());
     }
 
-    public function testFallsBackToQbittorrentIfOnlyQbit(): void
+    public function testQbittorrentPreferenceRedirectsWhenConfigured(): void
     {
-        $controller = $this->newController([]);
-        $response = $controller->index($this->config(['qbittorrent_url']));
+        $response = $this->newController()->index($this->config(['qbittorrent_url']), $this->prefs('qbittorrent'));
 
-        $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertStringContainsString('app_qbittorrent_index', $response->getTargetUrl());
     }
 
-    public function testRendersWelcomeWhenNothingConfigured(): void
+    public function testFallsBackToChainWhenPreferredTargetIsNotConfigured(): void
     {
-        $controller = $this->newController([]);
-        $response = $controller->index($this->config([]));
+        // User prefers discovery but hasn't configured TMDb → fallback to
+        // the first configured service (Radarr here).
+        $response = $this->newController()->index($this->config(['radarr_api_key']), $this->prefs('discovery'));
 
-        // Not a redirect → must be a 200 render (welcome.html.twig).
+        $this->assertStringContainsString('app_media_films', $response->getTargetUrl());
+    }
+
+    public function testLastVisitedPreferenceFallsBackToChain(): void
+    {
+        // 'last' is declared in DISPLAY_OPTIONS but not yet implemented —
+        // it must never crash: fall back to whatever is configured.
+        $response = $this->newController()->index($this->config(['tmdb_api_key']), $this->prefs('last'));
+
+        $this->assertStringContainsString('tmdb_index', $response->getTargetUrl());
+    }
+
+    public function testRendersWelcomeWhenNothingConfiguredAndPreferenceUnreachable(): void
+    {
+        // No config + preference that requires config → welcome template.
+        // Covers a fresh install where the wizard hasn't been completed.
+        $response = $this->newController()->index($this->config([]), $this->prefs('discovery'));
+
         $this->assertNotInstanceOf(RedirectResponse::class, $response);
         $this->assertInstanceOf(Response::class, $response);
         $this->assertSame(200, $response->getStatusCode());
-    }
-
-    public function testTmdbTakesPriorityOverRadarr(): void
-    {
-        // Both configured → TMDb wins (the discovery is the intended landing).
-        $controller = $this->newController([]);
-        $response = $controller->index($this->config(['tmdb_api_key', 'radarr_api_key']));
-
-        $this->assertStringContainsString('tmdb_index', $response->getTargetUrl());
     }
 }

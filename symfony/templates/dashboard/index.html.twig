@@ -1,0 +1,733 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tableau de bord{% endblock %}
+{% block page_title %}{% endblock %}
+
+{% block stylesheets %}
+<style>
+  /* ── Cards : délimitation plus contrastée ──────────────────────── */
+  .dashboard-scope .card {
+    border: 1px solid rgba(148, 163, 184, .18);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, .25);
+    border-radius: 12px;
+  }
+  [data-bs-theme="light"] .dashboard-scope .card {
+    border-color: rgba(0, 0, 0, .1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+  }
+  .dashboard-scope .card-header {
+    border-bottom: 1px solid rgba(148, 163, 184, .14);
+    padding: 1rem 1.15rem .85rem;
+  }
+  [data-bs-theme="light"] .dashboard-scope .card-header { border-bottom-color: rgba(0, 0, 0, .07); }
+  .dashboard-scope .card-title {
+    display: flex; align-items: center; gap: .55rem;
+    font-size: .95rem; font-weight: 600;
+    margin: 0;
+  }
+  .card-title-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 7px;
+    background: rgba(var(--tblr-primary-rgb, 99,102,241), .15);
+    color: var(--tblr-primary);
+    flex-shrink: 0;
+  }
+
+  /* Small button shared by card-header & section-header actions
+     (Calendrier →, Tout voir →, Découverte →, Gérer →, Paramètres →). */
+  .dash-action-btn,
+  .row-section-link {
+    display: inline-flex; align-items: center; gap: .25rem;
+    padding: .25rem .55rem;
+    border-radius: 5px;
+    background: rgba(var(--tblr-primary-rgb, 99,102,241), .1);
+    border: 1px solid rgba(var(--tblr-primary-rgb, 99,102,241), .22);
+    color: var(--tblr-primary);
+    font-size: .72rem; font-weight: 500;
+    text-decoration: none;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .dash-action-btn:hover,
+  .dash-action-btn:focus,
+  .row-section-link:hover,
+  .row-section-link:focus {
+    background: rgba(var(--tblr-primary-rgb, 99,102,241), .2);
+    border-color: rgba(var(--tblr-primary-rgb, 99,102,241), .45);
+    color: var(--tblr-primary);
+    text-decoration: none;
+  }
+
+  /* ── Hero banner ─────────────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    min-height: 560px;
+    display: flex; align-items: flex-end;
+    padding: 3.5rem 3.5rem 2.75rem;
+    color: #fff;
+    box-shadow: 0 18px 70px rgba(0,0,0,.55);
+  }
+  @media (max-width: 768px) {
+    .hero { min-height: 440px; padding: 2rem 1.5rem 1.75rem; }
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center 25%;
+    filter: brightness(.6) saturate(1.15);
+    transform: scale(1.05);
+  }
+  .hero-fade {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top,
+      rgba(10,10,15,.98) 0%,
+      rgba(10,10,15,.82) 30%,
+      rgba(10,10,15,.45) 55%,
+      rgba(99,102,241,.18) 100%);
+  }
+  .hero-noBg { background: linear-gradient(135deg, #4338ca 0%, #6366f1 50%, #8b5cf6 100%); }
+  .hero-inner { position: relative; z-index: 1; width: 100%; }
+  .hero-kicker { font-size: .78rem; opacity: .8; letter-spacing: .1em; text-transform: uppercase; margin-bottom: .35rem; font-weight: 500; }
+  .hero-greeting {
+    font-size: 3rem; font-weight: 800; line-height: 1.05;
+    letter-spacing: -0.025em; margin: 0 0 .25rem; color: #fff;
+    text-shadow: 0 2px 16px rgba(0,0,0,.5);
+  }
+  @media (max-width: 768px) { .hero-greeting { font-size: 2.1rem; } }
+  .hero-spotlight {
+    margin-top: 1.25rem;
+    display: block;
+    text-decoration: none;
+    color: #fff;
+    max-width: 640px;
+  }
+  .hero-spotlight-label {
+    display: inline-block;
+    font-size: .7rem; font-weight: 600;
+    padding: .28rem .7rem;
+    background: rgba(99,102,241,.28);
+    border: 1px solid rgba(99,102,241,.55);
+    border-radius: 999px;
+    text-transform: uppercase; letter-spacing: .08em;
+    backdrop-filter: blur(8px);
+    margin-bottom: .9rem;
+  }
+  .hero-spotlight-title {
+    font-size: 1.95rem; font-weight: 700; line-height: 1.15;
+    letter-spacing: -0.015em;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0,0,0,.5);
+    margin-bottom: .6rem;
+  }
+  @media (max-width: 768px) { .hero-spotlight-title { font-size: 1.5rem; } }
+  .hero-spotlight-meta {
+    display: flex; flex-wrap: wrap; gap: .6rem .9rem;
+    font-size: .8rem; opacity: .8;
+    margin-bottom: .75rem;
+    align-items: center;
+  }
+  .hero-spotlight-meta span { display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap; }
+  .hero-spotlight-meta .rating { color: #fbbf24; font-weight: 600; }
+  .hero-spotlight-meta .chip {
+    padding: .15rem .5rem;
+    background: rgba(255,255,255,.12);
+    border-radius: 4px;
+    backdrop-filter: blur(8px);
+    font-size: .7rem;
+  }
+  .hero-spotlight-overview {
+    font-size: .88rem;
+    line-height: 1.5;
+    opacity: .85;
+    margin-bottom: 1rem;
+    max-width: 620px;
+  }
+  .hero-spotlight-cta {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .65rem 1.2rem;
+    background: #fff;
+    color: #0f0f14;
+    font-weight: 600; font-size: .88rem;
+    border-radius: 8px;
+    text-decoration: none !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    transition: transform .15s ease, background .15s ease;
+  }
+  .hero-spotlight-cta:hover,
+  .hero-spotlight-cta:focus {
+    transform: translateY(-1px);
+    background: #e5e7eb;
+    color: #0f0f14;
+    text-decoration: none !important;
+  }
+  .hero-stats {
+    display: flex; gap: 1.5rem; flex-wrap: wrap;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,.12);
+  }
+  .hero-stat { display: flex; align-items: center; gap: .6rem; }
+  .hero-stat-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.12); backdrop-filter: blur(6px);
+  }
+  .hero-stat-value { font-size: 1.2rem; font-weight: 600; line-height: 1; }
+  .hero-stat-label { font-size: .72rem; opacity: .65; margin-top: .15rem; text-transform: uppercase; letter-spacing: .04em; }
+
+  /* ── Mini-calendar (7 days, one column per day) ───────────────── */
+  .mini-cal {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    padding: .85rem;
+  }
+  @media (max-width: 768px) { .mini-cal { grid-template-columns: repeat(2, 1fr); } }
+
+  .mini-cal-day {
+    display: flex; flex-direction: column;
+    background: var(--tblr-bg-surface-secondary);
+    border: 1px solid rgba(148,163,184,.12);
+    border-radius: 8px;
+    padding: .45rem .4rem .5rem;
+    min-height: 140px;
+    transition: border-color .15s ease;
+  }
+  .mini-cal-day.is-today {
+    background: rgba(var(--tblr-primary-rgb, 99,102,241), .08);
+    border-color: rgba(var(--tblr-primary-rgb, 99,102,241), .4);
+  }
+  .mini-cal-day-head {
+    text-align: center;
+    padding: .15rem 0 .35rem;
+    border-bottom: 1px dashed rgba(148,163,184,.18);
+    margin-bottom: .4rem;
+  }
+  .mini-cal-dow {
+    font-size: .62rem; font-weight: 600;
+    color: var(--tblr-secondary);
+    text-transform: uppercase; letter-spacing: .08em;
+  }
+  .mini-cal-dom {
+    font-size: 1.2rem; font-weight: 700;
+    color: var(--tblr-body-color); line-height: 1;
+    margin-top: .15rem;
+  }
+  .mini-cal-day.is-today .mini-cal-dow,
+  .mini-cal-day.is-today .mini-cal-dom { color: var(--tblr-primary); }
+
+  .mini-cal-items { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .mini-cal-item {
+    display: flex; align-items: center; gap: 5px;
+    padding: 3px 4px;
+    background: var(--tblr-bg-surface);
+    border-radius: 4px;
+    text-decoration: none !important;
+    color: var(--tblr-body-color);
+    min-width: 0;
+    transition: background .1s ease;
+  }
+  .mini-cal-item:hover { background: rgba(var(--tblr-primary-rgb, 99,102,241), .12); color: var(--tblr-body-color); }
+  .mini-cal-item-thumb {
+    width: 18px; height: 26px; flex-shrink: 0; border-radius: 2px;
+    background-size: cover; background-position: center;
+    background-color: var(--tblr-bg-surface-secondary);
+  }
+  .mini-cal-item-thumb.is-placeholder {
+    display: flex; align-items: center; justify-content: center;
+    font-size: .7rem; color: var(--tblr-secondary);
+  }
+  .mini-cal-item-body { min-width: 0; flex: 1; }
+  .mini-cal-item-title {
+    font-size: .68rem; font-weight: 500; line-height: 1.2;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mini-cal-item-meta {
+    font-size: .58rem; color: var(--tblr-secondary); line-height: 1;
+    margin-top: 1px;
+  }
+  .mini-cal-empty {
+    font-size: .65rem; color: var(--tblr-secondary); opacity: .5;
+    text-align: center; margin: auto 0; padding: .5rem 0;
+    font-style: italic;
+  }
+
+  /* ── List item inside .card (reuses Tabler spacing) ──────────────── */
+  .dash-list .list-group-item {
+    display: flex; align-items: center; gap: .85rem;
+    padding: .7rem 1rem;
+  }
+  .dash-list .list-group-item + .list-group-item { border-top: 1px solid var(--tblr-border-color); }
+  .dash-list .list-group-item:hover { background: rgba(var(--tblr-primary-rgb, 99, 102, 241), .05); }
+  .dash-poster {
+    width: 40px; height: 60px; border-radius: 5px;
+    object-fit: cover; flex-shrink: 0;
+    background: var(--tblr-bg-surface-secondary);
+    box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  }
+  .dash-poster-placeholder {
+    width: 40px; height: 60px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--tblr-bg-surface-secondary);
+    color: var(--tblr-secondary);
+    font-size: 1.2rem; flex-shrink: 0;
+  }
+  .dash-item-body { flex: 1; min-width: 0; }
+  .dash-item-title { font-weight: 500; font-size: .88rem; line-height: 1.25; color: var(--tblr-body-color); }
+  .dash-item-sub { font-size: .75rem; color: var(--tblr-secondary); margin-top: .2rem; }
+  .dash-item-aside { text-align: right; flex-shrink: 0; }
+  .dash-date-rel { font-weight: 600; font-size: .82rem; color: var(--tblr-body-color); }
+  .dash-date-rel.is-soon { color: var(--tblr-primary); }
+  .dash-date-time { font-size: .68rem; color: var(--tblr-secondary); margin-top: .1rem; }
+  .dash-badge-inline {
+    display: inline-block;
+    padding: .1rem .4rem; border-radius: 3px; font-size: .65rem; font-weight: 500;
+    background: rgba(var(--tblr-primary-rgb, 99, 102, 241), .18);
+    color: var(--tblr-primary); margin-left: .25rem;
+  }
+
+  /* ── Poster tiles (trending + recent additions) ─────────────────── */
+  .row-section { margin-bottom: 1.75rem; }
+  .row-section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: .8rem;
+    padding-bottom: .55rem;
+    border-bottom: 1px solid rgba(148,163,184,.14);
+  }
+  [data-bs-theme="light"] .row-section-head { border-bottom-color: rgba(0,0,0,.08); }
+  .row-section-title {
+    font-size: 1rem; font-weight: 600; margin: 0; color: var(--tblr-body-color);
+    display: flex; align-items: center; gap: .55rem;
+  }
+  .row-section-title-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 7px;
+    background: rgba(var(--tblr-primary-rgb, 99,102,241), .15);
+    color: var(--tblr-primary);
+  }
+
+  /* Fixed column counts that always divide the 16-item payload cleanly →
+     no dangling tiles at the end of the last row. Mobile 2 cols (= 8 rows),
+     tablet 4 cols (= 4 rows), desktop 8 cols (= 2 full rows of 8). */
+  .poster-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .75rem;
+  }
+  @media (min-width: 576px) { .poster-row { grid-template-columns: repeat(4, 1fr); } }
+  @media (min-width: 992px) { .poster-row { grid-template-columns: repeat(8, 1fr); } }
+  .poster-tile {
+    display: flex; flex-direction: column;
+    text-decoration: none !important; color: inherit;
+    background: var(--tblr-bg-surface);
+    border: 1px solid rgba(148,163,184,.18);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+  }
+  [data-bs-theme="light"] .poster-tile {
+    border-color: rgba(0,0,0,.1);
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .poster-tile:hover,
+  .poster-tile:focus,
+  .poster-tile:hover .poster-tile-title,
+  .poster-tile:hover .poster-tile-sub {
+    transform: translateY(-2px);
+    border-color: rgba(var(--tblr-primary-rgb, 99,102,241), .45);
+    box-shadow: 0 6px 16px rgba(var(--tblr-primary-rgb, 99,102,241), .22);
+    color: inherit;
+    text-decoration: none !important;
+  }
+  .poster-tile-title, .poster-tile-sub { text-decoration: none !important; }
+  .poster-tile-wrap { position: relative; }
+  .poster-tile-img {
+    display: block; width: 100%; aspect-ratio: 2/3; object-fit: cover;
+    background: var(--tblr-bg-surface-secondary);
+  }
+  .poster-tile-placeholder {
+    width: 100%; aspect-ratio: 2/3;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--tblr-bg-surface-secondary);
+    color: var(--tblr-secondary);
+    font-size: 1.4rem;
+  }
+  .poster-tile-info {
+    padding: .45rem .55rem .55rem;
+  }
+  .poster-tile-title { font-size: .76rem; font-weight: 600; line-height: 1.25; color: var(--tblr-body-color); }
+  .poster-tile-sub { font-size: .66rem; color: var(--tblr-secondary); margin-top: .12rem; }
+  .poster-tile-badge {
+    position: absolute; top: .35rem; left: .35rem;
+    padding: .12rem .35rem; border-radius: 3px; font-size: .6rem;
+    background: rgba(0,0,0,.78); color: #fff; backdrop-filter: blur(6px);
+    font-weight: 600; letter-spacing: .02em;
+  }
+  .poster-tile-badge.is-downloaded { background: rgba(34,197,94,.92); }
+
+  /* ── Service health grid ────────────────────────────────────────── */
+  .service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: .6rem;
+  }
+  .service-chip {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .6rem .75rem; border-radius: 8px;
+    background: var(--tblr-bg-surface-secondary);
+    border: 1px solid var(--tblr-border-color);
+  }
+  .service-chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .service-chip-dot.is-ok { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,.55); }
+  .service-chip-dot.is-ko { background: #ef4444; }
+  .service-chip-dot.is-unk { background: #6b7280; }
+  .service-chip-name { font-size: .82rem; font-weight: 500; line-height: 1; }
+  .service-chip-state { font-size: .68rem; color: var(--tblr-secondary); margin-top: .15rem; }
+</style>
+{% endblock %}
+
+{% block body %}
+{%- set now_ymd = 'today'|date('Y-m-d') -%}
+{%- set tomorrow_ymd = '+1 day'|date('Y-m-d') -%}
+{%- set hour = 'now'|date('H')|number_format -%}
+{%- set greeting = hour < 5 ? 'Bonsoir' : (hour < 12 ? 'Bonjour' : (hour < 18 ? 'Bon après-midi' : 'Bonsoir')) -%}
+{%- set user = app.user -%}
+{%- set username = user ? (user.displayName ?? user.email ?? 'admin') : 'admin' -%}
+
+<div class="page-body dashboard-scope">
+  <div class="container-xl">
+
+    {# ── Hero : bienvenue + film aléatoire de la bibliothèque ───────── #}
+    <div class="hero {{ hero_spotlight is null ? 'hero-noBg' }}">
+      {% if hero_spotlight %}
+        <div class="hero-bg" style="background-image: url('{{ hero_spotlight.url }}');"></div>
+      {% endif %}
+      <div class="hero-fade"></div>
+      <div class="hero-inner">
+        <p class="hero-kicker">{{ 'now'|date('l j F Y')|capitalize }}</p>
+        <h1 class="hero-greeting">{{ greeting }}, {{ username }}</h1>
+
+        {% if hero_spotlight and hero_spotlight.title %}
+          <div class="hero-spotlight">
+            <span class="hero-spotlight-label">{{ hero_spotlight.badge }}</span>
+            <h2 class="hero-spotlight-title">{{ hero_spotlight.title }}</h2>
+
+            <div class="hero-spotlight-meta">
+              {% if hero_spotlight.rating %}<span class="rating">★ {{ hero_spotlight.rating|round(1) }}/10</span>{% endif %}
+              {% if hero_spotlight.year %}<span>{{ hero_spotlight.year }}</span>{% endif %}
+              {% if hero_spotlight.runtime %}<span>{{ hero_spotlight.runtime }} min</span>{% endif %}
+              {% if hero_spotlight.quality %}<span class="chip">{{ hero_spotlight.quality }}</span>{% endif %}
+              {% for g in hero_spotlight.genres %}<span class="chip">{{ g }}</span>{% endfor %}
+            </div>
+
+            {% if hero_spotlight.overview %}
+              <p class="hero-spotlight-overview">{{ hero_spotlight.overview }}</p>
+            {% endif %}
+
+            {% if hero_spotlight.detailUrl %}
+              <a href="{{ hero_spotlight.detailUrl }}" class="hero-spotlight-cta">
+                {{ hero_spotlight.cta }}
+              </a>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-stat-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 7.5h4M3 12h18M3 16.5h4M17 7.5h4M17 16.5h4"/>
+              </svg>
+            </div>
+            <div>
+              <div class="hero-stat-value">{{ stats.films ?? '—' }}</div>
+              <div class="hero-stat-label">Films</div>
+            </div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/>
+              </svg>
+            </div>
+            <div>
+              <div class="hero-stat-value">{{ stats.series ?? '—' }}</div>
+              <div class="hero-stat-label">Séries</div>
+            </div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+            <div>
+              <div class="hero-stat-value">{{ upcoming|length }}</div>
+              <div class="hero-stat-label">À venir 7j</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── Prochaines sorties (mini-calendrier 7 jours) ──────────────── #}
+    <div class="row row-cards mb-3">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <span class="card-title-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </span>
+              Prochaines sorties · 7 jours
+            </h3>
+            <div class="card-actions">
+              <a href="{{ path('app_calendrier') }}" class="dash-action-btn">Calendrier →</a>
+            </div>
+          </div>
+          {% if upcoming is empty %}
+            <div class="card-body text-center text-secondary py-4">
+              Aucune sortie prévue cette semaine.
+            </div>
+          {% else %}
+            <div class="mini-cal">
+              {% for iso, day in upcoming_days %}
+                <div class="mini-cal-day {{ day.isToday ? 'is-today' }}">
+                  <div class="mini-cal-day-head">
+                    <div class="mini-cal-dow">{{ day.dow }}</div>
+                    <div class="mini-cal-dom">{{ day.dom }}</div>
+                  </div>
+                  <div class="mini-cal-items">
+                    {% if day.items is empty %}
+                      <div class="mini-cal-empty">—</div>
+                    {% else %}
+                      {% for item in day.items %}
+                        <div class="mini-cal-item" title="{{ item.title }}{% if item.subtitle %} — {{ item.subtitle }}{% endif %} · {{ item.date|date('H:i') }}">
+                          {% if item.poster %}
+                            <div class="mini-cal-item-thumb" style="background-image: url('{{ item.poster }}');"></div>
+                          {% else %}
+                            <div class="mini-cal-item-thumb is-placeholder">{{ item.type == 'movie' ? '🎬' : '📺' }}</div>
+                          {% endif %}
+                          <div class="mini-cal-item-body">
+                            <div class="mini-cal-item-title">{{ item.title }}</div>
+                            <div class="mini-cal-item-meta">{{ item.date|date('H:i') }}{% if item.badge %} · {{ item.badge }}{% endif %}</div>
+                          </div>
+                        </div>
+                      {% endfor %}
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {# ── Requêtes + Santé services ─────────────────────────────────── #}
+    <div class="row row-cards mb-3">
+      <div class="col-12 col-lg-6">
+        <div class="card h-100">
+          <div class="card-header">
+            <h3 class="card-title">
+              <span class="card-title-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M9 12l3 3l3 -3"/><path d="M21 14v4a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-4"/></svg>
+              </span>
+              Requêtes en attente
+            </h3>
+            <div class="card-actions">
+              <a href="{{ path('jellyseerr_index') }}" class="dash-action-btn">Gérer →</a>
+            </div>
+          </div>
+          <div class="list-group list-group-flush dash-list">
+            {% if jellyseerr_requests is empty %}
+              <div class="card-body text-center text-secondary py-4">
+                Aucune requête en attente.
+              </div>
+            {% else %}
+              {% for req in jellyseerr_requests %}
+                {% set req_type = req.type == 'tv' ? 'tv' : 'movie' %}
+                <a href="{{ path('tmdb_index') }}?detail={{ req_type }}/{{ req.tmdbId }}" class="list-group-item list-group-item-action text-reset text-decoration-none">
+                  {% if req.poster %}
+                    <img src="https://image.tmdb.org/t/p/w92{{ req.poster }}" alt="" class="dash-poster" loading="lazy">
+                  {% else %}
+                    <div class="dash-poster-placeholder">{{ req_type == 'movie' ? '🎬' : '📺' }}</div>
+                  {% endif %}
+                  <div class="dash-item-body">
+                    <div class="dash-item-title text-truncate">{{ req.title }}</div>
+                    <div class="dash-item-sub">
+                      par {{ req.requestedBy }}
+                      {%- if req.requestedAt %} · {{ req.requestedAt|date('d/m') }}{% endif -%}
+                    </div>
+                  </div>
+                  <div class="dash-item-aside">
+                    <span class="badge bg-yellow-lt text-yellow">En attente</span>
+                  </div>
+                </a>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <div class="card h-100">
+          <div class="card-header">
+            <h3 class="card-title">
+              <span class="card-title-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 -9l4 18l3 -9h4"/></svg>
+              </span>
+              Santé des services
+            </h3>
+            <div class="card-actions">
+              <a href="{{ path('admin_settings_index') }}" class="dash-action-btn">Paramètres →</a>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="service-grid">
+              {% for id, ok in services_health %}
+                {% set meta = {
+                  radarr:      {name:'Radarr',      color:'#FFC230'},
+                  sonarr:      {name:'Sonarr',      color:'#00CCFF'},
+                  prowlarr:    {name:'Prowlarr',    color:'#E88D1A'},
+                  jellyseerr:  {name:'Jellyseerr',  color:'#a259ff'},
+                  qbittorrent: {name:'qBittorrent', color:'#2f67ba'},
+                  tmdb:        {name:'TMDb',        color:'#01B4E4'},
+                }[id] %}
+                <div class="service-chip">
+                  <span class="service-chip-dot {{ ok is null ? 'is-unk' : (ok ? 'is-ok' : 'is-ko') }}"></span>
+                  <div class="flex-fill">
+                    <div class="service-chip-name" style="color: {{ meta.color }};">{{ meta.name }}</div>
+                    <div class="service-chip-state">
+                      {{ ok is null ? 'Non configuré' : (ok ? 'Opérationnel' : 'Injoignable') }}
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── Ma watchlist (perso, DB locale) ────────────────────────────── #}
+    {% if watchlist is not empty %}
+    <div class="row-section">
+      <div class="row-section-head">
+        <h2 class="row-section-title">
+          <span class="row-section-title-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></svg>
+          </span>
+          Ma liste à voir
+        </h2>
+        <a href="{{ path('tmdb_watchlist') }}" class="row-section-link">Tout voir →</a>
+      </div>
+      <div class="poster-row">
+        {% for w in watchlist %}
+          <a href="{{ path('tmdb_index') }}?detail={{ w.mediaType }}/{{ w.tmdbId }}" class="poster-tile">
+            <div class="poster-tile-wrap">
+              {% if w.poster %}
+                <img src="https://image.tmdb.org/t/p/w342{{ w.poster }}" alt="{{ w.title }}" loading="lazy" class="poster-tile-img">
+              {% else %}
+                <div class="poster-tile-placeholder">{{ w.mediaType == 'tv' ? '📺' : '🎬' }}</div>
+              {% endif %}
+              {% if w.vote and w.vote > 0 %}
+                <span class="poster-tile-badge">★ {{ w.vote|round(1) }}</span>
+              {% endif %}
+            </div>
+            <div class="poster-tile-info">
+              <div class="poster-tile-title text-truncate">{{ w.title }}</div>
+              <div class="poster-tile-sub">
+                {{ w.mediaType == 'tv' ? 'Série' : 'Film' }}
+                {%- if w.year %} · {{ w.year }}{% endif -%}
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# ── Tendances TMDb (liens vers modal Découverte) ─────────────── #}
+    {% if recommendations is not empty %}
+    <div class="row-section">
+      <div class="row-section-head">
+        <h2 class="row-section-title">
+          <span class="row-section-title-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>
+          </span>
+          Tendances de la semaine
+        </h2>
+        <a href="{{ path('tmdb_index') }}" class="row-section-link">Découverte →</a>
+      </div>
+      <div class="poster-row">
+        {% for item in recommendations %}
+          {% set tmdb_title = item.title|default(item.name|default('—')) %}
+          {% set tmdb_date = item.release_date|default(item.first_air_date|default('')) %}
+          {% set tmdb_type = item.media_type == 'tv' ? 'tv' : 'movie' %}
+          <a href="{{ path('tmdb_index') }}?detail={{ tmdb_type }}/{{ item.id }}" class="poster-tile">
+            <div class="poster-tile-wrap">
+              {% if item.poster_path %}
+                <img src="https://image.tmdb.org/t/p/w342{{ item.poster_path }}" alt="{{ tmdb_title }}" loading="lazy" class="poster-tile-img">
+              {% else %}
+                <div class="poster-tile-placeholder">{{ item.media_type == 'tv' ? '📺' : '🎬' }}</div>
+              {% endif %}
+              {% if item.vote_average and item.vote_average > 0 %}
+                <span class="poster-tile-badge">★ {{ item.vote_average|round(1) }}</span>
+              {% endif %}
+            </div>
+            <div class="poster-tile-info">
+              <div class="poster-tile-title text-truncate">{{ tmdb_title }}</div>
+              <div class="poster-tile-sub">
+                {{ item.media_type == 'tv' ? 'Série' : 'Film' }}
+                {%- if tmdb_date %} · {{ tmdb_date|slice(0, 4) }}{% endif -%}
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# ── Ajouts récents bibliothèque ──────────────────────────────── #}
+    {% if recent_additions is not empty %}
+    <div class="row-section">
+      <div class="row-section-head">
+        <h2 class="row-section-title">
+          <span class="row-section-title-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2l4 -4"/></svg>
+          </span>
+          Ajouts récents à votre bibliothèque
+        </h2>
+      </div>
+      <div class="poster-row">
+        {% for item in recent_additions %}
+          <a href="{{ item.href }}" class="poster-tile">
+            <div class="poster-tile-wrap">
+              {% if item.poster %}
+                <img src="{{ item.poster }}" alt="{{ item.title }}" loading="lazy" class="poster-tile-img">
+              {% else %}
+                <div class="poster-tile-placeholder">{{ item.type == 'movie' ? '🎬' : '📺' }}</div>
+              {% endif %}
+              {% if item.badge %}
+                <span class="poster-tile-badge {{ item.badge == 'Téléchargé' ? 'is-downloaded' }}">{{ item.badge }}</span>
+              {% endif %}
+            </div>
+            <div class="poster-tile-info">
+              <div class="poster-tile-title text-truncate">{{ item.title }}</div>
+              <div class="poster-tile-sub">
+                {{ item.type == 'movie' ? 'Film' : 'Série' }}
+                {%- if item.subtitle %} · {{ item.subtitle }}{% endif -%}
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

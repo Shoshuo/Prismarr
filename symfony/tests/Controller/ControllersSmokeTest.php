@@ -25,6 +25,7 @@ class ControllersSmokeTest extends AbstractWebTestCase
     {
         return [
             // Main media landings
+            'dashboard'           => ['/tableau-de-bord', 'DashboardController::index'],
             'media films'         => ['/medias/films', 'MediaController::films'],
             'media series'        => ['/medias/series', 'MediaController::series'],
             'tmdb discovery'      => ['/decouverte', 'TmdbController::index'],
