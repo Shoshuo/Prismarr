@@ -197,7 +197,7 @@ class ProfileController extends AbstractController
     {
         $path = $this->getParameter('kernel.project_dir') . '/var/data/avatars/' . $filename;
         if (!is_file($path)) {
-            throw $this->createNotFoundException('Avatar introuvable.');
+            throw $this->createNotFoundException($this->translator->trans('flash.profile.avatar_not_found'));
         }
 
         return new BinaryFileResponse($path, 200, [

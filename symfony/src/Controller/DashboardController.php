@@ -12,6 +12,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Dashboard landing page — aggregates the most relevant recent signals from
@@ -48,6 +49,7 @@ class DashboardController extends AbstractController
         private readonly TmdbClient $tmdb,
         private readonly WatchlistItemRepository $watchlistRepo,
         private readonly LoggerInterface $logger,
+        private readonly TranslatorInterface $translator,
     ) {}
 
     private function movies(): array
@@ -224,9 +226,9 @@ class DashboardController extends AbstractController
     private function pickNextReleaseDate(array $movie, \DateTimeImmutable $today): ?array
     {
         $candidates = array_filter([
-            ['at' => $movie['digitalAt']   ?? null, 'badge' => 'Numérique'],
-            ['at' => $movie['inCinemasAt'] ?? null, 'badge' => 'Cinéma'],
-            ['at' => $movie['physicalAt']  ?? null, 'badge' => 'Blu-ray'],
+            ['at' => $movie['digitalAt']   ?? null, 'badge' => $this->translator->trans('dashboard.release_badge.digital')],
+            ['at' => $movie['inCinemasAt'] ?? null, 'badge' => $this->translator->trans('dashboard.release_badge.cinema')],
+            ['at' => $movie['physicalAt']  ?? null, 'badge' => $this->translator->trans('dashboard.release_badge.bluray')],
         ], fn($c) => $c['at'] instanceof \DateTimeImmutable && $c['at']->setTime(0, 0) >= $today);
 
         if ($candidates === []) {
@@ -332,14 +334,16 @@ class DashboardController extends AbstractController
 
         $now = new \DateTimeImmutable();
         foreach ($movies as $m) {
+            $downloaded = ($m['hasFile'] ?? false) === true;
             $items[] = [
-                'type'     => 'movie',
-                'title'    => $m['title'] ?? '—',
-                'subtitle' => $this->relativeDate($m['addedAt'] ?? null, $now),
-                'poster'   => $m['poster'] ?? null,
-                'badge'    => ($m['hasFile'] ?? false) ? 'Téléchargé' : null,
-                'addedAt'  => $m['addedAt'] ?? null,
-                'href'     => $this->generateUrl('app_media_films') . '?open=' . ($m['id'] ?? ''),
+                'type'         => 'movie',
+                'title'        => $m['title'] ?? '—',
+                'subtitle'     => $this->relativeDate($m['addedAt'] ?? null, $now),
+                'poster'       => $m['poster'] ?? null,
+                'badge'        => $downloaded ? $this->translator->trans('dashboard.lib_badge.downloaded') : null,
+                'is_downloaded'=> $downloaded,
+                'addedAt'      => $m['addedAt'] ?? null,
+                'href'         => $this->generateUrl('app_media_films') . '?open=' . ($m['id'] ?? ''),
             ];
         }
         foreach ($series as $s) {
@@ -411,8 +415,10 @@ class DashboardController extends AbstractController
                 'quality'   => $m['quality'] ?? null,
                 'rating'    => $m['ratings'] ?? null,
                 'genres'    => array_slice($m['genres'] ?? [], 0, 3),
-                'badge'     => $m['hasFile'] ? 'Dans votre bibliothèque' : 'Suivi · à télécharger',
-                'cta'       => '▶ Voir la fiche',
+                'badge'     => $m['hasFile']
+                    ? $this->translator->trans('dashboard.hero_badge.in_library')
+                    : $this->translator->trans('dashboard.hero_badge.monitored'),
+                'cta'       => $this->translator->trans('dashboard.hero_badge.cta_view'),
                 'detailUrl' => $m['id'] ? $this->generateUrl('app_media_films') . '?open=' . $m['id'] : null,
             ];
         }
@@ -432,8 +438,8 @@ class DashboardController extends AbstractController
                     'quality'   => null,
                     'rating'    => $item['vote_average'] ?? null,
                     'genres'    => [],
-                    'badge'     => '★ Tendance de la semaine',
-                    'cta'       => '▶ Découvrir',
+                    'badge'     => $this->translator->trans('dashboard.hero_badge.trending'),
+                    'cta'       => $this->translator->trans('dashboard.hero_badge.cta_discover'),
                     'detailUrl' => $item['id'] ? $this->generateUrl('tmdb_index') . '?detail=' . $type . '/' . $item['id'] : null,
                 ];
             }

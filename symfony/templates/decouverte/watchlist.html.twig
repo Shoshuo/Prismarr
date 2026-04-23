@@ -107,7 +107,7 @@
   <div class="mb-3">
     <a href="{{ path('tmdb_index') }}" class="btn btn-outline-secondary btn-sm">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-      Découverte
+      {{ 'watchlist_page.back_to_discover'|trans }}
     </a>
   </div>
 
@@ -118,7 +118,7 @@
         <div class="card-body d-flex align-items-center gap-2 py-2 px-3">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.6-6.2 4.6 2.4-7.4-6.2-4.5h7.6z"/></svg>
           <span class="fw-bold" id="wl-total">{{ items|length }}</span>
-          <span class="text-secondary">titre{{ items|length > 1 ? 's' : '' }}</span>
+          <span class="text-secondary">{{ 'watchlist_page.count_titles'|trans({count: items|length}) }}</span>
         </div>
       </div>
     </div>
@@ -127,7 +127,7 @@
         <div class="card-body d-flex align-items-center gap-2 py-2 px-3">
           <span style="color:#ffc230;">🎬</span>
           <span class="fw-bold" id="wl-movies">{{ items|filter(i => i.type == 'movie')|length }}</span>
-          <span class="text-secondary">films</span>
+          <span class="text-secondary">{{ 'watchlist_page.films_suffix'|trans }}</span>
         </div>
       </div>
     </div>
@@ -136,7 +136,7 @@
         <div class="card-body d-flex align-items-center gap-2 py-2 px-3">
           <span style="color:#0cf;">📺</span>
           <span class="fw-bold" id="wl-series">{{ items|filter(i => i.type == 'tv')|length }}</span>
-          <span class="text-secondary">séries</span>
+          <span class="text-secondary">{{ 'watchlist_page.series_suffix'|trans }}</span>
         </div>
       </div>
     </div>
@@ -195,7 +195,7 @@
       </button>
       <div class="card-overlay">
         <div class="card-title" title="{{ item.title }}">{{ item.title }}</div>
-        <div class="card-sub">{{ item.year ?: '' }} · Ajouté le {{ item.addedAt|slice(0, 10) }}</div>
+        <div class="card-sub">{{ item.year ?: '' }} · {{ 'watchlist_page.added_on'|trans({date: item.addedAt|slice(0, 10)}) }}</div>
       </div>
     </div>
     {% endfor %}

@@ -141,7 +141,7 @@
   <div class="mb-3">
     <a href="{{ path('tmdb_index') }}" class="btn btn-outline-secondary btn-sm">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-      Découverte
+      {{ 'decouverte.explorer.back_to_discover'|trans }}
     </a>
   </div>
 
@@ -151,7 +151,7 @@
 
       <!-- Type -->
       <div class="explorer-card">
-        <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/></svg> Type</h6>
+        <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/></svg> {{ 'decouverte.explorer.section.type'|trans }}</h6>
         <div class="ex-type-switch">
           <button class="ex-type-btn active" data-type="movie">{{ 'decouverte.filters.movies'|trans }}</button>
           <button class="ex-type-btn" data-type="tv">{{ 'decouverte.filters.series'|trans }}</button>
@@ -160,13 +160,13 @@
 
       <!-- Genre -->
       <div class="explorer-card">
-        <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16l13-8z"/></svg> Genre</h6>
+        <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16l13-8z"/></svg> {{ 'decouverte.explorer.section.genre'|trans }}</h6>
         <div class="ex-pills" id="ex-genre-pills"></div>
       </div>
 
       <!-- Décennie -->
       <div class="explorer-card">
-        <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Décennie</h6>
+        <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> {{ 'decouverte.explorer.section.decade'|trans }}</h6>
         <div class="ex-pills">
           <button class="ex-pill" data-decade="1980">80s</button>
           <button class="ex-pill" data-decade="1990">90s</button>
@@ -178,19 +178,19 @@
 
       <!-- Tri -->
       <div class="explorer-card">
-        <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h18M7 12h10M11 20h2"/></svg> Tri</h6>
+        <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h18M7 12h10M11 20h2"/></svg> {{ 'decouverte.explorer.section.sort'|trans }}</h6>
         <select class="form-select form-select-sm" id="ex-sort" style="font-size:.75rem;">
-          <option value="popularity.desc">Populaires</option>
-          <option value="vote_average.desc">Mieux notés</option>
-          <option value="primary_release_date.desc">Plus récents</option>
-          <option value="revenue.desc">Box-office</option>
+          <option value="popularity.desc">{{ 'decouverte.explorer.sort_options.popular'|trans }}</option>
+          <option value="vote_average.desc">{{ 'decouverte.explorer.sort_options.top_rated'|trans }}</option>
+          <option value="primary_release_date.desc">{{ 'decouverte.explorer.sort_options.recent'|trans }}</option>
+          <option value="revenue.desc">{{ 'decouverte.explorer.sort_options.box_office'|trans }}</option>
         </select>
       </div>
 
       <!-- Collections -->
       <div class="explorer-card">
-        <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg> Collections</h6>
-        <input type="text" class="ex-person-input mb-2" id="ex-col-search" placeholder="Rechercher une collection...">
+        <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg> {{ 'decouverte.explorer.section.collections'|trans }}</h6>
+        <input type="text" class="ex-person-input mb-2" id="ex-col-search" placeholder="{{ 'decouverte.explorer.collection_search'|trans }}">
         <div id="ex-col-suggestions" style="margin-bottom:.3rem;"></div>
         <div class="ex-pills" id="ex-col-pills">
           <button class="ex-col-pill" data-col-id="529892">MCU</button>
@@ -214,8 +214,8 @@
 
       <!-- Par acteur -->
       <div class="explorer-card">
-        <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a7.5 7.5 0 0115 0"/></svg> Par acteur</h6>
-        <input type="text" class="ex-person-input" id="ex-person-input" placeholder="Nom de l'acteur...">
+        <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a7.5 7.5 0 0115 0"/></svg> {{ 'decouverte.explorer.section.by_actor'|trans }}</h6>
+        <input type="text" class="ex-person-input" id="ex-person-input" placeholder="{{ 'decouverte.explorer.actor_search'|trans }}">
         <div id="ex-person-suggestions" style="margin-top:.3rem;"></div>
       </div>
     </div>
@@ -225,7 +225,7 @@
       <div class="ex-action-bar">
         <button class="btn btn-primary btn-sm" id="ex-apply">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M10 10m-7 0a7 7 0 1014 0 7 7 0 10-14 0"/><path d="M21 21l-6-6"/></svg>
-          Rechercher
+          {{ 'decouverte.explorer.search'|trans }}
         </button>
         <button class="btn btn-outline-secondary btn-sm" id="ex-clear">{{ 'decouverte.filters.reset'|trans }}</button>
         <div class="ex-status" id="ex-status" style="margin:0;"></div>
@@ -238,11 +238,11 @@
         </div>
       </div>
       <div class="ex-grid" id="ex-grid">
-        <div class="ex-empty">Sélectionnez des filtres et cliquez sur Rechercher, ou choisissez une collection / un acteur.</div>
+        <div class="ex-empty">{{ 'decouverte.explorer.empty_hint'|trans }}</div>
       </div>
       <div class="text-center mt-3" id="ex-load-more-wrap" style="display:none;">
         <button class="btn btn-outline-primary btn-sm" id="ex-load-more" style="font-size:.8rem; padding:.35rem 1.5rem;">
-          Charger plus
+          {{ 'decouverte.explorer.load_more'|trans }}
         </button>
         <div class="text-secondary mt-1" id="ex-page-info" style="font-size:.7rem;"></div>
       </div>
@@ -256,7 +256,7 @@
     <div class="modal-content" style="background:var(--tblr-bg-surface); overflow:hidden;">
       <div class="modal-body p-0">
         <div id="ex-detail-loading" class="text-center py-5 text-secondary">
-          <div class="spinner-border spinner-border-sm me-2"></div> Chargement...
+          <div class="spinner-border spinner-border-sm me-2"></div> {{ 'decouverte.explorer.loading'|trans }}
         </div>
         <div id="ex-detail-content" style="display:none;"></div>
       </div>
@@ -296,6 +296,21 @@
 (function() {
   function escHtml(s) { if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+  // Localized strings used by the dynamic JS parts of this page.
+  var EX_I18N = {
+    loading:       {{ 'decouverte.explorer.loading'|trans|json_encode|raw }},
+    no_results:    {{ 'decouverte.explorer.no_results_js'|trans|json_encode|raw }},
+    network_error: {{ 'decouverte.explorer.network_error'|trans|json_encode|raw }},
+    empty_hint:    {{ 'decouverte.explorer.empty_hint'|trans|json_encode|raw }},
+    watchlist:     {{ 'decouverte.explorer.watchlist'|trans|json_encode|raw }},
+    type_film:     {{ 'decouverte.explorer.type_film'|trans|json_encode|raw }},
+    type_series:   {{ 'decouverte.explorer.type_series'|trans|json_encode|raw }},
+    add_to_radarr: {{ 'decouverte.explorer.add_to'|trans({service: 'Radarr'})|json_encode|raw }},
+    add_to_sonarr: {{ 'decouverte.explorer.add_to'|trans({service: 'Sonarr'})|json_encode|raw }},
+    view_movies:   {{ 'decouverte.explorer.view_in_movies'|trans|json_encode|raw }},
+    view_series:   {{ 'decouverte.explorer.view_in_series'|trans|json_encode|raw }},
+  };
+
   var grid = document.getElementById('ex-grid');
   var statusEl = document.getElementById('ex-status');
   var loadMoreWrap = document.getElementById('ex-load-more-wrap');
@@ -310,20 +325,27 @@
   var lastLabel = '';
 
   var statusColors = { downloaded: '#22c55e', missing: '#f59e0b', announced: '#6366f1', inCinemas: '#6366f1', partial: '#3b82f6', unmonitored: '#6b7280' };
-  var statusLabels = { downloaded: 'Dispo', missing: 'Manquant', announced: 'Annoncé', inCinemas: 'En salles', partial: 'Partiel', unmonitored: 'Non suivi' };
+  var statusLabels = {
+    downloaded:  {{ 'decouverte.explorer.status.downloaded'|trans|json_encode|raw }},
+    missing:     {{ 'decouverte.explorer.status.missing'|trans|json_encode|raw }},
+    announced:   {{ 'decouverte.explorer.status.announced'|trans|json_encode|raw }},
+    inCinemas:   {{ 'decouverte.explorer.status.inCinemas'|trans|json_encode|raw }},
+    partial:     {{ 'decouverte.explorer.status.partial'|trans|json_encode|raw }},
+    unmonitored: {{ 'decouverte.explorer.status.unmonitored'|trans|json_encode|raw }},
+  };
 
   function cardHTML(item) {
     var vc = item.vote >= 7 ? 'good' : (item.vote >= 5 ? 'mid' : 'bad');
     var poster = item.poster
       ? '<img class="poster" src="' + escHtml(item.poster) + '" alt="" loading="lazy">'
       : '<div class="no-poster">🎬</div>';
-    var lib = item.in_library ? '<span class="badge-lib" style="background:' + (statusColors[item.lib_status] || '#22c55e') + ';">' + (statusLabels[item.lib_status] || 'Dispo') + '</span>' : '';
+    var lib = item.in_library ? '<span class="badge-lib" style="background:' + (statusColors[item.lib_status] || '#22c55e') + ';">' + (statusLabels[item.lib_status] || statusLabels.downloaded) + '</span>' : '';
     var vote = item.vote ? '<span class="badge-vote ' + vc + '">★ ' + escHtml(item.vote) + '</span>' : '';
     var wlClass = (window._prismarrWatchlist && window._prismarrWatchlist[item.type + '_' + item.id]) ? ' in-wl' : '';
     var wlStar = '<button type="button" class="wl-star' + wlClass + '" data-tmdb-id="' + escHtml(item.id) + '" data-tmdb-type="' + escHtml(item.type) + '" data-title="' + escHtml(item.title) + '" data-poster="' + escHtml(item.poster) + '" data-vote="' + escHtml(item.vote) + '" data-year="' + escHtml(item.year) + '"><svg viewBox="0 0 24 24" fill="' + (wlClass ? '#f59e0b' : 'none') + '" stroke="#f59e0b" stroke-width="2"><path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.6-6.2 4.6 2.4-7.4-6.2-4.5h7.6z"/></svg></button>';
     return '<div class="ex-card" data-tmdb-id="' + escHtml(item.id) + '" data-type="' + escHtml(item.type) + '">'
       + poster
-      + '<span class="badge-type ' + escHtml(item.type) + '">' + (item.type === 'movie' ? 'Film' : 'Série') + '</span>'
+      + '<span class="badge-type ' + escHtml(item.type) + '">' + (item.type === 'movie' ? EX_I18N.type_film : EX_I18N.type_series) + '</span>'
       + lib + wlStar + vote
       + '<div class="overlay"><div class="title">' + escHtml(item.title) + '</div>'
       + '<div class="sub">' + escHtml(item.year) + '</div></div></div>';
@@ -333,7 +355,7 @@
     if (append) {
       grid.insertAdjacentHTML('beforeend', items.map(cardHTML).join(''));
     } else {
-      grid.innerHTML = items.map(cardHTML).join('') || '<div class="ex-empty">Aucun résultat.</div>';
+      grid.innerHTML = items.map(cardHTML).join('') || '<div class="ex-empty">' + EX_I18N.no_results + '</div>';
     }
     var count = grid.querySelectorAll('.ex-card').length;
     statusEl.textContent = label ? label + ' · ' + (totalResults || count) + ' résultat' + ((totalResults || count) > 1 ? 's' : '') : '';
@@ -350,7 +372,7 @@
   }
 
   function showSpinner() {
-    grid.innerHTML = '<div class="ex-empty"><span class="spinner-border spinner-border-sm me-2"></span>Chargement...</div>';
+    grid.innerHTML = '<div class="ex-empty"><span class="spinner-border spinner-border-sm me-2"></span>' + EX_I18N.loading + '</div>';
     loadMoreWrap.style.display = 'none';
   }
 
@@ -444,14 +466,14 @@
 
     html += '<div class="exd-actions">';
     if (!d.in_library) {
-      html += '<button class="btn btn-primary btn-sm exd-add-btn" data-tmdb-id="' + escHtml(d.id) + '" data-type="' + escHtml(d.type) + '" data-title="' + escHtml(d.title) + '">Ajouter à ' + (d.type === 'movie' ? 'Radarr' : 'Sonarr') + '</button>';
+      html += '<button class="btn btn-primary btn-sm exd-add-btn" data-tmdb-id="' + escHtml(d.id) + '" data-type="' + escHtml(d.type) + '" data-title="' + escHtml(d.title) + '">' + (d.type === 'movie' ? EX_I18N.add_to_radarr : EX_I18N.add_to_sonarr) + '</button>';
     } else {
       var libUrl = (d.type === 'movie' ? '/medias/films' : '/medias/series') + (d.lib_id ? '?open=' + encodeURIComponent(d.lib_id) : '');
-      html += '<a href="' + escHtml(libUrl) + '" class="btn btn-success btn-sm">Voir dans ' + (d.type === 'movie' ? 'Films' : 'Séries') + '</a>';
+      html += '<a href="' + escHtml(libUrl) + '" class="btn btn-success btn-sm">' + (d.type === 'movie' ? EX_I18N.view_movies : EX_I18N.view_series) + '</a>';
     }
     html += '<button class="btn btn-sm ' + (isInWl ? 'btn-warning' : 'btn-outline-warning') + ' exd-wl-btn" data-tmdb-id="' + escHtml(d.id) + '" data-type="' + escHtml(d.type) + '" data-title="' + escHtml(d.title) + '" data-poster-path="' + escHtml(d.poster_path) + '" data-vote="' + escHtml(d.vote) + '" data-year="' + escHtml(d.year) + '">'
       + '<svg width="13" height="13" viewBox="0 0 24 24" fill="' + (isInWl ? '#fff' : 'none') + '" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.6-6.2 4.6 2.4-7.4-6.2-4.5h7.6z"/></svg>'
-      + (isInWl ? 'Watchlist ✓' : 'Watchlist') + '</button>';
+      + (isInWl ? EX_I18N.watchlist + ' ✓' : EX_I18N.watchlist) + '</button>';
     html += '<a href="https://www.themoviedb.org/' + encodeURIComponent(d.type) + '/' + encodeURIComponent(d.id) + '" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">TMDb</a>';
     if (d.imdb_id) html += '<a href="https://www.imdb.com/title/' + encodeURIComponent(d.imdb_id) + '" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">IMDb</a>';
     html += '</div></div>';
@@ -468,7 +490,7 @@
         if (d.error) { detailLoading.innerHTML = '<div class="alert alert-danger m-3">' + escHtml(d.error) + '</div>'; return; }
         renderDetailModal(d);
       })
-      .catch(function() { detailLoading.innerHTML = '<div class="alert alert-danger m-3">Erreur réseau</div>'; });
+      .catch(function() { detailLoading.innerHTML = '<div class="alert alert-danger m-3">' + EX_I18N.network_error + '</div>'; });
   }
 
   // Clic card → modal détail locale
@@ -503,7 +525,7 @@
       btn.className = 'btn btn-sm ' + (added ? 'btn-warning' : 'btn-outline-warning') + ' exd-wl-btn';
       btn.querySelector('svg').setAttribute('fill', added ? '#fff' : 'none');
       var txt = btn.childNodes[btn.childNodes.length - 1];
-      txt.textContent = added ? 'Watchlist ✓' : 'Watchlist';
+      txt.textContent = added ? EX_I18N.watchlist + ' ✓' : EX_I18N.watchlist;
       // Sync étoiles dans la grille
       document.querySelectorAll('.wl-star[data-tmdb-id="' + btn.dataset.tmdbId + '"]').forEach(function(s) {
         s.classList.toggle('in-wl', added);
@@ -574,7 +596,7 @@
   }
 
   function buildLabel(info) {
-    var label = info.type === 'movie' ? 'Films' : 'Séries';
+    var label = info.type === 'movie' ? {{ 'sidebar.nav.films'|trans|json_encode|raw }} : {{ 'sidebar.nav.series'|trans|json_encode|raw }};
     if (info.genres.length) label += ' · ' + info.genres.length + ' genre' + (info.genres.length > 1 ? 's' : '');
     if (info.decades.length) label += ' · ' + info.decades.map(function(d) { return d + 's'; }).join('+');
     return label;
@@ -604,7 +626,7 @@
     if (currentMode !== 'discover' || currentPage >= totalPages) return;
     currentPage++;
     loadMoreBtn.disabled = true;
-    loadMoreBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Chargement...';
+    loadMoreBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + EX_I18N.loading;
     var info = buildParams(currentPage);
     fetch('/decouverte/filter?' + info.params.toString(), { credentials: 'same-origin' })
       .then(function(r) { return r.json(); })
@@ -622,7 +644,7 @@
     document.getElementById('ex-sort').value = 'popularity.desc';
     clearCollectionActive();
     clearPersonHeader();
-    grid.innerHTML = '<div class="ex-empty">Sélectionnez des filtres et cliquez sur Rechercher.</div>';
+    grid.innerHTML = '<div class="ex-empty">' + EX_I18N.empty_hint + '</div>';
     statusEl.textContent = '';
     loadMoreWrap.style.display = 'none';
     currentPage = 1; totalPages = 1; totalResults = 0;
@@ -770,7 +792,7 @@
       })
       .catch(function() {
         btn.className = 'btn btn-danger btn-sm exd-add-btn';
-        btn.innerHTML = 'Erreur réseau';
+        btn.innerHTML = EX_I18N.network_error;
         btn.disabled = false;
         setTimeout(function() { btn.className = 'btn btn-primary btn-sm exd-add-btn'; btn.innerHTML = origText; }, 3000);
       });
@@ -841,7 +863,7 @@
       if (wasIn) window._prismarrWatchlist[key] = true;
       else delete window._prismarrWatchlist[key];
       syncExWlStar(star.dataset.tmdbId, star.dataset.tmdbType, wasIn);
-      if (window._prismarrToast) window._prismarrToast('Erreur réseau', 'danger');
+      if (window._prismarrToast) window._prismarrToast(EX_I18N.network_error, 'danger');
     });
   });
 })();

@@ -133,6 +133,7 @@ login:
   title: Sign in
   subtitle: Access your Prismarr instance
   email: Email
+  email_placeholder: you@email.com
   password: Password
   remember: Remember me
   submit: Sign in
@@ -303,6 +304,18 @@ dashboard:
   type:
     film: Movie
     series: TV Show
+  release_badge:
+    digital: Digital
+    cinema: Cinema
+    bluray: Blu-ray
+  lib_badge:
+    downloaded: Downloaded
+  hero_badge:
+    in_library: In your library
+    monitored: 'Monitored · awaiting download'
+    trending: '★ Trending this week'
+    cta_view: '▶ View details'
+    cta_discover: '▶ Discover'
 
 profile:
   title: My profile
@@ -532,6 +545,19 @@ admin:
     imported: Configuration imported.
     import_failed: Import failed.
     display_reset: Display preferences reset.
+    display_reset_full: Display preferences reset to their defaults.
+  test:
+    unknown_service: Unknown service
+    unreachable: Service unreachable
+  export:
+    encode_failed: Cannot encode.
+  import:
+    no_file: No file received.
+    too_big: 'File too large (64 KB max).'
+    read_failed: Cannot read file.
+    invalid_json: Invalid JSON
+    unknown_format: 'Unknown format (export v1 expected).'
+    result: '{applied, plural, =0 {No settings imported} one {# setting imported} other {# settings imported}}, {skipped, plural, one {# skipped.} other {# skipped.}}'
   coming:
     v1_1: v1.1
 
@@ -714,6 +740,50 @@ decouverte:
     title: Explorer
     subtitle: 'Filter TMDb by genre, year, rating, language, popularity.'
     no_results: No results for these filters.
+    back_to_discover: Discover
+    section:
+      type: Type
+      genre: Genre
+      decade: Decade
+      sort: Sort
+      collections: Collections
+      by_actor: By actor
+    sort_options:
+      popular: Popular
+      top_rated: Top-rated
+      recent: Most recent
+      box_office: Box office
+    collection_search: 'Search a collection...'
+    actor_search: 'Actor name...'
+    search: Search
+    load_more: Load more
+    empty_hint: 'Pick some filters and click Search, or choose a collection / actor.'
+    loading: Loading...
+    no_results_js: No results.
+    network_error: Network error
+    watchlist: Watchlist
+    watchlist_added: '✓'
+    type_film: Movie
+    type_series: TV Show
+    add_to: 'Add to {service}'
+    view_in_movies: 'View in Movies'
+    view_in_series: 'View in TV shows'
+    status:
+      downloaded: Available
+      missing: Missing
+      announced: Announced
+      inCinemas: Theatres
+      partial: Partial
+      unmonitored: Unmonitored
+    page: 'Page {current} / {total}'
+
+watchlist_page:
+  back_to_discover: Discover
+  count_titles: '{count, plural, one {# title} other {# titles}}'
+  films_suffix: movies
+  series_suffix: TV shows
+  added_on: 'Added {date}'
+  loading: Loading...
 
 calendar:
   title: Calendar
@@ -795,6 +865,14 @@ calendar:
   week:
     same_month: 'Week of {start}–{end} {month} {year}'
     cross_month: 'Week of {start_day} {start_month} — {end_day} {end_month} {year}'
+  status:
+    available: Available
+    monitored: Monitored
+    unmonitored: Not monitored
+  day:
+    empty: Nothing scheduled this day.
+    today_suffix: '(today)'
+    overflow: '+ {count} more'
 
 flash:
   profile:
@@ -805,6 +883,7 @@ flash:
     avatar_too_big: The image exceeds 2 MB.
     avatar_upload_failed: The image could not be saved.
     avatar_no_file: No file received or upload invalid.
+    avatar_not_found: Avatar not found.
   password:
     current_wrong: Current password is incorrect.
     too_short: The new password must be at least 8 characters long.

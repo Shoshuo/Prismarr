@@ -342,8 +342,14 @@
         event_episode: {{ 'calendar.event.episode'|trans|json_encode|raw }},
         event_none:    {{ 'calendar.event.none'|trans|json_encode|raw }},
         today:         {{ 'calendar.nav.today'|trans|json_encode|raw }},
+        today_suffix:  {{ 'calendar.day.today_suffix'|trans|json_encode|raw }},
         week_same:     {{ 'calendar.week.same_month'|trans|json_encode|raw }},
         week_cross:    {{ 'calendar.week.cross_month'|trans|json_encode|raw }},
+        status_available:  {{ 'calendar.status.available'|trans|json_encode|raw }},
+        status_monitored:  {{ 'calendar.status.monitored'|trans|json_encode|raw }},
+        status_unmonitored:{{ 'calendar.status.unmonitored'|trans|json_encode|raw }},
+        day_empty:     {{ 'calendar.day.empty'|trans|json_encode|raw }},
+        day_overflow:  {{ 'calendar.day.overflow'|trans({count: '__N__'})|json_encode|raw }},
     };
     // ICU plural templates rendered at load — swap in the actual count at
     // runtime using Intl.PluralRules so we stay locale-aware.
@@ -536,7 +542,7 @@
             var evIdx = allEvents.indexOf(ev);
             h += '<div class="' + blockCls + '" data-ev-idx="' + evIdx + '">' + title + line2 + '</div>';
         });
-        if (evs.length > max) h += '<div class="cal-block-more" data-date-detail="' + ds + '">+' + (evs.length-max) + ' de plus</div>';
+        if (evs.length > max) h += '<div class="cal-block-more" data-date-detail="' + ds + '">' + CAL_I18N.day_overflow.replace('__N__', evs.length-max) + '</div>';
         h += '</div></div>';
         return h;
     }
@@ -644,7 +650,7 @@
         h += '</div>';
 
         if (!evs.length) {
-            h += '<div class="cal-day-empty">Rien de prévu ce jour.</div>';
+            h += '<div class="cal-day-empty">' + CAL_I18N.day_empty + '</div>';
         } else {
             h += '<div class="cal-day-list">';
             evs.forEach(function(ev) {
@@ -798,9 +804,9 @@
 
         // Badges statut
         var statusBadge = '';
-        if (ev.hasFile) statusBadge = '<span class="cal-tooltip-badge" style="background:#22c55e;color:#fff;">Disponible</span>';
-        else if (ev.monitored) statusBadge = '<span class="cal-tooltip-badge" style="background:var(--tblr-primary);color:#fff;">Suivi</span>';
-        else statusBadge = '<span class="cal-tooltip-badge" style="background:#f59e0b;color:#000;">Non suivi</span>';
+        if (ev.hasFile) statusBadge = '<span class="cal-tooltip-badge" style="background:#22c55e;color:#fff;">' + CAL_I18N.status_available + '</span>';
+        else if (ev.monitored) statusBadge = '<span class="cal-tooltip-badge" style="background:var(--tblr-primary);color:#fff;">' + CAL_I18N.status_monitored + '</span>';
+        else statusBadge = '<span class="cal-tooltip-badge" style="background:#f59e0b;color:#000;">' + CAL_I18N.status_unmonitored + '</span>';
 
         tooltip.innerHTML = fanartHtml
             + '<div class="cal-tooltip-body">'
@@ -935,7 +941,7 @@
         var dt = new Date(ds + 'T12:00:00');
         var dow = (dt.getDay()+6) % 7;
         var dateLabel = DNfull[dow] + ' ' + dt.getDate() + ' ' + MN[dt.getMonth()] + ' ' + dt.getFullYear();
-        if (ds === todayStr) dateLabel += ' (aujourd\'hui)';
+        if (ds === todayStr) dateLabel += ' ' + CAL_I18N.today_suffix;
 
         var relColors = { cinema:'#dc2626', digital:'#a855f7', physical:'#22c55e', episode:'#38bdf8', unknown:'#6b7280' };
 
@@ -950,9 +956,9 @@
             var relCls = 'rel-' + (ev.releaseType || 'unknown');
 
             var statusBadge = '';
-            if (ev.hasFile) statusBadge = '<span class="badge" style="background:#22c55e;font-size:.5rem;">Disponible</span>';
-            else if (ev.monitored) statusBadge = '<span class="badge" style="background:var(--tblr-primary);font-size:.5rem;">Suivi</span>';
-            else statusBadge = '<span class="badge" style="background:#f59e0b;color:#000;font-size:.5rem;">Non suivi</span>';
+            if (ev.hasFile) statusBadge = '<span class="badge" style="background:#22c55e;font-size:.5rem;">' + CAL_I18N.status_available + '</span>';
+            else if (ev.monitored) statusBadge = '<span class="badge" style="background:var(--tblr-primary);font-size:.5rem;">' + CAL_I18N.status_monitored + '</span>';
+            else statusBadge = '<span class="badge" style="background:#f59e0b;color:#000;font-size:.5rem;">' + CAL_I18N.status_unmonitored + '</span>';
 
             var relLabel = '<span style="color:' + (relColors[ev.releaseType]||'#6b7280') + ';font-size:.58rem;font-weight:600;">' + (releaseLabels[ev.releaseType]||'') + '</span>';
 

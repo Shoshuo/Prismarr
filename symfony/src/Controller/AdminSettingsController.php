@@ -319,7 +319,7 @@ class AdminSettingsController extends AbstractController
     public function test(string $service): JsonResponse
     {
         if (!isset(self::SERVICE_LABELS[$service])) {
-            return new JsonResponse(['ok' => false, 'error' => 'Service inconnu'], 400);
+            return new JsonResponse(['ok' => false, 'error' => $this->translator?->trans('admin.test.unknown_service') ?? 'Service inconnu'], 400);
         }
 
         try {
@@ -330,7 +330,7 @@ class AdminSettingsController extends AbstractController
                 'service' => $service,
                 'message' => $e->getMessage(),
             ]);
-            return new JsonResponse(['ok' => false, 'error' => 'Service injoignable']);
+            return new JsonResponse(['ok' => false, 'error' => $this->translator?->trans('admin.test.unreachable') ?? 'Service injoignable']);
         }
 
         return new JsonResponse([
@@ -438,7 +438,7 @@ class AdminSettingsController extends AbstractController
     public function resetDisplay(Request $request): Response
     {
         if (!$this->isCsrfTokenValid('admin_settings_reset_display', (string) $request->request->get('_csrf_token'))) {
-            $this->addFlash('error', 'Jeton CSRF invalide.');
+            $this->addFlash('error', $this->translator?->trans('flash.csrf.invalid') ?? 'Jeton CSRF invalide.');
             return $this->redirectToRoute('admin_settings_index');
         }
 
@@ -453,7 +453,7 @@ class AdminSettingsController extends AbstractController
         $this->health->invalidate();
         $this->appCache->clear();
 
-        $this->addFlash('success', 'Préférences d\'affichage réinitialisées aux valeurs par défaut.');
+        $this->addFlash('success', $this->translator?->trans('admin.flash.display_reset_full') ?? 'Préférences d\'affichage réinitialisées aux valeurs par défaut.');
         return $this->redirectToRoute('admin_settings_index');
     }
 
@@ -479,7 +479,7 @@ class AdminSettingsController extends AbstractController
 
         $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
-            return new JsonResponse(['error' => 'Encodage impossible.'], 500);
+            return new JsonResponse(['error' => $this->translator?->trans('admin.export.encode_failed') ?? 'Encodage impossible.'], 500);
         }
 
         return new Response(
@@ -496,36 +496,36 @@ class AdminSettingsController extends AbstractController
     public function import(Request $request): Response
     {
         if (!$this->isCsrfTokenValid('admin_settings_import', (string) $request->request->get('_csrf_token'))) {
-            $this->addFlash('error', 'Jeton CSRF invalide.');
+            $this->addFlash('error', $this->translator?->trans('flash.csrf.invalid') ?? 'Jeton CSRF invalide.');
             return $this->redirectToRoute('admin_settings_index');
         }
 
         $file = $request->files->get('config');
         if (!$file || !$file->isValid()) {
-            $this->addFlash('error', 'Aucun fichier reçu.');
+            $this->addFlash('error', $this->translator?->trans('admin.import.no_file') ?? 'Aucun fichier reçu.');
             return $this->redirectToRoute('admin_settings_index');
         }
 
         if ($file->getSize() > 64_000) {
-            $this->addFlash('error', 'Fichier trop volumineux (max 64 Ko).');
+            $this->addFlash('error', $this->translator?->trans('admin.import.too_big') ?? 'Fichier trop volumineux (max 64 Ko).');
             return $this->redirectToRoute('admin_settings_index');
         }
 
         $raw = @file_get_contents($file->getPathname());
         if ($raw === false) {
-            $this->addFlash('error', 'Lecture du fichier impossible.');
+            $this->addFlash('error', $this->translator?->trans('admin.import.read_failed') ?? 'Lecture du fichier impossible.');
             return $this->redirectToRoute('admin_settings_index');
         }
 
         try {
             $payload = json_decode($raw, true, 8, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            $this->addFlash('error', 'JSON invalide : ' . $e->getMessage());
+            $this->addFlash('error', ($this->translator?->trans('admin.import.invalid_json') ?? 'JSON invalide') . ' : ' . $e->getMessage());
             return $this->redirectToRoute('admin_settings_index');
         }
 
         if (!is_array($payload) || ($payload['prismarr_export_version'] ?? 0) !== 1 || !is_array($payload['settings'] ?? null)) {
-            $this->addFlash('error', 'Format non reconnu (version export v1 attendue).');
+            $this->addFlash('error', $this->translator?->trans('admin.import.unknown_format') ?? 'Format non reconnu (version export v1 attendue).');
             return $this->redirectToRoute('admin_settings_index');
         }
 
@@ -561,7 +561,10 @@ class AdminSettingsController extends AbstractController
 
         $this->addFlash(
             'success',
-            sprintf('%d réglage%s importé%s, %d ignoré%s.', $applied, $applied > 1 ? 's' : '', $applied > 1 ? 's' : '', $skipped, $skipped > 1 ? 's' : ''),
+            $this->translator?->trans('admin.import.result', [
+                'applied' => $applied,
+                'skipped' => $skipped,
+            ]) ?? sprintf('%d réglage%s importé%s, %d ignoré%s.', $applied, $applied > 1 ? 's' : '', $applied > 1 ? 's' : '', $skipped, $skipped > 1 ? 's' : ''),
         );
 
         return $this->redirectToRoute('admin_settings_index');

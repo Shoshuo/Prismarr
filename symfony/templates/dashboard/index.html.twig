@@ -774,7 +774,7 @@
                 <div class="poster-tile-placeholder">{{ item.type == 'movie' ? '🎬' : '📺' }}</div>
               {% endif %}
               {% if item.badge %}
-                <span class="poster-tile-badge {{ item.badge == 'Téléchargé' ? 'is-downloaded' }}">{{ item.badge }}</span>
+                <span class="poster-tile-badge {{ item.is_downloaded|default(false) ? 'is-downloaded' }}">{{ item.badge }}</span>
               {% endif %}
             </div>
             <div class="poster-tile-info">
