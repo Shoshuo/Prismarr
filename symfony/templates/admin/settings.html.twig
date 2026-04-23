@@ -514,8 +514,18 @@
             {% endfor %}
           </section>
 
-          {# ─── Section 3 : Sauvegarde / Restauration ──────────── #}
-          <section id="section-backup" class="settings-group" data-section>
+          {# Save button + close main form BEFORE the Sauvegarde section.
+             Nested <form> tags (import + reset-display) would otherwise
+             close the outer form prematurely at their first </form>,
+             leaving the Save button orphaned. Sauvegarde + À propos
+             render their own buttons below, outside the main form. #}
+          <div class="settings-footer" data-settings-footer>
+            <button type="submit" class="btn btn-primary">{{ 'admin.save'|trans }}</button>
+          </div>
+        </form>
+
+        {# ─── Section 3 : Sauvegarde / Restauration ──────────── #}
+        <section id="section-backup" class="settings-group" data-section>
             <div class="settings-group-title">{{ 'admin.backup.title'|trans }}</div>
             <p class="settings-group-desc">{{ 'admin.backup.description'|trans|raw }}</p>
 
@@ -655,12 +665,7 @@
                 </a>
               </div>
             </div>
-          </section>
-
-          <div class="settings-footer">
-            <button type="submit" class="btn btn-primary">{{ 'admin.save'|trans }}</button>
-          </div>
-        </form>
+        </section>
 
       </div>
     </div>
@@ -735,6 +740,13 @@
       var sections = document.querySelectorAll('.settings-group[data-section]');
       var STORAGE_KEY = 'prismarrSettingsActiveSection';
 
+      var footer = document.querySelector('[data-settings-footer]');
+      // Save button applies only to Services + Display (the main form).
+      // Sauvegarde + À propos have their own action buttons, so we hide
+      // the footer on those tabs to avoid a dangling "Save" with nothing
+      // to save.
+      var SAVE_SECTIONS = { 'section-services': true, 'section-display': true };
+
       function activate(id) {
         if (!id) return;
         sections.forEach(function (s) {
@@ -743,6 +755,9 @@
         navLinks.forEach(function (a) {
           a.classList.toggle('active', a.dataset.settingsNav === id);
         });
+        if (footer) {
+          footer.style.display = SAVE_SECTIONS[id] ? '' : 'none';
+        }
         try { sessionStorage.setItem(STORAGE_KEY, id); } catch (e) {}
       }
 

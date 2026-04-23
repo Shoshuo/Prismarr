@@ -222,7 +222,8 @@ class AdminSettingsController extends AbstractController
         #[Autowire('%kernel.environment%')]
         private readonly string $environment = 'prod',
         private readonly ?TranslatorInterface $translator = null,
-    ) {}
+    ) {
+    }
 
     #[Route('', name: 'index', methods: ['GET', 'POST'])]
     public function index(Request $request): Response
