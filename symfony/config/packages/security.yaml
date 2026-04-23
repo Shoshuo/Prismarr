@@ -43,7 +43,6 @@ security:
         # The /api/health/services snapshot needs auth (leaks service config).
         - { path: ^/api/health/services, roles: ROLE_USER }
         - { path: ^/api/health$, roles: PUBLIC_ACCESS }
-        - { path: ^/locale, roles: PUBLIC_ACCESS }
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/setup, roles: PUBLIC_ACCESS }
         - { path: ^/admin, roles: ROLE_ADMIN }

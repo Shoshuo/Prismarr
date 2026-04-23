@@ -11,20 +11,24 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * Resolves the active locale on every main request.
  *
  * Priority order:
- *   1. `?_locale=xx` query param (temporary override, never persisted)
- *   2. `prismarr_locale` cookie (set by the topbar switcher)
- *   3. Admin preference `display_language` from the DB
- *   4. Hard-coded `fr` fallback
+ *   1. `?_locale=xx` query param (one-off preview, never persisted)
+ *   2. Admin preference `display_language` from the DB
+ *   3. Hard-coded `fr` fallback
+ *
+ * Prismarr is a single-instance homelab tool where admin + users typically
+ * share the same language — so we expose the language as a single admin
+ * setting instead of a per-user override. Users who want a different UI
+ * language can still use `?_locale=en` for a single request, but nothing is
+ * persisted client-side.
  *
  * We accept only whitelisted locales to avoid breaking Twig/Translator when
- * someone forges a cookie or crafts a `?_locale=zz` URL — unknown values
- * silently fall back to the next step.
+ * someone crafts a `?_locale=zz` URL — unknown values silently fall back to
+ * the next step.
  */
 class LocaleSubscriber implements EventSubscriberInterface
 {
-    public const COOKIE_NAME = 'prismarr_locale';
-    public const SUPPORTED   = ['fr', 'en'];
-    public const FALLBACK    = 'fr';
+    public const SUPPORTED = ['fr', 'en'];
+    public const FALLBACK  = 'fr';
 
     public function __construct(
         private readonly DisplayPreferencesService $prefs,
@@ -46,7 +50,6 @@ class LocaleSubscriber implements EventSubscriberInterface
         $request = $event->getRequest();
 
         $locale = $this->pickLocale($request->query->get('_locale'))
-            ?? $this->pickLocale($request->cookies->get(self::COOKIE_NAME))
             ?? $this->pickLocale($this->safePrefLanguage())
             ?? self::FALLBACK;
 

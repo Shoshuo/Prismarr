@@ -41,10 +41,9 @@ class LocaleSubscriberTest extends TestCase
         $this->assertSame('xx', $request->getLocale());
     }
 
-    public function testQueryParamWinsOverEverything(): void
+    public function testQueryParamWinsOverPreference(): void
     {
         $request = Request::create('/?_locale=en');
-        $request->cookies->set(LocaleSubscriber::COOKIE_NAME, 'fr');
         $event = $this->event($request);
 
         ($this->subscriber('fr'))->onKernelRequest($event);
@@ -52,18 +51,7 @@ class LocaleSubscriberTest extends TestCase
         $this->assertSame('en', $request->getLocale());
     }
 
-    public function testCookieWinsOverPreference(): void
-    {
-        $request = Request::create('/');
-        $request->cookies->set(LocaleSubscriber::COOKIE_NAME, 'en');
-        $event = $this->event($request);
-
-        ($this->subscriber('fr'))->onKernelRequest($event);
-
-        $this->assertSame('en', $request->getLocale());
-    }
-
-    public function testPreferenceUsedWhenNoCookie(): void
+    public function testPreferenceUsedWhenNoQueryParam(): void
     {
         $request = Request::create('/');
         $event = $this->event($request);
@@ -90,12 +78,11 @@ class LocaleSubscriberTest extends TestCase
     public function testUnknownLocaleIsRejected(): void
     {
         $request = Request::create('/?_locale=zz');
-        $request->cookies->set(LocaleSubscriber::COOKIE_NAME, 'qq');
         $event = $this->event($request);
 
         ($this->subscriber('en'))->onKernelRequest($event);
 
-        // Falls through all three bogus sources → the en preference wins.
+        // `zz` is bogus → pref `en` wins.
         $this->assertSame('en', $request->getLocale());
     }
 

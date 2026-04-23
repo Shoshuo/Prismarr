@@ -79,7 +79,8 @@ class ControllersSmokeTest extends AbstractWebTestCase
 
     public function testLocaleQueryParamSwitchesUiToEnglish(): void
     {
-        // ?_locale=en is the temporary override — bypasses cookie/pref.
+        // `?_locale=en` is the only runtime override (preview). Admin
+        // changes `display_language` via /admin/settings to persist.
         $this->client->request('GET', '/tableau-de-bord?_locale=en');
 
         $this->assertSame(200, $this->client->getResponse()->getStatusCode());
@@ -87,34 +88,5 @@ class ControllersSmokeTest extends AbstractWebTestCase
         // "Pending requests" (EN) must be present, not "Requêtes en attente" (FR).
         $this->assertStringContainsString('Pending requests', $body);
         $this->assertStringNotContainsString('Requêtes en attente', $body);
-    }
-
-    public function testLocaleSwitchPersistsCookie(): void
-    {
-        // Grab CSRF token by hitting any authenticated page first.
-        $this->client->request('GET', '/tableau-de-bord');
-        $crawler = $this->client->getCrawler();
-        $token = $crawler->filter('input[name="_csrf_token"][value]')->first()->count()
-            ? $crawler->filter('input[name="_csrf_token"]')->first()->attr('value')
-            : null;
-
-        // The locale switcher lives in the topbar — extract its own token.
-        $switchToken = null;
-        $forms = $crawler->filter('form[action*="/locale/en"]');
-        if ($forms->count()) {
-            $switchToken = $forms->first()->filter('input[name="_csrf_token"]')->attr('value');
-        }
-        if ($switchToken === null) {
-            $this->markTestSkipped('Locale switcher form not rendered (topbar missing).');
-        }
-
-        $this->client->request('POST', '/locale/en', ['_csrf_token' => $switchToken]);
-
-        // Should redirect + drop the cookie.
-        $this->assertTrue($this->client->getResponse()->isRedirection());
-        $cookie = $this->client->getResponse()->headers->getCookies();
-        $hit = array_filter($cookie, fn($c) => $c->getName() === 'prismarr_locale');
-        $this->assertCount(1, $hit);
-        $this->assertSame('en', reset($hit)->getValue());
     }
 }
