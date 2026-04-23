@@ -11,6 +11,47 @@ Work toward the first public release of Prismarr. Entries here will be rolled
 into `[1.0.0]` at publication time.
 
 ### Added
+- **Profile page** at `/profil` — edit display name and password, upload an
+  avatar (JPG / PNG / WebP / GIF, 2 MB max). Avatars live in the
+  `var/data/avatars/` volume so they survive container recreations. The
+  page also shows a small personal stats block (watchlist count, member
+  since, role) and the four most recent watchlist additions.
+- **Services health badge** in the topbar — a coloured dot (green = all
+  up, orange = partial, red = none) with a dropdown listing the live
+  state of the six services. Refreshes every 60 s. Backed by a new
+  `GET /api/health/services` endpoint (ROLE_USER — the service list
+  leaks part of the configuration, so it is no longer public).
+- **Calendar week and day views** — toggle between Month, Week and Day
+  at the top of `/calendrier`. State is persisted in `localStorage` and
+  also reflected in the URL (`?view=…&date=YYYY-MM-DD`) so widgets on
+  the dashboard can deep-link into a specific day. Past days are
+  dimmed; events on past days are greyscaled and struck through.
+- **iCal export** at `/calendrier.ics` — downloads an RFC 5545
+  calendar with stable UIDs (movie and TV episode releases, each typed
+  cinema / digital / physical / series). Existing calendar clients
+  update events in place rather than duplicating them.
+- **Backup and import in `/admin/settings`** — export non-sensitive
+  settings as JSON, reimport them with a CSRF-protected form (version
+  check, 64 KB max, scalar-only values). Keys matching `api_key`,
+  `password` or `secret` are never exported and are always filtered
+  out on import, even if a malicious file tries to smuggle them in.
+- **About section in `/admin/settings`** — runtime information
+  (Prismarr, Symfony, PHP, SAPI, environment, database path and size,
+  server timezone), three counters (users / movies / series — tolerant
+  of Radarr / Sonarr being offline), and links to the project sources
+  and issue tracker.
+- **Reset display preferences** button in `/admin/settings` — clears
+  every `display_*` key so reading them falls back to the defaults.
+- **Twig filters** `|prismarr_date`, `|prismarr_time` and
+  `|prismarr_datetime` — apply the admin's chosen timezone, date
+  format (FR / US / ISO) and time format (24 h / 12 h) to any
+  `DateTimeInterface`, ISO 8601 string or timestamp.
+- **Global search improvements** — ARIA combobox, arrow-key
+  navigation with visible highlight, an inline clear button, a
+  recent-searches list stored in `localStorage` (shown when focusing
+  an empty input), and Everything / Movies / Series filter pills.
+  Results are now grouped (online discovery first, local library
+  second).
 - **Main dashboard** at `/tableau-de-bord` — the new default landing page
   for logged-in users. Aggregates seven widgets with graceful degradation
   when a service is offline: hero spotlight (random library pick with
@@ -75,6 +116,25 @@ into `[1.0.0]` at publication time.
 - `make check` target: PHP lint + Twig lint + full PHPUnit suite.
 
 ### Security
+- `always_use_default_target_path: true` on the main firewall — Symfony
+  no longer redirects to whatever URL was in the session at login time
+  (typically an expired AJAX endpoint such as `/api/health/services`).
+  Users always land on the home route and honour their `display_home_page`
+  preference.
+- `^/api/health/services` is gated behind `ROLE_USER` (the exact
+  `^/api/health$` Docker healthcheck remains public). Previously the
+  whole `^/api/health` prefix was public, which meant an unauthenticated
+  client could enumerate which external services an instance had
+  configured.
+- CSRF tokens are now required on every new admin action
+  (`/admin/settings/import`, `/admin/settings/reset-display`) and every
+  profile mutation (`/profil` save, `/profil/avatar` upload and delete).
+- Avatar uploads validate MIME type against an allow-list, cap size at
+  2 MB, and the serving route uses a strict filename regex
+  (`\d+\.(jpg|png|webp|gif)`) to prevent path traversal.
+- Settings export and import strip any key containing `api_key`,
+  `password` or `secret`, so a shared config file cannot accidentally
+  leak credentials and a hostile import file cannot inject them either.
 - Container runs as non-root (`www-data` via `s6-setuidgid`); s6-overlay keeps
   PID 1 as root only as required.
 - SSRF protection on user-provided URLs: protocol whitelist, cloud-metadata
@@ -95,6 +155,33 @@ into `[1.0.0]` at publication time.
   FrankenPHP worker is re-used.
 
 ### Changed
+- Display preferences are now effective — theme colour drives a dynamic
+  `--tblr-primary` / `--tblr-primary-rgb` CSS variable (declared after
+  the Tabler stylesheet so Tabler's default `:root` no longer wins the
+  cascade), UI density toggles `body.density-compact` /
+  `body.density-comfortable`, toasts toggles `body.toasts-off`, qBit
+  auto-refresh reads its interval from the preference (setting it to
+  0 disables polling entirely), and the `last` home option reads a
+  rotating `prismarr_last_route` HttpOnly cookie to resume where the
+  user left off.
+- `display_default_view` (default Radarr / Sonarr view) has been
+  dropped from the preferences — wiring it to the client-side view
+  switcher was too invasive for v1.0 and the feature is deferred to a
+  later release. The key is no longer written; any stale value already
+  stored in a user's DB is simply ignored.
+- 27 media templates had their browser tab title cleaned up: the
+  trailing `— IH-ARGOS` is gone, the tab now just reads `Prismarr`.
+- Sidebar wording: `Films` → `Radarr`, `Séries` → `Sonarr` (matches the
+  underlying service and improves the collapsed sidebar tooltips).
+  Calendar moved up in the sidebar order (right after Discovery).
+- The topbar has been rebuilt into a three-column layout (title /
+  large centred search / actions). The user dropdown now links to the
+  new profile page and, for admins, to the settings page.
+- Flash messages no longer auto-hide, so a long save confirmation or
+  error is not missed when it happens during a Turbo navigation.
+- Trending / spotlight / Jellyseerr links on the dashboard now open
+  the in-page discovery modal (`/decouverte?detail=type/id`) instead
+  of hitting the JSON resolver endpoint.
 - Home route (`/`) now resolves to the admin's `display_home_page`
   preference (dashboard by default), instead of always falling through
   to the first configured service. The legacy fallback chain
@@ -125,6 +212,17 @@ into `[1.0.0]` at publication time.
   previous values were too aggressive on slow VPN handshakes.
 
 ### Fixed
+- Dashboard mini-calendar no longer drops the upcoming events of the
+  last displayed days. The earlier 8-item cap was applied globally and
+  silently truncated the week; events are now limited per day with a
+  clickable "+N more" link that deep-links into the calendar day view.
+  Today's morning episodes also stop being misclassified as "past".
+- Dashboard and calendar hovers no longer get stuck in a highlighted
+  state after a tap on touch devices — hover rules are now wrapped in
+  `@media (hover: hover) and (pointer: fine)`.
+- The trending / recent tiles on the dashboard now open the discovery
+  modal correctly (the previous link pointed at the JSON resolver
+  endpoint, which did nothing visible for the user).
 - qBittorrent client cURL calls now set `CURLOPT_NOSIGNAL=1` and an
   explicit 3 s connect timeout on the four entry points
   (login / getRaw / request / post). Without `NOSIGNAL`, libcurl falls
