@@ -1729,12 +1729,23 @@
       ? '<img src="' + item.poster + '" alt="" loading="lazy">'
       : '<div class="no-poster">🎬</div>';
     var statusColors = { downloaded: '#22c55e', missing: '#f59e0b', announced: '#6366f1', inCinemas: '#6366f1', partial: '#3b82f6', unmonitored: '#6b7280' };
-    var statusLabels = { downloaded: 'Dispo', missing: 'Manquant', announced: 'Annoncé', inCinemas: 'En salles', partial: 'Partiel', unmonitored: 'Non suivi' };
-    var libBadge = item.in_library ? '<span class="lib-badge" style="background:' + (statusColors[item.lib_status] || '#22c55e') + ';">' + (statusLabels[item.lib_status] || 'Dispo') + '</span>' : '';
+    // Short labels (for card badges) — reuse the card.status_short keys
+    // from _i18n, with a sensible fallback if a lib_status is unknown.
+    var cardShort = {
+      downloaded:  {{ 'decouverte.card.status_short.downloaded'|trans|json_encode|raw }},
+      missing:     {{ 'decouverte.card.status_short.missing'|trans|json_encode|raw }},
+      announced:   {{ 'decouverte.card.status_short.announced'|trans|json_encode|raw }},
+      inCinemas:   {{ 'decouverte.card.status_short.inCinemas'|trans|json_encode|raw }},
+      partial:     {{ 'decouverte.card.status_short.partial'|trans|json_encode|raw }},
+      unmonitored: {{ 'decouverte.card.status_short.unmonitored'|trans|json_encode|raw }},
+      _default:    {{ 'decouverte.card.status_short.default'|trans|json_encode|raw }},
+    };
+    var inLibraryShort = {{ 'decouverte.card.in_library_short'|trans|json_encode|raw }};
+    var libBadge = item.in_library ? '<span class="lib-badge" style="background:' + (statusColors[item.lib_status] || '#22c55e') + ';">' + (cardShort[item.lib_status] || cardShort._default) + '</span>' : '';
     var voteBadge = item.vote ? '<span class="vote-badge ' + vc + '">★ ' + item.vote + '</span>' : '';
     var hoverBtn  = item.in_library
-      ? '<a href="' + (item.type === 'movie' ? '/medias/films' : '/medias/series') + '?open=' + (item.lib_id||'') + '" class="btn btn-sm" style="background:' + ({downloaded:'#22c55e',missing:'#f59e0b',announced:'#6366f1',inCinemas:'#6366f1',partial:'#3b82f6',unmonitored:'#6b7280'}[item.lib_status]||'#22c55e') + ';color:#fff;">' + (statusLabels[item.lib_status]||'En bibli.') + '</a>'
-      : '<button type="button" class="btn btn-primary btn-sm tmdb-add-btn" data-tmdb-id="' + item.id + '" data-tmdb-type="' + item.type + '" data-tmdb-title="' + safeTitle + '">Ajouter</button>';
+      ? '<a href="' + (item.type === 'movie' ? '/medias/films' : '/medias/series') + '?open=' + (item.lib_id||'') + '" class="btn btn-sm" style="background:' + ({downloaded:'#22c55e',missing:'#f59e0b',announced:'#6366f1',inCinemas:'#6366f1',partial:'#3b82f6',unmonitored:'#6b7280'}[item.lib_status]||'#22c55e') + ';color:#fff;">' + (cardShort[item.lib_status] || inLibraryShort) + '</a>'
+      : '<button type="button" class="btn btn-primary btn-sm tmdb-add-btn" data-tmdb-id="' + item.id + '" data-tmdb-type="' + item.type + '" data-tmdb-title="' + safeTitle + '">' + {{ 'decouverte.action.add'|trans|json_encode|raw }} + '</button>';
 
     var wlClass = (window._prismarrWatchlist && window._prismarrWatchlist[item.type + '_' + item.id]) ? ' in-wl' : '';
     var wlStar = '<button type="button" class="wl-star' + wlClass + '" data-tmdb-id="' + item.id + '" data-tmdb-type="' + item.type + '" title="Watchlist"><svg viewBox="0 0 24 24" fill="' + (wlClass ? '#f59e0b' : 'none') + '" stroke="#f59e0b" stroke-width="2"><path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.6-6.2 4.6 2.4-7.4-6.2-4.5h7.6z"/></svg></button>';
@@ -1748,7 +1759,7 @@
 
     return '<div class="media-card" data-tmdb-id="' + item.id + '" data-tmdb-type="' + item.type + '" data-tmdb-title="' + safeTitle + '" data-tmdb-vote="' + (item.vote||'') + '" data-tmdb-year="' + (item.year||'') + '" data-release="' + (item.release||'') + '">'
       + poster
-      + '<span class="quality-badge ' + item.type + '">' + (item.type === 'movie' ? 'Film' : 'Série') + '</span>'
+      + '<span class="quality-badge ' + item.type + '">' + (item.type === 'movie' ? TMDB_I18N.type_film : TMDB_I18N.type_series) + '</span>'
       + libBadge + countdown + wlStar + voteBadge
       + '<div class="card-overlay"><div class="card-title-text" title="' + safeTitle + '">' + (item.title || '—') + '</div>'
       + '<div class="card-year">' + (item.year || '') + '</div></div>'
@@ -1763,13 +1774,13 @@
       .then(function(r) { return r.json(); })
       .then(function(d) {
         if (d.error) {
-          detailLoading.innerHTML = '<div class="alert alert-danger m-4">Erreur : ' + d.error + '</div>';
+          detailLoading.innerHTML = '<div class="alert alert-danger m-4">' + {{ 'decouverte.search.error_prefix'|trans({message: '__MSG__'})|json_encode|raw }}.replace('__MSG__', d.error) + '</div>';
           return;
         }
         renderDetail(d);
       })
       .catch(function() {
-        detailLoading.innerHTML = '<div class="alert alert-danger m-4">Erreur réseau</div>';
+        detailLoading.innerHTML = '<div class="alert alert-danger m-4">' + TMDB_I18N.network_error + '</div>';
       });
   }
 
@@ -1831,7 +1842,7 @@
   function renderMyRecs(typeFilter) {
     var list = myRecsSets[typeFilter] || [];
     myRecsRow.innerHTML = list.map(renderCardHTML).join('')
-      || '<div class="text-secondary py-4 px-2">Aucun résultat pour ce filtre.</div>';
+      || '<div class="text-secondary py-4 px-2">' + {{ 'decouverte.search.no_filter_item'|trans|json_encode|raw }} + '</div>';
     if (myRecsCountEl) myRecsCountEl.textContent = '(' + list.length + ')';
     if (window._prismarrWatchlistSync) window._prismarrWatchlistSync();
   }
@@ -1959,20 +1970,23 @@
     }
     if (filterSort.value)    params.set('sort', filterSort.value);
 
-    document.getElementById('tmdb-search-title').textContent = 'Résultats filtrés (' + (type === 'movie' ? 'Films' : 'Séries') + ')';
-    searchGrid.innerHTML = '<div class="text-secondary p-3"><span class="spinner-border spinner-border-sm me-2"></span>Recherche…</div>';
+    var typeLabel = type === 'movie'
+      ? {{ 'decouverte.filters.movies'|trans|json_encode|raw }}
+      : {{ 'decouverte.filters.series'|trans|json_encode|raw }};
+    document.getElementById('tmdb-search-title').textContent = {{ 'decouverte.search.results_filtered'|trans({label: '__LABEL__'})|json_encode|raw }}.replace('__LABEL__', typeLabel);
+    searchGrid.innerHTML = '<div class="text-secondary p-3"><span class="spinner-border spinner-border-sm me-2"></span>' + {{ 'decouverte.search.searching'|trans|json_encode|raw }} + '</div>';
     searchBlock.style.display = '';
 
     fetch('/decouverte/filter?' + params.toString(), { credentials: 'same-origin' })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         searchGrid.innerHTML = (d.results || []).map(renderCardHTML).join('')
-          || '<div class="text-secondary p-3">Aucun résultat avec ces filtres.</div>';
-        searchCount.textContent = '(' + (d.total_results || (d.results||[]).length) + ' résultats)';
+          || '<div class="text-secondary p-3">' + {{ 'decouverte.search.no_filter_results'|trans|json_encode|raw }} + '</div>';
+        searchCount.textContent = {{ 'decouverte.search.count'|trans({count: '__N__'})|json_encode|raw }}.replace('__N__', d.total_results || (d.results||[]).length);
         if (window._prismarrWatchlistSync) window._prismarrWatchlistSync();
       })
       .catch(function() {
-        searchGrid.innerHTML = '<div class="alert alert-danger">Erreur lors de la recherche</div>';
+        searchGrid.innerHTML = '<div class="alert alert-danger">' + {{ 'decouverte.search.search_error'|trans|json_encode|raw }} + '</div>';
       });
   }
   filterApply.addEventListener('click', applyFilters);
@@ -1990,7 +2004,7 @@
   // Reset le titre sur une nouvelle recherche texte
   if (searchInput) {
     searchInput.addEventListener('focus', function() {
-      document.getElementById('tmdb-search-title').textContent = 'Résultats';
+      document.getElementById('tmdb-search-title').textContent = {{ 'decouverte.search.results'|trans|json_encode|raw }};
     });
   }
 
@@ -2075,7 +2089,7 @@
       if (wasIn) window._prismarrWatchlist[key] = true;
       else delete window._prismarrWatchlist[key];
       syncWlUI(tmdbId, type, wasIn);
-      if (window._prismarrToast) window._prismarrToast('Erreur réseau', 'danger');
+      if (window._prismarrToast) window._prismarrToast(TMDB_I18N.network_error, 'danger');
     });
   }
 

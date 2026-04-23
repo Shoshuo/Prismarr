@@ -993,42 +993,42 @@
                 <div class="text-secondary small" id="qa-subtitle"></div>
               </div>
             </div>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'quickadd.close'|trans }}"></button>
           </div>
           <div class="modal-body">
             <div id="qa-already" class="alert alert-success d-flex align-items-center gap-2" style="display:none !important;">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M9 12l2 2l4 -4"/></svg>
-              Déjà en bibliothèque
+              {{ 'quickadd.already_in_library'|trans }}
             </div>
 
             {# ── Formulaire FILM (Radarr) ── #}
             <div id="qa-form-film" style="display:none">
               <div class="row g-2">
                 <div class="col-12 col-sm-4">
-                  <label class="form-label small mb-1">Profil de qualité</label>
+                  <label class="form-label small mb-1">{{ 'quickadd.field.quality_profile'|trans }}</label>
                   <select id="qa-film-quality" class="form-select form-select-sm"></select>
                 </div>
                 <div class="col-12 col-sm-4">
-                  <label class="form-label small mb-1">Dossier racine</label>
+                  <label class="form-label small mb-1">{{ 'quickadd.field.root_folder'|trans }}</label>
                   <select id="qa-film-folder" class="form-select form-select-sm"></select>
                 </div>
                 <div class="col-12 col-sm-4">
-                  <label class="form-label small mb-1">Disponibilité minimum</label>
+                  <label class="form-label small mb-1">{{ 'quickadd.field.min_availability'|trans }}</label>
                   <select id="qa-film-availability" class="form-select form-select-sm">
-                    <option value="announced">Annoncé</option>
-                    <option value="inCinemas">En salles</option>
-                    <option value="released" selected>Sorti</option>
+                    <option value="announced">{{ 'quickadd.availability.announced'|trans }}</option>
+                    <option value="inCinemas">{{ 'quickadd.availability.inCinemas'|trans }}</option>
+                    <option value="released" selected>{{ 'quickadd.availability.released'|trans }}</option>
                   </select>
                 </div>
               </div>
               <div class="d-flex align-items-center justify-content-between mt-3">
                 <label class="form-check form-switch mb-0">
                   <input class="form-check-input" type="checkbox" id="qa-film-search" checked>
-                  <span class="form-check-label small">Rechercher automatiquement</span>
+                  <span class="form-check-label small">{{ 'quickadd.field.search_auto'|trans }}</span>
                 </label>
                 <button id="qa-film-confirm" class="btn btn-success">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M12 5l0 14"/><path d="M5 12l14 0"/></svg>
-                  Ajouter à Radarr
+                  {{ 'quickadd.cta.add_radarr'|trans }}
                 </button>
               </div>
             </div>
@@ -1037,31 +1037,31 @@
             <div id="qa-form-serie" style="display:none">
               <div class="row g-2">
                 <div class="col-6 col-sm-3">
-                  <label class="form-label small mb-1">Profil de qualité</label>
+                  <label class="form-label small mb-1">{{ 'quickadd.field.quality_profile'|trans }}</label>
                   <select id="qa-serie-quality" class="form-select form-select-sm"></select>
                 </div>
                 <div class="col-6 col-sm-3">
-                  <label class="form-label small mb-1">Dossier racine</label>
+                  <label class="form-label small mb-1">{{ 'quickadd.field.root_folder'|trans }}</label>
                   <select id="qa-serie-folder" class="form-select form-select-sm"></select>
                 </div>
                 <div class="col-6 col-sm-3">
-                  <label class="form-label small mb-1">Type de série</label>
+                  <label class="form-label small mb-1">{{ 'quickadd.field.series_type'|trans }}</label>
                   <select id="qa-serie-type" class="form-select form-select-sm">
-                    <option value="standard">Standard</option>
-                    <option value="daily">Quotidienne</option>
-                    <option value="anime">Anime</option>
+                    <option value="standard">{{ 'quickadd.series_type_options.standard'|trans }}</option>
+                    <option value="daily">{{ 'quickadd.series_type_options.daily'|trans }}</option>
+                    <option value="anime">{{ 'quickadd.series_type_options.anime'|trans }}</option>
                   </select>
                 </div>
                 <div class="col-6 col-sm-3">
-                  <label class="form-label small mb-1">Surveiller</label>
+                  <label class="form-label small mb-1">{{ 'quickadd.field.monitor'|trans }}</label>
                   <select id="qa-serie-monitor" class="form-select form-select-sm">
-                    <option value="all">Tous les épisodes</option>
-                    <option value="future">Futurs uniquement</option>
-                    <option value="missing">Manquants</option>
-                    <option value="firstSeason">1ère saison</option>
-                    <option value="lastSeason">Dernière saison</option>
-                    <option value="pilot">Pilote</option>
-                    <option value="none">Aucun</option>
+                    <option value="all">{{ 'quickadd.monitor_options.all'|trans }}</option>
+                    <option value="future">{{ 'quickadd.monitor_options.future'|trans }}</option>
+                    <option value="missing">{{ 'quickadd.monitor_options.missing'|trans }}</option>
+                    <option value="firstSeason">{{ 'quickadd.monitor_options.firstSeason'|trans }}</option>
+                    <option value="lastSeason">{{ 'quickadd.monitor_options.lastSeason'|trans }}</option>
+                    <option value="pilot">{{ 'quickadd.monitor_options.pilot'|trans }}</option>
+                    <option value="none">{{ 'quickadd.monitor_options.none'|trans }}</option>
                   </select>
                 </div>
               </div>
@@ -1069,16 +1069,16 @@
                 <div class="d-flex align-items-center gap-3 flex-wrap">
                   <label class="form-check mb-0">
                     <input type="checkbox" class="form-check-input" id="qa-serie-season-folder" checked>
-                    <span class="form-check-label small">Dossiers par saison</span>
+                    <span class="form-check-label small">{{ 'quickadd.field.season_folder'|trans }}</span>
                   </label>
                   <label class="form-check mb-0">
                     <input type="checkbox" class="form-check-input" id="qa-serie-search-missing">
-                    <span class="form-check-label small">Rechercher les manquants</span>
+                    <span class="form-check-label small">{{ 'quickadd.field.search_missing'|trans }}</span>
                   </label>
                 </div>
                 <button id="qa-serie-confirm" class="btn btn-success">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M12 5l0 14"/><path d="M5 12l14 0"/></svg>
-                  Ajouter à Sonarr
+                  {{ 'quickadd.cta.add_sonarr'|trans }}
                 </button>
               </div>
             </div>
@@ -1117,6 +1117,21 @@
       'health.status_down':    'topbar.health.status.down'|trans,
       'health.status_unk':     'topbar.health.status.not_configured'|trans,
       'common.loading':        'common.status.loading'|trans,
+      'qa.add_radarr':         'quickadd.cta.add_radarr'|trans,
+      'qa.add_sonarr':         'quickadd.cta.add_sonarr'|trans,
+      'qa.toast_film':         'quickadd.toast.type_film'|trans,
+      'qa.toast_series':       'quickadd.toast.type_series'|trans,
+      'qa.network_error':      'quickadd.error.network'|trans,
+      'qa.retry':              'quickadd.error.retry'|trans,
+      'qa.missing_fields':     'quickadd.error.missing_fields'|trans,
+      'qa.adding':             'quickadd.error.adding'|trans,
+      'qa.cannot_add':         'quickadd.error.cannot_add'|trans,
+      'qa.error_tpl':          'quickadd.error.generic'|trans({reason: '__REASON__'}),
+      'qa.added_film':         'quickadd.error.added_success'|trans({type: 'quickadd.toast.type_film'|trans}),
+      'qa.added_series':       'quickadd.error.added_success'|trans({type: 'quickadd.toast.type_series'|trans}),
+      'qa.added_done':         'quickadd.error.added_done'|trans,
+      'qa.toast_added_film_radarr':   'quickadd.toast.added'|trans({type: 'quickadd.toast.type_film'|trans, service: 'Radarr'}),
+      'qa.toast_added_series_sonarr': 'quickadd.toast.added'|trans({type: 'quickadd.toast.type_series'|trans, service: 'Sonarr'}),
     }|json_encode|raw }};
   </script>
 
@@ -1504,7 +1519,7 @@
         document.getElementById('qa-result').className = 'mt-3 alert d-none';
         var confirmBtn = document.getElementById(isFilm ? 'qa-film-confirm' : 'qa-serie-confirm');
         confirmBtn.disabled = false;
-        confirmBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 5l0 14"/><path d="M5 12l14 0"/></svg> Ajouter à ' + (isFilm ? 'Radarr' : 'Sonarr');
+        confirmBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 5l0 14"/><path d="M5 12l14 0"/></svg> ' + (isFilm ? (window._i18n['qa.add_radarr'] || 'Ajouter à Radarr') : (window._i18n['qa.add_sonarr'] || 'Ajouter à Sonarr'));
 
         // Charger profils/dossiers
         var cacheKey = isFilm ? 'film' : 'serie';
@@ -1578,8 +1593,10 @@
           if (btn) {
             btn.disabled = false;
             btn.className = 'btn btn-success';
-            var label = id === 'qa-film-confirm' ? 'Radarr' : 'Sonarr';
-            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 5l0 14"/><path d="M5 12l14 0"/></svg> Ajouter à ' + label;
+            var ctaLabel = id === 'qa-film-confirm'
+              ? (window._i18n['qa.add_radarr'] || 'Ajouter à Radarr')
+              : (window._i18n['qa.add_sonarr'] || 'Ajouter à Sonarr');
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 5l0 14"/><path d="M5 12l14 0"/></svg> ' + ctaLabel;
           }
         });
         var result = document.getElementById('qa-result');
@@ -1596,12 +1613,12 @@
 
         if (!qualVal || !folderVal) {
           result.className = 'mt-3 alert alert-warning';
-          result.textContent = 'Sélectionnez un profil et un dossier.';
+          result.textContent = window._i18n['qa.missing_fields'] || 'Sélectionnez un profil et un dossier.';
           return;
         }
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Ajout…';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + (window._i18n['qa.adding'] || 'Ajout…');
 
         var url, payload;
         if (isFilm) {
@@ -1631,25 +1648,29 @@
           .then(function (data) {
             if (data.ok) {
               result.className = 'mt-3 alert alert-success';
-              result.textContent = (isFilm ? 'Film' : 'Série') + ' ajouté(e) avec succès !';
-              btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5l10-10"/></svg> Ajouté !';
+              result.textContent = (isFilm ? window._i18n['qa.added_film'] : window._i18n['qa.added_series']) || 'Ajouté !';
+              btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5l10-10"/></svg> ' + (window._i18n['qa.added_done'] || 'Ajouté !');
               btn.className = 'btn btn-outline-success';
-              if (window._prismarrToast) window._prismarrToast((isFilm ? 'Film' : 'Série') + ' ajouté(e) à ' + (isFilm ? 'Radarr' : 'Sonarr'), 'success');
+              if (window._prismarrToast) window._prismarrToast(
+                (isFilm ? window._i18n['qa.toast_added_film_radarr'] : window._i18n['qa.toast_added_series_sonarr']) || 'Ajouté',
+                'success'
+              );
               setTimeout(function () {
                 closeQA();
               }, 1000);
             } else {
               result.className = 'mt-3 alert alert-danger';
-              result.textContent = 'Erreur : ' + (data.error || 'Ajout impossible');
+              var errTpl = window._i18n['qa.error_tpl'] || 'Erreur : __REASON__';
+              result.textContent = errTpl.replace('__REASON__', data.error || (window._i18n['qa.cannot_add'] || 'Ajout impossible'));
               btn.disabled = false;
-              btn.innerHTML = 'Réessayer';
+              btn.innerHTML = window._i18n['qa.retry'] || 'Réessayer';
             }
           })
           .catch(function () {
             result.className = 'mt-3 alert alert-danger';
-            result.textContent = 'Erreur réseau';
+            result.textContent = window._i18n['qa.network_error'] || 'Erreur réseau';
             btn.disabled = false;
-            btn.innerHTML = 'Réessayer';
+            btn.innerHTML = window._i18n['qa.retry'] || 'Réessayer';
           });
       }
 

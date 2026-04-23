@@ -128,6 +128,52 @@ footer:
   made_with: Propulsé par Prismarr
   version: 'Version {version}'
 
+quickadd:
+  close: Fermer
+  already_in_library: Déjà en bibliothèque
+  field:
+    quality_profile: Profil de qualité
+    root_folder: Dossier racine
+    min_availability: Disponibilité minimum
+    series_type: Type de série
+    monitor: Surveiller
+    season_folder: Dossiers par saison
+    search_missing: Rechercher les manquants
+    search_auto: Rechercher automatiquement
+  availability:
+    announced: Annoncé
+    inCinemas: En salles
+    released: Sorti
+  series_type_options:
+    standard: Standard
+    daily: Quotidienne
+    anime: Anime
+  monitor_options:
+    all: Tous les épisodes
+    future: Futurs uniquement
+    missing: Manquants
+    firstSeason: 1ère saison
+    lastSeason: Dernière saison
+    pilot: Pilote
+    none: Aucun
+  cta:
+    add_radarr: Ajouter à Radarr
+    add_sonarr: Ajouter à Sonarr
+    add_to: 'Ajouter à {service}'
+  toast:
+    added: '{type} ajouté à {service}'
+    type_film: Film
+    type_series: Série
+  error:
+    network: Erreur réseau
+    retry: Réessayer
+    missing_fields: Sélectionnez un profil et un dossier.
+    adding: Ajout…
+    generic: 'Erreur : {reason}'
+    cannot_add: Ajout impossible
+    added_success: '{type} ajouté(e) avec succès !'
+    added_done: '✓ Ajouté !'
+
 login:
   title: Connexion
   subtitle: Accédez à votre instance Prismarr
@@ -587,8 +633,15 @@ decouverte:
     reset: Réinitialiser
   search:
     results: Résultats
+    results_filtered: 'Résultats filtrés ({label})'
     close: '× Fermer'
     no_results: Aucun résultat.
+    no_filter_results: Aucun résultat avec ces filtres.
+    searching: Recherche…
+    search_error: Erreur lors de la recherche
+    count: '({count} résultats)'
+    no_filter_item: Aucun résultat pour ce filtre.
+    error_prefix: 'Erreur : {message}'
   hero:
     movie: 'Film tendance · Cette semaine'
     tv: 'Série tendance · Cette semaine'

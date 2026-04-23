@@ -129,6 +129,52 @@ footer:
   made_with: Powered by Prismarr
   version: 'Version {version}'
 
+quickadd:
+  close: Close
+  already_in_library: Already in library
+  field:
+    quality_profile: Quality profile
+    root_folder: Root folder
+    min_availability: Minimum availability
+    series_type: Series type
+    monitor: Monitor
+    season_folder: Season folders
+    search_missing: Search for missing
+    search_auto: Auto-search
+  availability:
+    announced: Announced
+    inCinemas: In theatres
+    released: Released
+  series_type_options:
+    standard: Standard
+    daily: Daily
+    anime: Anime
+  monitor_options:
+    all: All episodes
+    future: Future only
+    missing: Missing
+    firstSeason: First season
+    lastSeason: Last season
+    pilot: Pilot
+    none: None
+  cta:
+    add_radarr: Add to Radarr
+    add_sonarr: Add to Sonarr
+    add_to: 'Add to {service}'
+  toast:
+    added: '{type} added to {service}'
+    type_film: Movie
+    type_series: TV Show
+  error:
+    network: Network error
+    retry: Retry
+    missing_fields: Pick a profile and a folder.
+    adding: Adding…
+    generic: 'Error: {reason}'
+    cannot_add: Cannot add
+    added_success: '{type} successfully added!'
+    added_done: '✓ Added!'
+
 login:
   title: Sign in
   subtitle: Access your Prismarr instance
@@ -588,8 +634,15 @@ decouverte:
     reset: Reset
   search:
     results: Results
+    results_filtered: 'Filtered results ({label})'
     close: '× Close'
     no_results: No results.
+    no_filter_results: No results with these filters.
+    searching: Searching…
+    search_error: Error while searching
+    count: '({count} results)'
+    no_filter_item: No result for this filter.
+    error_prefix: 'Error: {message}'
   hero:
     movie: 'Trending movie · This week'
     tv: 'Trending TV show · This week'
