@@ -366,6 +366,338 @@ error:
     home: Back to home
     retry: Retry
 
+admin:
+  page:
+    title: Settings
+    subtitle: 'Services and interface configuration. Changes take effect immediately — no restart required.'
+  nav:
+    section: Settings
+    coming: Coming soon
+    services: External services
+    display: Display
+    backup: Backup
+    about: About
+    email_notifications: Email notifications
+    security_sessions: 'Security · sessions'
+    aria_label: Settings sections
+  services:
+    title: External services
+    description: 'URLs and API keys for the services Prismarr drives. Use <em>Test</em> to validate connectivity after changes.'
+    group:
+      discovery: Discovery
+      managers: Managers
+      indexers: Indexers & requests
+      downloads: Downloads
+    subtitle:
+      tmdb: Movie & TV discovery, watchlist
+      radarr: Movie manager
+      sonarr: TV show manager
+      prowlarr: Indexer aggregator
+      jellyseerr: Request platform
+      qbittorrent: Torrent client
+      gluetun: 'VPN / port forwarding'
+    sidebar_toggle: Menu
+    sidebar_toggle_title: Show in sidebar
+    status:
+      not_tested: Not tested
+      testing: Testing…
+      connected: Connected
+      unreachable: Unreachable
+      error: Error
+    test: Test
+  display:
+    title: Display
+    description: 'Personal display preferences (timezone, date format, theme, density) and sidebar section visibility.'
+    preferences:
+      title: Preferences
+      subtitle: Default UI behaviour
+    switch:
+      on: Enabled
+      off: Disabled
+    home_page:
+      label: Default home page
+      help: Page shown right after sign-in.
+      options:
+        dashboard: Dashboard
+        discovery: Discover (TMDb)
+        films: Movies
+        series: TV shows
+        qbittorrent: Downloads
+        last: Last visited page
+    toasts:
+      label: Toast notifications
+      help: 'Transient bubbles at the bottom of the screen (downloads finished, errors).'
+    timezone:
+      label: Timezone
+      help: Used for all dates/times.
+    date_format:
+      label: Date format
+      options:
+        fr: 'French (21/04/2026)'
+        us: 'American (Apr 21, 2026)'
+        iso: 'ISO (2026-04-21)'
+    time_format:
+      label: Time format
+      options:
+        '24h': '24h (14:30)'
+        '12h': '12h (2:30 PM)'
+    theme_color:
+      label: Primary colour
+    qbit_refresh:
+      label: qBittorrent refresh
+      help: Auto-polling frequency on the Downloads page.
+      options:
+        '1': '1 second (real-time)'
+        '2': '2 seconds (default)'
+        '5': '5 seconds'
+        '10': '10 seconds (low load)'
+        '0': Disabled
+    ui_density:
+      label: UI density
+      options:
+        comfortable: Comfortable (default)
+        compact: Compact
+    language:
+      label: UI language
+      help: 'Default UI language. Every user can override it via the top-bar picker.'
+      options:
+        fr: Français
+        en: English
+    metadata_language:
+      label: Metadata language
+      help: 'Language requested from TMDb for titles, overviews and images. Applies to everyone. Radarr/Sonarr/Jellyseerr still have to be configured in their own UI (automatic sync planned for v1.1).'
+      options:
+        fr_FR: Français (fr-FR)
+        en_US: 'English — US (en-US)'
+        en_GB: 'English — UK (en-GB)'
+        es_ES: Español (es-ES)
+        de_DE: Deutsch (de-DE)
+        it_IT: Italiano (it-IT)
+        pt_PT: 'Português (pt-PT)'
+        pt_BR: 'Português — Brazil (pt-BR)'
+        ja_JP: 日本語 (ja-JP)
+  field:
+    url: URL
+    api_key: API key
+    username: Username
+    password: Password
+    protocol: 'Protocol (openvpn/wireguard)'
+    api_key_if_protected: 'API key (if protected)'
+    tmdb:
+      api_key: v3 API key
+  internal:
+    calendar:
+      label: Calendar
+      subtitle: 'Aggregated movie + episode releases (Radarr + Sonarr)'
+  backup:
+    title: Backup
+    description: 'Export your configuration (service URLs, sidebar toggles, display preferences) to move it to another homelab or version-control it. <strong>API keys and passwords are deliberately excluded</strong>: they have to be re-entered after an import.'
+    export:
+      title: Export configuration
+      count: '{safe, plural, one {# exportable setting} other {# exportable settings}} · {skipped} skipped (keys / passwords)'
+      cta: Download JSON
+    import:
+      title: Import a configuration
+      subtitle: 'Prismarr JSON file (export v1, 64 KB max).'
+      cta: Import
+      confirm: 'Import the configuration? Matching current values will be replaced.'
+    reset:
+      title: Reset display preferences
+      subtitle: 'Resets the Display section options to their default values (home page, timezone, date/time format, theme, density, toasts, qBit refresh, languages).'
+      cta: Reset
+      confirm: 'Reset all display preferences to their default values?'
+  about:
+    title: About
+    description: Runtime info about this Prismarr install.
+    field:
+      version: Version
+      environment: Environment
+      symfony: Symfony
+      php: PHP
+      database: Database
+      server_time: Server time
+    content:
+      title: Content
+      users: '{count, plural, one {# user} other {# users}}'
+      films: '{count, plural, one {# movie} other {# movies}}'
+      series: '{count, plural, one {# TV show} other {# TV shows}}'
+    links:
+      title: Links
+      source: 'Source code ↗'
+      bug: 'Report a bug ↗'
+      docs: 'Documentation ↗'
+  save: Save changes
+  coming:
+    v1_1: v1.1
+
+decouverte:
+  title: Discover
+  search_placeholder: 'Search a movie or TV show on TMDb…'
+  actions:
+    filters: Filters
+    watchlist: Watchlist
+    explorer: Explorer
+  filters:
+    type: Type
+    movies: Movies
+    series: TV shows
+    genre: Genre
+    all: All
+    year_from: Year from
+    year_to: to
+    vote_min: 'Min rating: {value}/10'
+    sort: Sort
+    sort_options:
+      popularity: 'Popularity ↓'
+      vote_avg: 'Rating ↓'
+      vote_count: 'Reviews ↓'
+      release: 'Release date ↓'
+      revenue: 'Revenue ↓'
+    apply: Apply
+    reset: Reset
+  search:
+    results: Results
+    close: '× Close'
+    no_results: No results.
+  hero:
+    movie: 'Trending movie · This week'
+    tv: 'Trending TV show · This week'
+  section:
+    my_recs:
+      title: For you
+      subtitle: 'based on your library'
+      loading: Scanning your library…
+    trending: Trending this week
+    popular_movies: Popular movies
+    popular_tv: Popular TV shows
+    upcoming: Upcoming theatrical releases
+    on_air: TV shows currently airing
+    top_movies: Top-rated movies
+    top_tv: Top-rated TV shows
+  scroll:
+    prev: Previous
+    next: Next
+  recent:
+    title: Recently viewed
+    clear: Clear
+    clear_title: Clear history
+  badge:
+    in_library: In library
+  action:
+    add: Add
+    close: Close
+  card:
+    rating: 'Rating {value}/10'
+  watchlist:
+    title: Watchlist
+    filter_all: All
+    filter_movies: Movies
+    filter_tv: TV shows
+    search_placeholder: Search...
+    sort:
+      added_desc: Most recent
+      added_asc: Oldest
+      title_asc: 'Title A-Z'
+      title_desc: 'Title Z-A'
+      vote_desc: Best rated
+      year_desc: 'Year ↓'
+    type_film: Movie
+    type_tv: TV Show
+    empty_title: Watchlist empty
+    empty_message: 'Add movies and TV shows from the <a href="{path}">Discover page</a>.'
+    remove_confirm: 'Remove "{title}" from the watchlist?'
+    removed_toast: Removed from watchlist
+    notes_title: Notes
+    notes_placeholder: Add a note...
+    notes_cancel: Cancel
+    notes_save: Save
+    notes_saved_toast: Note saved
+  explorer:
+    title: Explorer
+    subtitle: 'Filter TMDb by genre, year, rating, language, popularity.'
+    no_results: No results for these filters.
+
+calendar:
+  title: Calendar
+  subtitle: Aggregated movie + episode releases (Radarr + Sonarr)
+  filter:
+    all: All
+    media: Media
+    cinema: Cinema
+    digital: Digital
+    physical: Physical
+    episode: Episodes
+    status: Status
+    status_all: All
+    status_monitored: Monitored
+    status_missing: Not monitored
+    status_available: Available
+  view:
+    month: Month
+    week: Week
+    day: Day
+    aria_label: Calendar view
+  nav:
+    today: Today
+    prev: Previous
+    next: Next
+    ical: iCal
+    ical_title: 'iCal subscription (Apple Calendar / Google / Thunderbird)'
+  empty:
+    month: No releases scheduled this month.
+    week: No releases scheduled this week.
+    day: No releases scheduled this day.
+  months:
+    full:
+      - January
+      - February
+      - March
+      - April
+      - May
+      - June
+      - July
+      - August
+      - September
+      - October
+      - November
+      - December
+  weekdays:
+    short:
+      - Mon
+      - Tue
+      - Wed
+      - Thu
+      - Fri
+      - Sat
+      - Sun
+    full:
+      - Monday
+      - Tuesday
+      - Wednesday
+      - Thursday
+      - Friday
+      - Saturday
+      - Sunday
+  event:
+    type_cinema: Cinema
+    type_digital: Digital
+    type_physical: Physical
+    type_episode: Episode
+    film: Movie
+    series: TV Show
+    episode: Episode
+    release_cinema: Cinema release
+    release_digital: Digital release
+    release_physical: Physical release
+    release_episode: Episode
+    release_unknown: Unknown date
+    more: '+ {count} more'
+    count: '{count, plural, one {# event} other {# events}}'
+    none: No events
+  week:
+    same_month: 'Week of {start}–{end} {month} {year}'
+    cross_month: 'Week of {start_day} {start_month} — {end_day} {end_month} {year}'
+
 flash:
   profile:
     updated: Profile updated.

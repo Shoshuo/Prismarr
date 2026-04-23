@@ -37,33 +37,33 @@ class AdminSettingsController extends AbstractController
      */
     private const FIELDS = [
         'tmdb' => [
-            ['key' => 'tmdb_api_key', 'type' => 'password', 'label' => 'Clé API v3', 'placeholder' => '7a2f4…'],
+            ['key' => 'tmdb_api_key', 'type' => 'password', 'label' => 'admin.field.tmdb.api_key', 'placeholder' => '7a2f4…'],
         ],
         'radarr' => [
-            ['key' => 'radarr_url',     'type' => 'text',     'label' => 'URL',     'placeholder' => 'http://host.docker.internal:7878'],
-            ['key' => 'radarr_api_key', 'type' => 'password', 'label' => 'Clé API'],
+            ['key' => 'radarr_url',     'type' => 'text',     'label' => 'admin.field.url',     'placeholder' => 'http://host.docker.internal:7878'],
+            ['key' => 'radarr_api_key', 'type' => 'password', 'label' => 'admin.field.api_key'],
         ],
         'sonarr' => [
-            ['key' => 'sonarr_url',     'type' => 'text',     'label' => 'URL',     'placeholder' => 'http://host.docker.internal:8989'],
-            ['key' => 'sonarr_api_key', 'type' => 'password', 'label' => 'Clé API'],
+            ['key' => 'sonarr_url',     'type' => 'text',     'label' => 'admin.field.url',     'placeholder' => 'http://host.docker.internal:8989'],
+            ['key' => 'sonarr_api_key', 'type' => 'password', 'label' => 'admin.field.api_key'],
         ],
         'prowlarr' => [
-            ['key' => 'prowlarr_url',     'type' => 'text',     'label' => 'URL',     'placeholder' => 'http://host.docker.internal:9696'],
-            ['key' => 'prowlarr_api_key', 'type' => 'password', 'label' => 'Clé API'],
+            ['key' => 'prowlarr_url',     'type' => 'text',     'label' => 'admin.field.url',     'placeholder' => 'http://host.docker.internal:9696'],
+            ['key' => 'prowlarr_api_key', 'type' => 'password', 'label' => 'admin.field.api_key'],
         ],
         'jellyseerr' => [
-            ['key' => 'jellyseerr_url',     'type' => 'text',     'label' => 'URL',     'placeholder' => 'http://host.docker.internal:5055'],
-            ['key' => 'jellyseerr_api_key', 'type' => 'password', 'label' => 'Clé API'],
+            ['key' => 'jellyseerr_url',     'type' => 'text',     'label' => 'admin.field.url',     'placeholder' => 'http://host.docker.internal:5055'],
+            ['key' => 'jellyseerr_api_key', 'type' => 'password', 'label' => 'admin.field.api_key'],
         ],
         'qbittorrent' => [
-            ['key' => 'qbittorrent_url',      'type' => 'text',     'label' => 'URL',           'placeholder' => 'http://host.docker.internal:8080'],
-            ['key' => 'qbittorrent_user',     'type' => 'text',     'label' => 'Utilisateur'],
-            ['key' => 'qbittorrent_password', 'type' => 'password', 'label' => 'Mot de passe'],
+            ['key' => 'qbittorrent_url',      'type' => 'text',     'label' => 'admin.field.url',             'placeholder' => 'http://host.docker.internal:8080'],
+            ['key' => 'qbittorrent_user',     'type' => 'text',     'label' => 'admin.field.username'],
+            ['key' => 'qbittorrent_password', 'type' => 'password', 'label' => 'admin.field.password'],
         ],
         'gluetun' => [
-            ['key' => 'gluetun_url',      'type' => 'text',     'label' => 'URL'],
-            ['key' => 'gluetun_api_key',  'type' => 'password', 'label' => 'Clé API (si protégé)'],
-            ['key' => 'gluetun_protocol', 'type' => 'text',     'label' => 'Protocole (openvpn/wireguard)'],
+            ['key' => 'gluetun_url',      'type' => 'text',     'label' => 'admin.field.url'],
+            ['key' => 'gluetun_api_key',  'type' => 'password', 'label' => 'admin.field.api_key_if_protected'],
+            ['key' => 'gluetun_protocol', 'type' => 'text',     'label' => 'admin.field.protocol'],
         ],
     ];
 
@@ -86,8 +86,8 @@ class AdminSettingsController extends AbstractController
      */
     private const INTERNAL_FEATURES = [
         'calendar' => [
-            'label'    => 'Calendrier',
-            'subtitle' => 'Sorties films + épisodes agrégées (Radarr + Sonarr)',
+            'label'    => 'admin.internal.calendar.label',
+            'subtitle' => 'admin.internal.calendar.subtitle',
         ],
     ];
 
@@ -101,52 +101,52 @@ class AdminSettingsController extends AbstractController
      */
     public const DISPLAY_OPTIONS = [
         'display_home_page' => [
-            'label'   => 'Page d\'accueil par défaut',
+            'label'   => 'admin.display.home_page.label',
             'type'    => 'select',
             'default' => 'dashboard',
             'options' => [
-                'dashboard'   => 'Tableau de bord',
-                'discovery'   => 'Découverte (TMDb)',
-                'films'       => 'Films',
-                'series'      => 'Séries',
-                'qbittorrent' => 'Téléchargements',
-                'last'        => 'Dernière page visitée',
+                'dashboard'   => 'admin.display.home_page.options.dashboard',
+                'discovery'   => 'admin.display.home_page.options.discovery',
+                'films'       => 'admin.display.home_page.options.films',
+                'series'      => 'admin.display.home_page.options.series',
+                'qbittorrent' => 'admin.display.home_page.options.qbittorrent',
+                'last'        => 'admin.display.home_page.options.last',
             ],
-            'help' => 'La page que Prismarr affiche quand vous vous connectez.',
+            'help' => 'admin.display.home_page.help',
         ],
         'display_toasts' => [
-            'label'   => 'Notifications (toasts)',
+            'label'   => 'admin.display.toasts.label',
             'type'    => 'switch',
             'default' => '1',
-            'help'    => 'Afficher les bulles fugaces en bas d\'écran (fin de téléchargement, erreurs).',
+            'help'    => 'admin.display.toasts.help',
         ],
         'display_timezone' => [
-            'label'   => 'Fuseau horaire',
+            'label'   => 'admin.display.timezone.label',
             'type'    => 'timezone',
             'default' => 'Europe/Paris',
-            'help'    => 'Utilisé pour afficher toutes les dates/heures.',
+            'help'    => 'admin.display.timezone.help',
         ],
         'display_date_format' => [
-            'label'   => 'Format de date',
+            'label'   => 'admin.display.date_format.label',
             'type'    => 'select',
             'default' => 'fr',
             'options' => [
-                'fr'  => 'Français (21/04/2026)',
-                'us'  => 'Américain (Apr 21, 2026)',
-                'iso' => 'ISO (2026-04-21)',
+                'fr'  => 'admin.display.date_format.options.fr',
+                'us'  => 'admin.display.date_format.options.us',
+                'iso' => 'admin.display.date_format.options.iso',
             ],
         ],
         'display_time_format' => [
-            'label'   => 'Format d\'heure',
+            'label'   => 'admin.display.time_format.label',
             'type'    => 'select',
             'default' => '24h',
             'options' => [
-                '24h' => '24h (14:30)',
-                '12h' => '12h (2:30 PM)',
+                '24h' => 'admin.display.time_format.options.24h',
+                '12h' => 'admin.display.time_format.options.12h',
             ],
         ],
         'display_theme_color' => [
-            'label'   => 'Couleur principale',
+            'label'   => 'admin.display.theme_color.label',
             'type'    => 'color',
             'default' => 'indigo',
             'options' => [
@@ -159,36 +159,53 @@ class AdminSettingsController extends AbstractController
             ],
         ],
         'display_qbit_refresh' => [
-            'label'   => 'Rafraîchissement qBittorrent',
+            'label'   => 'admin.display.qbit_refresh.label',
             'type'    => 'select',
             'default' => '2',
             'options' => [
-                '1'  => '1 seconde (temps réel)',
-                '2'  => '2 secondes (défaut)',
-                '5'  => '5 secondes',
-                '10' => '10 secondes (économe)',
-                '0'  => 'Désactivé',
+                '1'  => 'admin.display.qbit_refresh.options.1',
+                '2'  => 'admin.display.qbit_refresh.options.2',
+                '5'  => 'admin.display.qbit_refresh.options.5',
+                '10' => 'admin.display.qbit_refresh.options.10',
+                '0'  => 'admin.display.qbit_refresh.options.0',
             ],
-            'help' => 'Fréquence du polling automatique sur la page Téléchargements.',
+            'help' => 'admin.display.qbit_refresh.help',
         ],
         'display_ui_density' => [
-            'label'   => 'Densité de l\'interface',
+            'label'   => 'admin.display.ui_density.label',
             'type'    => 'select',
             'default' => 'comfortable',
             'options' => [
-                'comfortable' => 'Confortable (défaut)',
-                'compact'     => 'Compacte',
+                'comfortable' => 'admin.display.ui_density.options.comfortable',
+                'compact'     => 'admin.display.ui_density.options.compact',
             ],
         ],
         'display_language' => [
-            'label'   => 'Langue de l\'interface',
+            'label'   => 'admin.display.language.label',
             'type'    => 'select',
             'default' => 'fr',
             'options' => [
-                'fr' => 'Français',
-                'en' => 'English',
+                'fr' => 'admin.display.language.options.fr',
+                'en' => 'admin.display.language.options.en',
             ],
-            'help' => 'Langue par défaut de l\'interface. Chaque utilisateur peut surcharger via le sélecteur de la barre du haut.',
+            'help' => 'admin.display.language.help',
+        ],
+        'display_metadata_language' => [
+            'label'   => 'admin.display.metadata_language.label',
+            'type'    => 'select',
+            'default' => 'fr-FR',
+            'options' => [
+                'fr-FR' => 'admin.display.metadata_language.options.fr_FR',
+                'en-US' => 'admin.display.metadata_language.options.en_US',
+                'en-GB' => 'admin.display.metadata_language.options.en_GB',
+                'es-ES' => 'admin.display.metadata_language.options.es_ES',
+                'de-DE' => 'admin.display.metadata_language.options.de_DE',
+                'it-IT' => 'admin.display.metadata_language.options.it_IT',
+                'pt-PT' => 'admin.display.metadata_language.options.pt_PT',
+                'pt-BR' => 'admin.display.metadata_language.options.pt_BR',
+                'ja-JP' => 'admin.display.metadata_language.options.ja_JP',
+            ],
+            'help' => 'admin.display.metadata_language.help',
         ],
     ];
 

@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Paramètres{% endblock %}
+{% block title %}{{ 'admin.page.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
 <style>
@@ -225,8 +225,8 @@
     <div class="settings-page">
 
       {# ── Nav left (sticky on desktop, collapsed on mobile) ───────── #}
-      <nav class="settings-nav" aria-label="Sections des paramètres">
-        <div class="settings-nav-title">Paramètres</div>
+      <nav class="settings-nav" aria-label="{{ 'admin.nav.aria_label'|trans }}">
+        <div class="settings-nav-title">{{ 'admin.nav.section'|trans }}</div>
         <a href="#section-services" data-settings-nav="section-services">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round">
@@ -235,7 +235,7 @@
             <rect x="4" y="14" width="6" height="6" rx="1"/>
             <rect x="14" y="14" width="6" height="6" rx="1"/>
           </svg>
-          Services externes
+          {{ 'admin.nav.services'|trans }}
         </a>
         <a href="#section-display" data-settings-nav="section-display">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -244,7 +244,7 @@
             <line x1="8" y1="20" x2="16" y2="20"/>
             <line x1="12" y1="16" x2="12" y2="20"/>
           </svg>
-          Affichage
+          {{ 'admin.nav.display'|trans }}
         </a>
 
         <a href="#section-backup" data-settings-nav="section-backup">
@@ -253,7 +253,7 @@
             <path d="M4 7v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-10"/>
             <path d="M12 4l0 12"/><path d="M7 8l5 -4l5 4"/>
           </svg>
-          Sauvegarde
+          {{ 'admin.nav.backup'|trans }}
         </a>
         <a href="#section-about" data-settings-nav="section-about">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -262,18 +262,18 @@
             <line x1="12" y1="8" x2="12.01" y2="8"/>
             <polyline points="11 12 12 12 12 16 13 16"/>
           </svg>
-          À propos
+          {{ 'admin.nav.about'|trans }}
         </a>
 
-        <div class="settings-nav-title" style="margin-top: 1.25rem;">Bientôt</div>
+        <div class="settings-nav-title" style="margin-top: 1.25rem;">{{ 'admin.nav.coming'|trans }}</div>
         <a class="disabled">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round">
             <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/>
             <path d="M9 17v1a3 3 0 0 0 6 0v-1"/>
           </svg>
-          Notifications email
-          <span class="coming-badge">v1.1</span>
+          {{ 'admin.nav.email_notifications'|trans }}
+          <span class="coming-badge">{{ 'admin.coming.v1_1'|trans }}</span>
         </a>
         <a class="disabled">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -281,8 +281,8 @@
             <path d="M12 9v2M12 14v.01"/>
             <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75"/>
           </svg>
-          Sécurité · sessions
-          <span class="coming-badge">v1.1</span>
+          {{ 'admin.nav.security_sessions'|trans }}
+          <span class="coming-badge">{{ 'admin.coming.v1_1'|trans }}</span>
         </a>
       </nav>
 
@@ -290,10 +290,9 @@
       <div class="settings-content">
 
         <div class="settings-header">
-          <h1>Paramètres</h1>
+          <h1>{{ 'admin.page.title'|trans }}</h1>
           <div class="text-secondary">
-            Configuration des services et de l'interface. Les modifications
-            prennent effet immédiatement — aucun redémarrage requis.
+            {{ 'admin.page.subtitle'|trans }}
           </div>
         </div>
 
@@ -308,29 +307,26 @@
           <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_settings') }}"/>
 
           {% set service_meta = {
-            'tmdb':        { icon_bg: '#0d253f', subtitle: 'Découverte films & séries, watchlist' },
-            'radarr':      { icon_bg: '#ffc230', subtitle: 'Gestionnaire de films' },
-            'sonarr':      { icon_bg: '#35c5f0', subtitle: 'Gestionnaire de séries' },
-            'prowlarr':    { icon_bg: '#e86100', subtitle: 'Agrégateur d\'indexeurs' },
-            'jellyseerr':  { icon_bg: '#6366f1', subtitle: 'Plateforme de requêtes' },
-            'qbittorrent': { icon_bg: '#2f67ba', subtitle: 'Client torrent' },
-            'gluetun':     { icon_bg: '#10b981', subtitle: 'VPN / port forwarding' },
+            'tmdb':        { icon_bg: '#0d253f', subtitle: 'admin.services.subtitle.tmdb'|trans },
+            'radarr':      { icon_bg: '#ffc230', subtitle: 'admin.services.subtitle.radarr'|trans },
+            'sonarr':      { icon_bg: '#35c5f0', subtitle: 'admin.services.subtitle.sonarr'|trans },
+            'prowlarr':    { icon_bg: '#e86100', subtitle: 'admin.services.subtitle.prowlarr'|trans },
+            'jellyseerr':  { icon_bg: '#6366f1', subtitle: 'admin.services.subtitle.jellyseerr'|trans },
+            'qbittorrent': { icon_bg: '#2f67ba', subtitle: 'admin.services.subtitle.qbittorrent'|trans },
+            'gluetun':     { icon_bg: '#10b981', subtitle: 'admin.services.subtitle.gluetun'|trans },
           } %}
 
           {% set groupings = {
-            'Découverte':           ['tmdb'],
-            'Gestionnaires':        ['radarr', 'sonarr'],
-            'Indexeurs & requêtes': ['prowlarr', 'jellyseerr'],
-            'Téléchargements':      ['qbittorrent', 'gluetun'],
+            ('admin.services.group.discovery'|trans):  ['tmdb'],
+            ('admin.services.group.managers'|trans):   ['radarr', 'sonarr'],
+            ('admin.services.group.indexers'|trans):   ['prowlarr', 'jellyseerr'],
+            ('admin.services.group.downloads'|trans):  ['qbittorrent', 'gluetun'],
           } %}
 
           {# ─── Section 1 : Services externes ─────────────────────── #}
           <section id="section-services" class="settings-group" data-section>
-            <div class="settings-group-title">Services externes</div>
-            <p class="settings-group-desc">
-              URLs et clés API des services que Prismarr pilote. Utilisez
-              <em>Tester</em> pour valider la connectivité après modification.
-            </p>
+            <div class="settings-group-title">{{ 'admin.services.title'|trans }}</div>
+            <p class="settings-group-desc">{{ 'admin.services.description'|trans|raw }}</p>
 
             {% for group_label, service_ids in groupings %}
               <div style="font-size:.75rem; color:var(--tblr-secondary); font-weight:600; margin: 1.25rem 0 .6rem;">
@@ -355,26 +351,26 @@
                       <p class="service-card-sub">{{ meta.subtitle }}</p>
                     </div>
                     <div class="service-card-actions">
-                      <label class="form-check form-switch mb-0 me-1" title="Afficher dans le menu latéral">
+                      <label class="form-check form-switch mb-0 me-1" title="{{ 'admin.services.sidebar_toggle_title'|trans }}">
                         <input class="form-check-input"
                                type="checkbox"
                                name="sidebar_visible_{{ service_id }}"
                                value="1"
                                {% if sidebar_visibility[service_id] ?? true %}checked{% endif %}/>
-                        <span class="form-check-label small text-secondary">Menu</span>
+                        <span class="form-check-label small text-secondary">{{ 'admin.services.sidebar_toggle'|trans }}</span>
                       </label>
-                      <span class="status-pill" data-service-result="{{ service_id }}">Non testé</span>
+                      <span class="status-pill" data-service-result="{{ service_id }}">{{ 'admin.services.status.not_tested'|trans }}</span>
                       <button type="button"
                               class="btn btn-sm btn-outline-secondary admin-settings-test"
                               data-service="{{ service_id }}">
-                        Tester
+                        {{ 'admin.services.test'|trans }}
                       </button>
                     </div>
                   </div>
 
                   {% for field in fields %}
                     <div class="field-row">
-                      <label for="{{ field.key }}">{{ field.label }}</label>
+                      <label for="{{ field.key }}">{{ field.label|trans }}</label>
                       {% if field.type == 'password' %}
                         <div class="secret-wrapper">
                           <input type="password"
@@ -385,7 +381,7 @@
                                  autocomplete="off"
                                  spellcheck="false"
                                  {% if field.placeholder is defined %}placeholder="{{ field.placeholder }}"{% endif %}/>
-                          <button type="button" class="secret-toggle" aria-label="Afficher/masquer"
+                          <button type="button" class="secret-toggle" aria-label="{{ 'setup.step.admin.toggle_visibility'|trans }}"
                                   data-toggle-for="{{ field.key }}">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                                  fill="none" stroke="currentColor" stroke-width="2"
@@ -414,11 +410,8 @@
 
           {# ─── Section 2 : Affichage / préférences utilisateur ──── #}
           <section id="section-display" class="settings-group" data-section>
-            <div class="settings-group-title">Affichage</div>
-            <p class="settings-group-desc">
-              Préférences d'affichage personnelles (fuseau horaire, format de date,
-              thème, densité) et visibilité des sections du menu latéral.
-            </p>
+            <div class="settings-group-title">{{ 'admin.display.title'|trans }}</div>
+            <p class="settings-group-desc">{{ 'admin.display.description'|trans }}</p>
 
             {# --- Préférences ----------------------------------------- #}
             <div class="service-card">
@@ -432,15 +425,15 @@
                   </svg>
                 </div>
                 <div>
-                  <p class="service-card-title">Préférences</p>
-                  <p class="service-card-sub">Comportement par défaut de l'interface</p>
+                  <p class="service-card-title">{{ 'admin.display.preferences.title'|trans }}</p>
+                  <p class="service-card-sub">{{ 'admin.display.preferences.subtitle'|trans }}</p>
                 </div>
               </div>
 
               <div class="display-grid">
                 {% for key, spec in display_options %}
                   <div class="display-row">
-                    <label class="display-label" for="{{ key }}">{{ spec.label }}</label>
+                    <label class="display-label" for="{{ key }}">{{ spec.label|trans }}</label>
 
                     {% if spec.type == 'switch' %}
                       <label class="form-check form-switch mb-0">
@@ -448,7 +441,7 @@
                                id="{{ key }}" name="{{ key }}" value="1"
                                {% if display_values[key] == '1' %}checked{% endif %}/>
                         <span class="form-check-label small text-secondary">
-                          {{ display_values[key] == '1' ? 'Activées' : 'Désactivées' }}
+                          {{ display_values[key] == '1' ? 'admin.display.switch.on'|trans : 'admin.display.switch.off'|trans }}
                         </span>
                       </label>
 
@@ -475,13 +468,13 @@
                     {% else %}{# select #}
                       <select id="{{ key }}" name="{{ key }}" class="form-select form-select-sm">
                         {% for value, label in spec.options %}
-                          <option value="{{ value }}" {% if display_values[key] == value %}selected{% endif %}>{{ label }}</option>
+                          <option value="{{ value }}" {% if display_values[key] == value %}selected{% endif %}>{{ label|trans }}</option>
                         {% endfor %}
                       </select>
                     {% endif %}
 
                     {% if spec.help is defined %}
-                      <p class="display-help">{{ spec.help }}</p>
+                      <p class="display-help">{{ spec.help|trans }}</p>
                     {% endif %}
                   </div>
                 {% endfor %}
@@ -503,17 +496,17 @@
                     </svg>
                   </div>
                   <div>
-                    <p class="service-card-title">{{ meta.label }}</p>
-                    <p class="service-card-sub">{{ meta.subtitle }}</p>
+                    <p class="service-card-title">{{ meta.label|trans }}</p>
+                    <p class="service-card-sub">{{ meta.subtitle|trans }}</p>
                   </div>
                   <div class="service-card-actions">
-                    <label class="form-check form-switch mb-0" title="Afficher dans le menu latéral">
+                    <label class="form-check form-switch mb-0" title="{{ 'admin.services.sidebar_toggle_title'|trans }}">
                       <input class="form-check-input"
                              type="checkbox"
                              name="sidebar_visible_{{ feature_id }}"
                              value="1"
                              {% if sidebar_visibility[feature_id] ?? true %}checked{% endif %}/>
-                      <span class="form-check-label small text-secondary">Menu</span>
+                      <span class="form-check-label small text-secondary">{{ 'admin.services.sidebar_toggle'|trans }}</span>
                     </label>
                   </div>
                 </div>
@@ -523,12 +516,8 @@
 
           {# ─── Section 3 : Sauvegarde / Restauration ──────────── #}
           <section id="section-backup" class="settings-group" data-section>
-            <div class="settings-group-title">Sauvegarde</div>
-            <p class="settings-group-desc">
-              Exportez votre configuration (URLs services, toggles sidebar, préférences d'affichage)
-              pour la porter sur un autre homelab ou la versionner. <strong>Les clés API et mots de passe
-              sont volontairement exclus</strong> : ils devront être re-saisis après un import.
-            </p>
+            <div class="settings-group-title">{{ 'admin.backup.title'|trans }}</div>
+            <p class="settings-group-desc">{{ 'admin.backup.description'|trans|raw }}</p>
 
             <div class="service-card">
               <div class="service-card-head" style="margin-bottom:.9rem;">
@@ -539,15 +528,14 @@
                   </svg>
                 </div>
                 <div>
-                  <p class="service-card-title">Exporter la configuration</p>
+                  <p class="service-card-title">{{ 'admin.backup.export.title'|trans }}</p>
                   <p class="service-card-sub">
-                    <strong>{{ export_counts.safe }}</strong> réglage{{ export_counts.safe > 1 ? 's' }} exportable{{ export_counts.safe > 1 ? 's' }}
-                    · <span class="text-secondary">{{ export_counts.skipped }} ignoré{{ export_counts.skipped > 1 ? 's' }} (clés / mots de passe)</span>
+                    {{ 'admin.backup.export.count'|trans({safe: export_counts.safe, skipped: export_counts.skipped}) }}
                   </p>
                 </div>
                 <div class="service-card-actions">
                   <a href="{{ path('admin_settings_export') }}" class="btn btn-sm btn-primary" download>
-                    Télécharger le JSON
+                    {{ 'admin.backup.export.cta'|trans }}
                   </a>
                 </div>
               </div>
@@ -562,14 +550,14 @@
                   </svg>
                 </div>
                 <div>
-                  <p class="service-card-title">Importer une configuration</p>
-                  <p class="service-card-sub">Fichier JSON Prismarr (export v1, max 64 Ko).</p>
+                  <p class="service-card-title">{{ 'admin.backup.import.title'|trans }}</p>
+                  <p class="service-card-sub">{{ 'admin.backup.import.subtitle'|trans }}</p>
                 </div>
               </div>
               <form action="{{ path('admin_settings_import') }}" method="post" enctype="multipart/form-data" class="d-flex gap-2 align-items-center">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_settings_import') }}">
                 <input type="file" name="config" accept="application/json,.json" class="form-control form-control-sm" required>
-                <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Importer la configuration ? Les valeurs actuelles correspondantes seront remplacées.')">Importer</button>
+                <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('{{ 'admin.backup.import.confirm'|trans|e('js') }}')">{{ 'admin.backup.import.cta'|trans }}</button>
               </form>
             </div>
 
@@ -583,15 +571,15 @@
                   </svg>
                 </div>
                 <div>
-                  <p class="service-card-title">Réinitialiser les préférences d'affichage</p>
-                  <p class="service-card-sub">Remet les 8 options de la section Affichage à leurs valeurs par défaut (page d'accueil, fuseau, format date/heure, thème, densité, toasts, rafraîchissement qBit).</p>
+                  <p class="service-card-title">{{ 'admin.backup.reset.title'|trans }}</p>
+                  <p class="service-card-sub">{{ 'admin.backup.reset.subtitle'|trans }}</p>
                 </div>
               </div>
               <form action="{{ path('admin_settings_reset_display') }}" method="post">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_settings_reset_display') }}">
                 <button type="submit" class="btn btn-sm btn-outline-danger"
-                        onclick="return confirm('Réinitialiser toutes les préférences d\'affichage aux valeurs par défaut ?')">
-                  Réinitialiser
+                        onclick="return confirm('{{ 'admin.backup.reset.confirm'|trans|e('js') }}')">
+                  {{ 'admin.backup.reset.cta'|trans }}
                 </button>
               </form>
             </div>
@@ -599,80 +587,78 @@
 
           {# ─── Section 4 : À propos ───────────────────────────── #}
           <section id="section-about" class="settings-group" data-section>
-            <div class="settings-group-title">À propos</div>
-            <p class="settings-group-desc">
-              Informations runtime sur cette installation Prismarr.
-            </p>
+            <div class="settings-group-title">{{ 'admin.about.title'|trans }}</div>
+            <p class="settings-group-desc">{{ 'admin.about.description'|trans }}</p>
 
             <div class="service-card">
               <div class="d-flex flex-column gap-2">
                 <div class="d-flex justify-content-between border-bottom pb-2">
-                  <span class="text-secondary small">Version</span>
+                  <span class="text-secondary small">{{ 'admin.about.field.version'|trans }}</span>
                   <span class="small fw-medium">{{ system_info.prismarr_version }}</span>
                 </div>
                 <div class="d-flex justify-content-between border-bottom pb-2">
-                  <span class="text-secondary small">Environnement</span>
+                  <span class="text-secondary small">{{ 'admin.about.field.environment'|trans }}</span>
                   <span class="small fw-medium"><code>{{ system_info.environment }}</code> · {{ system_info.sapi }}</span>
                 </div>
                 <div class="d-flex justify-content-between border-bottom pb-2">
-                  <span class="text-secondary small">Symfony</span>
+                  <span class="text-secondary small">{{ 'admin.about.field.symfony'|trans }}</span>
                   <span class="small fw-medium">{{ system_info.symfony_version }}</span>
                 </div>
                 <div class="d-flex justify-content-between border-bottom pb-2">
-                  <span class="text-secondary small">PHP</span>
+                  <span class="text-secondary small">{{ 'admin.about.field.php'|trans }}</span>
                   <span class="small fw-medium">{{ system_info.php_version }}</span>
                 </div>
                 <div class="d-flex justify-content-between border-bottom pb-2">
-                  <span class="text-secondary small">Base de données</span>
+                  <span class="text-secondary small">{{ 'admin.about.field.database'|trans }}</span>
                   <span class="small fw-medium">
                     SQLite ·
                     {% set kb = (system_info.db_size / 1024)|round(1) %}
-                    {{ kb >= 1024 ? (kb / 1024)|round(1) ~ ' Mo' : kb ~ ' Ko' }}
+                    {{ kb >= 1024 ? (kb / 1024)|round(1) ~ ' MB' : kb ~ ' KB' }}
                   </span>
                 </div>
                 <div class="d-flex justify-content-between border-bottom pb-2">
-                  <span class="text-secondary small">Heure serveur</span>
+                  <span class="text-secondary small">{{ 'admin.about.field.server_time'|trans }}</span>
                   <span class="small fw-medium">{{ system_info.server_time|prismarr_datetime }} · {{ system_info.timezone }}</span>
                 </div>
               </div>
             </div>
 
             <div class="service-card" style="margin-top:1rem;">
-              <p class="service-card-title" style="margin-bottom:.8rem;">Contenu</p>
+              <p class="service-card-title" style="margin-bottom:.8rem;">{{ 'admin.about.content.title'|trans }}</p>
               <div class="row g-2 text-center">
                 <div class="col-4">
                   <div class="display-6 fw-bold" style="color: var(--tblr-primary);">{{ system_info.user_count ?? '—' }}</div>
-                  <div class="small text-secondary">Utilisateur{{ system_info.user_count != 1 ? 's' }}</div>
+                  <div class="small text-secondary">{{ 'admin.about.content.users'|trans({count: system_info.user_count ?? 0}) }}</div>
                 </div>
                 <div class="col-4">
                   <div class="display-6 fw-bold" style="color: #FFC230;">{{ system_info.film_count ?? '—' }}</div>
-                  <div class="small text-secondary">Film{{ system_info.film_count != 1 ? 's' }}</div>
+                  <div class="small text-secondary">{{ 'admin.about.content.films'|trans({count: system_info.film_count ?? 0}) }}</div>
                 </div>
                 <div class="col-4">
                   <div class="display-6 fw-bold" style="color: #00CCFF;">{{ system_info.series_count ?? '—' }}</div>
-                  <div class="small text-secondary">Série{{ system_info.series_count != 1 ? 's' }}</div>
+                  <div class="small text-secondary">{{ 'admin.about.content.series'|trans({count: system_info.series_count ?? 0}) }}</div>
                 </div>
               </div>
             </div>
 
             <div class="service-card" style="margin-top:1rem;">
-              <p class="service-card-title" style="margin-bottom:.4rem;">Liens</p>
+              <p class="service-card-title" style="margin-bottom:.4rem;">{{ 'admin.about.links.title'|trans }}</p>
               <div class="d-flex flex-wrap gap-2">
                 <a href="https://github.com/joshuabv2005/prismarr" target="_blank" rel="noopener" class="btn btn-sm btn-ghost-primary">
-                  Code source ↗
+                  {{ 'admin.about.links.source'|trans }}
                 </a>
                 <a href="https://github.com/joshuabv2005/prismarr/issues" target="_blank" rel="noopener" class="btn btn-sm btn-ghost-primary">
-                  Signaler un bug ↗
+                  {{ 'admin.about.links.bug'|trans }}
                 </a>
                 <a href="https://github.com/joshuabv2005/prismarr#readme" target="_blank" rel="noopener" class="btn btn-sm btn-ghost-primary">
-                  Documentation ↗
+                  {{ 'admin.about.links.docs'|trans }}
                 </a>
               </div>
             </div>
           </section>
 
           <div class="settings-footer">
-            <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+            <button type="submit" class="btn btn-primary">{{ 'admin.save'|trans }}</button>
           </div>
         </form>
 
@@ -715,7 +701,7 @@
         btn.onclick = function () {
           var service = btn.dataset.service;
           var pill = document.querySelector('[data-service-result="' + service + '"]');
-          pill.textContent = 'Test…';
+          pill.textContent = {{ 'admin.services.status.testing'|trans|json_encode|raw }};
           pill.className = 'status-pill testing';
 
           fetch('{{ path('admin_settings_index') }}/test/' + encodeURIComponent(service), {
@@ -726,15 +712,15 @@
             .then(function (r) { return r.json(); })
             .then(function (data) {
               if (data.ok) {
-                pill.textContent = 'Connecté';
+                pill.textContent = {{ 'admin.services.status.connected'|trans|json_encode|raw }};
                 pill.className = 'status-pill ok';
               } else {
-                pill.textContent = 'Injoignable';
+                pill.textContent = {{ 'admin.services.status.unreachable'|trans|json_encode|raw }};
                 pill.className = 'status-pill ko';
               }
             })
             .catch(function () {
-              pill.textContent = 'Erreur';
+              pill.textContent = {{ 'admin.services.status.error'|trans|json_encode|raw }};
               pill.className = 'status-pill ko';
             });
         };

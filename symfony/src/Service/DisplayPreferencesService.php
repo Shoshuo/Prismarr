@@ -43,15 +43,16 @@ class DisplayPreferencesService implements ResetInterface
         $this->cache = null;
     }
 
-    public function getHomePage(): string          { return $this->get('display_home_page'); }
-    public function areToastsEnabled(): bool       { return $this->get('display_toasts') === '1'; }
-    public function getTimezone(): string          { return $this->get('display_timezone'); }
-    public function getDateFormat(): string        { return $this->get('display_date_format'); }
-    public function getTimeFormat(): string        { return $this->get('display_time_format'); }
-    public function getThemeColor(): string        { return $this->get('display_theme_color'); }
-    public function getQbitRefreshSeconds(): int   { return (int) $this->get('display_qbit_refresh'); }
-    public function getUiDensity(): string         { return $this->get('display_ui_density'); }
-    public function getLanguage(): string          { return $this->get('display_language'); }
+    public function getHomePage(): string           { return $this->get('display_home_page'); }
+    public function areToastsEnabled(): bool        { return $this->get('display_toasts') === '1'; }
+    public function getTimezone(): string           { return $this->get('display_timezone'); }
+    public function getDateFormat(): string         { return $this->get('display_date_format'); }
+    public function getTimeFormat(): string         { return $this->get('display_time_format'); }
+    public function getThemeColor(): string         { return $this->get('display_theme_color'); }
+    public function getQbitRefreshSeconds(): int    { return (int) $this->get('display_qbit_refresh'); }
+    public function getUiDensity(): string          { return $this->get('display_ui_density'); }
+    public function getLanguage(): string           { return $this->get('display_language'); }
+    public function getMetadataLanguage(): string   { return $this->get('display_metadata_language'); }
 
     /**
      * Resolves the chosen theme color name (e.g. "indigo") to its hex code
@@ -147,6 +148,7 @@ class DisplayPreferencesService implements ResetInterface
      *   qbit_refresh_seconds: int,
      *   ui_density: string,
      *   language: string,
+     *   metadata_language: string,
      * }
      */
     public function all(): array
@@ -163,6 +165,7 @@ class DisplayPreferencesService implements ResetInterface
             'qbit_refresh_seconds' => $this->getQbitRefreshSeconds(),
             'ui_density'           => $this->getUiDensity(),
             'language'             => $this->getLanguage(),
+            'metadata_language'    => $this->getMetadataLanguage(),
         ];
     }
 

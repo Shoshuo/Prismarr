@@ -365,6 +365,338 @@ error:
     home: Retour à l'accueil
     retry: Réessayer
 
+admin:
+  page:
+    title: Paramètres
+    subtitle: 'Configuration des services et de l''interface. Les modifications prennent effet immédiatement — aucun redémarrage requis.'
+  nav:
+    section: Paramètres
+    coming: Bientôt
+    services: Services externes
+    display: Affichage
+    backup: Sauvegarde
+    about: À propos
+    email_notifications: Notifications email
+    security_sessions: 'Sécurité · sessions'
+    aria_label: Sections des paramètres
+  services:
+    title: Services externes
+    description: 'URLs et clés API des services que Prismarr pilote. Utilisez <em>Tester</em> pour valider la connectivité après modification.'
+    group:
+      discovery: Découverte
+      managers: Gestionnaires
+      indexers: Indexeurs & requêtes
+      downloads: Téléchargements
+    subtitle:
+      tmdb: Découverte films & séries, watchlist
+      radarr: Gestionnaire de films
+      sonarr: Gestionnaire de séries
+      prowlarr: Agrégateur d'indexeurs
+      jellyseerr: Plateforme de requêtes
+      qbittorrent: Client torrent
+      gluetun: 'VPN / port forwarding'
+    sidebar_toggle: Menu
+    sidebar_toggle_title: Afficher dans le menu latéral
+    status:
+      not_tested: Non testé
+      testing: Test…
+      connected: Connecté
+      unreachable: Injoignable
+      error: Erreur
+    test: Tester
+  display:
+    title: Affichage
+    description: 'Préférences d''affichage personnelles (fuseau horaire, format de date, thème, densité) et visibilité des sections du menu latéral.'
+    preferences:
+      title: Préférences
+      subtitle: Comportement par défaut de l'interface
+    switch:
+      on: Activées
+      off: Désactivées
+    home_page:
+      label: Page d'accueil par défaut
+      help: Page affichée à la connexion.
+      options:
+        dashboard: Tableau de bord
+        discovery: Découverte (TMDb)
+        films: Films
+        series: Séries
+        qbittorrent: Téléchargements
+        last: Dernière page visitée
+    toasts:
+      label: Notifications (toasts)
+      help: 'Bulles fugaces en bas d''écran (fin de téléchargement, erreurs).'
+    timezone:
+      label: Fuseau horaire
+      help: Utilisé pour afficher toutes les dates/heures.
+    date_format:
+      label: Format de date
+      options:
+        fr: 'Français (21/04/2026)'
+        us: 'Américain (Apr 21, 2026)'
+        iso: 'ISO (2026-04-21)'
+    time_format:
+      label: Format d'heure
+      options:
+        '24h': '24h (14:30)'
+        '12h': '12h (2:30 PM)'
+    theme_color:
+      label: Couleur principale
+    qbit_refresh:
+      label: Rafraîchissement qBittorrent
+      help: Fréquence du polling automatique sur la page Téléchargements.
+      options:
+        '1': '1 seconde (temps réel)'
+        '2': '2 secondes (défaut)'
+        '5': '5 secondes'
+        '10': '10 secondes (économe)'
+        '0': Désactivé
+    ui_density:
+      label: Densité de l'interface
+      options:
+        comfortable: Confortable (défaut)
+        compact: Compacte
+    language:
+      label: Langue de l'interface
+      help: 'Langue par défaut de l''interface. Chaque utilisateur peut surcharger via le sélecteur de la barre du haut.'
+      options:
+        fr: Français
+        en: English
+    metadata_language:
+      label: Langue des métadonnées
+      help: 'Langue demandée à TMDb pour les titres, résumés et images. S''applique à tous les utilisateurs. Radarr/Sonarr/Jellyseerr restent à configurer dans leur propre interface (synchronisation automatique prévue en v1.1).'
+      options:
+        fr_FR: Français (fr-FR)
+        en_US: 'English — US (en-US)'
+        en_GB: 'English — UK (en-GB)'
+        es_ES: Español (es-ES)
+        de_DE: Deutsch (de-DE)
+        it_IT: Italiano (it-IT)
+        pt_PT: 'Português (pt-PT)'
+        pt_BR: 'Português — Brasil (pt-BR)'
+        ja_JP: 日本語 (ja-JP)
+  field:
+    url: URL
+    api_key: Clé API
+    username: Utilisateur
+    password: Mot de passe
+    protocol: 'Protocole (openvpn/wireguard)'
+    api_key_if_protected: 'Clé API (si protégé)'
+    tmdb:
+      api_key: Clé API v3
+  internal:
+    calendar:
+      label: Calendrier
+      subtitle: 'Sorties films + épisodes agrégées (Radarr + Sonarr)'
+  backup:
+    title: Sauvegarde
+    description: 'Exportez votre configuration (URLs services, toggles sidebar, préférences d''affichage) pour la porter sur un autre homelab ou la versionner. <strong>Les clés API et mots de passe sont volontairement exclus</strong> : ils devront être re-saisis après un import.'
+    export:
+      title: Exporter la configuration
+      count: '{safe, plural, one {# réglage exportable} other {# réglages exportables}} · {skipped} ignoré(s) (clés / mots de passe)'
+      cta: Télécharger le JSON
+    import:
+      title: Importer une configuration
+      subtitle: 'Fichier JSON Prismarr (export v1, max 64 Ko).'
+      cta: Importer
+      confirm: 'Importer la configuration ? Les valeurs actuelles correspondantes seront remplacées.'
+    reset:
+      title: Réinitialiser les préférences d'affichage
+      subtitle: 'Remet les options de la section Affichage à leurs valeurs par défaut (page d''accueil, fuseau, format date/heure, thème, densité, toasts, rafraîchissement qBit, langues).'
+      cta: Réinitialiser
+      confirm: 'Réinitialiser toutes les préférences d''affichage aux valeurs par défaut ?'
+  about:
+    title: À propos
+    description: Informations runtime sur cette installation Prismarr.
+    field:
+      version: Version
+      environment: Environnement
+      symfony: Symfony
+      php: PHP
+      database: Base de données
+      server_time: Heure serveur
+    content:
+      title: Contenu
+      users: '{count, plural, one {# utilisateur} other {# utilisateurs}}'
+      films: '{count, plural, one {# film} other {# films}}'
+      series: '{count, plural, one {# série} other {# séries}}'
+    links:
+      title: Liens
+      source: 'Code source ↗'
+      bug: 'Signaler un bug ↗'
+      docs: 'Documentation ↗'
+  save: Enregistrer les modifications
+  coming:
+    v1_1: v1.1
+
+decouverte:
+  title: Découverte
+  search_placeholder: 'Rechercher un film ou une série sur TMDb…'
+  actions:
+    filters: Filtres
+    watchlist: Watchlist
+    explorer: Explorer
+  filters:
+    type: Type
+    movies: Films
+    series: Séries
+    genre: Genre
+    all: Tous
+    year_from: Année de
+    year_to: à
+    vote_min: 'Note min : {value}/10'
+    sort: Tri
+    sort_options:
+      popularity: 'Popularité ↓'
+      vote_avg: 'Note ↓'
+      vote_count: 'Nb avis ↓'
+      release: 'Date sortie ↓'
+      revenue: 'Recettes ↓'
+    apply: Appliquer
+    reset: Réinitialiser
+  search:
+    results: Résultats
+    close: '× Fermer'
+    no_results: Aucun résultat.
+  hero:
+    movie: 'Film tendance · Cette semaine'
+    tv: 'Série tendance · Cette semaine'
+  section:
+    my_recs:
+      title: Pour toi
+      subtitle: 'basé sur ta bibliothèque'
+      loading: Analyse de ta bibliothèque en cours…
+    trending: Tendances cette semaine
+    popular_movies: Films populaires
+    popular_tv: Séries populaires
+    upcoming: Prochaines sorties ciné
+    on_air: Séries en cours de diffusion
+    top_movies: Films les mieux notés
+    top_tv: Séries les mieux notées
+  scroll:
+    prev: Précédent
+    next: Suivant
+  recent:
+    title: Consultés récemment
+    clear: Effacer
+    clear_title: 'Effacer l''historique'
+  badge:
+    in_library: En bibliothèque
+  action:
+    add: Ajouter
+    close: Fermer
+  card:
+    rating: 'Note {value}/10'
+  watchlist:
+    title: Watchlist
+    filter_all: Tout
+    filter_movies: Films
+    filter_tv: Séries
+    search_placeholder: Rechercher...
+    sort:
+      added_desc: Plus récent
+      added_asc: Plus ancien
+      title_asc: Titre A-Z
+      title_desc: Titre Z-A
+      vote_desc: Meilleure note
+      year_desc: 'Année ↓'
+    type_film: Film
+    type_tv: Série
+    empty_title: Watchlist vide
+    empty_message: 'Ajoutez des films et séries depuis la <a href="{path}">page Découverte</a>.'
+    remove_confirm: 'Retirer "{title}" de la watchlist ?'
+    removed_toast: Retiré de la watchlist
+    notes_title: Notes
+    notes_placeholder: Ajouter une note...
+    notes_cancel: Annuler
+    notes_save: Enregistrer
+    notes_saved_toast: Note enregistrée
+  explorer:
+    title: Explorer
+    subtitle: 'Filtrer TMDb par genre, année, note, langue, popularité.'
+    no_results: Aucun résultat pour ces filtres.
+
+calendar:
+  title: Calendrier
+  subtitle: Sorties films + épisodes agrégées (Radarr + Sonarr)
+  filter:
+    all: Tout
+    media: Médias
+    cinema: Cinéma
+    digital: Numérique
+    physical: Physique
+    episode: Épisodes
+    status: Statut
+    status_all: Tous
+    status_monitored: Suivis
+    status_missing: Non suivis
+    status_available: Disponibles
+  view:
+    month: Mois
+    week: Semaine
+    day: Jour
+    aria_label: Vue calendrier
+  nav:
+    today: Aujourd'hui
+    prev: Précédent
+    next: Suivant
+    ical: iCal
+    ical_title: 'Abonnement iCal (Apple Calendar / Google / Thunderbird)'
+  empty:
+    month: Aucune sortie prévue ce mois-ci.
+    week: Aucune sortie prévue cette semaine.
+    day: Aucune sortie prévue ce jour-là.
+  months:
+    full:
+      - Janvier
+      - Février
+      - Mars
+      - Avril
+      - Mai
+      - Juin
+      - Juillet
+      - Août
+      - Septembre
+      - Octobre
+      - Novembre
+      - Décembre
+  weekdays:
+    short:
+      - Lun
+      - Mar
+      - Mer
+      - Jeu
+      - Ven
+      - Sam
+      - Dim
+    full:
+      - Lundi
+      - Mardi
+      - Mercredi
+      - Jeudi
+      - Vendredi
+      - Samedi
+      - Dimanche
+  event:
+    type_cinema: Cinéma
+    type_digital: Numérique
+    type_physical: Physique
+    type_episode: Épisode
+    film: Film
+    series: Série
+    episode: Épisode
+    release_cinema: Sortie cinéma
+    release_digital: Sortie numérique
+    release_physical: Sortie physique
+    release_episode: Épisode
+    release_unknown: Date inconnue
+    more: '+ {count} autres'
+    count: '{count, plural, one {# événement} other {# événements}}'
+    none: Aucun événement
+  week:
+    same_month: 'Semaine du {start} au {end} {month} {year}'
+    cross_month: 'Semaine du {start_day} {start_month} au {end_day} {end_month} {year}'
+
 flash:
   profile:
     updated: Profil mis à jour.

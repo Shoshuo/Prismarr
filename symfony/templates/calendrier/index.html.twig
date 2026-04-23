@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Calendrier{% endblock %}
+{% block title %}{{ 'calendar.title'|trans }}{% endblock %}
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}
 
 {% block stylesheets %}
@@ -248,7 +248,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
 </svg>
-Calendrier
+{{ 'calendar.title'|trans }}
 {% endblock %}
 
 {% block body %}
@@ -259,28 +259,28 @@ Calendrier
 
         {# Card : Tout #}
         <div class="cal-toolbar" style="flex:0 0 auto;">
-            <button class="cal-filter-pill active" data-filter="all"><div class="cal-filter-dot" style="background:var(--tblr-primary);"></div> Tout <span class="cal-filter-count" id="fc-all"></span></button>
+            <button class="cal-filter-pill active" data-filter="all"><div class="cal-filter-dot" style="background:var(--tblr-primary);"></div> {{ 'calendar.filter.all'|trans }} <span class="cal-filter-count" id="fc-all"></span></button>
         </div>
 
         {# Card : Médias #}
         <div class="cal-toolbar" style="flex:0 1 auto;">
             <span class="cal-toolbar-label">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFC230" stroke-width="2" class="me-1"><path d="M7 4v16l13 -8z"/></svg>
-                Médias
+                {{ 'calendar.filter.media'|trans }}
             </span>
-            <button class="cal-filter-pill" data-filter="cinema"><div class="cal-filter-dot" style="background:#dc2626;"></div> Cinéma <span class="cal-filter-count" id="fc-cinema"></span></button>
-            <button class="cal-filter-pill" data-filter="digital"><div class="cal-filter-dot" style="background:#a855f7;"></div> Numérique <span class="cal-filter-count" id="fc-digital"></span></button>
-            <button class="cal-filter-pill" data-filter="physical"><div class="cal-filter-dot" style="background:#22c55e;"></div> Physique <span class="cal-filter-count" id="fc-physical"></span></button>
-            <button class="cal-filter-pill" data-filter="episode"><div class="cal-filter-dot" style="background:#38bdf8;"></div> Épisodes <span class="cal-filter-count" id="fc-episode"></span></button>
+            <button class="cal-filter-pill" data-filter="cinema"><div class="cal-filter-dot" style="background:#dc2626;"></div> {{ 'calendar.filter.cinema'|trans }} <span class="cal-filter-count" id="fc-cinema"></span></button>
+            <button class="cal-filter-pill" data-filter="digital"><div class="cal-filter-dot" style="background:#a855f7;"></div> {{ 'calendar.filter.digital'|trans }} <span class="cal-filter-count" id="fc-digital"></span></button>
+            <button class="cal-filter-pill" data-filter="physical"><div class="cal-filter-dot" style="background:#22c55e;"></div> {{ 'calendar.filter.physical'|trans }} <span class="cal-filter-count" id="fc-physical"></span></button>
+            <button class="cal-filter-pill" data-filter="episode"><div class="cal-filter-dot" style="background:#38bdf8;"></div> {{ 'calendar.filter.episode'|trans }} <span class="cal-filter-count" id="fc-episode"></span></button>
         </div>
 
         {# Card : Statut #}
         <div class="cal-toolbar" style="flex:0 1 auto;">
-            <span class="cal-toolbar-label">Statut</span>
-            <button class="cal-filter-pill active" data-status="all"><div class="cal-filter-dot" style="background:var(--tblr-primary);"></div> Tous</button>
-            <button class="cal-filter-pill" data-status="monitored"><div class="cal-filter-dot" style="background:#818cf8;"></div> Suivis</button>
-            <button class="cal-filter-pill" data-status="missing"><div class="cal-filter-dot" style="background:#f59e0b;"></div> Non suivis</button>
-            <button class="cal-filter-pill" data-status="available"><div class="cal-filter-dot" style="background:#22c55e;"></div> Disponibles</button>
+            <span class="cal-toolbar-label">{{ 'calendar.filter.status'|trans }}</span>
+            <button class="cal-filter-pill active" data-status="all"><div class="cal-filter-dot" style="background:var(--tblr-primary);"></div> {{ 'calendar.filter.status_all'|trans }}</button>
+            <button class="cal-filter-pill" data-status="monitored"><div class="cal-filter-dot" style="background:#818cf8;"></div> {{ 'calendar.filter.status_monitored'|trans }}</button>
+            <button class="cal-filter-pill" data-status="missing"><div class="cal-filter-dot" style="background:#f59e0b;"></div> {{ 'calendar.filter.status_missing'|trans }}</button>
+            <button class="cal-filter-pill" data-status="available"><div class="cal-filter-dot" style="background:#22c55e;"></div> {{ 'calendar.filter.status_available'|trans }}</button>
         </div>
 
     </div>
@@ -290,16 +290,16 @@ Calendrier
         <div class="cal-main-title" id="main-title"></div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
             {# Toggle de vues #}
-            <div class="cal-view-switch" role="tablist" aria-label="Vue calendrier">
-                <button type="button" class="cal-view-btn is-active" data-view="month" role="tab" aria-selected="true">Mois</button>
-                <button type="button" class="cal-view-btn" data-view="week" role="tab" aria-selected="false">Semaine</button>
-                <button type="button" class="cal-view-btn" data-view="day" role="tab" aria-selected="false">Jour</button>
+            <div class="cal-view-switch" role="tablist" aria-label="{{ 'calendar.view.aria_label'|trans }}">
+                <button type="button" class="cal-view-btn is-active" data-view="month" role="tab" aria-selected="true">{{ 'calendar.view.month'|trans }}</button>
+                <button type="button" class="cal-view-btn" data-view="week" role="tab" aria-selected="false">{{ 'calendar.view.week'|trans }}</button>
+                <button type="button" class="cal-view-btn" data-view="day" role="tab" aria-selected="false">{{ 'calendar.view.day'|trans }}</button>
             </div>
-            <a href="{{ path('app_calendrier_ical') }}" class="btn btn-sm btn-ghost-secondary" title="Abonnement iCal (Apple Calendar / Google / Thunderbird)" download>
+            <a href="{{ path('app_calendrier_ical') }}" class="btn btn-sm btn-ghost-secondary" title="{{ 'calendar.nav.ical_title'|trans }}" download>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:.3rem;"><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><polyline points="7 11 12 16 17 11"/><line x1="12" y1="4" x2="12" y2="16"/></svg>
-                iCal
+                {{ 'calendar.nav.ical'|trans }}
             </a>
-            <button id="main-today" class="btn btn-sm btn-outline-indigo">Aujourd'hui</button>
+            <button id="main-today" class="btn btn-sm btn-outline-indigo">{{ 'calendar.nav.today'|trans }}</button>
             <button id="main-prev" class="btn btn-sm btn-ghost-secondary btn-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
             <button id="main-next" class="btn btn-sm btn-ghost-secondary btn-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
 
@@ -335,6 +335,28 @@ Calendrier
 <script>
 (function () {
     var allEvents = {{ eventsJson|json_encode|raw }};
+    // Calendar-scoped i18n (strings the JS renders on the fly).
+    var CAL_I18N = {
+        event_film:    {{ 'calendar.event.film'|trans|json_encode|raw }},
+        event_series:  {{ 'calendar.event.series'|trans|json_encode|raw }},
+        event_episode: {{ 'calendar.event.episode'|trans|json_encode|raw }},
+        event_none:    {{ 'calendar.event.none'|trans|json_encode|raw }},
+        today:         {{ 'calendar.nav.today'|trans|json_encode|raw }},
+        week_same:     {{ 'calendar.week.same_month'|trans|json_encode|raw }},
+        week_cross:    {{ 'calendar.week.cross_month'|trans|json_encode|raw }},
+    };
+    // ICU plural templates rendered at load — swap in the actual count at
+    // runtime using Intl.PluralRules so we stay locale-aware.
+    var _plural = new Intl.PluralRules({{ app.request.locale|default('fr')|json_encode|raw }});
+    var _eventTpl = {
+        one:   {{ 'calendar.event.count'|trans({count: 1})|json_encode|raw }},
+        other: {{ 'calendar.event.count'|trans({count: 9})|json_encode|raw }},
+    };
+    function countLabel(n) {
+        var rule = _plural.select(n);
+        var tpl  = _eventTpl[rule] || _eventTpl.other;
+        return tpl.replace(/^\d+/, n);
+    }
     var today = new Date();
     var curYear = today.getFullYear(), curMonth = today.getMonth(), curDay = today.getDate();
     var currentView = 'month'; // 'month' | 'week' | 'day'
@@ -360,9 +382,22 @@ Calendrier
     var selDate = null;
     var filterType = 'all', filterStatus = 'all';
 
-    var MN = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-    var DN = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
-    var DNfull = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+    var MN     = {{ [
+        'calendar.months.full.0','calendar.months.full.1','calendar.months.full.2',
+        'calendar.months.full.3','calendar.months.full.4','calendar.months.full.5',
+        'calendar.months.full.6','calendar.months.full.7','calendar.months.full.8',
+        'calendar.months.full.9','calendar.months.full.10','calendar.months.full.11'
+    ]|map(k => k|trans)|json_encode|raw }};
+    var DN     = {{ [
+        'calendar.weekdays.short.0','calendar.weekdays.short.1','calendar.weekdays.short.2',
+        'calendar.weekdays.short.3','calendar.weekdays.short.4','calendar.weekdays.short.5',
+        'calendar.weekdays.short.6'
+    ]|map(k => k|trans)|json_encode|raw }};
+    var DNfull = {{ [
+        'calendar.weekdays.full.0','calendar.weekdays.full.1','calendar.weekdays.full.2',
+        'calendar.weekdays.full.3','calendar.weekdays.full.4','calendar.weekdays.full.5',
+        'calendar.weekdays.full.6'
+    ]|map(k => k|trans)|json_encode|raw }};
     var todayStr = fmt(today);
 
     // Couleurs par série (hash → index)
@@ -403,7 +438,13 @@ Calendrier
 
     function evTitle(ev) { return ev.type === 'film' ? ev.title : (ev.seriesTitle||'') + ' S' + String(ev.season||0).padStart(2,'0') + 'E' + String(ev.episode||0).padStart(2,'0'); }
 
-    var releaseLabels = { cinema: 'Sortie cinéma', digital: 'Sortie numérique', physical: 'Sortie physique', episode: 'Épisode', unknown: 'Date inconnue' };
+    var releaseLabels = {
+        cinema:   {{ 'calendar.event.release_cinema'|trans|json_encode|raw }},
+        digital:  {{ 'calendar.event.release_digital'|trans|json_encode|raw }},
+        physical: {{ 'calendar.event.release_physical'|trans|json_encode|raw }},
+        episode:  {{ 'calendar.event.release_episode'|trans|json_encode|raw }},
+        unknown:  {{ 'calendar.event.release_unknown'|trans|json_encode|raw }},
+    };
 
     // Counts
     var cAll = allEvents.length, cCinema = 0, cDigital = 0, cPhysical = 0, cEp = 0;
@@ -520,9 +561,18 @@ Calendrier
 
         var title;
         if (monday.getMonth() === sunday.getMonth()) {
-            title = 'Semaine du ' + monday.getDate() + ' au ' + sunday.getDate() + ' ' + MN[sunday.getMonth()] + ' ' + sunday.getFullYear();
+            title = CAL_I18N.week_same
+                .replace('{start}', monday.getDate())
+                .replace('{end}',   sunday.getDate())
+                .replace('{month}', MN[sunday.getMonth()])
+                .replace('{year}',  sunday.getFullYear());
         } else {
-            title = 'Semaine du ' + monday.getDate() + ' ' + MN[monday.getMonth()] + ' au ' + sunday.getDate() + ' ' + MN[sunday.getMonth()] + ' ' + sunday.getFullYear();
+            title = CAL_I18N.week_cross
+                .replace('{start_day}',   monday.getDate())
+                .replace('{start_month}', MN[monday.getMonth()])
+                .replace('{end_day}',     sunday.getDate())
+                .replace('{end_month}',   MN[sunday.getMonth()])
+                .replace('{year}',        sunday.getFullYear());
         }
         document.getElementById('main-title').textContent = title;
 
@@ -590,7 +640,7 @@ Calendrier
         h += '<div class="cal-day-header">';
         h += '<div class="cal-day-date-big">' + cursor.getDate() + '</div>';
         h += '<div class="cal-day-date-lbl">' + weekday + '</div>';
-        h += '<div class="cal-day-count">' + (evs.length ? (evs.length + ' événement' + (evs.length > 1 ? 's' : '')) : 'Aucun événement') + (isToday ? ' · Aujourd\'hui' : '') + '</div>';
+        h += '<div class="cal-day-count">' + (evs.length ? countLabel(evs.length) : CAL_I18N.event_none) + (isToday ? ' · ' + CAL_I18N.today : '') + '</div>';
         h += '</div>';
 
         if (!evs.length) {
@@ -613,8 +663,8 @@ Calendrier
                     typeBg = 'background:rgba(14,165,233,.2);color:#bae6fd;';
                 }
                 var typeLbl = ev.type === 'film'
-                    ? (releaseLabels[ev.releaseType] || 'Film')
-                    : 'Série';
+                    ? (releaseLabels[ev.releaseType] || CAL_I18N.event_film)
+                    : CAL_I18N.event_series;
                 var poster = ev.poster
                     ? '<img src="' + ev.poster + '" alt="" class="cal-day-row-poster" loading="lazy">'
                     : '<div class="cal-day-row-placeholder">' + (ev.type === 'film' ? '🎬' : '📺') + '</div>';
@@ -720,7 +770,7 @@ Calendrier
 
         var fanartHtml = ev.fanart ? '<img src="' + ev.fanart + '" class="cal-tooltip-fanart">' : '<div class="cal-tooltip-fanart-ph"></div>';
 
-        var typeLabel = ev.type === 'film' ? (releaseLabels[ev.releaseType] || 'Film') : 'Épisode';
+        var typeLabel = ev.type === 'film' ? (releaseLabels[ev.releaseType] || CAL_I18N.event_film) : CAL_I18N.event_episode;
         var titleText = ev.type === 'film' ? ev.title : (ev.seriesTitle || '');
         var epName = ev.type === 'episode' ? 'S' + String(ev.season||0).padStart(2,'0') + 'E' + String(ev.episode||0).padStart(2,'0') + (ev.title ? ' — ' + ev.title : '') : '';
 

@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Watchlist{% endblock %}
+{% block title %}{{ 'decouverte.watchlist.title'|trans }}{% endblock %}
 {% block page_title %}Watchlist{% endblock %}
 
 {% block body %}
@@ -144,18 +144,18 @@
 
   <!-- Filtres -->
   <div class="wl-filters">
-    <button class="wl-filter-btn active" data-filter="all">Tous</button>
-    <button class="wl-filter-btn" data-filter="movie">Films</button>
-    <button class="wl-filter-btn" data-filter="tv">Séries</button>
+    <button class="wl-filter-btn active" data-filter="all">{{ 'decouverte.watchlist.filter_all'|trans }}</button>
+    <button class="wl-filter-btn" data-filter="movie">{{ 'decouverte.watchlist.filter_movies'|trans }}</button>
+    <button class="wl-filter-btn" data-filter="tv">{{ 'decouverte.watchlist.filter_tv'|trans }}</button>
     <select class="wl-sort-select" id="wl-sort">
-      <option value="added_desc">Plus récent</option>
-      <option value="added_asc">Plus ancien</option>
-      <option value="title_asc">Titre A-Z</option>
-      <option value="title_desc">Titre Z-A</option>
-      <option value="vote_desc">Meilleure note</option>
-      <option value="year_desc">Année ↓</option>
+      <option value="added_desc">{{ 'decouverte.watchlist.sort.added_desc'|trans }}</option>
+      <option value="added_asc">{{ 'decouverte.watchlist.sort.added_asc'|trans }}</option>
+      <option value="title_asc">{{ 'decouverte.watchlist.sort.title_asc'|trans }}</option>
+      <option value="title_desc">{{ 'decouverte.watchlist.sort.title_desc'|trans }}</option>
+      <option value="vote_desc">{{ 'decouverte.watchlist.sort.vote_desc'|trans }}</option>
+      <option value="year_desc">{{ 'decouverte.watchlist.sort.year_desc'|trans }}</option>
     </select>
-    <input type="text" class="wl-search" id="wl-search" placeholder="Rechercher...">
+    <input type="text" class="wl-search" id="wl-search" placeholder="{{ 'decouverte.watchlist.search_placeholder'|trans }}">
     <span class="wl-count" id="wl-visible-count"></span>
   </div>
 
@@ -176,9 +176,9 @@
       {% else %}
         <div class="no-poster">🎬</div>
       {% endif %}
-      <span class="type-badge {{ item.type }}">{{ item.type == 'movie' ? 'Film' : 'Série' }}</span>
+      <span class="type-badge {{ item.type }}">{{ item.type == 'movie' ? 'decouverte.watchlist.type_film'|trans : 'decouverte.watchlist.type_tv'|trans }}</span>
       {% if item.in_library %}
-        <span class="lib-dot" title="En bibliothèque"></span>
+        <span class="lib-dot" title="{{ 'decouverte.badge.in_library'|trans }}"></span>
       {% endif %}
       {% if item.vote %}
         {% set vc = item.vote >= 7 ? 'good' : (item.vote >= 5 ? 'mid' : 'bad') %}
@@ -187,10 +187,10 @@
       {% if item.notes %}
         <div class="wl-notes-preview">📝 {{ item.notes }}</div>
       {% endif %}
-      <button class="wl-notes-ico" title="Notes" data-wl-id="{{ item.id }}">
+      <button class="wl-notes-ico" title="{{ 'decouverte.watchlist.notes_title'|trans }}" data-wl-id="{{ item.id }}">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 013.002 3.002L7.368 18.635a2 2 0 01-.855.506l-2.872.838.838-2.872a2 2 0 01.506-.855z"/></svg>
       </button>
-      <button class="wl-remove" title="Retirer" data-wl-id="{{ item.id }}">
+      <button class="wl-remove" title="{{ 'common.action.delete'|trans }}" data-wl-id="{{ item.id }}">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
       </button>
       <div class="card-overlay">
@@ -204,8 +204,8 @@
   {% if items is empty %}
   <div class="wl-empty">
     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.6-6.2 4.6 2.4-7.4-6.2-4.5h7.6z"/></svg>
-    <h3>Watchlist vide</h3>
-    <p>Ajoutez des films et séries depuis la <a href="{{ path('tmdb_index') }}">page Découverte</a>.</p>
+    <h3>{{ 'decouverte.watchlist.empty_title'|trans }}</h3>
+    <p>{{ 'decouverte.watchlist.empty_message'|trans({path: path('tmdb_index')})|raw }}</p>
   </div>
   {% endif %}
 </div>
@@ -215,15 +215,15 @@
   <div class="modal-dialog modal-sm modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Notes</h5>
+        <h5 class="modal-title">{{ 'decouverte.watchlist.notes_title'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <textarea class="form-control" id="wl-notes-text" rows="4" placeholder="Ajouter une note..."></textarea>
+        <textarea class="form-control" id="wl-notes-text" rows="4" placeholder="{{ 'decouverte.watchlist.notes_placeholder'|trans }}"></textarea>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-primary" id="wl-notes-save">Enregistrer</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'decouverte.watchlist.notes_cancel'|trans }}</button>
+        <button type="button" class="btn btn-primary" id="wl-notes-save">{{ 'decouverte.watchlist.notes_save'|trans }}</button>
       </div>
     </div>
   </div>
@@ -301,7 +301,7 @@
     e.stopPropagation();
     var card = rmBtn.closest('.wl-card');
     var wlId = rmBtn.dataset.wlId;
-    if (!confirm('Retirer "' + card.dataset.title + '" de la watchlist ?')) return;
+    if (!confirm({{ 'decouverte.watchlist.remove_confirm'|trans({title: '__TITLE__'})|json_encode|raw }}.replace('__TITLE__', card.dataset.title))) return;
 
     fetch('/decouverte/watchlist/remove/' + wlId, { method: 'POST', credentials: 'same-origin' })
       .then(function(r) { return r.json(); })
@@ -316,7 +316,7 @@
             applyFilters();
             updateStats();
           }, 300);
-          if (window._prismarrToast) window._prismarrToast('Retiré de la watchlist', 'success');
+          if (window._prismarrToast) window._prismarrToast({{ 'decouverte.watchlist.removed_toast'|trans|json_encode|raw }}, 'success');
         }
       });
   });
@@ -385,7 +385,7 @@
           preview.remove();
         }
         closeNotesModal();
-        if (window._prismarrToast) window._prismarrToast('Note enregistrée', 'success');
+        if (window._prismarrToast) window._prismarrToast({{ 'decouverte.watchlist.notes_saved_toast'|trans|json_encode|raw }}, 'success');
       }
     });
   });

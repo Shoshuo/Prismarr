@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Découverte{% endblock %}
+{% block title %}{{ 'decouverte.title'|trans }}{% endblock %}
 {% block page_title %}<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#6366f1" stroke="#6366f1" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2l2.4 7.4h7.6l-6.2 4.5l2.4 7.4l-6.2 -4.6l-6.2 4.6l2.4 -7.4l-6.2 -4.5h7.6z"/></svg> Découverte{% endblock %}
 
 {% block body %}
@@ -458,7 +458,7 @@
         </svg>
         <input id="tmdb-search" type="search"
                class="tmdb-search-input"
-               placeholder="Rechercher un film ou une série sur TMDb…"
+               placeholder="{{ 'decouverte.search_placeholder'|trans }}"
                autocomplete="off">
         <kbd class="tmdb-search-kbd d-none d-md-inline">TMDb</kbd>
       </div>
@@ -467,21 +467,21 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 4h18M7 12h10M11 20h2"/>
           </svg>
-          Filtres
+          {{ 'decouverte.actions.filters'|trans }}
           <span class="tmdb-filter-badge" id="tmdb-filter-active-count" style="display:none;">0</span>
         </button>
         <a href="{{ path('tmdb_watchlist') }}" class="tmdb-action-btn" id="tmdb-watchlist-link">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1.5" stroke-linejoin="round">
             <path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.6-6.2 4.6 2.4-7.4-6.2-4.5h7.6z"/>
           </svg>
-          Watchlist
+          {{ 'decouverte.actions.watchlist'|trans }}
           <span class="tmdb-filter-badge" id="tmdb-wl-count" style="display:none;">0</span>
         </a>
         <a href="{{ path('tmdb_explorer') }}" class="tmdb-action-btn">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
             <circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20 14.5 14.5 0 000-20"/><path d="M2 12h20"/>
           </svg>
-          Explorer
+          {{ 'decouverte.actions.explorer'|trans }}
         </a>
       </div>
     </div>
@@ -491,47 +491,47 @@
       <div class="card-body py-2">
         <div class="row g-2 align-items-end">
           <div class="col-auto">
-            <label class="form-label small mb-1">Type</label>
+            <label class="form-label small mb-1">{{ 'decouverte.filters.type'|trans }}</label>
             <div class="btn-group" role="group">
               <input type="radio" class="btn-check" name="filter-type" id="filter-type-movie" value="movie" checked>
-              <label class="btn btn-outline-primary btn-sm" for="filter-type-movie">Films</label>
+              <label class="btn btn-outline-primary btn-sm" for="filter-type-movie">{{ 'decouverte.filters.movies'|trans }}</label>
               <input type="radio" class="btn-check" name="filter-type" id="filter-type-tv" value="tv">
-              <label class="btn btn-outline-primary btn-sm" for="filter-type-tv">Séries</label>
+              <label class="btn btn-outline-primary btn-sm" for="filter-type-tv">{{ 'decouverte.filters.series'|trans }}</label>
             </div>
           </div>
           <div class="col-md-3">
-            <label class="form-label small mb-1">Genre</label>
+            <label class="form-label small mb-1">{{ 'decouverte.filters.genre'|trans }}</label>
             <select class="form-select form-select-sm" id="filter-genre">
-              <option value="">Tous</option>
+              <option value="">{{ 'decouverte.filters.all'|trans }}</option>
             </select>
           </div>
           <div class="col-auto">
-            <label class="form-label small mb-1">Année de</label>
+            <label class="form-label small mb-1">{{ 'decouverte.filters.year_from'|trans }}</label>
             <input type="number" class="form-control form-control-sm" id="filter-year-min" placeholder="1970" min="1900" max="2030" style="width:90px;">
           </div>
           <div class="col-auto">
-            <label class="form-label small mb-1">à</label>
+            <label class="form-label small mb-1">{{ 'decouverte.filters.year_to'|trans }}</label>
             <input type="number" class="form-control form-control-sm" id="filter-year-max" placeholder="2030" min="1900" max="2030" style="width:90px;">
           </div>
           <div class="col-auto" style="min-width:140px;">
-            <label class="form-label small mb-1">Note min : <span id="filter-vote-val" class="fw-medium">0</span>/10</label>
+            <label class="form-label small mb-1">{{ 'decouverte.filters.vote_min'|trans({value: '__VAL__'})|replace({'__VAL__': '<span id="filter-vote-val" class="fw-medium">0</span>'})|raw }}</label>
             <input type="range" class="form-range" id="filter-vote-min" min="0" max="10" step="0.5" value="0">
           </div>
           <div class="col-md-2">
-            <label class="form-label small mb-1">Tri</label>
+            <label class="form-label small mb-1">{{ 'decouverte.filters.sort'|trans }}</label>
             <select class="form-select form-select-sm" id="filter-sort">
-              <option value="popularity.desc">Popularité ↓</option>
-              <option value="vote_average.desc">Note ↓</option>
-              <option value="vote_count.desc">Nb avis ↓</option>
-              <option value="primary_release_date.desc">Date sortie ↓</option>
-              <option value="revenue.desc">Recettes ↓</option>
+              <option value="popularity.desc">{{ 'decouverte.filters.sort_options.popularity'|trans }}</option>
+              <option value="vote_average.desc">{{ 'decouverte.filters.sort_options.vote_avg'|trans }}</option>
+              <option value="vote_count.desc">{{ 'decouverte.filters.sort_options.vote_count'|trans }}</option>
+              <option value="primary_release_date.desc">{{ 'decouverte.filters.sort_options.release'|trans }}</option>
+              <option value="revenue.desc">{{ 'decouverte.filters.sort_options.revenue'|trans }}</option>
             </select>
           </div>
           <div class="col-auto">
-            <button type="button" class="btn btn-primary btn-sm" id="filter-apply">Appliquer</button>
+            <button type="button" class="btn btn-primary btn-sm" id="filter-apply">{{ 'decouverte.filters.apply'|trans }}</button>
           </div>
           <div class="col-auto">
-            <button type="button" class="btn btn-ghost-secondary btn-sm" id="filter-reset">Réinitialiser</button>
+            <button type="button" class="btn btn-ghost-secondary btn-sm" id="filter-reset">{{ 'decouverte.filters.reset'|trans }}</button>
           </div>
         </div>
       </div>
@@ -541,10 +541,10 @@
     <div id="tmdb-search-results" class="mb-3" style="display:none;">
       <div class="d-flex align-items-center justify-content-between mb-2">
         <h3 class="mb-0" style="font-size:1rem;">
-          <span id="tmdb-search-title">Résultats</span>
+          <span id="tmdb-search-title">{{ 'decouverte.search.results'|trans }}</span>
           <span id="tmdb-search-count" class="text-secondary small ms-1"></span>
         </h3>
-        <button type="button" class="btn btn-sm btn-ghost-secondary" id="tmdb-search-close">× Fermer</button>
+        <button type="button" class="btn btn-sm btn-ghost-secondary" id="tmdb-search-close">{{ 'decouverte.search.close'|trans }}</button>
       </div>
       <div class="tmdb-results-grid" id="tmdb-search-grid"></div>
     </div>
@@ -553,12 +553,12 @@
       <div class="row g-3 mb-3 tmdb-hero-row">
         {% if heroMovie %}
           <div class="col-lg-6">
-            {{ _self.hero(heroMovie, 'Film tendance · Cette semaine') }}
+            {{ _self.hero(heroMovie, 'decouverte.hero.movie'|trans) }}
           </div>
         {% endif %}
         {% if heroTv %}
           <div class="col-lg-6">
-            {{ _self.hero(heroTv, 'Série tendance · Cette semaine') }}
+            {{ _self.hero(heroTv, 'decouverte.hero.tv'|trans) }}
           </div>
         {% endif %}
       </div>
@@ -568,23 +568,23 @@
     <div class="tmdb-section" data-section="my-recs" id="tmdb-my-recs" style="display:none;">
       <div class="tmdb-section-header">
         <h3>
-          Pour toi
-          <span class="count">· basé sur ta bibliothèque <span id="tmdb-my-recs-count"></span></span>
+          {{ 'decouverte.section.my_recs.title'|trans }}
+          <span class="count">· {{ 'decouverte.section.my_recs.subtitle'|trans }} <span id="tmdb-my-recs-count"></span></span>
         </h3>
         <div class="d-flex align-items-center gap-2">
           <div class="btn-group btn-group-sm" role="group">
             <input type="radio" class="btn-check" name="myrecs-filter" id="myrecs-all" value="all" checked>
-            <label class="btn btn-outline-secondary py-0 px-2" for="myrecs-all" style="font-size:.7rem;">Tous</label>
+            <label class="btn btn-outline-secondary py-0 px-2" for="myrecs-all" style="font-size:.7rem;">{{ 'decouverte.filters.all'|trans }}</label>
             <input type="radio" class="btn-check" name="myrecs-filter" id="myrecs-movies" value="movie">
-            <label class="btn btn-outline-secondary py-0 px-2" for="myrecs-movies" style="font-size:.7rem;">Films</label>
+            <label class="btn btn-outline-secondary py-0 px-2" for="myrecs-movies" style="font-size:.7rem;">{{ 'decouverte.filters.movies'|trans }}</label>
             <input type="radio" class="btn-check" name="myrecs-filter" id="myrecs-tv" value="tv">
-            <label class="btn btn-outline-secondary py-0 px-2" for="myrecs-tv" style="font-size:.7rem;">Séries</label>
+            <label class="btn btn-outline-secondary py-0 px-2" for="myrecs-tv" style="font-size:.7rem;">{{ 'decouverte.filters.series'|trans }}</label>
           </div>
           <div class="tmdb-section-actions">
-            <button type="button" class="tmdb-scroll-btn" data-scroll="left" aria-label="Précédent">
+            <button type="button" class="tmdb-scroll-btn" data-scroll="left" aria-label="{{ 'decouverte.scroll.prev'|trans }}">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6"/></svg>
             </button>
-            <button type="button" class="tmdb-scroll-btn" data-scroll="right" aria-label="Suivant">
+            <button type="button" class="tmdb-scroll-btn" data-scroll="right" aria-label="{{ 'decouverte.scroll.next'|trans }}">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6l-6 6"/></svg>
             </button>
           </div>
@@ -592,26 +592,26 @@
       </div>
       <div class="tmdb-row" id="tmdb-my-recs-row">
         <div class="text-secondary py-3 px-2">
-          <span class="spinner-border spinner-border-sm me-2"></span>Analyse de ta bibliothèque en cours…
+          <span class="spinner-border spinner-border-sm me-2"></span>{{ 'decouverte.section.my_recs.loading'|trans }}
         </div>
       </div>
     </div>
 
-    {{ _self.section('Tendances cette semaine', trending, 'trending') }}
-    {{ _self.section('Films populaires', popMovies, 'popular-movies') }}
-    {{ _self.section('Séries populaires', popTv, 'popular-tv') }}
-    {{ _self.section('Prochaines sorties ciné', upcoming, 'upcoming') }}
-    {{ _self.section('Séries en cours de diffusion', onAir, 'on-air') }}
-    {{ _self.section('Films les mieux notés', topMovies, 'top-movies') }}
-    {{ _self.section('Séries les mieux notées', topTv, 'top-tv') }}
+    {{ _self.section('decouverte.section.trending'|trans, trending, 'trending') }}
+    {{ _self.section('decouverte.section.popular_movies'|trans, popMovies, 'popular-movies') }}
+    {{ _self.section('decouverte.section.popular_tv'|trans, popTv, 'popular-tv') }}
+    {{ _self.section('decouverte.section.upcoming'|trans, upcoming, 'upcoming') }}
+    {{ _self.section('decouverte.section.on_air'|trans, onAir, 'on-air') }}
+    {{ _self.section('decouverte.section.top_movies'|trans, topMovies, 'top-movies') }}
+    {{ _self.section('decouverte.section.top_tv'|trans, topTv, 'top-tv') }}
     {# Vu récemment — discret, en bas de page #}
     <div id="tmdb-recent" style="display:none; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--tblr-border-color);">
       <div class="d-flex align-items-center justify-content-between mb-2">
         <span style="font-size:.8rem; color:var(--tblr-muted); font-weight:500;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px; margin-right:4px;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          Consultés récemment
+          {{ 'decouverte.recent.title'|trans }}
         </span>
-        <button type="button" class="btn btn-ghost-secondary btn-sm py-0 px-1" id="tmdb-recent-clear" style="font-size:.65rem;" title="Effacer l'historique">Effacer</button>
+        <button type="button" class="btn btn-ghost-secondary btn-sm py-0 px-1" id="tmdb-recent-clear" style="font-size:.65rem;" title="{{ 'decouverte.recent.clear_title'|trans }}">{{ 'decouverte.recent.clear'|trans }}</button>
       </div>
       <div class="tmdb-row" id="tmdb-recent-row" style="gap:.5rem;"></div>
     </div>
@@ -657,7 +657,7 @@
                 </div>
                 <div id="td-genres" class="d-flex flex-wrap gap-1 mt-2"></div>
               </div>
-              <button type="button" class="btn-close btn-close-white ms-2 mt-1" data-bs-dismiss="modal" aria-label="Fermer" style="filter:drop-shadow(0 0 2px rgba(0,0,0,.8))"></button>
+              <button type="button" class="btn-close btn-close-white ms-2 mt-1" data-bs-dismiss="modal" aria-label="{{ 'decouverte.action.close'|trans }}" style="filter:drop-shadow(0 0 2px rgba(0,0,0,.8))"></button>
             </div>
           </div>
         </div>
@@ -783,10 +783,10 @@
                 <div class="card-header py-2 d-flex align-items-center justify-content-between">
                   <h3 class="card-title mb-0">Saisons</h3>
                   <div class="tmdb-section-actions">
-                    <button type="button" class="tmdb-scroll-btn" data-seasons-scroll="left" aria-label="Précédent">
+                    <button type="button" class="tmdb-scroll-btn" data-seasons-scroll="left" aria-label="{{ 'decouverte.scroll.prev'|trans }}">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6"/></svg>
                     </button>
-                    <button type="button" class="tmdb-scroll-btn" data-seasons-scroll="right" aria-label="Suivant">
+                    <button type="button" class="tmdb-scroll-btn" data-seasons-scroll="right" aria-label="{{ 'decouverte.scroll.next'|trans }}">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6l-6 6"/></svg>
                     </button>
                   </div>
@@ -824,10 +824,10 @@
                 <div class="card-header py-2 d-flex align-items-center justify-content-between">
                   <h3 class="card-title mb-0">Galerie</h3>
                   <div class="tmdb-section-actions">
-                    <button type="button" class="tmdb-scroll-btn" data-backdrops-scroll="left" aria-label="Précédent">
+                    <button type="button" class="tmdb-scroll-btn" data-backdrops-scroll="left" aria-label="{{ 'decouverte.scroll.prev'|trans }}">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6l6 6"/></svg>
                     </button>
-                    <button type="button" class="tmdb-scroll-btn" data-backdrops-scroll="right" aria-label="Suivant">
+                    <button type="button" class="tmdb-scroll-btn" data-backdrops-scroll="right" aria-label="{{ 'decouverte.scroll.next'|trans }}">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6l-6 6"/></svg>
                     </button>
                   </div>
@@ -842,10 +842,10 @@
                 <div class="card-header py-2 d-flex align-items-center justify-content-between">
                   <h3 class="card-title mb-0">Similaires</h3>
                   <div class="tmdb-section-actions">
-                    <button type="button" class="tmdb-scroll-btn" data-td-scroll="left" aria-label="Précédent">
+                    <button type="button" class="tmdb-scroll-btn" data-td-scroll="left" aria-label="{{ 'decouverte.scroll.prev'|trans }}">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 6l-6 6l6 6"/></svg>
                     </button>
-                    <button type="button" class="tmdb-scroll-btn" data-td-scroll="right" aria-label="Suivant">
+                    <button type="button" class="tmdb-scroll-btn" data-td-scroll="right" aria-label="{{ 'decouverte.scroll.next'|trans }}">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6"/></svg>
                     </button>
                   </div>
@@ -878,7 +878,7 @@
         {% if item.year %}<span>{{ item.year }}</span>{% endif %}
         {% if item.vote %}<span>★ {{ item.vote }}/10</span>{% endif %}
         {% if item.in_library %}
-          <span class="badge" style="background:#22c55e; color:#fff;">En bibliothèque</span>
+          <span class="badge" style="background:#22c55e; color:#fff;">{{ 'decouverte.badge.in_library'|trans }}</span>
         {% endif %}
       </div>
       {% if item.overview %}
@@ -913,10 +913,10 @@
         <span class="count">· {{ items|length }}</span>
       </h3>
       <div class="tmdb-section-actions">
-        <button type="button" class="tmdb-scroll-btn" data-scroll="left" aria-label="Précédent">
+        <button type="button" class="tmdb-scroll-btn" data-scroll="left" aria-label="{{ 'decouverte.scroll.prev'|trans }}">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 6l-6 6l6 6"/></svg>
         </button>
-        <button type="button" class="tmdb-scroll-btn" data-scroll="right" aria-label="Suivant">
+        <button type="button" class="tmdb-scroll-btn" data-scroll="right" aria-label="{{ 'decouverte.scroll.next'|trans }}">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6"/></svg>
         </button>
       </div>
@@ -925,7 +925,7 @@
       {% for item in items %}
         {{ _self.card(item) }}
       {% else %}
-        <div class="text-secondary py-4 px-2">Aucun résultat.</div>
+        <div class="text-secondary py-4 px-2">{{ 'decouverte.search.no_results'|trans }}</div>
       {% endfor %}
     </div>
   </div>
@@ -976,7 +976,7 @@
           <button type="button" class="btn btn-primary btn-sm tmdb-add-btn"
                   data-tmdb-id="{{ item.id }}"
                   data-tmdb-type="{{ item.type }}"
-                  data-tmdb-title="{{ item.title }}">Ajouter</button>
+                  data-tmdb-title="{{ item.title }}">{{ 'decouverte.action.add'|trans }}</button>
         {% else %}
           {% set statusColors = {'downloaded':'#22c55e','missing':'#f59e0b','announced':'#6366f1','inCinemas':'#6366f1','partial':'#3b82f6','unmonitored':'#6b7280'} %}
           {% set statusLabel = {'downloaded':'Téléchargé','missing':'Manquant','announced':'Annoncé','inCinemas':'En salles','partial':'Partiel','unmonitored':'Non surveillé'} %}

@@ -1,7 +1,7 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Explorer{% endblock %}
-{% block page_title %}Explorer{% endblock %}
+{% block title %}{{ 'decouverte.explorer.title'|trans }}{% endblock %}
+{% block page_title %}{{ 'decouverte.explorer.title'|trans }}{% endblock %}
 
 {% block body %}
 <style>
@@ -153,8 +153,8 @@
       <div class="explorer-card">
         <h6><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/></svg> Type</h6>
         <div class="ex-type-switch">
-          <button class="ex-type-btn active" data-type="movie">Films</button>
-          <button class="ex-type-btn" data-type="tv">Séries</button>
+          <button class="ex-type-btn active" data-type="movie">{{ 'decouverte.filters.movies'|trans }}</button>
+          <button class="ex-type-btn" data-type="tv">{{ 'decouverte.filters.series'|trans }}</button>
         </div>
       </div>
 
@@ -227,7 +227,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M10 10m-7 0a7 7 0 1014 0 7 7 0 10-14 0"/><path d="M21 21l-6-6"/></svg>
           Rechercher
         </button>
-        <button class="btn btn-outline-secondary btn-sm" id="ex-clear">Réinitialiser</button>
+        <button class="btn btn-outline-secondary btn-sm" id="ex-clear">{{ 'decouverte.filters.reset'|trans }}</button>
         <div class="ex-status" id="ex-status" style="margin:0;"></div>
       </div>
       <div id="ex-person-header" class="ex-person-header" style="display:none;">

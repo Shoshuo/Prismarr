@@ -61,6 +61,7 @@ class ClientResetTest extends TestCase
             $config,
             $this->createMock(CacheInterface::class),
             $this->createMock(LoggerInterface::class),
+            $this->createMock(\App\Service\DisplayPreferencesService::class),
         );
 
         // Force first config load.

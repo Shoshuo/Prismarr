@@ -3,6 +3,7 @@
 namespace App\Service\Media;
 
 use App\Service\ConfigService;
+use App\Service\DisplayPreferencesService;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -16,14 +17,16 @@ class TmdbClient implements ResetInterface
     private const TTL_LIST   = 3600;   // 1h for lists (trending/popular/upcoming)
     private const TTL_DETAIL = 21600;  // 6h for detail pages
     private const TTL_SEARCH = 600;    // 10min for searches
+    private const FALLBACK_LOCALE = 'fr-FR';
 
-    private string $locale = 'fr-FR';
+    private ?string $locale = null;
     private string $apiKey = '';
 
     public function __construct(
         private readonly ConfigService $config,
         private readonly CacheInterface $cache,
         private readonly LoggerInterface $logger,
+        private readonly DisplayPreferencesService $prefs,
     ) {}
 
     private function ensureConfig(): void
@@ -34,12 +37,33 @@ class TmdbClient implements ResetInterface
     }
 
     /**
-     * Drop the cached API key between FrankenPHP worker requests so an
-     * admin-triggered config change (/admin/settings) is picked up immediately.
+     * Read the admin-level metadata language once per request, falling back
+     * to FR if the pref service is unreachable (shouldn't happen but
+     * defensive — TMDb still needs a `language=` value to respond).
+     */
+    private function getLocale(): string
+    {
+        if ($this->locale === null) {
+            try {
+                $lang = $this->prefs->getMetadataLanguage();
+                $this->locale = $lang !== '' ? $lang : self::FALLBACK_LOCALE;
+            } catch (\Throwable) {
+                $this->locale = self::FALLBACK_LOCALE;
+            }
+        }
+
+        return $this->locale;
+    }
+
+    /**
+     * Drop the cached API key + locale between FrankenPHP worker requests so
+     * an admin-triggered config change (/admin/settings) is picked up
+     * immediately — the next request rebuilds from the DB.
      */
     public function reset(): void
     {
         $this->apiKey = '';
+        $this->locale = null;
     }
 
     /** Light ping — true if TMDb responds with a valid key. Bypasses cache. */
@@ -241,7 +265,9 @@ class TmdbClient implements ResetInterface
 
     private function cachedGet(string $cacheKey, string $path, array $params, int $ttl): array
     {
-        $full = "prismarr_tmdb_{$this->locale}_{$cacheKey}";
+        // Cache keyed by locale so switching `display_metadata_language`
+        // doesn't serve stale localized strings from the previous locale.
+        $full = "prismarr_tmdb_{$this->getLocale()}_{$cacheKey}";
 
         return $this->cache->get($full, function (ItemInterface $item) use ($path, $params, $ttl) {
             $item->expiresAfter($ttl);
@@ -253,7 +279,7 @@ class TmdbClient implements ResetInterface
     {
         $this->ensureConfig();
         $params['api_key']       = $this->apiKey;
-        $params['language']      = $params['language']      ?? $this->locale;
+        $params['language']      = $params['language']      ?? $this->getLocale();
         $params['include_adult'] = $params['include_adult'] ?? 'false';
 
         $url = self::BASE_URL . $path . '?' . http_build_query($params);
