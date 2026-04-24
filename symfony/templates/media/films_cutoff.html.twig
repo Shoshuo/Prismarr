@@ -1,13 +1,13 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Films sous le seuil{% endblock %}
+{% block title %}{{ 'media.films_cutoff.empty_title'|trans }}{% endblock %}
 
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Films sous le seuil de qualité
+        <h2 class="page-title">{{ 'media.films_cutoff.title'|trans }}
           {% if cutoff.totalRecords is defined %}
             <span class="badge bg-blue-lt ms-2">{{ cutoff.totalRecords }}</span>
           {% endif %}
@@ -31,12 +31,12 @@
     <table class="table table-vcenter table-sm card-table">
       <thead>
         <tr>
-          <th style="width:50px">Poster</th>
-          <th>Titre</th>
-          <th>Année</th>
-          <th>Qualité actuelle</th>
-          <th>Date sortie</th>
-          <th class="text-end">Actions</th>
+          <th style="width:50px">{{ 'media.films_cutoff.col_poster'|trans }}</th>
+          <th>{{ 'media.films_cutoff.col_title'|trans }}</th>
+          <th>{{ 'media.films_cutoff.col_year'|trans }}</th>
+          <th>{{ 'media.films_cutoff.col_current_quality'|trans }}</th>
+          <th>{{ 'media.films_cutoff.col_release_date'|trans }}</th>
+          <th class="text-end">{{ 'media.films_cutoff.col_actions'|trans }}</th>
         </tr>
       </thead>
       <tbody>
@@ -73,16 +73,16 @@
           </td>
           <td class="text-end">
             {% if m.id is defined %}
-              <button class="btn btn-sm btn-primary py-0 px-2 btn-search-upgrade" data-id="{{ m.id }}" title="Rechercher une meilleure qualité">
+              <button class="btn btn-sm btn-primary py-0 px-2 btn-search-upgrade" data-id="{{ m.id }}" title="{{ 'media.films_cutoff.upgrade_title'|trans }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                Améliorer
+                {{ 'media.films_cutoff.upgrade'|trans }}
               </button>
             {% endif %}
           </td>
         </tr>
       {% else %}
         <tr>
-          <td colspan="6" class="text-center text-muted py-4">Aucun film sous le seuil de qualité</td>
+          <td colspan="6" class="text-center text-muted py-4">{{ 'media.films_cutoff.empty'|trans }}</td>
         </tr>
       {% endfor %}
       </tbody>
@@ -91,13 +91,13 @@
 
   {% if total > 50 %}
   <div class="card-footer d-flex align-items-center justify-content-between">
-    <p class="m-0 text-muted small">Page {{ page }} — {{ records|length }} résultats sur {{ total }}</p>
+    <p class="m-0 text-muted small">{{ 'media.films_cutoff.pagination_summary'|trans({page: page, count: records|length, total: total}) }}</p>
     <div class="d-flex gap-2">
       {% if page > 1 %}
-        <a href="{{ path('app_media_films_cutoff', {page: page - 1}) }}" class="btn btn-sm btn-ghost-secondary">Précédent</a>
+        <a href="{{ path('app_media_films_cutoff', {page: page - 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_cutoff.prev'|trans }}</a>
       {% endif %}
       {% if records|length == 50 %}
-        <a href="{{ path('app_media_films_cutoff', {page: page + 1}) }}" class="btn btn-sm btn-ghost-secondary">Suivant</a>
+        <a href="{{ path('app_media_films_cutoff', {page: page + 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_cutoff.next'|trans }}</a>
       {% endif %}
     </div>
   </div>
@@ -111,6 +111,10 @@
 {% block javascripts %}
 <script>
 (function () {
+  var I18N = {
+    launched: {{ 'media.films_cutoff.launched'|trans|json_encode|raw }},
+    error: {{ 'media.films_cutoff.error'|trans|json_encode|raw }}
+  };
   document.querySelectorAll('.btn-search-upgrade').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var id = this.dataset.id;
@@ -124,15 +128,15 @@
       .then(function (r) { return r.json(); })
       .then(function (data) {
         if (data.ok) {
-          btn.textContent = 'Lancé ✓';
+          btn.textContent = I18N.launched;
           btn.className = 'btn btn-sm btn-success py-0 px-2';
         } else {
-          btn.textContent = 'Erreur';
+          btn.textContent = I18N.error;
           btn.disabled = false;
         }
       })
       .catch(function () {
-        btn.textContent = 'Erreur';
+        btn.textContent = I18N.error;
         btn.disabled = false;
       });
     });

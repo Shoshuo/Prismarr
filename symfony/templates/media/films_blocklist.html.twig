@@ -1,13 +1,13 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Blocklist Films{% endblock %}
+{% block title %}{{ 'media.films_blocklist.title'|trans }}{% endblock %}
 
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Blocklist
+        <h2 class="page-title">{{ 'media.films_blocklist.title'|trans }}
           {% if blocklist.totalRecords is defined %}
             <span class="badge bg-secondary-lt ms-2">{{ blocklist.totalRecords }}</span>
           {% endif %}
@@ -15,7 +15,7 @@
       </div>
       <div class="col-auto ms-auto d-flex gap-2">
         <button id="btn-bulk-delete" class="btn btn-danger btn-sm" style="display:none">
-          Supprimer la sélection (<span id="selected-count">0</span>)
+          {{ 'media.films_blocklist.bulk_delete_label'|trans }} (<span id="selected-count">0</span>)
         </button>
         {% include 'media/_radarr_nav.html.twig' %}
       </div>
@@ -37,13 +37,13 @@
           <th style="width:32px">
             <input type="checkbox" id="check-all" class="form-check-input m-0">
           </th>
-          <th>Date</th>
-          <th>Film</th>
-          <th>Source / Titre</th>
-          <th>Qualité</th>
-          <th>Protocole</th>
-          <th>Indexeur</th>
-          <th>Raison</th>
+          <th>{{ 'media.films_blocklist.col_date'|trans }}</th>
+          <th>{{ 'media.films_blocklist.col_film'|trans }}</th>
+          <th>{{ 'media.films_blocklist.col_source'|trans }}</th>
+          <th>{{ 'media.films_blocklist.col_quality'|trans }}</th>
+          <th>{{ 'media.films_blocklist.col_protocol'|trans }}</th>
+          <th>{{ 'media.films_blocklist.col_indexer'|trans }}</th>
+          <th>{{ 'media.films_blocklist.col_reason'|trans }}</th>
           <th></th>
         </tr>
       </thead>
@@ -92,14 +92,14 @@
             {% endif %}
           </td>
           <td>
-            <button class="btn btn-sm btn-ghost-danger py-0 px-2 btn-delete-one" data-id="{{ item.id }}" title="Supprimer">
+            <button class="btn btn-sm btn-ghost-danger py-0 px-2 btn-delete-one" data-id="{{ item.id }}" title="{{ 'media.films_blocklist.delete'|trans }}">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
             </button>
           </td>
         </tr>
       {% else %}
         <tr>
-          <td colspan="9" class="text-center text-muted py-4">Blocklist vide</td>
+          <td colspan="9" class="text-center text-muted py-4">{{ 'media.films_blocklist.empty'|trans }}</td>
         </tr>
       {% endfor %}
       </tbody>
@@ -108,13 +108,13 @@
 
   {% if total > 50 %}
   <div class="card-footer d-flex align-items-center justify-content-between">
-    <p class="m-0 text-muted small">Page {{ page }} — {{ records|length }} entrées sur {{ total }}</p>
+    <p class="m-0 text-muted small">{{ 'media.films_blocklist.pagination_summary'|trans({page: page, count: records|length, total: total}) }}</p>
     <div class="d-flex gap-2">
       {% if page > 1 %}
-        <a href="{{ path('app_media_films_blocklist', {page: page - 1}) }}" class="btn btn-sm btn-ghost-secondary">Précédent</a>
+        <a href="{{ path('app_media_films_blocklist', {page: page - 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_blocklist.prev'|trans }}</a>
       {% endif %}
       {% if records|length == 50 %}
-        <a href="{{ path('app_media_films_blocklist', {page: page + 1}) }}" class="btn btn-sm btn-ghost-secondary">Suivant</a>
+        <a href="{{ path('app_media_films_blocklist', {page: page + 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_blocklist.next'|trans }}</a>
       {% endif %}
     </div>
   </div>
@@ -128,6 +128,13 @@
 {% block javascripts %}
 <script>
 (function () {
+  var BL_I18N = {
+    confirm_delete: {{ 'media.films_blocklist.confirm_delete'|trans|json_encode|raw }},
+    confirm_bulk_delete_tpl: {{ 'media.films_blocklist.confirm_bulk_delete'|trans({count: '__COUNT__'})|json_encode|raw }},
+    error: {{ 'media.films_blocklist.error'|trans|json_encode|raw }},
+    error_bulk: {{ 'media.films_blocklist.error_bulk_delete'|trans|json_encode|raw }}
+  };
+
   var checkAll    = document.getElementById('check-all');
   var bulkBtn     = document.getElementById('btn-bulk-delete');
   var countSpan   = document.getElementById('selected-count');
@@ -161,12 +168,12 @@
     btn.addEventListener('click', function () {
       var id  = this.dataset.id;
       var row = this.closest('tr');
-      if (!confirm('Supprimer cet élément de la blocklist ?')) return;
+      if (!confirm(BL_I18N.confirm_delete)) return;
       btn.disabled = true;
       postJson('/medias/films/blocklist/' + id + '/delete')
       .then(function (data) {
         if (data.ok) row.remove();
-        else { alert('Erreur.'); btn.disabled = false; }
+        else { alert(BL_I18N.error); btn.disabled = false; }
       })
       .catch(function () { btn.disabled = false; });
     });
@@ -176,7 +183,7 @@
   bulkBtn.addEventListener('click', function () {
     var checked = document.querySelectorAll('.row-check:checked');
     if (!checked.length) return;
-    if (!confirm('Supprimer ' + checked.length + ' élément(s) de la blocklist ?')) return;
+    if (!confirm(BL_I18N.confirm_bulk_delete_tpl.replace('__COUNT__', checked.length))) return;
     var ids = Array.from(checked).map(function (c) { return parseInt(c.value); });
     bulkBtn.disabled = true;
     postJson('/medias/films/blocklist/bulk-delete', { ids: ids })
@@ -188,7 +195,7 @@
         });
         updateBulkBtn();
       } else {
-        alert('Erreur lors de la suppression.');
+        alert(BL_I18N.error_bulk);
       }
       bulkBtn.disabled = false;
     })

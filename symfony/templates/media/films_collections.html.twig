@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Collections{% endblock %}
+{% block title %}{{ 'media.films_collections.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
 <style>
@@ -39,7 +39,7 @@
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Collections
+        <h2 class="page-title">{{ 'media.films_collections.title'|trans }}
           <span class="badge bg-secondary-lt text-secondary ms-2">{{ collections|length }}</span>
         </h2>
       </div>
@@ -54,7 +54,7 @@
 <div class="container-xl">
 
 {% if collections is empty %}
-  <div class="alert alert-info">Aucune collection trouvée dans Radarr.</div>
+  <div class="alert alert-info">{{ 'media.films_collections.empty'|trans }}</div>
 {% else %}
 
 {# Stats globales #}
@@ -72,7 +72,7 @@
     <div class="card card-sm text-center">
       <div class="card-body">
         <div class="h1 mb-0">{{ collections|length }}</div>
-        <div class="text-muted small">Collections</div>
+        <div class="text-muted small">{{ 'media.films_collections.stats_total'|trans }}</div>
       </div>
     </div>
   </div>
@@ -80,7 +80,7 @@
     <div class="card card-sm text-center">
       <div class="card-body">
         <div class="h1 mb-0">{{ totalFilms }}</div>
-        <div class="text-muted small">Films au total</div>
+        <div class="text-muted small">{{ 'media.films_collections.stats_films'|trans }}</div>
       </div>
     </div>
   </div>
@@ -91,7 +91,7 @@
           {{ downloadedFilms }}
           <small class="text-muted fs-4">/ {{ totalFilms }}</small>
         </div>
-        <div class="text-muted small">Téléchargés</div>
+        <div class="text-muted small">{{ 'media.films_collections.stats_downloaded'|trans }}</div>
       </div>
     </div>
   </div>
@@ -122,7 +122,7 @@
     {# Badge monitored #}
     {% if col.monitored ?? false %}
       <div style="position:absolute;top:.4rem;right:.4rem">
-        <span class="badge bg-success" style="font-size:.6rem">Suivi</span>
+        <span class="badge bg-success" style="font-size:.6rem">{{ 'media.films_collections.monitored_badge'|trans }}</span>
       </div>
     {% endif %}
 
@@ -131,7 +131,7 @@
         {{ col.title }}
       </div>
       <div style="font-size:.62rem;color:rgba(255,255,255,.7);margin-top:.2rem">
-        {{ colDl }}/{{ colTotal }} films
+        {{ colDl }}/{{ colTotal }} {{ 'media.films_collections.films_count_suffix'|trans }}
       </div>
       {# Barre de progression #}
       <div style="height:3px;background:rgba(255,255,255,.2);border-radius:2px;margin-top:.3rem;overflow:hidden">
@@ -144,7 +144,7 @@
                 data-id="{{ col.id }}"
                 data-monitored="{{ col.monitored ? '1' : '0' }}"
                 onclick="event.stopPropagation();">
-          {{ col.monitored ? 'Ne plus suivre' : 'Suivre' }}
+          {{ col.monitored ? 'media.films_collections.unfollow'|trans : 'media.films_collections.follow'|trans }}
         </button>
       </div>
     </div>
@@ -162,7 +162,7 @@
       </div>
       <div class="modal-body" id="col-modal-body"></div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{{ 'media.films_collections.modal.close'|trans }}</button>
         <button type="button" class="btn btn-sm" id="col-modal-monitor"></button>
       </div>
     </div>
@@ -178,6 +178,24 @@
 {% block javascripts %}
 <script>
 (function () {
+
+  var COL_I18N = {
+    film_count_tpl: {{ 'media.films_collections.modal.film_count'|trans({count: '__COUNT__'})|json_encode|raw }},
+    col_title: {{ 'media.films_collections.modal.col_title'|trans|json_encode|raw }},
+    col_year: {{ 'media.films_collections.modal.col_year'|trans|json_encode|raw }},
+    col_status: {{ 'media.films_collections.modal.col_status'|trans|json_encode|raw }},
+    quality_profile: {{ 'media.films_collections.modal.quality_profile'|trans|json_encode|raw }},
+    root_folder: {{ 'media.films_collections.modal.root_folder'|trans|json_encode|raw }},
+    loading: {{ 'media.films_collections.modal.loading'|trans|json_encode|raw }},
+    downloaded: {{ 'media.films_collections.modal.downloaded'|trans|json_encode|raw }},
+    missing: {{ 'media.films_collections.modal.missing'|trans|json_encode|raw }},
+    add: {{ 'media.films_collections.modal.add'|trans|json_encode|raw }},
+    added: {{ 'media.films_collections.modal.added'|trans|json_encode|raw }},
+    error: {{ 'media.films_collections.modal.error'|trans|json_encode|raw }},
+    follow: {{ 'media.films_collections.follow'|trans|json_encode|raw }},
+    unfollow: {{ 'media.films_collections.unfollow'|trans|json_encode|raw }},
+    monitored_badge: {{ 'media.films_collections.monitored_badge'|trans|json_encode|raw }}
+  };
 
   /* ── Modal collection ─────────────────────────────────────────────── */
   var colModal = document.getElementById('modal-collection');
@@ -225,16 +243,16 @@
     var hasNonAdded = movies.some(function(m) { return !(m.inLibrary || m.isExisting); });
     if (hasNonAdded) {
       html += '<div class="col-add-config d-flex gap-2 mb-3 p-2 rounded" style="background:var(--tblr-bg-surface-secondary)">';
-      html += '<div class="flex-fill"><label class="form-label small mb-1">Profil de qualité</label>';
-      html += '<select id="col-add-quality" class="form-select form-select-sm"><option value="">Chargement…</option></select></div>';
-      html += '<div class="flex-fill"><label class="form-label small mb-1">Dossier racine</label>';
-      html += '<select id="col-add-folder" class="form-select form-select-sm"><option value="">Chargement…</option></select></div>';
+      html += '<div class="flex-fill"><label class="form-label small mb-1">' + COL_I18N.quality_profile + '</label>';
+      html += '<select id="col-add-quality" class="form-select form-select-sm"><option value="">' + COL_I18N.loading + '</option></select></div>';
+      html += '<div class="flex-fill"><label class="form-label small mb-1">' + COL_I18N.root_folder + '</label>';
+      html += '<select id="col-add-folder" class="form-select form-select-sm"><option value="">' + COL_I18N.loading + '</option></select></div>';
       html += '</div>';
     }
 
-    html += '<div class="mb-2 small text-muted">' + movies.length + ' film(s)</div>';
+    html += '<div class="mb-2 small text-muted">' + COL_I18N.film_count_tpl.replace('__COUNT__', movies.length) + '</div>';
     html += '<div class="table-responsive"><table class="table table-vcenter table-hover mb-0"><thead><tr>';
-    html += '<th style="width:50px"></th><th>Titre</th><th>Année</th><th class="text-end">Statut</th>';
+    html += '<th style="width:50px"></th><th>' + COL_I18N.col_title + '</th><th>' + COL_I18N.col_year + '</th><th class="text-end">' + COL_I18N.col_status + '</th>';
     html += '</tr></thead><tbody>';
 
     movies.forEach(function(m) {
@@ -251,12 +269,12 @@
       html += '<td class="text-muted">' + (m.year || '—') + '</td>';
       html += '<td class="text-end">';
       if (hasFile) {
-        html += '<span class="badge bg-success-lt">Téléchargé</span>';
+        html += '<span class="badge bg-success-lt">' + COL_I18N.downloaded + '</span>';
       } else if (inLib) {
-        html += '<span class="badge bg-warning-lt">Manquant</span>';
+        html += '<span class="badge bg-warning-lt">' + COL_I18N.missing + '</span>';
       } else {
         html += '<button class="btn btn-sm btn-primary btn-add-col-movie" data-tmdb="' + m.tmdbId + '" data-title="' + (m.title || '').replace(/"/g,'&quot;') + '">';
-        html += '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg> Ajouter';
+        html += '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg> ' + COL_I18N.add;
         html += '</button>';
       }
       html += '</td></tr>';
@@ -308,17 +326,17 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (data.ok) {
-            btn.outerHTML = '<span class="badge bg-success-lt">Ajouté</span>';
+            btn.outerHTML = '<span class="badge bg-success-lt">' + COL_I18N.added + '</span>';
           } else {
             btn.disabled = false;
-            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg> Ajouter';
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg> ' + COL_I18N.add;
             btn.classList.replace('btn-primary', 'btn-danger');
             setTimeout(function() { btn.classList.replace('btn-danger', 'btn-primary'); }, 2000);
           }
         })
         .catch(function() {
           btn.disabled = false;
-          btn.textContent = 'Erreur';
+          btn.textContent = COL_I18N.error;
         });
       });
     });
@@ -326,7 +344,7 @@
     // Monitor button
     var monBtn = document.getElementById('col-modal-monitor');
     var isMonitored = currentCol.monitored || false;
-    monBtn.textContent = isMonitored ? 'Ne plus suivre' : 'Suivre';
+    monBtn.textContent = isMonitored ? COL_I18N.unfollow : COL_I18N.follow;
     monBtn.className = 'btn btn-sm ' + (isMonitored ? 'btn-outline-secondary' : 'btn-primary');
     monBtn.dataset.id = currentCol.id;
     monBtn.dataset.monitored = isMonitored ? '1' : '0';
@@ -370,7 +388,7 @@
       .then(function (data) {
         if (data.ok) {
           btn.dataset.monitored = newMonitored ? '1' : '0';
-          btn.textContent = newMonitored ? 'Ne plus suivre' : 'Suivre';
+          btn.textContent = newMonitored ? COL_I18N.unfollow : COL_I18N.follow;
           // Mettre à jour le badge
           var card = btn.closest('.collection-card');
           var badge = card ? card.querySelector('.badge.bg-success') : null;
@@ -378,7 +396,7 @@
             var b = document.createElement('span');
             b.className = 'badge bg-success';
             b.style.fontSize = '.6rem';
-            b.textContent = 'Suivi';
+            b.textContent = COL_I18N.monitored_badge;
             var corner = document.createElement('div');
             corner.style = 'position:absolute;top:.4rem;right:.4rem';
             corner.appendChild(b);

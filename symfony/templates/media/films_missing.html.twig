@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Films manquants{% endblock %}
+{% block title %}{{ 'media.films_missing.title'|trans }}{% endblock %}
 
 {% block stylesheets %}
 <style>
@@ -14,7 +14,7 @@
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Films manquants
+        <h2 class="page-title">{{ 'media.films_missing.title'|trans }}
           {% if missing.totalRecords is defined %}
             <span class="badge bg-warning-lt text-warning ms-2">{{ missing.totalRecords }}</span>
           {% endif %}
@@ -40,7 +40,7 @@
 <div class="d-flex justify-content-end mb-3">
   <button id="btn-search-all" class="btn btn-primary btn-sm">
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    Rechercher tous les manquants
+    {{ 'media.films_missing.search_all'|trans }}
   </button>
 </div>
 
@@ -50,12 +50,12 @@
       <thead>
         <tr>
           <th style="width:20px"></th>
-          <th>Titre</th>
-          <th style="width:50px">Année</th>
-          <th>Profil</th>
-          <th>Sortie</th>
-          <th>Statut</th>
-          <th class="text-end" style="width:120px">Actions</th>
+          <th>{{ 'media.films_missing.col_title'|trans }}</th>
+          <th style="width:50px">{{ 'media.films_missing.col_year'|trans }}</th>
+          <th>{{ 'media.films_missing.col_profile'|trans }}</th>
+          <th>{{ 'media.films_missing.col_release'|trans }}</th>
+          <th>{{ 'media.films_missing.col_status'|trans }}</th>
+          <th class="text-end" style="width:120px">{{ 'media.films_missing.col_actions'|trans }}</th>
         </tr>
       </thead>
       <tbody>
@@ -65,7 +65,7 @@
         <tr data-id="{{ m.id ?? '' }}">
           <td>
             <span style="width:14px;height:14px;border-radius:50%;display:inline-block;border:2px solid rgba(0,0,0,.3);background:{{ isUnavail ? '#6366f1' : '#f59e0b' }};box-shadow:0 0 4px {{ isUnavail ? '#6366f1' : '#f59e0b' }};"
-                  title="{{ isUnavail ? (m.status == 'inCinemas' ? 'En salles' : 'Annoncé') : 'Manquant' }}"></span>
+                  title="{{ isUnavail ? (m.status == 'inCinemas' ? 'media.films_missing.in_cinemas_short'|trans : 'media.films_missing.announced_short'|trans) : 'media.films_missing.missing_short'|trans }}"></span>
           </td>
           <td style="font-size:.85rem;">
             <div class="fw-medium">{{ m.title ?? '—' }}</div>
@@ -90,11 +90,11 @@
           </td>
           <td>
             {% if m.status == 'announced' %}
-              <span class="badge" style="background:rgba(99,102,241,.15);color:#6366f1;font-size:.7rem;" title="Ce film est annoncé mais pas encore sorti">Annoncé</span>
+              <span class="badge" style="background:rgba(99,102,241,.15);color:#6366f1;font-size:.7rem;" title="{{ 'media.films_missing.announced_tip'|trans }}">{{ 'media.films_missing.status_announced'|trans }}</span>
             {% elseif m.status == 'inCinemas' %}
-              <span class="badge" style="background:rgba(99,102,241,.15);color:#6366f1;font-size:.7rem;" title="En salles, pas encore disponible">En salles</span>
+              <span class="badge" style="background:rgba(99,102,241,.15);color:#6366f1;font-size:.7rem;" title="{{ 'media.films_missing.in_cinemas_tip'|trans }}">{{ 'media.films_missing.status_in_cinemas'|trans }}</span>
             {% elseif m.status == 'released' %}
-              <span class="badge bg-warning-lt text-warning" style="font-size:.7rem;" title="Sorti mais non téléchargé">Manquant</span>
+              <span class="badge bg-warning-lt text-warning" style="font-size:.7rem;" title="{{ 'media.films_missing.released_missing_tip'|trans }}">{{ 'media.films_missing.status_missing'|trans }}</span>
             {% else %}
               <span class="badge bg-secondary-lt" style="font-size:.7rem;">{{ m.status ?? '—' }}</span>
             {% endif %}
@@ -103,13 +103,13 @@
             <div class="d-flex gap-1 justify-content-end align-items-center">
               {% if m.id is defined and not isUnavail %}
                 <button class="btn btn-ghost-primary btn-icon btn-search-one"
-                        data-id="{{ m.id }}" data-title="{{ m.title ?? '' }}" title="Rechercher">
+                        data-id="{{ m.id }}" data-title="{{ m.title ?? '' }}" title="{{ 'media.films_missing.search_title'|trans }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                 </button>
               {% endif %}
               {% if m.id is defined %}
                 <button class="btn btn-ghost-secondary btn-icon btn-unmonitor"
-                        data-id="{{ m.id }}" title="Ne plus suivre">
+                        data-id="{{ m.id }}" title="{{ 'media.films_missing.unmonitor_title'|trans }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><path d="m2 2 20 20" stroke-width="2.5"/></svg>
                 </button>
               {% endif %}
@@ -118,7 +118,7 @@
         </tr>
       {% else %}
         <tr>
-          <td colspan="7" class="text-center text-muted py-4">Aucun film manquant</td>
+          <td colspan="7" class="text-center text-muted py-4">{{ 'media.films_missing.empty'|trans }}</td>
         </tr>
       {% endfor %}
       </tbody>
@@ -127,13 +127,13 @@
 
   {% if total > 50 %}
   <div class="card-footer d-flex align-items-center justify-content-between">
-    <p class="m-0 text-muted small">Page {{ page }} — {{ records|length }} sur {{ total }}</p>
+    <p class="m-0 text-muted small">{{ 'media.films_missing.pagination_summary'|trans({page: page, count: records|length, total: total}) }}</p>
     <div class="d-flex gap-2">
       {% if page > 1 %}
-        <a href="{{ path('app_media_films_missing', {page: page - 1}) }}" class="btn btn-sm btn-ghost-secondary">Précédent</a>
+        <a href="{{ path('app_media_films_missing', {page: page - 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_missing.prev'|trans }}</a>
       {% endif %}
       {% if records|length == 50 %}
-        <a href="{{ path('app_media_films_missing', {page: page + 1}) }}" class="btn btn-sm btn-ghost-secondary">Suivant</a>
+        <a href="{{ path('app_media_films_missing', {page: page + 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_missing.next'|trans }}</a>
       {% endif %}
     </div>
   </div>
@@ -147,10 +147,31 @@
 {% block javascripts %}
 <script>
 (function () {
+  var FM_I18N = {
+    searching: {{ 'media.films_missing.searching'|trans|json_encode|raw }},
+    download_started: {{ 'media.films_missing.download_started'|trans|json_encode|raw }},
+    nothing_found: {{ 'media.films_missing.nothing_found'|trans|json_encode|raw }},
+    error: {{ 'media.films_missing.error'|trans|json_encode|raw }},
+    no_missing: {{ 'media.films_missing.no_missing'|trans|json_encode|raw }},
+    confirm_search_all_tpl: {{ 'media.films_missing.confirm_search_all'|trans({count: '__COUNT__'})|json_encode|raw }},
+    searching_for_tpl: {{ 'media.films_missing.searching_for'|trans({count: '__COUNT__'})|json_encode|raw }},
+    launch_error: {{ 'media.films_missing.launch_error'|trans|json_encode|raw }},
+    search_done_dl_tpl: {{ 'media.films_missing.search_done_dl'|trans({dl: '__DL__', total: '__TOTAL__'})|json_encode|raw }},
+    search_done_none_tpl: {{ 'media.films_missing.search_done_none'|trans({total: '__TOTAL__'})|json_encode|raw }},
+    search_failed_tpl: {{ 'media.films_missing.search_failed'|trans({error: '__ERROR__'})|json_encode|raw }},
+    search_progress_tpl: {{ 'media.films_missing.search_progress'|trans({done: '__DONE__', total: '__TOTAL__', title: '__TITLE__'})|json_encode|raw }},
+    search_in_progress_tpl: {{ 'media.films_missing.search_in_progress'|trans({seconds: '__SEC__'})|json_encode|raw }},
+    unknown_error: {{ 'media.films_missing.unknown_error'|trans|json_encode|raw }},
+    confirm_unmonitor: {{ 'media.films_missing.confirm_unmonitor'|trans|json_encode|raw }},
+    network_error: {{ 'media.films_missing.network_error'|trans|json_encode|raw }},
+    search_all_label: {{ 'media.films_missing.search_all'|trans|json_encode|raw }}
+  };
+
   var SVG_SEARCH = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
   var SVG_SPIN_SM = '<span class="spinner-border spinner-border-sm" style="width:16px;height:16px;"></span>';
   var SVG_OK = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>';
   var SVG_FAIL = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+  var SEARCH_ICON_SM = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
 
   var banner = document.getElementById('page-banner');
   function showBanner(html, type) {
@@ -182,13 +203,13 @@
       btn.disabled = true;
       btn.innerHTML = SVG_SPIN_SM;
       statusEl.classList.remove('d-none');
-      statusEl.innerHTML = '<span class="text-muted">Recherche…</span>';
+      statusEl.innerHTML = '<span class="text-muted">' + FM_I18N.searching + '</span>';
 
       postJson('/medias/films/' + id + '/search')
       .then(function (data) {
         if (!data.ok || !data.cmdId) {
           btn.innerHTML = SVG_FAIL;
-          statusEl.innerHTML = '<span class="text-danger">Erreur</span>';
+          statusEl.innerHTML = '<span class="text-danger">' + FM_I18N.error + '</span>';
           btn.disabled = false;
           setTimeout(function() { btn.innerHTML = SVG_SEARCH; statusEl.classList.add('d-none'); }, 3000);
           return;
@@ -203,17 +224,17 @@
               var dlCount = dlMatch ? parseInt(dlMatch[1]) : 0;
               if (dlCount > 0) {
                 btn.innerHTML = SVG_OK;
-                statusEl.innerHTML = '<span class="text-success">Téléchargement lancé</span>';
+                statusEl.innerHTML = '<span class="text-success">' + FM_I18N.download_started + '</span>';
               } else {
                 btn.innerHTML = SVG_FAIL;
-                statusEl.innerHTML = '<span class="text-warning">Rien trouvé</span>';
+                statusEl.innerHTML = '<span class="text-warning">' + FM_I18N.nothing_found + '</span>';
               }
               btn.disabled = false;
               setTimeout(function() { btn.innerHTML = SVG_SEARCH; }, 5000);
             } else if (st === 'failed') {
               clearInterval(pollTimer);
               btn.innerHTML = SVG_FAIL;
-              statusEl.innerHTML = '<span class="text-danger">Erreur</span>';
+              statusEl.innerHTML = '<span class="text-danger">' + FM_I18N.error + '</span>';
               btn.disabled = false;
               setTimeout(function() { btn.innerHTML = SVG_SEARCH; }, 3000);
             } else if (msg) {
@@ -235,29 +256,28 @@
     // Count all missing movies (including unavailable — Radarr searches them all)
     var totalMissing = document.querySelectorAll('tr[data-id]').length;
     if (!totalMissing) {
-      showBanner('Aucun film manquant.', 'warning');
+      showBanner(FM_I18N.no_missing, 'warning');
       return;
     }
-    if (!confirm('Lancer la recherche pour ' + totalMissing + ' film(s) manquant(s) ?')) return;
+    if (!confirm(FM_I18N.confirm_search_all_tpl.replace('__COUNT__', totalMissing))) return;
     var ids = { length: totalMissing }; // for display only
 
     var btn = this;
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + ids.length + ' films...';
-    showBanner('<span class="spinner-border spinner-border-sm me-2"></span> Recherche en cours pour ' + ids.length + ' film(s) manquant(s)...', 'info');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + ids.length + '...';
+    showBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + FM_I18N.searching_for_tpl.replace('__COUNT__', ids.length), 'info');
 
     postJson('/medias/films/recherche-manquants')
     .then(function (data) {
       if (!data.ok || !data.cmdId) {
-        showBanner('Erreur lors du lancement.', 'danger');
+        showBanner(FM_I18N.launch_error, 'danger');
         btn.disabled = false;
-        btn.innerHTML = SVG_SEARCH + ' Rechercher tous les manquants';
+        btn.innerHTML = SEARCH_ICON_SM + ' ' + FM_I18N.search_all_label;
         return;
       }
       var lastFilmSeen = '';
       var filmsDone = 0;
       var pollCount = 0;
-      var SEARCH_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
 
       var pollTimer = setInterval(function() {
         pollCount++;
@@ -269,22 +289,22 @@
           if (st === 'completed') {
             clearInterval(pollTimer);
             btn.disabled = false;
-            btn.innerHTML = SEARCH_ICON + ' Rechercher tous les manquants';
+            btn.innerHTML = SEARCH_ICON_SM + ' ' + FM_I18N.search_all_label;
             var downloaded = msg.match(/(\d+) reports downloaded/);
             var searchedMatch = msg.match(/(\d+) movies/);
             var dlCount = downloaded ? parseInt(downloaded[1]) : 0;
             var searchedCount = searchedMatch ? parseInt(searchedMatch[1]) : ids.length;
             if (dlCount > 0) {
-              showBanner('Recherche terminée — ' + dlCount + ' téléchargement(s) lancé(s) sur ' + searchedCount + ' film(s) recherché(s).', 'success');
+              showBanner(FM_I18N.search_done_dl_tpl.replace('__DL__', dlCount).replace('__TOTAL__', searchedCount), 'success');
             } else {
-              showBanner('Recherche terminée pour ' + searchedCount + ' film(s) — aucun résultat correspondant aux critères.', 'warning');
+              showBanner(FM_I18N.search_done_none_tpl.replace('__TOTAL__', searchedCount), 'warning');
             }
             setTimeout(function() { location.reload(); }, 3000);
           } else if (st === 'failed') {
             clearInterval(pollTimer);
             btn.disabled = false;
-            btn.innerHTML = SEARCH_ICON + ' Rechercher tous les manquants';
-            showBanner('Recherche échouée : ' + (msg || 'erreur inconnue'), 'danger');
+            btn.innerHTML = SEARCH_ICON_SM + ' ' + FM_I18N.search_all_label;
+            showBanner(FM_I18N.search_failed_tpl.replace('__ERROR__', msg || FM_I18N.unknown_error), 'danger');
           } else {
             // Progression
             var filmMatch = msg.match(/Searching\s+\d+\s+indexers for\s+\[(.+?)\]/i) || msg.match(/for\s+\[(.+?)\]/i);
@@ -294,11 +314,14 @@
             }
             var progressText = '';
             if (filmsDone > 0) {
-              progressText = 'Film ' + filmsDone + '/' + ids.length + ' — ' + lastFilmSeen;
+              progressText = FM_I18N.search_progress_tpl
+                .replace('__DONE__', filmsDone)
+                .replace('__TOTAL__', ids.length)
+                .replace('__TITLE__', lastFilmSeen);
             } else if (msg) {
               progressText = msg;
             } else {
-              progressText = 'Recherche en cours... (' + elapsed + 's)';
+              progressText = FM_I18N.search_in_progress_tpl.replace('__SEC__', elapsed);
             }
             showBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + progressText, 'info');
           }
@@ -307,8 +330,8 @@
     })
     .catch(function () {
       btn.disabled = false;
-      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Rechercher tous les manquants';
-      showBanner('Erreur réseau.', 'danger');
+      btn.innerHTML = SEARCH_ICON_SM + ' ' + FM_I18N.search_all_label;
+      showBanner(FM_I18N.network_error, 'danger');
     });
   });
 
@@ -317,7 +340,7 @@
     btn.addEventListener('click', function () {
       var id = btn.dataset.id;
       var row = btn.closest('tr');
-      if (!confirm('Ne plus suivre ce film ?')) return;
+      if (!confirm(FM_I18N.confirm_unmonitor)) return;
       btn.disabled = true;
       postJson('/medias/films/' + id + '/monitor', { monitored: false })
       .then(function (data) {

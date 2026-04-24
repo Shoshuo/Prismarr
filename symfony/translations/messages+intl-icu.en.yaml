@@ -931,6 +931,490 @@ media:
     backups: Backups
     updates: Updates
 
+  films:
+    stats:
+      total: Total
+      downloaded: Downloaded
+      waiting: Waiting
+      total_size: Total size
+      gb_suffix: GB
+      mo_suffix: MB
+    filters:
+      search_placeholder: "Search…"
+      status:
+        all: All
+        downloaded: Downloaded
+        missing: Missing
+        unmonitored: Unmonitored
+      quality: Quality
+      genre: Genre
+      language: Language
+      sort:
+        title_asc: Title A→Z
+        title_desc: Title Z→A
+        year_desc: 'Year ↓'
+        year_asc: 'Year ↑'
+        added_desc: Recently added
+        size_desc: 'Size ↓'
+        size_asc: 'Size ↑'
+    view:
+      grid: Grid
+      wall: Wall
+      extended: Extended
+      table: Table
+      shelf: Shelves
+    actions:
+      refresh_filtered: Refresh filtered
+      search_filtered: Search filtered
+      refresh_all_title: Refresh and scan all
+      rss_sync: RSS sync
+      select_mode: Selection mode
+      cancel: Cancel
+      add: Add
+      refresh_filtered_title: Refresh and scan filtered movies
+      search_filtered_title: Search for filtered missing movies
+    status:
+      downloaded: Downloaded
+      missing: Missing
+      unmonitored: Unmonitored
+      announced: Announced
+      in_cinemas: In theatres
+      announced_lc: announced
+      in_cinemas_lc: in theatres
+      monitored_indisp: 'Monitored — unavailable ({status})'
+      monitored_missing: 'Monitored — missing'
+      radarr_monitors: Radarr monitors this movie and will search for a release automatically
+      radarr_not_monitored: "This movie isn't monitored, Radarr won't look for a release"
+      file_on_disk: The file is present on disk
+      released_not_found: "The movie has been released but no file has been found or downloaded"
+      in_cinemas_tip: "This movie is currently in theatres, not yet available for download"
+      announced_tip: This movie is announced but has not been released yet
+      file_quality_tip: Downloaded file quality
+      file_size_tip: File size on disk
+      indisponible_prefix: 'Unavailable — '
+    table:
+      title: Title
+      year: Year
+      quality: Quality
+      size: Size
+      status: Status
+    bulk:
+      edit: Edit
+      rename: Rename files
+      tags: Set tags
+      delete: Delete
+      select_all: Select all
+      clear: Clear
+      selected_count: 'selected'
+      edit_title: Edit selected movies
+      edit_monitored: Monitored
+      edit_keep: '— Keep current —'
+      edit_follow: Monitor
+      edit_unfollow: Unmonitor
+      edit_quality: Quality profile
+      edit_availability: Minimum availability
+      edit_root: Root folder
+      availability_announced: Announced
+      availability_in_cinemas: In theatres
+      availability_released: Released
+      cancel: Cancel
+      save: Save
+      tags_title: Tags
+      tags_label: Tags
+      tags_action: Tag action
+      tags_add: 'Add — Add tags to existing movies'
+      tags_remove: 'Remove — Remove tags from existing movies'
+      tags_replace: 'Replace — Replace tags with the selected ones'
+      apply: Apply
+      delete_title: Delete selected movies
+      delete_warning: 'Are you sure you want to delete <strong id="bulk-delete-count">0</strong> movie(s)? This action is irreversible.'
+      delete_files: Delete files on disk
+      delete_exclude: Add to import exclusion list
+      delete_confirm: Delete
+      rename_title: Organize & Rename
+      rename_loading: Loading previews...
+      rename_go: Organize
+      selected_hint: '{count} movie(s) selected'
+      no_tag_defined: No tag defined
+      all_correct: Already correct
+      organise_files: 'Organize {count} file(s)'
+      films_correctly_named: '{count} movie(s) already correctly named.'
+    modal:
+      add_title: Add a movie
+      search_placeholder: "Search a movie…"
+      search_btn: Search
+      quality_profile: Quality profile
+      root_folder: Root folder
+      loading: "Loading…"
+      search_auto: Auto-search
+      add_button: Add
+      no_results: No results
+      search_error: Error while searching
+      no_poster: "No poster"
+      already_radarr: Already in Radarr
+      pick_quality_folder: "⚠️ Pick a quality profile and a folder."
+      adding: "Adding…"
+      added_success: "✅ «{title}» added to Radarr!"
+      added_searching: "✅ «{title}» added — 🔍 Radarr is searching on {count} indexer(s)..."
+      searching_dots: "🔍 Radarr searching{dots}"
+      searching_elapsed: " ({seconds}s)"
+      dl_started: "✅ «{title}» — 📥 Download started{src}! Reloading..."
+      via_prefix: " via {src}"
+      dl_failed: "❌ «{title}» — Download failed. Check qBittorrent and retry via interactive search."
+      grab_but_no_queue: "⚠️ «{title}» — Torrent grabbed{src} but not detected in the queue. Check qBittorrent."
+      no_download_detected: "⚠️ «{title}» added but no download detected. Open the movie to launch an interactive search."
+      added_not_monitored: "✅ «{title}» added (not monitored)"
+      add_error_duplicate: "❌ Error — the movie may already exist."
+      network_error: "❌ Network error"
+    detail:
+      follow: Monitor
+      unfollow: Unmonitor
+      close: Close
+      search: Search
+      interactive_search: Interactive search
+      refresh_scan: "Refresh & scan"
+      remove_from_radarr: Remove from Radarr
+      delete_file: Delete file
+      delete_all: Delete everything (Radarr + file)
+      releases_available: Available releases
+      interrogating_indexers: "Querying indexers (30-60s)..."
+      release_col: Release
+      indexer_col: Indexer
+      quality_col: Quality
+      score_col: Score
+      formats_col: Formats
+      size_col: Size
+      seeds_col: Seeds
+      langs_col: Langs
+      age_col: Age
+      no_release_found: No release found.
+      loading_error: Error while loading (timeout or indexers unavailable).
+      synopsis: Overview
+      no_synopsis: No overview available.
+      studio_prefix: 'Studio: '
+      file_info: File information
+      no_extras: No extra files to manage.
+      extras_suffix: ' extra file(s): '
+      file_naming: File naming
+      rename: Rename
+      loading_proposals: "Loading proposals..."
+      current_name: "Current name:"
+      expected_name: "Expected name:"
+      already_correct: The file is already correctly named.
+      no_rename_proposal: No rename proposal.
+      edit: Edit
+      edit_modify: Edit
+      edit_monitored: Monitored
+      edit_monitored_help: Download the movie if available
+      edit_availability: Minimum availability
+      edit_quality: Quality profile
+      edit_path: Path
+      edit_explorer: Explorer
+      edit_update_path: Update path
+      edit_empty_folder: Empty folder
+      edit_tags: Tags
+      edit_tag_placeholder: "New tag..."
+      edit_delete: Delete
+      edit_cancel: Cancel
+      edit_save: Save
+      edit_modified_title: "Edit — {title}"
+      edit_update_path_confirm: "Update the path to:\n{path}"
+      edit_path_updated: "✅ Path updated."
+      edit_delete_confirm: "Delete «{title}»?"
+      edit_delete_files_confirm: "Also delete files on disk?"
+      edit_saved: "✅ Movie updated."
+      edit_error: "❌ Error: {error}"
+      edit_config_error: "Error loading configuration."
+      manage_files: Manage files
+      loading_files: "Loading files..."
+      loading_error_short: Error while loading.
+      no_file_associated: No file associated with this movie.
+      expected_path: "Expected path:"
+      release_group: Release group
+      release_group_placeholder: "ex: MyGroup"
+      quality: Quality
+      languages: Languages
+      path: Path
+      video: Video
+      audio: Audio
+      subtitles: Subtitles
+      save: Save
+      saving: "Saving..."
+      delete_file_btn: Delete file
+      delete_file_confirm: "Delete this file from disk?\n\nThis action is irreversible."
+      file_deleted: File deleted.
+      delete_error: Error while deleting.
+      network_error: Network error.
+      pick_language: Pick at least one language.
+      saved: Changes saved.
+      save_error: "Error: {error}"
+      cast: Cast
+      loading: "Loading..."
+      no_cast: No cast information available.
+      crew: Crew
+      titles: Titles
+      alt_title: Alternative title
+      source: Source
+      history: History
+      no_history: No history.
+      bookmark_artist: Follow this artist
+      original_title_prefix: "Original title: "
+      ev_grabbed: Grabbed
+      ev_imported: Imported
+      ev_download_failed: Download failed
+      ev_file_deleted: File deleted
+      ev_movie_imported: Imported
+      ev_file_renamed: Renamed
+      search_launch: "Starting..."
+      search_start: "🔍 Starting search for \"{title}\"..."
+      search_cannot_launch: "❌ Cannot launch search — check that the movie is in Radarr"
+      search_indexers_plural: "📡 Querying {count} indexers..."
+      search_indexers_sing: "📡 Querying {count} indexer..."
+      search_indexers_generic: "📡 Querying indexers..."
+      search_indexers_short: "Indexers..."
+      search_verify: "Verifying..."
+      search_results_check: "📋 Search done — checking results..."
+      search_download_in_progress: "✅ Download in progress: \"{title}\" — status: {status}"
+      search_torrent_grabbed: "✅ Torrent grabbed via {indexer} — waiting for download"
+      search_no_auto_result: "🔍 Auto-search empty — querying indexers directly..."
+      search_idx_connect: "📡 Connecting to indexers..."
+      search_idx_query_plural: "📡 Querying {count} indexers..."
+      search_idx_query_sing: "📡 Querying {count} indexer..."
+      search_torrents_searching: "🔍 Searching for torrents..."
+      search_torrents_analysing: "🔍 Analysing results..."
+      search_progress_elapsed: " ({seconds}s)"
+      search_results_grab_best: "📥 {total} result(s) found, {approved} valid — grabbing the best..."
+      search_grab_started: "✅ Download started via {indexer}: {title}"
+      search_grab_failed_manual: "⚠️ {count} torrent(s) found but grab failed: {error}. Use interactive search to pick manually."
+      search_grab_network_error: "⚠️ Network error during grab. Use interactive search."
+      search_no_quality_match: "⚠️ {count} result(s) found but none match the quality profile. Use interactive search for details."
+      search_no_torrent_found: "⚠️ No torrent found on the indexers for this movie."
+      search_indexer_timeout: "⚠️ Indexers timed out. Retry or use interactive search."
+      search_completed: "✅ Search complete"
+      search_failed: "❌ Search failed: {error}"
+      unknown_error: Unknown error
+      search_network_error: "❌ Network error — cannot reach Radarr"
+      refresh_in_progress: "Refreshing..."
+      refresh_launch_error: "Error while starting"
+      refresh_done: "Refresh complete!"
+      refresh_failed: "Refresh failed"
+      no_release_for_grab: "No custom format"
+      grab_launched: "📥 Download started: {title} — progress will appear in the banner at the top of the page"
+      grab_failed_err: "❌ Grab failed — {error}"
+      rename_launch: "Renaming..."
+      rename_launch_start: "Starting rename..."
+      rename_launch_error: "Error while starting rename."
+      rename_success: "✅ Rename complete!"
+      rename_failed: "Rename failed: {error}"
+      delete_in_progress: "Deleting..."
+      delete_success: "✅ Deleted!"
+      delete_error_msg: "Error while deleting."
+      file_delete_success: "✅ File deleted!"
+      no_file_found: "No file found."
+      del_file_confirm: "Delete the file of «{title}» from disk?\n\n⚠️ This action is irreversible."
+      del_film_and_file_confirm: "Delete «{title}» from Radarr AND delete the file on disk?\n\n⚠️ This action is irreversible."
+    filter:
+      filter_label: 'Filter:'
+    warnings_update: "✅ Refresh started for {count} movie(s) — Radarr is updating metadata and scanning files."
+    warnings_update_error: "❌ Refresh error: {error}"
+    warnings_network_error: "❌ Network error."
+    warnings_no_missing_filter: "⚠️ No missing movie in the filtered selection."
+    warnings_search_confirm: "Search for {count} missing movie(s)?"
+    warnings_search_progress: "🔍 Searching for {count} missing movie(s) on {indexers} indexer(s)..."
+    warnings_search_dl: "✅ Search done — {dl} download(s) started for {total} movie(s). Check the queue above."
+    warnings_search_none: "⚠️ Search done for {total} movie(s) — no matching torrent found."
+    warnings_search_failed: "❌ Search failed: {error}"
+    warnings_search_elapsed: "🔍 {msg}{progress}"
+    warnings_search_progress_suffix: " — Movie {done}/{total}"
+    warnings_search_in_progress_elapsed: "Search in progress... ({seconds}s)"
+    warnings_search_error_pr: "❌ Search error: {error}"
+    warnings_refresh_label: "Library refresh"
+    warnings_rss_label: "RSS sync"
+    warnings_generic_error: "❌ Error."
+    warnings_cmd_search: "Movie search"
+    warnings_cmd_missing_search: "Missing movies search"
+    warnings_cmd_rename: "Rename"
+    warnings_cmd_import: "Manual import"
+    warnings_cmd_in_progress: "🔍 {label} — in progress..."
+    warnings_cmd_dl_ok: "✅ {label} — {count} download(s) started. Check the queue."
+    warnings_cmd_import_done: "✅ Import complete."
+    warnings_cmd_nothing: "⚠️ {label} — done, no result found."
+    warnings_cmd_failed: "❌ {label} — failed: {error}"
+    warnings_cmd_elapsed: "🔍 {label} — {msg}"
+    warnings_cmd_done: "✅ {label} — complete."
+    warnings_bulk_modified: "✅ {count} movie(s) updated."
+    warnings_bulk_tags_ok: "✅ Tags updated for {count} movie(s)."
+    warnings_bulk_rename_ok: "✅ Rename started for {count} movie(s)."
+    warnings_bulk_delete_ok: "✅ {count} movie(s) deleted."
+    queue:
+      title: Downloads
+      movie_col: Movie
+      quality_col: Quality
+      progress_col: Progress
+      status_col: Status
+      actions_col: Actions
+      eta_prefix: " — ETA "
+      importing: "Importing..."
+      import_pending: "Awaiting import"
+      import_blocked: "Import blocked"
+      completed_pct: "100%"
+      status_importing: "📦 Importing"
+      status_pending: "⏳ Awaiting import"
+      status_blocked: "⚠️ Import blocked"
+      status_warning_prefix: "⚠️ "
+      status_error_prefix: "✗ "
+      status_completed: "✓ Complete"
+      status_downloading: "⬇️ Downloading"
+      action_force_import: "Force import"
+      action_force_download: "Force download"
+      action_delete: "Delete"
+      import_done_badge: "✓ Imported"
+      delete_msg: 'Delete «{title}»:'
+      delete_remove_client: Remove from download client
+      delete_blocklist: Add to blocklist
+      delete_confirm: Confirm
+      delete_cancel: Cancel
+      import_done_status: "✓ Imported"
+      import_failed: "❌ {message}"
+      import_failed_short: "Import failed"
+      import_failed_status: "✗ Failed"
+      network_error: "❌ Network error"
+      error_generic: "❌ {error}"
+      error: Error
+    banner:
+      path_update: "✅ Path updated."
+
+  films_blocklist:
+    title: Blocklist
+    bulk_delete: 'Delete selection ({count})'
+    bulk_delete_label: Delete selection
+    col_date: Date
+    col_film: Movie
+    col_source: Source / Title
+    col_quality: Quality
+    col_protocol: Protocol
+    col_indexer: Indexer
+    col_reason: Reason
+    empty: Blocklist empty
+    delete: Delete
+    pagination_summary: "Page {page} — {count} entries out of {total}"
+    prev: Previous
+    next: Next
+    confirm_delete: "Remove this item from the blocklist?"
+    confirm_bulk_delete: "Remove {count} item(s) from the blocklist?"
+    error: Error.
+    error_bulk_delete: Error while deleting.
+
+  films_collections:
+    title: Collections
+    empty: No collection found in Radarr.
+    stats_total: Collections
+    stats_films: Movies in total
+    stats_downloaded: Downloaded
+    follow: Monitor
+    unfollow: Unmonitor
+    monitored_badge: Monitored
+    films_count_suffix: movies
+    modal:
+      close: Close
+      film_count: '{count} movie(s)'
+      col_title: Title
+      col_year: Year
+      col_status: Status
+      quality_profile: Quality profile
+      root_folder: Root folder
+      loading: "Loading…"
+      downloaded: Downloaded
+      missing: Missing
+      add: Add
+      added: Added
+      error: Error
+
+  films_cutoff:
+    title: Movies below quality cutoff
+    empty_title: Movies below cutoff
+    col_poster: Poster
+    col_title: Title
+    col_year: Year
+    col_current_quality: Current quality
+    col_release_date: Release date
+    col_actions: Actions
+    upgrade: Upgrade
+    upgrade_title: Search for a better quality
+    empty: No movie below the quality cutoff
+    pagination_summary: "Page {page} — {count} results out of {total}"
+    prev: Previous
+    next: Next
+    launched: "Launched ✓"
+    error: Error
+
+  films_history:
+    title: Movies history
+    filter_label: 'Filter:'
+    event_all: All
+    event_grabbed: Grabbed
+    event_imported: Imported
+    event_failed: Failed
+    event_deleted: Deleted
+    event_renamed: Renamed
+    col_date: Date
+    col_film: Movie
+    col_event: Event
+    col_quality: Quality
+    col_source: Source / Indexer
+    col_protocol: Protocol
+    ev_grabbed: Grabbed
+    ev_imported: Imported
+    ev_download_failed: DL failed
+    ev_file_deleted: Deleted
+    ev_film_imported: Movie imported
+    ev_file_renamed: Renamed
+    empty: No history
+    pagination_summary: "Page {page} — {count} entries out of {total}"
+    prev: Previous
+    next: Next
+
+  films_missing:
+    title: Missing movies
+    col_title: Title
+    col_year: Year
+    col_profile: Profile
+    col_release: Release
+    col_status: Status
+    col_actions: Actions
+    status_announced: Announced
+    status_in_cinemas: In theatres
+    status_missing: Missing
+    announced_tip: This movie is announced but has not been released yet
+    in_cinemas_tip: "In theatres, not yet available"
+    released_missing_tip: "Released but not downloaded"
+    in_cinemas_short: In theatres
+    announced_short: Announced
+    missing_short: Missing
+    search_title: Search
+    unmonitor_title: Unmonitor
+    search_all: Search all missing movies
+    empty: No missing movie
+    pagination_summary: "Page {page} — {count} out of {total}"
+    prev: Previous
+    next: Next
+    searching: "Searching…"
+    download_started: "Download started"
+    nothing_found: "Nothing found"
+    error: "Error"
+    no_missing: "No missing movie."
+    confirm_search_all: "Search for {count} missing movie(s)?"
+    searching_for: "Searching for {count} missing movie(s)..."
+    launch_error: "Error while starting."
+    search_done_dl: "Search done — {dl} download(s) started out of {total} movie(s) searched."
+    search_done_none: "Search done for {total} movie(s) — no matching result."
+    search_failed: "Search failed: {error}"
+    search_progress: "Movie {done}/{total} — {title}"
+    search_in_progress: "Searching... ({seconds}s)"
+    unknown_error: "unknown error"
+    confirm_unmonitor: "Unmonitor this movie?"
+    network_error: "Network error."
+
 watchlist_page:
   back_to_discover: Discover
   count_titles: '{count, plural, one {# title} other {# titles}}'

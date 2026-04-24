@@ -1,13 +1,13 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Historique Films{% endblock %}
+{% block title %}{{ 'media.films_history.title'|trans }}{% endblock %}
 
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Historique Films</h2>
+        <h2 class="page-title">{{ 'media.films_history.title'|trans }}</h2>
       </div>
       <div class="col-auto ms-auto">
         {% include 'media/_radarr_nav.html.twig' %}
@@ -23,14 +23,14 @@
 <div class="card mb-3">
   <div class="card-body py-2">
     <div class="d-flex align-items-center gap-2 flex-wrap">
-      <span class="text-muted small fw-medium">Filtrer :</span>
+      <span class="text-muted small fw-medium">{{ 'media.films_history.filter_label'|trans }}</span>
       {% set eventTypes = [
-        {value: '', label: 'Tous'},
-        {value: '1', label: 'Capturé'},
-        {value: '3', label: 'Importé'},
-        {value: '4', label: 'Échec'},
-        {value: '6', label: 'Supprimé'},
-        {value: '8', label: 'Renommé'},
+        {value: '', label: 'media.films_history.event_all'|trans},
+        {value: '1', label: 'media.films_history.event_grabbed'|trans},
+        {value: '3', label: 'media.films_history.event_imported'|trans},
+        {value: '4', label: 'media.films_history.event_failed'|trans},
+        {value: '6', label: 'media.films_history.event_deleted'|trans},
+        {value: '8', label: 'media.films_history.event_renamed'|trans},
       ] %}
       {% for et in eventTypes %}
         <a href="{{ path('app_media_films_history', {eventType: et.value, page: 1}) }}"
@@ -50,12 +50,12 @@
     <table class="table table-vcenter table-sm card-table">
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Film</th>
-          <th>Événement</th>
-          <th>Qualité</th>
-          <th>Source / Indexeur</th>
-          <th>Protocole</th>
+          <th>{{ 'media.films_history.col_date'|trans }}</th>
+          <th>{{ 'media.films_history.col_film'|trans }}</th>
+          <th>{{ 'media.films_history.col_event'|trans }}</th>
+          <th>{{ 'media.films_history.col_quality'|trans }}</th>
+          <th>{{ 'media.films_history.col_source'|trans }}</th>
+          <th>{{ 'media.films_history.col_protocol'|trans }}</th>
         </tr>
       </thead>
       <tbody>
@@ -80,17 +80,17 @@
           <td>
             {% set evType = item.eventType ?? '' %}
             {% if evType == 'grabbed' %}
-              <span class="badge bg-primary-lt">Capturé</span>
+              <span class="badge bg-primary-lt">{{ 'media.films_history.ev_grabbed'|trans }}</span>
             {% elseif evType == 'downloadFolderImported' %}
-              <span class="badge bg-success-lt">Importé</span>
+              <span class="badge bg-success-lt">{{ 'media.films_history.ev_imported'|trans }}</span>
             {% elseif evType == 'downloadFailed' %}
-              <span class="badge bg-danger-lt">Échec DL</span>
+              <span class="badge bg-danger-lt">{{ 'media.films_history.ev_download_failed'|trans }}</span>
             {% elseif evType == 'movieFileDeleted' %}
-              <span class="badge bg-secondary-lt">Supprimé</span>
+              <span class="badge bg-secondary-lt">{{ 'media.films_history.ev_file_deleted'|trans }}</span>
             {% elseif evType == 'movieImported' %}
-              <span class="badge bg-success-lt">Film importé</span>
+              <span class="badge bg-success-lt">{{ 'media.films_history.ev_film_imported'|trans }}</span>
             {% elseif evType == 'movieFileRenamed' %}
-              <span class="badge bg-blue-lt">Renommé</span>
+              <span class="badge bg-blue-lt">{{ 'media.films_history.ev_file_renamed'|trans }}</span>
             {% else %}
               <span class="badge bg-secondary-lt">{{ evType }}</span>
             {% endif %}
@@ -117,7 +117,7 @@
         </tr>
       {% else %}
         <tr>
-          <td colspan="6" class="text-center text-muted py-4">Aucun historique</td>
+          <td colspan="6" class="text-center text-muted py-4">{{ 'media.films_history.empty'|trans }}</td>
         </tr>
       {% endfor %}
       </tbody>
@@ -126,13 +126,13 @@
 
   {% if total > 50 %}
   <div class="card-footer d-flex align-items-center justify-content-between">
-    <p class="m-0 text-muted small">Page {{ page }} — {{ records|length }} entrées sur {{ total }}</p>
+    <p class="m-0 text-muted small">{{ 'media.films_history.pagination_summary'|trans({page: page, count: records|length, total: total}) }}</p>
     <div class="d-flex gap-2">
       {% if page > 1 %}
-        <a href="{{ path('app_media_films_history', {page: page - 1, eventType: eventType}) }}" class="btn btn-sm btn-ghost-secondary">Précédent</a>
+        <a href="{{ path('app_media_films_history', {page: page - 1, eventType: eventType}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_history.prev'|trans }}</a>
       {% endif %}
       {% if records|length == 50 %}
-        <a href="{{ path('app_media_films_history', {page: page + 1, eventType: eventType}) }}" class="btn btn-sm btn-ghost-secondary">Suivant</a>
+        <a href="{{ path('app_media_films_history', {page: page + 1, eventType: eventType}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_history.next'|trans }}</a>
       {% endif %}
     </div>
   </div>

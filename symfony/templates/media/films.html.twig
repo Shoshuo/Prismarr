@@ -1,6 +1,7 @@
 {% extends 'base.html.twig' %}
 
 {% block title %}Radarr{% endblock %}
+{# i18n: this page (Films) is a Radarr-powered library view. The page title "Radarr" is the brand, intentionally untranslated. #}
 {% block page_title %}<svg width="24" height="24" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><g transform="translate(70 21)"><path d="M105.3 154.9L112.8 869.5C52.7 877 7.5 846.9 7.5 786.8L0 192.6C0 4.5 173-40.6 278.3 34.6L812.3 343C887.5 395.6 902.6 493.4 865 561.1C857.5 508.5 834.9 478.4 789.8 448.3L188 109.8C142.9 79.7 105.3 87.2 105.3 154.9Z" fill="#FFC230"/><path d="M0 376.1C45.1 391.1 90.3 383.6 127.9 361L744.6 0C782.2 52.7 774.7 105.3 729.6 135.4L210.6 436.3C135.4 473.9 37.6 436.3 0 376.1Z" transform="translate(60.2 531)" fill="#FFC230"/><path d="M0 413.7L368.6 203.1L7.5 0L0 413.7Z" transform="translate(240.7 282.8)" fill="#FFC230"/></g></svg> Radarr{% endblock %}
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}
 
@@ -241,7 +242,7 @@
     <div class="card card-sm text-center">
       <div class="card-body">
         <div class="h1 mb-0">{{ stats.total }}</div>
-        <div class="text-muted small">Total</div>
+        <div class="text-muted small">{{ 'media.films.stats.total'|trans }}</div>
       </div>
     </div>
   </div>
@@ -249,7 +250,7 @@
     <div class="card card-sm text-center">
       <div class="card-body">
         <div class="h1 mb-0 text-success">{{ stats.downloaded }}</div>
-        <div class="text-muted small">Téléchargés</div>
+        <div class="text-muted small">{{ 'media.films.stats.downloaded'|trans }}</div>
       </div>
     </div>
   </div>
@@ -257,15 +258,15 @@
     <div class="card card-sm text-center">
       <div class="card-body">
         <div class="h1 mb-0 text-warning">{{ stats.monitored }}</div>
-        <div class="text-muted small">En attente</div>
+        <div class="text-muted small">{{ 'media.films.stats.waiting'|trans }}</div>
       </div>
     </div>
   </div>
   <div class="col-6 col-sm-3">
     <div class="card card-sm text-center">
       <div class="card-body">
-        <div class="h1 mb-0">{{ stats.totalGb }} <small class="text-muted fs-4">Go</small></div>
-        <div class="text-muted small">Taille totale</div>
+        <div class="h1 mb-0">{{ stats.totalGb }} <small class="text-muted fs-4">{{ 'media.films.stats.gb_suffix'|trans }}</small></div>
+        <div class="text-muted small">{{ 'media.films.stats.total_size'|trans }}</div>
       </div>
     </div>
   </div>
@@ -274,7 +275,7 @@
 {# ── File de téléchargement (auto-refresh) ── #}
 <div id="queue-card" class="card mb-3" style="{{ queue is empty ? 'display:none' : '' }}">
   <div class="card-header">
-    <h3 class="card-title">⬇️ Téléchargements <span class="badge bg-primary ms-1" id="queue-count">{{ queue|length }}</span></h3>
+    <h3 class="card-title">⬇️ {{ 'media.films.queue.title'|trans }} <span class="badge bg-primary ms-1" id="queue-count">{{ queue|length }}</span></h3>
     <div class="card-actions">
       <span class="text-muted small" id="queue-refresh-label"></span>
     </div>
@@ -286,71 +287,71 @@
 <div class="card mb-3">
   <div class="card-body py-2">
     <div class="d-flex align-items-center gap-2 flex-wrap">
-      <input type="text" id="search-input" class="form-control form-control-sm" placeholder="Rechercher…" style="max-width:180px" autocomplete="off">
+      <input type="text" id="search-input" class="form-control form-control-sm" placeholder="{{ 'media.films.filters.search_placeholder'|trans }}" style="max-width:180px" autocomplete="off">
       <div class="d-flex gap-1 flex-wrap">
-        <button class="btn btn-sm btn-ghost-secondary filter-btn active" data-filter="all">Tous</button>
-        <button class="btn btn-sm btn-ghost-success filter-btn" data-filter="downloaded">Téléchargés</button>
-        <button class="btn btn-sm btn-ghost-warning filter-btn" data-filter="missing">Manquants</button>
-        <button class="btn btn-sm btn-ghost-secondary filter-btn" data-filter="unmonitored">Non suivis</button>
+        <button class="btn btn-sm btn-ghost-secondary filter-btn active" data-filter="all">{{ 'media.films.filters.status.all'|trans }}</button>
+        <button class="btn btn-sm btn-ghost-success filter-btn" data-filter="downloaded">{{ 'media.films.filters.status.downloaded'|trans }}</button>
+        <button class="btn btn-sm btn-ghost-warning filter-btn" data-filter="missing">{{ 'media.films.filters.status.missing'|trans }}</button>
+        <button class="btn btn-sm btn-ghost-secondary filter-btn" data-filter="unmonitored">{{ 'media.films.filters.status.unmonitored'|trans }}</button>
       </div>
       <select id="filter-quality" class="form-select form-select-sm" style="max-width:110px">
-        <option value="">Qualité</option>
+        <option value="">{{ 'media.films.filters.quality'|trans }}</option>
       </select>
       <select id="filter-genre" class="form-select form-select-sm" style="max-width:110px">
-        <option value="">Genre</option>
+        <option value="">{{ 'media.films.filters.genre'|trans }}</option>
       </select>
       <select id="filter-language" class="form-select form-select-sm" style="max-width:110px">
-        <option value="">Langue</option>
+        <option value="">{{ 'media.films.filters.language'|trans }}</option>
       </select>
       <select id="sort-select" class="form-select form-select-sm" style="max-width:140px">
-        <option value="title-asc">Titre A→Z</option>
-        <option value="title-desc">Titre Z→A</option>
-        <option value="year-desc">Année ↓</option>
-        <option value="year-asc">Année ↑</option>
-        <option value="added-desc">Ajouté récemment</option>
-        <option value="size-desc">Taille ↓</option>
-        <option value="size-asc">Taille ↑</option>
+        <option value="title-asc">{{ 'media.films.filters.sort.title_asc'|trans }}</option>
+        <option value="title-desc">{{ 'media.films.filters.sort.title_desc'|trans }}</option>
+        <option value="year-desc">{{ 'media.films.filters.sort.year_desc'|trans }}</option>
+        <option value="year-asc">{{ 'media.films.filters.sort.year_asc'|trans }}</option>
+        <option value="added-desc">{{ 'media.films.filters.sort.added_desc'|trans }}</option>
+        <option value="size-desc">{{ 'media.films.filters.sort.size_desc'|trans }}</option>
+        <option value="size-asc">{{ 'media.films.filters.sort.size_asc'|trans }}</option>
       </select>
       <div class="btn-group ms-auto" id="view-mode-btns">
-        <button class="btn btn-sm btn-secondary view-btn active" data-view="grid" title="Grille">
+        <button class="btn btn-sm btn-secondary view-btn active" data-view="grid" title="{{ 'media.films.view.grid'|trans }}">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         </button>
-        <button class="btn btn-sm btn-ghost-secondary view-btn" data-view="wall" title="Mur">
+        <button class="btn btn-sm btn-ghost-secondary view-btn" data-view="wall" title="{{ 'media.films.view.wall'|trans }}">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="6" height="9"/><rect x="10" y="2" width="6" height="9"/><rect x="18" y="2" width="4" height="9"/><rect x="2" y="13" width="6" height="9"/><rect x="10" y="13" width="6" height="9"/><rect x="18" y="13" width="4" height="9"/></svg>
         </button>
-        <button class="btn btn-sm btn-ghost-secondary view-btn" data-view="extended" title="Étendu">
+        <button class="btn btn-sm btn-ghost-secondary view-btn" data-view="extended" title="{{ 'media.films.view.extended'|trans }}">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></svg>
         </button>
-        <button class="btn btn-sm btn-ghost-secondary view-btn" data-view="table" title="Tableau">
+        <button class="btn btn-sm btn-ghost-secondary view-btn" data-view="table" title="{{ 'media.films.view.table'|trans }}">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
         </button>
-        <button class="btn btn-sm btn-ghost-secondary view-btn" data-view="shelf" title="Étagères">
+        <button class="btn btn-sm btn-ghost-secondary view-btn" data-view="shelf" title="{{ 'media.films.view.shelf'|trans }}">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/><rect x="5" y="2" width="3" height="4"/><rect x="10" y="2" width="3" height="4"/><rect x="5" y="8" width="3" height="4"/><rect x="10" y="8" width="3" height="4"/><rect x="15" y="8" width="3" height="4"/></svg>
         </button>
       </div>
     </div>
     <div class="d-flex align-items-center gap-1 mt-2">
-      <button class="btn btn-primary btn-sm" id="btn-update-filtered" style="display:none" title="Actualiser et scanner les films filtrés">
+      <button class="btn btn-primary btn-sm" id="btn-update-filtered" style="display:none" title="{{ 'media.films.actions.refresh_filtered_title'|trans }}">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
-        Actualiser les filtrés
+        {{ 'media.films.actions.refresh_filtered'|trans }}
       </button>
-      <button class="btn btn-warning btn-sm" id="btn-search-filtered" style="display:none" title="Rechercher les films manquants filtrés">
+      <button class="btn btn-warning btn-sm" id="btn-search-filtered" style="display:none" title="{{ 'media.films.actions.search_filtered_title'|trans }}">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        Rechercher les filtrés
+        {{ 'media.films.actions.search_filtered'|trans }}
       </button>
       <div class="ms-auto d-flex gap-1 align-items-center">
-        <button class="btn btn-sm btn-ghost-secondary" id="btn-refresh-all" title="Tout analyser et actualiser">
+        <button class="btn btn-sm btn-ghost-secondary" id="btn-refresh-all" title="{{ 'media.films.actions.refresh_all_title'|trans }}">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
         </button>
-        <button class="btn btn-sm btn-ghost-secondary" id="btn-rss-sync" title="Sync. RSS">
+        <button class="btn btn-sm btn-ghost-secondary" id="btn-rss-sync" title="{{ 'media.films.actions.rss_sync'|trans }}">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
         </button>
-        <button class="btn btn-sm btn-outline-secondary" id="btn-select-mode" title="Mode sélection">
+        <button class="btn btn-sm btn-outline-secondary" id="btn-select-mode" title="{{ 'media.films.actions.select_mode'|trans }}">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         </button>
         <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-add-film">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Ajouter
+          {{ 'media.films.actions.add'|trans }}
         </button>
       </div>
     </div>
@@ -366,7 +367,7 @@
     <div class="table-responsive">
       <table class="table table-sm table-vcenter table-hover card-table mb-0" style="font-size:.8rem;">
         <thead>
-          <tr><th class="table-select-col" style="width:30px;display:none;"></th><th style="width:45px"></th><th>Titre</th><th>Année</th><th>Qualité</th><th>Taille</th><th>Statut</th></tr>
+          <tr><th class="table-select-col" style="width:30px;display:none;"></th><th style="width:45px"></th><th>{{ 'media.films.table.title'|trans }}</th><th>{{ 'media.films.table.year'|trans }}</th><th>{{ 'media.films.table.quality'|trans }}</th><th>{{ 'media.films.table.size'|trans }}</th><th>{{ 'media.films.table.status'|trans }}</th></tr>
         </thead>
         <tbody id="films-table-tbody">
           {% for movie in movies %}
@@ -376,11 +377,11 @@
             <td class="fw-medium">{{ movie.title }}</td>
             <td class="text-muted">{{ movie.year }}</td>
             <td>{% if movie.quality %}<span class="badge bg-blue-lt" style="font-size:.65rem;">{{ movie.quality }}</span>{% else %}—{% endif %}</td>
-            <td class="text-muted">{{ movie.sizeGb ? movie.sizeGb ~ ' Go' : '—' }}</td>
+            <td class="text-muted">{{ movie.sizeGb ? movie.sizeGb ~ ' ' ~ ('media.films.stats.gb_suffix'|trans) : '—' }}</td>
             <td>
-              {% if movie.hasFile %}<span class="badge bg-success-lt" style="font-size:.65rem;">Téléchargé</span>
-              {% elseif movie.monitored %}<span class="badge bg-warning-lt" style="font-size:.65rem;">Manquant</span>
-              {% else %}<span class="badge bg-secondary-lt" style="font-size:.65rem;">Non suivi</span>{% endif %}
+              {% if movie.hasFile %}<span class="badge bg-success-lt" style="font-size:.65rem;">{{ 'media.films.status.downloaded'|trans }}</span>
+              {% elseif movie.monitored %}<span class="badge bg-warning-lt" style="font-size:.65rem;">{{ 'media.films.status.missing'|trans }}</span>
+              {% else %}<span class="badge bg-secondary-lt" style="font-size:.65rem;">{{ 'media.films.status.unmonitored'|trans }}</span>{% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -393,14 +394,14 @@
 {# ── Barre sélection bulk fixe en bas ── #}
 <div id="bulk-bar">
   <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size:.82rem;">
-    <button class="btn btn-sm btn-secondary" id="bulk-btn-edit">Modifier</button>
-    <button class="btn btn-sm btn-warning" id="bulk-btn-rename">Renommer les fichiers</button>
-    <button class="btn btn-sm btn-warning" id="bulk-btn-tags">Définir les étiquettes</button>
-    <button class="btn btn-sm btn-danger" id="bulk-btn-delete">Supprimer</button>
+    <button class="btn btn-sm btn-secondary" id="bulk-btn-edit">{{ 'media.films.bulk.edit'|trans }}</button>
+    <button class="btn btn-sm btn-warning" id="bulk-btn-rename">{{ 'media.films.bulk.rename'|trans }}</button>
+    <button class="btn btn-sm btn-warning" id="bulk-btn-tags">{{ 'media.films.bulk.tags'|trans }}</button>
+    <button class="btn btn-sm btn-danger" id="bulk-btn-delete">{{ 'media.films.bulk.delete'|trans }}</button>
     <div class="ms-auto d-flex align-items-center gap-2">
-      <button class="btn btn-sm btn-outline-primary" id="bulk-select-all">Tout sélectionner</button>
-      <button class="btn btn-sm btn-outline-secondary" id="bulk-clear">Effacer</button>
-      <span class="text-muted small"><span id="bulk-count">0</span> sélectionné(s)</span>
+      <button class="btn btn-sm btn-outline-primary" id="bulk-select-all">{{ 'media.films.bulk.select_all'|trans }}</button>
+      <button class="btn btn-sm btn-outline-secondary" id="bulk-clear">{{ 'media.films.bulk.clear'|trans }}</button>
+      <span class="text-muted small"><span id="bulk-count">0</span> {{ 'media.films.bulk.selected_count'|trans }}</span>
     </div>
   </div>
 </div>
@@ -410,46 +411,46 @@
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Modifier films sélectionnés</h5>
+        <h5 class="modal-title">{{ 'media.films.bulk.edit_title'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label small">Surveillé</label>
+            <label class="form-label small">{{ 'media.films.bulk.edit_monitored'|trans }}</label>
             <select class="form-select form-select-sm" id="bulk-edit-monitored">
-              <option value="">— Ne pas modifier —</option>
-              <option value="true">Suivre</option>
-              <option value="false">Ne plus suivre</option>
+              <option value="">{{ 'media.films.bulk.edit_keep'|trans }}</option>
+              <option value="true">{{ 'media.films.bulk.edit_follow'|trans }}</option>
+              <option value="false">{{ 'media.films.bulk.edit_unfollow'|trans }}</option>
             </select>
           </div>
           <div class="col-md-6">
-            <label class="form-label small">Profil de qualité</label>
+            <label class="form-label small">{{ 'media.films.bulk.edit_quality'|trans }}</label>
             <select class="form-select form-select-sm" id="bulk-edit-quality">
-              <option value="">— Ne pas modifier —</option>
+              <option value="">{{ 'media.films.bulk.edit_keep'|trans }}</option>
             </select>
           </div>
           <div class="col-md-6">
-            <label class="form-label small">Disponibilité minimale</label>
+            <label class="form-label small">{{ 'media.films.bulk.edit_availability'|trans }}</label>
             <select class="form-select form-select-sm" id="bulk-edit-avail">
-              <option value="">— Ne pas modifier —</option>
-              <option value="announced">Annoncé</option>
-              <option value="inCinemas">En salles</option>
-              <option value="released">Sorti</option>
+              <option value="">{{ 'media.films.bulk.edit_keep'|trans }}</option>
+              <option value="announced">{{ 'media.films.bulk.availability_announced'|trans }}</option>
+              <option value="inCinemas">{{ 'media.films.bulk.availability_in_cinemas'|trans }}</option>
+              <option value="released">{{ 'media.films.bulk.availability_released'|trans }}</option>
             </select>
           </div>
           <div class="col-md-6">
-            <label class="form-label small">Dossier racine</label>
+            <label class="form-label small">{{ 'media.films.bulk.edit_root'|trans }}</label>
             <select class="form-select form-select-sm" id="bulk-edit-root">
-              <option value="">— Ne pas modifier —</option>
+              <option value="">{{ 'media.films.bulk.edit_keep'|trans }}</option>
             </select>
           </div>
         </div>
         <div class="text-muted small mt-3" id="bulk-edit-info"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button class="btn btn-primary" id="bulk-edit-save">Sauvegarder</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">{{ 'media.films.bulk.cancel'|trans }}</button>
+        <button class="btn btn-primary" id="bulk-edit-save">{{ 'media.films.bulk.save'|trans }}</button>
       </div>
     </div>
   </div>
@@ -460,27 +461,27 @@
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Étiquettes</h5>
+        <h5 class="modal-title">{{ 'media.films.bulk.tags_title'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
-          <label class="form-label small">Étiquettes</label>
+          <label class="form-label small">{{ 'media.films.bulk.tags_label'|trans }}</label>
           <div class="d-flex flex-column gap-1 mb-2" id="bulk-tags-list"></div>
         </div>
         <div class="mb-3">
-          <label class="form-label small">Action tag</label>
+          <label class="form-label small">{{ 'media.films.bulk.tags_action'|trans }}</label>
           <select class="form-select form-select-sm" id="bulk-tags-action">
-            <option value="add">Ajouter — Ajouter les tags aux films existants</option>
-            <option value="remove">Retirer — Retirer les tags des films existants</option>
-            <option value="replace">Remplacer — Remplacer les tags par ceux sélectionnés</option>
+            <option value="add">{{ 'media.films.bulk.tags_add'|trans }}</option>
+            <option value="remove">{{ 'media.films.bulk.tags_remove'|trans }}</option>
+            <option value="replace">{{ 'media.films.bulk.tags_replace'|trans }}</option>
           </select>
         </div>
         <div class="text-muted small" id="bulk-tags-info"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button class="btn btn-primary" id="bulk-tags-save">Appliquer</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">{{ 'media.films.bulk.cancel'|trans }}</button>
+        <button class="btn btn-primary" id="bulk-tags-save">{{ 'media.films.bulk.apply'|trans }}</button>
       </div>
     </div>
   </div>
@@ -491,24 +492,24 @@
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title text-danger">Supprimer films sélectionnés</h5>
+        <h5 class="modal-title text-danger">{{ 'media.films.bulk.delete_title'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div class="alert alert-warning py-2 small mb-3">Êtes-vous sûr de vouloir supprimer <strong id="bulk-delete-count">0</strong> film(s) ? Cette action est irréversible.</div>
+        <div class="alert alert-warning py-2 small mb-3">{{ 'media.films.bulk.delete_warning'|trans|raw }}</div>
         <div class="form-check mb-2">
           <input type="checkbox" class="form-check-input" id="bulk-delete-files">
-          <label class="form-check-label" for="bulk-delete-files">Supprimer les fichiers du disque</label>
+          <label class="form-check-label" for="bulk-delete-files">{{ 'media.films.bulk.delete_files'|trans }}</label>
         </div>
         <div class="form-check mb-3">
           <input type="checkbox" class="form-check-input" id="bulk-delete-exclude">
-          <label class="form-check-label" for="bulk-delete-exclude">Ajouter à la liste d'exclusion d'import</label>
+          <label class="form-check-label" for="bulk-delete-exclude">{{ 'media.films.bulk.delete_exclude'|trans }}</label>
         </div>
         <div class="small text-muted" style="max-height:150px;overflow-y:auto;" id="bulk-delete-list"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button class="btn btn-danger" id="bulk-delete-confirm">Supprimer</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">{{ 'media.films.bulk.cancel'|trans }}</button>
+        <button class="btn btn-danger" id="bulk-delete-confirm">{{ 'media.films.bulk.delete_confirm'|trans }}</button>
       </div>
     </div>
   </div>
@@ -519,12 +520,12 @@
   <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Organiser & Renommer</h5>
+        <h5 class="modal-title">{{ 'media.films.bulk.rename_title'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div id="bulk-rename-loading" class="text-center text-muted py-3">
-          <span class="spinner-border spinner-border-sm me-2"></span> Chargement des prévisualisations...
+          <span class="spinner-border spinner-border-sm me-2"></span> {{ 'media.films.bulk.rename_loading'|trans }}
         </div>
         <div id="bulk-rename-content" style="display:none">
           <div id="bulk-rename-ok" class="alert alert-success py-2 small" style="display:none">
@@ -535,8 +536,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button class="btn btn-primary" id="bulk-rename-go">Organiser</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">{{ 'media.films.bulk.cancel'|trans }}</button>
+        <button class="btn btn-primary" id="bulk-rename-go">{{ 'media.films.bulk.rename_go'|trans }}</button>
       </div>
     </div>
   </div>
@@ -605,13 +606,13 @@
 
     {# Pastille statut #}
     {% if movie.hasFile %}
-      <div class="status-dot" style="background:#22c55e;box-shadow:0 0 4px #22c55e;" title="Téléchargé"></div>
+      <div class="status-dot" style="background:#22c55e;box-shadow:0 0 4px #22c55e;" title="{{ 'media.films.status.downloaded'|trans }}"></div>
     {% elseif movie.monitored and movie.status in ['announced', 'inCinemas'] %}
-      <div class="status-dot" style="background:#6366f1;box-shadow:0 0 4px #6366f1;" title="Suivi — indisponible ({{ movie.status == 'inCinemas' ? 'en salles' : 'annoncé' }})"></div>
+      <div class="status-dot" style="background:#6366f1;box-shadow:0 0 4px #6366f1;" title="{{ 'media.films.status.monitored_indisp'|trans({status: movie.status == 'inCinemas' ? 'media.films.status.in_cinemas_lc'|trans : 'media.films.status.announced_lc'|trans}) }}"></div>
     {% elseif movie.monitored %}
-      <div class="status-dot" style="background:#f59e0b;box-shadow:0 0 4px #f59e0b;" title="Suivi — manquant"></div>
+      <div class="status-dot" style="background:#f59e0b;box-shadow:0 0 4px #f59e0b;" title="{{ 'media.films.status.monitored_missing'|trans }}"></div>
     {% else %}
-      <div class="status-dot" style="background:#6b7280;" title="Non suivi"></div>
+      <div class="status-dot" style="background:#6b7280;" title="{{ 'media.films.status.unmonitored'|trans }}"></div>
     {% endif %}
 
     {# Badge qualité #}
@@ -628,7 +629,7 @@
     <div class="hover-info">
       <div style="position:absolute;top:.3rem;left:.4rem;right:.4rem;display:flex;align-items:center;justify-content:space-between;">
         <div class="d-flex align-items-center gap-2">
-          <span class="hover-monitor-btn-film" data-id="{{ movie.id }}" data-monitored="{{ movie.monitored ? '1' : '0' }}" style="line-height:1;pointer-events:auto;cursor:pointer;display:inline-flex;padding:.35rem;margin:-.35rem;border-radius:.25rem;" title="{{ movie.monitored ? 'Ne plus suivre' : 'Suivre' }}">
+          <span class="hover-monitor-btn-film" data-id="{{ movie.id }}" data-monitored="{{ movie.monitored ? '1' : '0' }}" style="line-height:1;pointer-events:auto;cursor:pointer;display:inline-flex;padding:.35rem;margin:-.35rem;border-radius:.25rem;" title="{{ movie.monitored ? 'media.films.detail.unfollow'|trans : 'media.films.detail.follow'|trans }}">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="{{ movie.monitored ? '#6366f1' : 'none' }}" stroke="{{ movie.monitored ? '#6366f1' : 'rgba(255,255,255,.5)' }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
           </span>
           {% if movie.quality %}<span class="badge bg-blue-lt" style="font-size:.6rem;">{{ movie.quality }}</span>{% endif %}
@@ -646,12 +647,12 @@
         </div>
       </div>
       <div class="h-badges">
-        {% if movie.hasFile %}<span class="badge bg-success-lt">Téléchargé</span>
-        {% elseif movie.monitored %}<span class="badge bg-warning-lt">Manquant</span>
-        {% else %}<span class="badge bg-secondary-lt">Non suivi</span>{% endif %}
+        {% if movie.hasFile %}<span class="badge bg-success-lt">{{ 'media.films.status.downloaded'|trans }}</span>
+        {% elseif movie.monitored %}<span class="badge bg-warning-lt">{{ 'media.films.status.missing'|trans }}</span>
+        {% else %}<span class="badge bg-secondary-lt">{{ 'media.films.status.unmonitored'|trans }}</span>{% endif %}
       </div>
       <div class="h-title">{{ movie.title }}</div>
-      <div class="h-year">{{ movie.year }}{% if movie.runtime %} · {{ movie.runtime }} min{% endif %}{% if movie.sizeGb %} · {{ movie.sizeGb }} Go{% endif %}</div>
+      <div class="h-year">{{ movie.year }}{% if movie.runtime %} · {{ movie.runtime }} min{% endif %}{% if movie.sizeGb %} · {{ movie.sizeGb }} {{ 'media.films.stats.gb_suffix'|trans }}{% endif %}</div>
       {% if movie.overview %}<div class="h-overview">{{ movie.overview }}</div>{% endif %}
     </div>
 
@@ -659,12 +660,12 @@
     <div class="extended-info">
       <div class="fw-bold mb-1">{{ movie.title }}{% if movie.year %} <span class="text-muted fw-normal">({{ movie.year }})</span>{% endif %}</div>
       <div class="d-flex align-items-center gap-2 mb-1 flex-wrap" style="font-size:.78rem;">
-        {% if movie.hasFile %}<span class="badge bg-success-lt">Téléchargé</span>
-        {% elseif movie.monitored %}<span class="badge bg-warning-lt">Manquant</span>
-        {% else %}<span class="badge bg-secondary-lt">Non suivi</span>{% endif %}
+        {% if movie.hasFile %}<span class="badge bg-success-lt">{{ 'media.films.status.downloaded'|trans }}</span>
+        {% elseif movie.monitored %}<span class="badge bg-warning-lt">{{ 'media.films.status.missing'|trans }}</span>
+        {% else %}<span class="badge bg-secondary-lt">{{ 'media.films.status.unmonitored'|trans }}</span>{% endif %}
         {% if movie.quality %}<span class="badge bg-blue-lt">{{ movie.quality }}</span>{% endif %}
         {% if movie.runtime %}<span class="text-muted">{{ movie.runtime }} min</span>{% endif %}
-        {% if movie.sizeGb %}<span class="text-muted">{{ movie.sizeGb }} Go</span>{% endif %}
+        {% if movie.sizeGb %}<span class="text-muted">{{ movie.sizeGb }} {{ 'media.films.stats.gb_suffix'|trans }}</span>{% endif %}
       </div>
       {% if movie.genres %}<div class="d-flex gap-1 flex-wrap mb-1">{% for g in movie.genres %}<span class="badge bg-secondary-lt" style="font-size:.6rem;">{{ g }}</span>{% endfor %}</div>{% endif %}
       {% if movie.overview %}<div class="text-muted small" style="overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{ movie.overview }}</div>{% endif %}
@@ -688,7 +689,7 @@
               <div class="d-flex align-items-center gap-3 mb-1">
                 <button id="btn-monitor" class="btn btn-sm d-flex align-items-center gap-1" style="filter:drop-shadow(0 1px 4px rgba(0,0,0,.5));font-size:.8rem;">
                   <svg id="monitor-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                  <span id="btn-monitor-label">Suivre</span>
+                  <span id="btn-monitor-label">{{ 'media.films.detail.follow'|trans }}</span>
                 </button>
                 <h2 class="text-white mb-0" id="film-title" style="text-shadow:0 2px 8px rgba(0,0,0,.6)"></h2>
               </div>
@@ -708,7 +709,7 @@
               </div>
               <div id="film-genres" class="d-flex flex-wrap gap-1 mt-2"></div>
             </div>
-            <button type="button" class="btn-close btn-close-white ms-2 mt-1" data-bs-dismiss="modal" aria-label="Fermer" style="filter:drop-shadow(0 0 2px rgba(0,0,0,.8))"></button>
+            <button type="button" class="btn-close btn-close-white ms-2 mt-1" data-bs-dismiss="modal" aria-label="{{ 'media.films.detail.close'|trans }}" style="filter:drop-shadow(0 0 2px rgba(0,0,0,.8))"></button>
           </div>
         </div>
       </div>
@@ -730,25 +731,25 @@
             <div class="d-grid gap-2">
               <button id="btn-search" class="btn btn-primary film-action-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                Rechercher
+                {{ 'media.films.detail.search'|trans }}
               </button>
               <button id="btn-interactive" class="btn btn-outline-primary film-action-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                Recherche interactive
+                {{ 'media.films.detail.interactive_search'|trans }}
               </button>
               <button id="btn-refresh" class="btn btn-outline-secondary film-action-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
-                Actualiser &amp; scanner
+                {{ 'media.films.detail.refresh_scan'|trans }}
               </button>
               <div id="delete-choices" class="d-grid gap-1">
                 <button id="btn-delete-radarr-only" class="btn btn-sm btn-warning">
-                  Retirer de Radarr
+                  {{ 'media.films.detail.remove_from_radarr'|trans }}
                 </button>
                 <button id="btn-delete-file-only" class="btn btn-sm btn-danger">
-                  Supprimer le fichier
+                  {{ 'media.films.detail.delete_file'|trans }}
                 </button>
                 <button id="btn-delete-from-radarr" class="btn btn-sm btn-danger">
-                  Supprimer tout (Radarr + fichier)
+                  {{ 'media.films.detail.delete_all'|trans }}
                 </button>
               </div>
             </div>
@@ -771,29 +772,29 @@
             {# Interactive releases area #}
             <div id="releases-area" class="card mb-2" style="display:none">
               <div class="card-header">
-                <h3 class="card-title">Releases disponibles</h3>
+                <h3 class="card-title">{{ 'media.films.detail.releases_available'|trans }}</h3>
                 <div class="card-actions">
-                  <button type="button" class="btn btn-sm btn-ghost-secondary" id="releases-close">Fermer</button>
+                  <button type="button" class="btn btn-sm btn-ghost-secondary" id="releases-close">{{ 'media.films.detail.close'|trans }}</button>
                 </div>
               </div>
               <div id="releases-loading" class="card-body text-center text-muted py-4">
                 <div class="spinner-border spinner-border-sm me-2"></div>
-                Interrogation des indexeurs (30-60s)...
+                {{ 'media.films.detail.interrogating_indexers'|trans }}
               </div>
               <div id="releases-table-wrap" style="display:none">
                 <div class="table-responsive" style="max-height:350px;overflow-y:auto">
                   <table class="table table-sm table-vcenter table-hover card-table" style="font-size:.78rem" id="releases-table">
                     <thead class="sticky-top" style="background:var(--tblr-bg-surface)">
                       <tr>
-                        <th class="rel-sort" data-col="title" style="cursor:pointer">Release <span class="rel-arrow"></span></th>
-                        <th class="rel-sort" data-col="indexer" style="cursor:pointer">Indexeur <span class="rel-arrow"></span></th>
-                        <th class="rel-sort" data-col="quality" style="cursor:pointer">Qualité <span class="rel-arrow"></span></th>
-                        <th class="rel-sort text-end" data-col="score" style="cursor:pointer">Score <span class="rel-arrow"></span></th>
-                        <th class="text-muted small">Formats</th>
-                        <th class="rel-sort text-end" data-col="size" style="cursor:pointer">Taille <span class="rel-arrow"></span></th>
-                        <th class="rel-sort text-end" data-col="seeders" style="cursor:pointer">Seeds <span class="rel-arrow"></span></th>
-                        <th class="text-end">Langs</th>
-                        <th class="rel-sort text-end" data-col="age" style="cursor:pointer">Âge <span class="rel-arrow"></span></th>
+                        <th class="rel-sort" data-col="title" style="cursor:pointer">{{ 'media.films.detail.release_col'|trans }} <span class="rel-arrow"></span></th>
+                        <th class="rel-sort" data-col="indexer" style="cursor:pointer">{{ 'media.films.detail.indexer_col'|trans }} <span class="rel-arrow"></span></th>
+                        <th class="rel-sort" data-col="quality" style="cursor:pointer">{{ 'media.films.detail.quality_col'|trans }} <span class="rel-arrow"></span></th>
+                        <th class="rel-sort text-end" data-col="score" style="cursor:pointer">{{ 'media.films.detail.score_col'|trans }} <span class="rel-arrow"></span></th>
+                        <th class="text-muted small">{{ 'media.films.detail.formats_col'|trans }}</th>
+                        <th class="rel-sort text-end" data-col="size" style="cursor:pointer">{{ 'media.films.detail.size_col'|trans }} <span class="rel-arrow"></span></th>
+                        <th class="rel-sort text-end" data-col="seeders" style="cursor:pointer">{{ 'media.films.detail.seeds_col'|trans }} <span class="rel-arrow"></span></th>
+                        <th class="text-end">{{ 'media.films.detail.langs_col'|trans }}</th>
+                        <th class="rel-sort text-end" data-col="age" style="cursor:pointer">{{ 'media.films.detail.age_col'|trans }} <span class="rel-arrow"></span></th>
                         <th></th>
                       </tr>
                     </thead>
@@ -802,20 +803,20 @@
                 </div>
               </div>
               <div id="releases-empty" class="card-body text-center text-muted py-4" style="display:none">
-                Aucune release trouvée.
+                {{ 'media.films.detail.no_release_found'|trans }}
               </div>
             </div>
 
             {# Synopsis #}
             <div class="mb-2">
-              <h4 class="mb-2">Synopsis</h4>
+              <h4 class="mb-2">{{ 'media.films.detail.synopsis'|trans }}</h4>
               <p id="film-overview" class="text-muted" style="line-height:1.7"></p>
               <div id="film-studio" class="text-muted small" style="display:none"></div>
             </div>
 
             {# Technical info (only if hasFile) — compact table #}
             <div id="film-techinfo" class="card mb-2" style="display:none">
-              <div class="card-header py-2"><h3 class="card-title mb-0">Informations du fichier</h3></div>
+              <div class="card-header py-2"><h3 class="card-title mb-0">{{ 'media.films.detail.file_info'|trans }}</h3></div>
               <div class="table-responsive">
                 <table class="table table-sm table-vcenter mb-0" style="font-size:.8rem" id="film-techinfo-table">
                   <tbody></tbody>
@@ -829,28 +830,28 @@
             {# Rename info (only if hasFile) #}
             <div id="film-rename-info" class="card mb-2" style="display:none">
               <div class="card-header">
-                <h3 class="card-title">Nommage du fichier</h3>
+                <h3 class="card-title">{{ 'media.films.detail.file_naming'|trans }}</h3>
                 <div class="card-actions">
                   <button id="btn-rename-file" class="btn btn-outline-secondary btn-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                    Renommer
+                    {{ 'media.films.detail.rename'|trans }}
                   </button>
                 </div>
               </div>
               <div class="card-body">
-                <div id="rename-loading" class="text-muted small">Chargement des propositions...</div>
+                <div id="rename-loading" class="text-muted small">{{ 'media.films.detail.loading_proposals'|trans }}</div>
                 <div id="rename-details" style="display:none">
                   <div class="mb-2">
-                    <span class="text-muted small">Nom actuel :</span>
+                    <span class="text-muted small">{{ 'media.films.detail.current_name'|trans }}</span>
                     <div class="fw-medium small font-monospace text-truncate" id="rename-current" title=""></div>
                   </div>
                   <div>
-                    <span class="text-muted small">Nom attendu :</span>
+                    <span class="text-muted small">{{ 'media.films.detail.expected_name'|trans }}</span>
                     <div class="fw-medium small font-monospace text-truncate" id="rename-expected" title=""></div>
                   </div>
-                  <div id="rename-match" class="mt-2 small text-success" style="display:none">Le fichier est déjà correctement nommé.</div>
+                  <div id="rename-match" class="mt-2 small text-success" style="display:none">{{ 'media.films.detail.already_correct'|trans }}</div>
                 </div>
-                <div id="rename-empty" class="text-muted small" style="display:none">Aucune proposition de renommage.</div>
+                <div id="rename-empty" class="text-muted small" style="display:none">{{ 'media.films.detail.no_rename_proposal'|trans }}</div>
               </div>
             </div>
 
@@ -867,7 +868,7 @@
               <div class="card-header" style="cursor:pointer" id="edit-card-toggle">
                 <h3 class="card-title">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  Modifier
+                  {{ 'media.films.detail.edit_modify'|trans }}
                 </h3>
                 <div class="card-actions">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="edit-card-chevron" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
@@ -875,7 +876,7 @@
               </div>
               <div id="edit-card-body" class="card-body p-0" style="display:none">
                 <div id="edit-card-loading" class="p-3 text-muted small text-center">
-                  <span class="spinner-border spinner-border-sm me-1"></span> Chargement...
+                  <span class="spinner-border spinner-border-sm me-1"></span> {{ 'media.films.detail.loading'|trans }}
                 </div>
                 <div id="edit-card-content" style="display:none"></div>
                 <div id="edit-card-feedback" class="alert m-3" style="display:none"></div>
@@ -887,7 +888,7 @@
               <div class="card-header" style="cursor:pointer" id="filemanager-toggle">
                 <h3 class="card-title">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  Gérer les fichiers
+                  {{ 'media.films.detail.manage_files'|trans }}
                 </h3>
                 <div class="card-actions">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="filemanager-chevron" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
@@ -895,7 +896,7 @@
               </div>
               <div id="filemanager-body" class="card-body p-0" style="display:none">
                 <div id="filemanager-loading" class="p-3 text-muted small text-center">
-                  <span class="spinner-border spinner-border-sm me-1"></span> Chargement des fichiers...
+                  <span class="spinner-border spinner-border-sm me-1"></span> {{ 'media.films.detail.loading_files'|trans }}
                 </div>
                 <div id="filemanager-content" style="display:none"></div>
                 <div id="filemanager-feedback" class="alert m-3" style="display:none">
@@ -907,17 +908,17 @@
 
             {# Casting (AJAX) #}
             <div class="card mb-2">
-              <div class="card-header py-2"><h3 class="card-title mb-0">Casting</h3></div>
+              <div class="card-header py-2"><h3 class="card-title mb-0">{{ 'media.films.detail.cast'|trans }}</h3></div>
               <div class="card-body py-2">
-                <div id="cast-loading" class="text-muted small">Chargement...</div>
+                <div id="cast-loading" class="text-muted small">{{ 'media.films.detail.loading'|trans }}</div>
                 <div id="cast-scroll" class="cast-scroll" style="display:none"></div>
-                <div id="cast-empty" class="text-muted small" style="display:none">Aucune information de casting disponible.</div>
+                <div id="cast-empty" class="text-muted small" style="display:none">{{ 'media.films.detail.no_cast'|trans }}</div>
               </div>
             </div>
 
             {# Équipe (AJAX) #}
             <div class="card mb-2" id="crew-section" style="display:none">
-              <div class="card-header py-2"><h3 class="card-title mb-0">Équipe</h3></div>
+              <div class="card-header py-2"><h3 class="card-title mb-0">{{ 'media.films.detail.crew'|trans }}</h3></div>
               <div class="card-body py-2">
                 <div id="crew-scroll" class="cast-scroll"></div>
               </div>
@@ -926,7 +927,7 @@
             {# Titres alternatifs (déroulant) #}
             <div class="card mb-2" id="titles-section" style="display:none">
               <div class="card-header py-2" style="cursor:pointer" id="titles-toggle">
-                <h3 class="card-title mb-0">Titres</h3>
+                <h3 class="card-title mb-0">{{ 'media.films.detail.titles'|trans }}</h3>
                 <div class="card-actions">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="titles-chevron" style="transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
@@ -934,7 +935,7 @@
               <div id="titles-body" class="card-body p-0" style="display:none">
                 <div class="table-responsive">
                   <table class="table table-sm table-vcenter mb-0" style="font-size:.78rem" id="titles-table">
-                    <thead><tr><th>Titre alternatif</th><th>Source</th></tr></thead>
+                    <thead><tr><th>{{ 'media.films.detail.alt_title'|trans }}</th><th>{{ 'media.films.detail.source'|trans }}</th></tr></thead>
                     <tbody id="titles-tbody"></tbody>
                   </table>
                 </div>
@@ -945,15 +946,15 @@
             <div class="card mb-2">
               <div class="card-header py-2" style="cursor:pointer" id="hist-toggle">
                 <h3 class="card-title d-flex align-items-center gap-2 mb-0">
-                  Historique
+                  {{ 'media.films.detail.history'|trans }}
                   <svg id="hist-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .2s"><path d="m6 9 6 6 6-6"/></svg>
                 </h3>
               </div>
               <div id="hist-content" style="display:none">
                 <div class="card-body py-2">
-                  <div id="hist-loading" class="text-muted small">Chargement...</div>
+                  <div id="hist-loading" class="text-muted small">{{ 'media.films.detail.loading'|trans }}</div>
                   <div id="hist-timeline"></div>
-                  <div id="hist-empty" class="text-muted small" style="display:none">Aucun historique.</div>
+                  <div id="hist-empty" class="text-muted small" style="display:none">{{ 'media.films.detail.no_history'|trans }}</div>
                 </div>
               </div>
             </div>
@@ -971,43 +972,43 @@
   <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document" style="margin-top:2rem">
     <div class="modal-content">
       <div class="modal-header">
-        <h4 class="modal-title">Ajouter un film</h4>
-        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        <h4 class="modal-title">{{ 'media.films.modal.add_title'|trans }}</h4>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="{{ 'media.films.detail.close'|trans }}"></button>
       </div>
       <div class="modal-body">
         {# Recherche #}
         <div class="d-flex gap-2 mb-4 mt-2">
-          <input type="text" id="add-search-input" class="form-control form-control-lg" placeholder="Rechercher un film…" autocomplete="off" autofocus>
-          <button id="add-search-btn" class="btn btn-primary flex-shrink-0">Chercher</button>
+          <input type="text" id="add-search-input" class="form-control form-control-lg" placeholder="{{ 'media.films.modal.search_placeholder'|trans }}" autocomplete="off" autofocus>
+          <button id="add-search-btn" class="btn btn-primary flex-shrink-0">{{ 'media.films.modal.search_btn'|trans }}</button>
         </div>
         {# Formulaire d'ajout (visible après sélection) — AU-DESSUS des résultats #}
         <div id="add-film-form" style="display:none" class="mb-3 p-3 border border-primary rounded" style="background:var(--tblr-bg-surface-secondary)">
           <h5 id="add-film-form-title" class="mb-3"></h5>
           <div class="row g-2">
             <div class="col-12 col-sm-4">
-              <label class="form-label small mb-1">Profil de qualité</label>
+              <label class="form-label small mb-1">{{ 'media.films.modal.quality_profile'|trans }}</label>
               <select id="add-quality-select" class="form-select form-select-sm">
-                <option value="">Chargement…</option>
+                <option value="">{{ 'media.films.modal.loading'|trans }}</option>
               </select>
             </div>
             <div class="col-12 col-sm-4">
-              <label class="form-label small mb-1">Dossier racine</label>
+              <label class="form-label small mb-1">{{ 'media.films.modal.root_folder'|trans }}</label>
               <select id="add-folder-select" class="form-select form-select-sm">
-                <option value="">Chargement…</option>
+                <option value="">{{ 'media.films.modal.loading'|trans }}</option>
               </select>
             </div>
             <div class="col-12 col-sm-4 d-flex align-items-end gap-2">
               <label class="form-check form-switch mb-0">
                 <input class="form-check-input" type="checkbox" id="add-monitored" checked>
-                <span class="form-check-label small">Rechercher auto</span>
+                <span class="form-check-label small">{{ 'media.films.modal.search_auto'|trans }}</span>
               </label>
-              <button id="add-film-confirm-btn" class="btn btn-success btn-sm ms-auto">Ajouter</button>
+              <button id="add-film-confirm-btn" class="btn btn-success btn-sm ms-auto">{{ 'media.films.modal.add_button'|trans }}</button>
             </div>
           </div>
           <div id="add-result" class="mt-3 alert d-none" style="font-size:.9rem;"></div>
         </div>
 
-        <div id="add-search-loading" class="text-muted small text-center py-2" style="display:none">Chargement…</div>
+        <div id="add-search-loading" class="text-muted small text-center py-2" style="display:none">{{ 'media.films.modal.loading'|trans }}</div>
         <div id="add-search-results" class="row g-3"></div>
         </div>
       </div>
@@ -1025,6 +1026,253 @@
 {% block javascripts %}
 <script>
 (function () {
+  /* ══════════════════════════════════════════════════════════════════════════
+     i18n injection (FR source of truth ; locale bascule via ?_locale=en)
+     ══════════════════════════════════════════════════════════════════════════ */
+  var FILM_I18N = {
+    add: {{ 'media.films.actions.add'|trans|json_encode|raw }},
+    cancel_select: {{ 'media.films.actions.cancel'|trans|json_encode|raw }},
+    refresh_filtered: {{ 'media.films.actions.refresh_filtered'|trans|json_encode|raw }},
+    search_filtered: {{ 'media.films.actions.search_filtered'|trans|json_encode|raw }},
+    downloaded: {{ 'media.films.status.downloaded'|trans|json_encode|raw }},
+    missing: {{ 'media.films.status.missing'|trans|json_encode|raw }},
+    unmonitored: {{ 'media.films.status.unmonitored'|trans|json_encode|raw }},
+    announced: {{ 'media.films.status.announced'|trans|json_encode|raw }},
+    in_cinemas: {{ 'media.films.status.in_cinemas'|trans|json_encode|raw }},
+    indisp_prefix: {{ 'media.films.status.indisponible_prefix'|trans|json_encode|raw }},
+    radarr_monitors: {{ 'media.films.status.radarr_monitors'|trans|json_encode|raw }},
+    radarr_not_monitored: {{ 'media.films.status.radarr_not_monitored'|trans|json_encode|raw }},
+    file_on_disk: {{ 'media.films.status.file_on_disk'|trans|json_encode|raw }},
+    released_not_found: {{ 'media.films.status.released_not_found'|trans|json_encode|raw }},
+    in_cinemas_tip: {{ 'media.films.status.in_cinemas_tip'|trans|json_encode|raw }},
+    announced_tip: {{ 'media.films.status.announced_tip'|trans|json_encode|raw }},
+    file_quality_tip: {{ 'media.films.status.file_quality_tip'|trans|json_encode|raw }},
+    file_size_tip: {{ 'media.films.status.file_size_tip'|trans|json_encode|raw }},
+    monitored_indisp_tpl: {{ 'media.films.status.monitored_indisp'|trans({status: '__STATUS__'})|json_encode|raw }},
+    monitored_missing: {{ 'media.films.status.monitored_missing'|trans|json_encode|raw }},
+    in_cinemas_lc: {{ 'media.films.status.in_cinemas_lc'|trans|json_encode|raw }},
+    announced_lc: {{ 'media.films.status.announced_lc'|trans|json_encode|raw }},
+    gb_suffix: {{ 'media.films.stats.gb_suffix'|trans|json_encode|raw }},
+    mo_suffix: {{ 'media.films.stats.mo_suffix'|trans|json_encode|raw }},
+    follow: {{ 'media.films.detail.follow'|trans|json_encode|raw }},
+    unfollow: {{ 'media.films.detail.unfollow'|trans|json_encode|raw }},
+    search_label: {{ 'media.films.detail.search'|trans|json_encode|raw }},
+    search_launch: {{ 'media.films.detail.search_launch'|trans|json_encode|raw }},
+    search_start_tpl: {{ 'media.films.detail.search_start'|trans({title: '__TITLE__'})|json_encode|raw }},
+    search_cannot_launch: {{ 'media.films.detail.search_cannot_launch'|trans|json_encode|raw }},
+    search_indexers_plural_tpl: {{ 'media.films.detail.search_indexers_plural'|trans({count: '__COUNT__'})|json_encode|raw }},
+    search_indexers_sing_tpl: {{ 'media.films.detail.search_indexers_sing'|trans({count: '__COUNT__'})|json_encode|raw }},
+    search_indexers_generic: {{ 'media.films.detail.search_indexers_generic'|trans|json_encode|raw }},
+    search_indexers_short: {{ 'media.films.detail.search_indexers_short'|trans|json_encode|raw }},
+    search_verify: {{ 'media.films.detail.search_verify'|trans|json_encode|raw }},
+    search_results_check: {{ 'media.films.detail.search_results_check'|trans|json_encode|raw }},
+    search_download_in_progress_tpl: {{ 'media.films.detail.search_download_in_progress'|trans({title: '__TITLE__', status: '__STATUS__'})|json_encode|raw }},
+    search_torrent_grabbed_tpl: {{ 'media.films.detail.search_torrent_grabbed'|trans({indexer: '__INDEXER__'})|json_encode|raw }},
+    search_no_auto_result: {{ 'media.films.detail.search_no_auto_result'|trans|json_encode|raw }},
+    search_idx_connect: {{ 'media.films.detail.search_idx_connect'|trans|json_encode|raw }},
+    search_idx_query_plural_tpl: {{ 'media.films.detail.search_idx_query_plural'|trans({count: '__COUNT__'})|json_encode|raw }},
+    search_idx_query_sing_tpl: {{ 'media.films.detail.search_idx_query_sing'|trans({count: '__COUNT__'})|json_encode|raw }},
+    search_torrents_searching: {{ 'media.films.detail.search_torrents_searching'|trans|json_encode|raw }},
+    search_torrents_analysing: {{ 'media.films.detail.search_torrents_analysing'|trans|json_encode|raw }},
+    search_progress_elapsed_tpl: {{ 'media.films.detail.search_progress_elapsed'|trans({seconds: '__SEC__'})|json_encode|raw }},
+    search_results_grab_best_tpl: {{ 'media.films.detail.search_results_grab_best'|trans({total: '__TOTAL__', approved: '__APPR__'})|json_encode|raw }},
+    search_grab_started_tpl: {{ 'media.films.detail.search_grab_started'|trans({indexer: '__INDEXER__', title: '__TITLE__'})|json_encode|raw }},
+    search_grab_failed_manual_tpl: {{ 'media.films.detail.search_grab_failed_manual'|trans({count: '__COUNT__', error: '__ERR__'})|json_encode|raw }},
+    search_grab_network_error: {{ 'media.films.detail.search_grab_network_error'|trans|json_encode|raw }},
+    search_no_quality_match_tpl: {{ 'media.films.detail.search_no_quality_match'|trans({count: '__COUNT__'})|json_encode|raw }},
+    search_no_torrent_found: {{ 'media.films.detail.search_no_torrent_found'|trans|json_encode|raw }},
+    search_indexer_timeout: {{ 'media.films.detail.search_indexer_timeout'|trans|json_encode|raw }},
+    search_completed: {{ 'media.films.detail.search_completed'|trans|json_encode|raw }},
+    search_failed_tpl: {{ 'media.films.detail.search_failed'|trans({error: '__ERR__'})|json_encode|raw }},
+    unknown_error: {{ 'media.films.detail.unknown_error'|trans|json_encode|raw }},
+    search_network_error: {{ 'media.films.detail.search_network_error'|trans|json_encode|raw }},
+    refresh_in_progress: {{ 'media.films.detail.refresh_in_progress'|trans|json_encode|raw }},
+    refresh_launch_error: {{ 'media.films.detail.refresh_launch_error'|trans|json_encode|raw }},
+    refresh_done: {{ 'media.films.detail.refresh_done'|trans|json_encode|raw }},
+    refresh_failed: {{ 'media.films.detail.refresh_failed'|trans|json_encode|raw }},
+    network_error: {{ 'media.films.detail.network_error'|trans|json_encode|raw }},
+    no_release_for_grab: {{ 'media.films.detail.no_release_for_grab'|trans|json_encode|raw }},
+    grab_launched_tpl: {{ 'media.films.detail.grab_launched'|trans({title: '__TITLE__'})|json_encode|raw }},
+    grab_failed_err_tpl: {{ 'media.films.detail.grab_failed_err'|trans({error: '__ERR__'})|json_encode|raw }},
+    rename_launch: {{ 'media.films.detail.rename_launch'|trans|json_encode|raw }},
+    rename_launch_start: {{ 'media.films.detail.rename_launch_start'|trans|json_encode|raw }},
+    rename_launch_error: {{ 'media.films.detail.rename_launch_error'|trans|json_encode|raw }},
+    rename_success: {{ 'media.films.detail.rename_success'|trans|json_encode|raw }},
+    rename_failed_tpl: {{ 'media.films.detail.rename_failed'|trans({error: '__ERR__'})|json_encode|raw }},
+    rename_label: {{ 'media.films.detail.rename'|trans|json_encode|raw }},
+    delete_in_progress: {{ 'media.films.detail.delete_in_progress'|trans|json_encode|raw }},
+    delete_success: {{ 'media.films.detail.delete_success'|trans|json_encode|raw }},
+    delete_error_msg: {{ 'media.films.detail.delete_error_msg'|trans|json_encode|raw }},
+    file_delete_success: {{ 'media.films.detail.file_delete_success'|trans|json_encode|raw }},
+    no_file_found: {{ 'media.films.detail.no_file_found'|trans|json_encode|raw }},
+    del_file_confirm_tpl: {{ 'media.films.detail.del_file_confirm'|trans({title: '__TITLE__'})|json_encode|raw }},
+    del_film_and_file_confirm_tpl: {{ 'media.films.detail.del_film_and_file_confirm'|trans({title: '__TITLE__'})|json_encode|raw }},
+    synopsis_none: {{ 'media.films.detail.no_synopsis'|trans|json_encode|raw }},
+    studio_prefix: {{ 'media.films.detail.studio_prefix'|trans|json_encode|raw }},
+    no_extras: {{ 'media.films.detail.no_extras'|trans|json_encode|raw }},
+    extras_suffix: {{ 'media.films.detail.extras_suffix'|trans|json_encode|raw }},
+    tech_chemin: {{ 'media.films.detail.path'|trans|json_encode|raw }},
+    tech_quality: {{ 'media.films.detail.quality'|trans|json_encode|raw }},
+    tech_video: {{ 'media.films.detail.video'|trans|json_encode|raw }},
+    tech_hdr: 'HDR',
+    tech_audio: {{ 'media.films.detail.audio'|trans|json_encode|raw }},
+    tech_languages: {{ 'media.films.detail.languages'|trans|json_encode|raw }},
+    tech_subtitles: {{ 'media.films.detail.subtitles'|trans|json_encode|raw }},
+    tech_size: {{ 'media.films.table.size'|trans|json_encode|raw }},
+    tech_group: {{ 'media.films.detail.release_group'|trans|json_encode|raw }},
+    tech_formats: {{ 'media.films.detail.formats_col'|trans|json_encode|raw }},
+    original_title_prefix: {{ 'media.films.detail.original_title_prefix'|trans|json_encode|raw }},
+    bookmark_artist: {{ 'media.films.detail.bookmark_artist'|trans|json_encode|raw }},
+    ev_grabbed: {{ 'media.films.detail.ev_grabbed'|trans|json_encode|raw }},
+    ev_imported: {{ 'media.films.detail.ev_imported'|trans|json_encode|raw }},
+    ev_download_failed: {{ 'media.films.detail.ev_download_failed'|trans|json_encode|raw }},
+    ev_file_deleted: {{ 'media.films.detail.ev_file_deleted'|trans|json_encode|raw }},
+    ev_movie_imported: {{ 'media.films.detail.ev_movie_imported'|trans|json_encode|raw }},
+    ev_file_renamed: {{ 'media.films.detail.ev_file_renamed'|trans|json_encode|raw }},
+    manage_loading_error: {{ 'media.films.detail.loading_error_short'|trans|json_encode|raw }},
+    no_file_associated: {{ 'media.films.detail.no_file_associated'|trans|json_encode|raw }},
+    expected_path: {{ 'media.films.detail.expected_path'|trans|json_encode|raw }},
+    release_group_label: {{ 'media.films.detail.release_group'|trans|json_encode|raw }},
+    release_group_placeholder: {{ 'media.films.detail.release_group_placeholder'|trans|json_encode|raw }},
+    save: {{ 'media.films.detail.save'|trans|json_encode|raw }},
+    saving: {{ 'media.films.detail.saving'|trans|json_encode|raw }},
+    delete_file_btn: {{ 'media.films.detail.delete_file_btn'|trans|json_encode|raw }},
+    delete_file_confirm: {{ 'media.films.detail.delete_file_confirm'|trans|json_encode|raw }},
+    file_deleted: {{ 'media.films.detail.file_deleted'|trans|json_encode|raw }},
+    delete_error: {{ 'media.films.detail.delete_error'|trans|json_encode|raw }},
+    pick_language: {{ 'media.films.detail.pick_language'|trans|json_encode|raw }},
+    saved: {{ 'media.films.detail.saved'|trans|json_encode|raw }},
+    save_error_tpl: {{ 'media.films.detail.save_error'|trans({error: '__ERR__'})|json_encode|raw }},
+    edit_modified_title_tpl: {{ 'media.films.detail.edit_modified_title'|trans({title: '__TITLE__'})|json_encode|raw }},
+    edit_monitored: {{ 'media.films.detail.edit_monitored'|trans|json_encode|raw }},
+    edit_monitored_help: {{ 'media.films.detail.edit_monitored_help'|trans|json_encode|raw }},
+    edit_availability: {{ 'media.films.detail.edit_availability'|trans|json_encode|raw }},
+    edit_quality: {{ 'media.films.detail.edit_quality'|trans|json_encode|raw }},
+    edit_path: {{ 'media.films.detail.edit_path'|trans|json_encode|raw }},
+    edit_explorer: {{ 'media.films.detail.edit_explorer'|trans|json_encode|raw }},
+    edit_update_path: {{ 'media.films.detail.edit_update_path'|trans|json_encode|raw }},
+    edit_empty_folder: {{ 'media.films.detail.edit_empty_folder'|trans|json_encode|raw }},
+    edit_tags: {{ 'media.films.detail.edit_tags'|trans|json_encode|raw }},
+    edit_tag_placeholder: {{ 'media.films.detail.edit_tag_placeholder'|trans|json_encode|raw }},
+    edit_delete: {{ 'media.films.detail.edit_delete'|trans|json_encode|raw }},
+    edit_cancel: {{ 'media.films.detail.edit_cancel'|trans|json_encode|raw }},
+    edit_save: {{ 'media.films.detail.edit_save'|trans|json_encode|raw }},
+    edit_update_path_confirm_tpl: {{ 'media.films.detail.edit_update_path_confirm'|trans({path: '__PATH__'})|json_encode|raw }},
+    edit_path_updated: {{ 'media.films.detail.edit_path_updated'|trans|json_encode|raw }},
+    edit_delete_confirm_tpl: {{ 'media.films.detail.edit_delete_confirm'|trans({title: '__TITLE__'})|json_encode|raw }},
+    edit_delete_files_confirm: {{ 'media.films.detail.edit_delete_files_confirm'|trans|json_encode|raw }},
+    edit_saved: {{ 'media.films.detail.edit_saved'|trans|json_encode|raw }},
+    edit_error_tpl: {{ 'media.films.detail.edit_error'|trans({error: '__ERR__'})|json_encode|raw }},
+    edit_config_error: {{ 'media.films.detail.edit_config_error'|trans|json_encode|raw }},
+    filter_label: {{ 'media.films.filter.filter_label'|trans|json_encode|raw }},
+    // Warnings banner / bulk / refresh-all etc
+    w_update_tpl: {{ 'media.films.warnings_update'|trans({count: '__COUNT__'})|json_encode|raw }},
+    w_update_error_tpl: {{ 'media.films.warnings_update_error'|trans({error: '__ERR__'})|json_encode|raw }},
+    w_network_error: {{ 'media.films.warnings_network_error'|trans|json_encode|raw }},
+    w_no_missing_filter: {{ 'media.films.warnings_no_missing_filter'|trans|json_encode|raw }},
+    w_search_confirm_tpl: {{ 'media.films.warnings_search_confirm'|trans({count: '__COUNT__'})|json_encode|raw }},
+    w_search_progress_tpl: {{ 'media.films.warnings_search_progress'|trans({count: '__COUNT__', indexers: '__IDX__'})|json_encode|raw }},
+    w_search_dl_tpl: {{ 'media.films.warnings_search_dl'|trans({dl: '__DL__', total: '__TOTAL__'})|json_encode|raw }},
+    w_search_none_tpl: {{ 'media.films.warnings_search_none'|trans({total: '__TOTAL__'})|json_encode|raw }},
+    w_search_failed_tpl: {{ 'media.films.warnings_search_failed'|trans({error: '__ERR__'})|json_encode|raw }},
+    w_search_elapsed_tpl: {{ 'media.films.warnings_search_elapsed'|trans({msg: '__MSG__', progress: '__PROG__'})|json_encode|raw }},
+    w_search_progress_suffix_tpl: {{ 'media.films.warnings_search_progress_suffix'|trans({done: '__DONE__', total: '__TOTAL__'})|json_encode|raw }},
+    w_search_in_progress_tpl: {{ 'media.films.warnings_search_in_progress_elapsed'|trans({seconds: '__SEC__'})|json_encode|raw }},
+    w_search_error_tpl: {{ 'media.films.warnings_search_error_pr'|trans({error: '__ERR__'})|json_encode|raw }},
+    w_refresh_label: {{ 'media.films.warnings_refresh_label'|trans|json_encode|raw }},
+    w_rss_label: {{ 'media.films.warnings_rss_label'|trans|json_encode|raw }},
+    w_generic_error: {{ 'media.films.warnings_generic_error'|trans|json_encode|raw }},
+    w_cmd_search: {{ 'media.films.warnings_cmd_search'|trans|json_encode|raw }},
+    w_cmd_missing_search: {{ 'media.films.warnings_cmd_missing_search'|trans|json_encode|raw }},
+    w_cmd_rename: {{ 'media.films.warnings_cmd_rename'|trans|json_encode|raw }},
+    w_cmd_import: {{ 'media.films.warnings_cmd_import'|trans|json_encode|raw }},
+    w_cmd_in_progress_tpl: {{ 'media.films.warnings_cmd_in_progress'|trans({label: '__LBL__'})|json_encode|raw }},
+    w_cmd_dl_ok_tpl: {{ 'media.films.warnings_cmd_dl_ok'|trans({label: '__LBL__', count: '__COUNT__'})|json_encode|raw }},
+    w_cmd_import_done: {{ 'media.films.warnings_cmd_import_done'|trans|json_encode|raw }},
+    w_cmd_nothing_tpl: {{ 'media.films.warnings_cmd_nothing'|trans({label: '__LBL__'})|json_encode|raw }},
+    w_cmd_failed_tpl: {{ 'media.films.warnings_cmd_failed'|trans({label: '__LBL__', error: '__ERR__'})|json_encode|raw }},
+    w_cmd_elapsed_tpl: {{ 'media.films.warnings_cmd_elapsed'|trans({label: '__LBL__', msg: '__MSG__'})|json_encode|raw }},
+    w_cmd_done_tpl: {{ 'media.films.warnings_cmd_done'|trans({label: '__LBL__'})|json_encode|raw }},
+    w_bulk_modified_tpl: {{ 'media.films.warnings_bulk_modified'|trans({count: '__COUNT__'})|json_encode|raw }},
+    w_bulk_tags_ok_tpl: {{ 'media.films.warnings_bulk_tags_ok'|trans({count: '__COUNT__'})|json_encode|raw }},
+    w_bulk_rename_ok_tpl: {{ 'media.films.warnings_bulk_rename_ok'|trans({count: '__COUNT__'})|json_encode|raw }},
+    w_bulk_delete_ok_tpl: {{ 'media.films.warnings_bulk_delete_ok'|trans({count: '__COUNT__'})|json_encode|raw }},
+    // Queue
+    q_movie: {{ 'media.films.queue.movie_col'|trans|json_encode|raw }},
+    q_quality: {{ 'media.films.queue.quality_col'|trans|json_encode|raw }},
+    q_progress: {{ 'media.films.queue.progress_col'|trans|json_encode|raw }},
+    q_status: {{ 'media.films.queue.status_col'|trans|json_encode|raw }},
+    q_actions: {{ 'media.films.queue.actions_col'|trans|json_encode|raw }},
+    q_eta_prefix: {{ 'media.films.queue.eta_prefix'|trans|json_encode|raw }},
+    q_importing: {{ 'media.films.queue.importing'|trans|json_encode|raw }},
+    q_import_pending: {{ 'media.films.queue.import_pending'|trans|json_encode|raw }},
+    q_import_blocked: {{ 'media.films.queue.import_blocked'|trans|json_encode|raw }},
+    q_completed_pct: {{ 'media.films.queue.completed_pct'|trans|json_encode|raw }},
+    q_status_importing: {{ 'media.films.queue.status_importing'|trans|json_encode|raw }},
+    q_status_pending: {{ 'media.films.queue.status_pending'|trans|json_encode|raw }},
+    q_status_blocked: {{ 'media.films.queue.status_blocked'|trans|json_encode|raw }},
+    q_status_warning_prefix: {{ 'media.films.queue.status_warning_prefix'|trans|json_encode|raw }},
+    q_status_error_prefix: {{ 'media.films.queue.status_error_prefix'|trans|json_encode|raw }},
+    q_status_completed: {{ 'media.films.queue.status_completed'|trans|json_encode|raw }},
+    q_status_downloading: {{ 'media.films.queue.status_downloading'|trans|json_encode|raw }},
+    q_action_force_import: {{ 'media.films.queue.action_force_import'|trans|json_encode|raw }},
+    q_action_force_download: {{ 'media.films.queue.action_force_download'|trans|json_encode|raw }},
+    q_action_delete: {{ 'media.films.queue.action_delete'|trans|json_encode|raw }},
+    q_import_done_badge: {{ 'media.films.queue.import_done_badge'|trans|json_encode|raw }},
+    q_delete_msg_tpl: {{ 'media.films.queue.delete_msg'|trans({title: '__TITLE__'})|json_encode|raw }},
+    q_delete_remove_client: {{ 'media.films.queue.delete_remove_client'|trans|json_encode|raw }},
+    q_delete_blocklist: {{ 'media.films.queue.delete_blocklist'|trans|json_encode|raw }},
+    q_delete_confirm: {{ 'media.films.queue.delete_confirm'|trans|json_encode|raw }},
+    q_delete_cancel: {{ 'media.films.queue.delete_cancel'|trans|json_encode|raw }},
+    q_import_done_status: {{ 'media.films.queue.import_done_status'|trans|json_encode|raw }},
+    q_import_failed_tpl: {{ 'media.films.queue.import_failed'|trans({message: '__MSG__'})|json_encode|raw }},
+    q_import_failed_short: {{ 'media.films.queue.import_failed_short'|trans|json_encode|raw }},
+    q_import_failed_status: {{ 'media.films.queue.import_failed_status'|trans|json_encode|raw }},
+    q_network_error: {{ 'media.films.queue.network_error'|trans|json_encode|raw }},
+    q_error_generic_tpl: {{ 'media.films.queue.error_generic'|trans({error: '__ERR__'})|json_encode|raw }},
+    q_error: {{ 'media.films.queue.error'|trans|json_encode|raw }},
+    banner_path_update: {{ 'media.films.banner.path_update'|trans|json_encode|raw }},
+    // Modal add
+    m_no_results: {{ 'media.films.modal.no_results'|trans|json_encode|raw }},
+    m_search_error: {{ 'media.films.modal.search_error'|trans|json_encode|raw }},
+    m_no_poster: {{ 'media.films.modal.no_poster'|trans|json_encode|raw }},
+    m_already_radarr: {{ 'media.films.modal.already_radarr'|trans|json_encode|raw }},
+    m_pick_quality_folder: {{ 'media.films.modal.pick_quality_folder'|trans|json_encode|raw }},
+    m_adding: {{ 'media.films.modal.adding'|trans|json_encode|raw }},
+    m_added_success_tpl: {{ 'media.films.modal.added_success'|trans({title: '__TITLE__'})|json_encode|raw }},
+    m_added_searching_tpl: {{ 'media.films.modal.added_searching'|trans({title: '__TITLE__', count: '__COUNT__'})|json_encode|raw }},
+    m_searching_dots_tpl: {{ 'media.films.modal.searching_dots'|trans({dots: '__DOTS__'})|json_encode|raw }},
+    m_searching_elapsed_tpl: {{ 'media.films.modal.searching_elapsed'|trans({seconds: '__SEC__'})|json_encode|raw }},
+    m_dl_started_tpl: {{ 'media.films.modal.dl_started'|trans({title: '__TITLE__', src: '__SRC__'})|json_encode|raw }},
+    m_via_prefix_tpl: {{ 'media.films.modal.via_prefix'|trans({src: '__SRC__'})|json_encode|raw }},
+    m_dl_failed_tpl: {{ 'media.films.modal.dl_failed'|trans({title: '__TITLE__'})|json_encode|raw }},
+    m_grab_but_no_queue_tpl: {{ 'media.films.modal.grab_but_no_queue'|trans({title: '__TITLE__', src: '__SRC__'})|json_encode|raw }},
+    m_no_download_detected_tpl: {{ 'media.films.modal.no_download_detected'|trans({title: '__TITLE__'})|json_encode|raw }},
+    m_added_not_monitored_tpl: {{ 'media.films.modal.added_not_monitored'|trans({title: '__TITLE__'})|json_encode|raw }},
+    m_add_error_duplicate: {{ 'media.films.modal.add_error_duplicate'|trans|json_encode|raw }},
+    m_network_error: {{ 'media.films.modal.network_error'|trans|json_encode|raw }},
+    m_loading: {{ 'media.films.modal.loading'|trans|json_encode|raw }},
+    b_edit_hint_tpl: {{ 'media.films.bulk.selected_hint'|trans({count: '__COUNT__'})|json_encode|raw }},
+    b_no_tag_defined: {{ 'media.films.bulk.no_tag_defined'|trans|json_encode|raw }},
+    b_all_correct: {{ 'media.films.bulk.all_correct'|trans|json_encode|raw }},
+    b_organise_files_tpl: {{ 'media.films.bulk.organise_files'|trans({count: '__COUNT__'})|json_encode|raw }},
+    b_save: {{ 'media.films.bulk.save'|trans|json_encode|raw }},
+    b_apply: {{ 'media.films.bulk.apply'|trans|json_encode|raw }},
+    b_organise: {{ 'media.films.bulk.rename_go'|trans|json_encode|raw }},
+    b_delete: {{ 'media.films.bulk.delete_confirm'|trans|json_encode|raw }},
+    b_correctly_named_tpl: {{ 'media.films.bulk.films_correctly_named'|trans({count: '__COUNT__'})|json_encode|raw }},
+    shelf_downloaded: {{ 'media.films.status.downloaded'|trans|json_encode|raw }},
+    shelf_missing: {{ 'media.films.status.missing'|trans|json_encode|raw }},
+    shelf_unmonitored: {{ 'media.films.status.unmonitored'|trans|json_encode|raw }}
+  };
+  function tpl(s, map) {
+    if (!s) return '';
+    Object.keys(map || {}).forEach(function(k){
+      s = s.split('__' + k + '__').join(String(map[k]));
+    });
+    return s;
+  }
+
   /* ══════════════════════════════════════════════════════════════════════════
      Grille + filtres
      ══════════════════════════════════════════════════════════════════════════ */
@@ -1068,7 +1316,7 @@
       }
     });
 
-    if (counter) counter.textContent = visible + ' film' + (visible > 1 ? 's' : '');
+    if (counter) counter.textContent = visible; // raw count; the label context handles singular/plural
 
     // Sync filtre sur le tableau
     document.querySelectorAll('.films-table-row').forEach(function(row) {
@@ -1149,22 +1397,22 @@
     if (!ids.length) return;
     var btn = this;
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + ids.length + ' films...';
-    showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> Actualisation de ' + ids.length + ' film(s) en cours...', 'info');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + ids.length + '...';
+    showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_update_tpl, {COUNT: ids.length}), 'info');
 
     ajaxPost('/medias/films/bulk/refresh', { movieIds: ids })
     .then(function(data) {
       btn.disabled = false;
-      btn.innerHTML = ICON_REFRESH + ' Actualiser les filtrés';
+      btn.innerHTML = ICON_REFRESH + ' ' + FILM_I18N.refresh_filtered;
       if (data.ok) {
-        showPageBanner('✅ Actualisation lancée pour ' + ids.length + ' film(s) — Radarr met à jour les métadonnées et scanne les fichiers.', 'success');
+        showPageBanner(tpl(FILM_I18N.w_update_tpl, {COUNT: ids.length}), 'success');
       } else {
-        showPageBanner('❌ Erreur actualisation : ' + (data.error || 'erreur inconnue'), 'danger');
+        showPageBanner(tpl(FILM_I18N.w_update_error_tpl, {ERR: data.error || FILM_I18N.unknown_error}), 'danger');
       }
     }).catch(function() {
       btn.disabled = false;
-      btn.innerHTML = ICON_REFRESH + ' Actualiser les filtrés';
-      showPageBanner('❌ Erreur réseau.', 'danger');
+      btn.innerHTML = ICON_REFRESH + ' ' + FILM_I18N.refresh_filtered;
+      showPageBanner(FILM_I18N.w_network_error, 'danger');
     });
   });
 
@@ -1174,14 +1422,14 @@
       if (c.style.display !== 'none' && c.dataset.hasFile === '0' && c.dataset.monitored === '1') ids.push(parseInt(c.dataset.id));
     });
     if (!ids.length) {
-      showPageBanner('⚠️ Aucun film manquant dans la sélection filtrée.', 'warning');
+      showPageBanner(FILM_I18N.w_no_missing_filter, 'warning');
       return;
     }
-    if (!confirm('Lancer la recherche pour ' + ids.length + ' film(s) manquant(s) ?')) return;
+    if (!confirm(tpl(FILM_I18N.w_search_confirm_tpl, {COUNT: ids.length}))) return;
     var btn = this;
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + ids.length + ' films...';
-    showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> 🔍 Recherche en cours pour ' + ids.length + ' film(s) manquant(s) sur ' + INDEXER_COUNT + ' indexeur(s)...', 'info');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + ids.length + '...';
+    showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_search_progress_tpl, {COUNT: ids.length, IDX: INDEXER_COUNT}), 'info');
 
     var filmNames = [];
     grid.querySelectorAll('.media-card').forEach(function(c) {
@@ -1208,19 +1456,19 @@
             if (st === 'completed') {
               clearInterval(bulkPoll);
               btn.disabled = false;
-              btn.innerHTML = ICON_SEARCH + ' Rechercher les filtrés';
+              btn.innerHTML = ICON_SEARCH + ' ' + FILM_I18N.search_filtered;
               var downloaded = msg.match(/(\d+) reports downloaded/);
               var dlCount = downloaded ? parseInt(downloaded[1]) : 0;
               if (dlCount > 0) {
-                showPageBanner('✅ Recherche terminée — ' + dlCount + ' téléchargement(s) lancé(s) pour ' + ids.length + ' film(s). Vérifiez la queue ci-dessus.', 'success');
+                showPageBanner(tpl(FILM_I18N.w_search_dl_tpl, {DL: dlCount, TOTAL: ids.length}), 'success');
               } else {
-                showPageBanner('⚠️ Recherche terminée pour ' + ids.length + ' film(s) — aucun torrent trouvé correspondant aux critères.', 'warning');
+                showPageBanner(tpl(FILM_I18N.w_search_none_tpl, {TOTAL: ids.length}), 'warning');
               }
             } else if (st === 'failed') {
               clearInterval(bulkPoll);
               btn.disabled = false;
-              btn.innerHTML = ICON_SEARCH + ' Rechercher les filtrés';
-              showPageBanner('❌ Recherche échouée : ' + (msg || 'erreur inconnue'), 'danger');
+              btn.innerHTML = ICON_SEARCH + ' ' + FILM_I18N.search_filtered;
+              showPageBanner(tpl(FILM_I18N.w_search_failed_tpl, {ERR: msg || FILM_I18N.unknown_error}), 'danger');
             } else {
               // En cours — compter les films traités
               var filmMatch = msg.match(/for\s+\[(.+?)\]/i);
@@ -1228,21 +1476,21 @@
                 lastFilmSeen = filmMatch[1];
                 filmsDone++;
               }
-              var progress = filmsDone > 0 ? ' — Film ' + filmsDone + '/' + ids.length : '';
-              var display = msg || ('Recherche en cours... (' + elapsed + 's)');
-              showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> 🔍 ' + display + progress, 'info');
+              var progress = filmsDone > 0 ? tpl(FILM_I18N.w_search_progress_suffix_tpl, {DONE: filmsDone, TOTAL: ids.length}) : '';
+              var display = msg || tpl(FILM_I18N.w_search_in_progress_tpl, {SEC: elapsed});
+              showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_search_elapsed_tpl, {MSG: display, PROG: progress}), 'info');
             }
           });
         }, 2000);
       } else {
         btn.disabled = false;
-        btn.innerHTML = ICON_SEARCH + ' Rechercher les filtrés';
-        showPageBanner('❌ Erreur recherche : ' + (data.error || 'erreur inconnue'), 'danger');
+        btn.innerHTML = ICON_SEARCH + ' ' + FILM_I18N.search_filtered;
+        showPageBanner(tpl(FILM_I18N.w_search_error_tpl, {ERR: data.error || FILM_I18N.unknown_error}), 'danger');
       }
     }).catch(function() {
       btn.disabled = false;
-      btn.innerHTML = ICON_SEARCH + ' Rechercher les filtrés';
-      showPageBanner('❌ Erreur réseau.', 'danger');
+      btn.innerHTML = ICON_SEARCH + ' ' + FILM_I18N.search_filtered;
+      showPageBanner(FILM_I18N.w_network_error, 'danger');
     });
   });
 
@@ -1284,8 +1532,8 @@
 
   function formatSize(bytes) {
     if (!bytes || bytes <= 0) return '—';
-    if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' Go';
-    return Math.round(bytes / 1048576) + ' Mo';
+    if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' ' + FILM_I18N.gb_suffix;
+    return Math.round(bytes / 1048576) + ' ' + FILM_I18N.mo_suffix;
   }
 
   function formatRuntime(min) {
@@ -1370,7 +1618,7 @@
 
     var origEl = document.getElementById('film-original-title');
     if (m.originalTitle && m.originalTitle !== m.title) {
-      origEl.textContent = 'Titre original : ' + m.originalTitle;
+      origEl.textContent = FILM_I18N.original_title_prefix + m.originalTitle;
       origEl.style.display = '';
     } else {
       origEl.style.display = 'none';
@@ -1436,24 +1684,24 @@
     var badgesEl = document.getElementById('film-status-badges');
     badgesEl.innerHTML = '';
     if (m.monitored) {
-      badgesEl.innerHTML += '<span class="badge bg-primary-lt" title="Radarr surveille ce film et cherchera automatiquement une release">Suivi</span>';
+      badgesEl.innerHTML += '<span class="badge bg-primary-lt" title="' + esc(FILM_I18N.radarr_monitors) + '">' + esc(FILM_I18N.follow) + '</span>';
     } else {
-      badgesEl.innerHTML += '<span class="badge bg-secondary-lt" title="Ce film n\'est pas surveillé, Radarr ne cherchera pas de release">Non suivi</span>';
+      badgesEl.innerHTML += '<span class="badge bg-secondary-lt" title="' + esc(FILM_I18N.radarr_not_monitored) + '">' + esc(FILM_I18N.unmonitored) + '</span>';
     }
     if (m.hasFile) {
-      badgesEl.innerHTML += '<span class="badge bg-success-lt" title="Le fichier est présent sur le disque">Téléchargé</span>';
+      badgesEl.innerHTML += '<span class="badge bg-success-lt" title="' + esc(FILM_I18N.file_on_disk) + '">' + esc(FILM_I18N.downloaded) + '</span>';
     } else if (m.monitored && (m.status === 'announced' || m.status === 'inCinemas')) {
-      var statusLabel = m.status === 'inCinemas' ? 'En salles' : 'Annoncé';
-      var statusTip = m.status === 'inCinemas' ? 'Ce film est actuellement en salles, pas encore disponible en téléchargement' : 'Ce film est annoncé mais pas encore sorti';
-      badgesEl.innerHTML += '<span class="badge" style="background:rgba(99,102,241,.15);color:#6366f1;" title="' + statusTip + '">Indisponible — ' + statusLabel + '</span>';
+      var statusLabel = m.status === 'inCinemas' ? FILM_I18N.in_cinemas : FILM_I18N.announced;
+      var statusTip = m.status === 'inCinemas' ? FILM_I18N.in_cinemas_tip : FILM_I18N.announced_tip;
+      badgesEl.innerHTML += '<span class="badge" style="background:rgba(99,102,241,.15);color:#6366f1;" title="' + esc(statusTip) + '">' + esc(FILM_I18N.indisp_prefix) + esc(statusLabel) + '</span>';
     } else {
-      badgesEl.innerHTML += '<span class="badge bg-warning-lt" title="Le film est sorti mais aucun fichier n\'a été trouvé ou téléchargé">Manquant</span>';
+      badgesEl.innerHTML += '<span class="badge bg-warning-lt" title="' + esc(FILM_I18N.released_not_found) + '">' + esc(FILM_I18N.missing) + '</span>';
     }
     if (m.quality) {
-      badgesEl.innerHTML += '<span class="badge bg-blue-lt" title="Qualité du fichier téléchargé">' + esc(m.quality) + '</span>';
+      badgesEl.innerHTML += '<span class="badge bg-blue-lt" title="' + esc(FILM_I18N.file_quality_tip) + '">' + esc(m.quality) + '</span>';
     }
     if (m.sizeOnDisk > 0) {
-      badgesEl.innerHTML += '<span class="badge bg-secondary-lt" title="Taille du fichier sur le disque">' + formatSize(m.sizeOnDisk) + '</span>';
+      badgesEl.innerHTML += '<span class="badge bg-secondary-lt" title="' + esc(FILM_I18N.file_size_tip) + '">' + formatSize(m.sizeOnDisk) + '</span>';
     }
 
     // Monitor button label
@@ -1473,11 +1721,11 @@
   /* ── Right column ── */
   function populateRightCol(m) {
     // Synopsis
-    document.getElementById('film-overview').textContent = m.overview || 'Aucun synopsis disponible.';
+    document.getElementById('film-overview').textContent = m.overview || FILM_I18N.synopsis_none;
 
     var studioEl = document.getElementById('film-studio');
     if (m.studio) {
-      studioEl.textContent = 'Studio : ' + m.studio;
+      studioEl.textContent = FILM_I18N.studio_prefix + m.studio;
       studioEl.style.display = '';
     } else {
       studioEl.style.display = 'none';
@@ -1494,20 +1742,20 @@
       var mi = mf.mediaInfo || {};
       var items = [];
 
-      if (mf.relativePath) items.push(['Chemin', '<span class="font-monospace small">' + esc(mf.relativePath) + '</span>']);
-      if (mf.quality) items.push(['Qualité', '<span class="badge bg-blue-lt">' + esc(mf.quality) + '</span>']);
-      if (mi.videoCodec) items.push(['Vidéo', esc(mi.videoCodec) + (mi.resolution ? ' · ' + esc(mi.resolution) : '') + (mi.videoFps ? ' · ' + parseFloat(mi.videoFps).toFixed(0) + 'fps' : '')]);
-      if (mi.videoDynamicRange) items.push(['HDR', esc(mi.videoDynamicRange) + (mi.videoBitDepth ? ' · ' + mi.videoBitDepth + 'bits' : '')]);
-      if (mi.audioCodec) items.push(['Audio', esc(mi.audioCodec) + (mi.audioChannels ? ' · ' + mi.audioChannels + 'ch' : '')]);
-      if (mf.languages && mf.languages.length) items.push(['Langues', mf.languages.map(function(l) { return '<span class="badge bg-cyan-lt me-1">' + esc(l) + '</span>'; }).join('')]);
-      if (mi.subtitles) items.push(['Sous-titres', '<span class="text-muted">' + esc(mi.subtitles) + '</span>']);
-      if (mf.size) items.push(['Taille', formatSize(mf.size)]);
-      if (mf.releaseGroup) items.push(['Groupe', esc(mf.releaseGroup)]);
+      if (mf.relativePath) items.push([FILM_I18N.tech_chemin, '<span class="font-monospace small">' + esc(mf.relativePath) + '</span>']);
+      if (mf.quality) items.push([FILM_I18N.tech_quality, '<span class="badge bg-blue-lt">' + esc(mf.quality) + '</span>']);
+      if (mi.videoCodec) items.push([FILM_I18N.tech_video, esc(mi.videoCodec) + (mi.resolution ? ' · ' + esc(mi.resolution) : '') + (mi.videoFps ? ' · ' + parseFloat(mi.videoFps).toFixed(0) + 'fps' : '')]);
+      if (mi.videoDynamicRange) items.push([FILM_I18N.tech_hdr, esc(mi.videoDynamicRange) + (mi.videoBitDepth ? ' · ' + mi.videoBitDepth + 'bits' : '')]);
+      if (mi.audioCodec) items.push([FILM_I18N.tech_audio, esc(mi.audioCodec) + (mi.audioChannels ? ' · ' + mi.audioChannels + 'ch' : '')]);
+      if (mf.languages && mf.languages.length) items.push([FILM_I18N.tech_languages, mf.languages.map(function(l) { return '<span class="badge bg-cyan-lt me-1">' + esc(l) + '</span>'; }).join('')]);
+      if (mi.subtitles) items.push([FILM_I18N.tech_subtitles, '<span class="text-muted">' + esc(mi.subtitles) + '</span>']);
+      if (mf.size) items.push([FILM_I18N.tech_size, formatSize(mf.size)]);
+      if (mf.releaseGroup) items.push([FILM_I18N.tech_group, esc(mf.releaseGroup)]);
       // Custom formats
       if (mf.customFormats && mf.customFormats.length) {
         var cfHtml = mf.customFormats.map(function(cf) { return '<span class="badge bg-purple-lt me-1">' + esc(cf) + '</span>'; }).join('');
         if (mf.customFormatScore) cfHtml += ' <span class="text-muted small">+' + mf.customFormatScore + '</span>';
-        items.push(['Formats', cfHtml]);
+        items.push([FILM_I18N.tech_formats, cfHtml]);
       }
 
       // 2 paires par ligne
@@ -1528,13 +1776,13 @@
     if (m.hasFile && m.id) {
       ajaxGet('/medias/films/' + m.id + '/extras').then(function(extras) {
         if (!extras || !extras.length) {
-          extrasEl.textContent = 'Pas de fichiers supplémentaires à gérer.';
+          extrasEl.textContent = FILM_I18N.no_extras;
         } else {
-          extrasEl.textContent = extras.length + ' fichier(s) supplémentaire(s) : ' + extras.map(function(e) { return e.relativePath || e.extension || '?'; }).join(', ');
+          extrasEl.textContent = extras.length + FILM_I18N.extras_suffix + extras.map(function(e) { return e.relativePath || e.extension || '?'; }).join(', ');
         }
         extrasEl.style.display = '';
       }).catch(function() {
-        extrasEl.textContent = 'Pas de fichiers supplémentaires à gérer.';
+        extrasEl.textContent = FILM_I18N.no_extras;
         extrasEl.style.display = '';
       });
     }
@@ -1553,7 +1801,7 @@
         if (person.images[i].url) { imgUrl = person.images[i].url; break; }
       }
     }
-    var html = '<button class="cast-bookmark" data-person="' + esc(person.personName || '') + '" data-tmdb="' + (person.personTmdbId || person.tmdbId || '') + '" data-person-type="' + (person.type || 'cast') + '" data-person-job="' + esc(person.job || '') + '" title="Suivre cet artiste">' + BOOKMARK_SVG + '</button>';
+    var html = '<button class="cast-bookmark" data-person="' + esc(person.personName || '') + '" data-tmdb="' + (person.personTmdbId || person.tmdbId || '') + '" data-person-type="' + (person.type || 'cast') + '" data-person-job="' + esc(person.job || '') + '" title="' + esc(FILM_I18N.bookmark_artist) + '">' + BOOKMARK_SVG + '</button>';
     html += imgUrl
       ? '<img src="' + esc(imgUrl) + '" alt="' + esc(person.personName) + '" loading="lazy">'
       : '<div style="width:64px;height:64px;border-radius:50%;background:var(--tblr-bg-surface-secondary);margin:0 auto;display:flex;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--tblr-muted)" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
@@ -1738,12 +1986,12 @@
       if (!items.length) { empty.style.display = ''; return; }
 
       var evLabel = {
-        grabbed: 'Capturé',
-        downloadFolderImported: 'Importé',
-        downloadFailed: 'Échec téléchargement',
-        movieFileDeleted: 'Fichier supprimé',
-        movieImported: 'Importé',
-        movieFileRenamed: 'Renommé',
+        grabbed: FILM_I18N.ev_grabbed,
+        downloadFolderImported: FILM_I18N.ev_imported,
+        downloadFailed: FILM_I18N.ev_download_failed,
+        movieFileDeleted: FILM_I18N.ev_file_deleted,
+        movieImported: FILM_I18N.ev_movie_imported,
+        movieFileRenamed: FILM_I18N.ev_file_renamed,
       };
 
       items.slice(0, 15).forEach(function (item) {
@@ -1803,12 +2051,12 @@
       icon.setAttribute('fill', 'currentColor');
       icon.setAttribute('stroke', 'currentColor');
       btn.className = 'btn btn-sm btn-warning d-flex align-items-center gap-1';
-      label.textContent = 'Ne plus suivre';
+      label.textContent = FILM_I18N.unfollow;
     } else {
       icon.setAttribute('fill', 'none');
       icon.setAttribute('stroke', 'currentColor');
       btn.className = 'btn btn-sm btn-success d-flex align-items-center gap-1';
-      label.textContent = 'Suivre';
+      label.textContent = FILM_I18N.follow;
     }
     btn.style.filter = 'drop-shadow(0 1px 4px rgba(0,0,0,.5))';
     btn.style.fontSize = '.8rem';
@@ -1816,7 +2064,15 @@
 
   /* ── Search button ── */
   var INDEXER_COUNT = {{ indexerCount }};
-  var SEARCH_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Rechercher';
+  var SEARCH_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> ' + FILM_I18N.search_label;
+
+  function indexersMsg(n) {
+    if (!n || n <= 0) return FILM_I18N.search_indexers_generic;
+    return tpl(n > 1 ? FILM_I18N.search_indexers_plural_tpl : FILM_I18N.search_indexers_sing_tpl, {COUNT: n});
+  }
+  function idxQueryMsg(n) {
+    return tpl(n > 1 ? FILM_I18N.search_idx_query_plural_tpl : FILM_I18N.search_idx_query_sing_tpl, {COUNT: n});
+  }
 
   document.getElementById('btn-search').addEventListener('click', function () {
     if (!currentId) return;
@@ -1827,24 +2083,22 @@
 
     // Étape 1 : lancement
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Lancement...';
-    showSearchFeedback('🔍 Lancement de la recherche pour "' + movieTitle + '"...', 'info', true);
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + FILM_I18N.search_launch;
+    showSearchFeedback(tpl(FILM_I18N.search_start_tpl, {TITLE: movieTitle}), 'info', true);
 
     ajaxPost('/medias/films/' + currentId + '/search')
     .then(function (data) {
       if (!data.ok || !data.cmdId) {
         btn.disabled = false;
         btn.innerHTML = SEARCH_ICON;
-        showSearchFeedback('❌ Impossible de lancer la recherche — vérifiez que le film est bien dans Radarr', 'danger', false);
+        showSearchFeedback(FILM_I18N.search_cannot_launch, 'danger', false);
         return;
       }
 
       // Étape 2 : interrogation des indexeurs
-      var idxMsg = INDEXER_COUNT > 0
-        ? '📡 Interrogation de ' + INDEXER_COUNT + ' indexeur' + (INDEXER_COUNT > 1 ? 's' : '') + '...'
-        : '📡 Interrogation des indexeurs...';
+      var idxMsg = indexersMsg(INDEXER_COUNT);
       showSearchFeedback(idxMsg, 'info', true);
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Indexeurs...';
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + FILM_I18N.search_indexers_short;
       var pollCount = 0;
 
       pollTimer = setInterval(function () {
@@ -1855,8 +2109,8 @@
 
           if (st === 'completed') {
             stopPoll();
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Vérification...';
-            showSearchFeedback('📋 Recherche terminée — vérification des résultats...', 'info', true);
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + FILM_I18N.search_verify;
+            showSearchFeedback(FILM_I18N.search_results_check, 'info', true);
 
             // Étape 3 : vérifier la queue et l'historique pour le résultat
             Promise.all([
@@ -1887,25 +2141,25 @@
                 var q = inQueue[0];
                 var dlStatus = q.status || 'downloading';
                 var dlTitle = q.title || '';
-                showSearchFeedback('✅ Téléchargement en cours : "' + dlTitle + '" — statut : ' + dlStatus, 'success', false);
+                showSearchFeedback(tpl(FILM_I18N.search_download_in_progress_tpl, {TITLE: dlTitle, STATUS: dlStatus}), 'success', false);
               } else if (recentGrabs.length > 0) {
                 var g = recentGrabs[0];
-                var src = (g.data || {}).indexer || 'indexeur inconnu';
-                showSearchFeedback('✅ Torrent capturé via ' + src + ' — en attente de téléchargement', 'success', false);
+                var src = (g.data || {}).indexer || '?';
+                showSearchFeedback(tpl(FILM_I18N.search_torrent_grabbed_tpl, {INDEXER: src}), 'success', false);
               } else {
                 // Recherche normale n'a rien trouvé — tenter via recherche interactive
-                showSearchFeedback('🔍 Recherche auto sans résultat — interrogation directe des indexeurs...', 'info', true);
+                showSearchFeedback(FILM_I18N.search_no_auto_result, 'info', true);
                 var releaseTimer = 0;
                 var releaseCountdown = setInterval(function() {
                   releaseTimer++;
                   var msgs = [
-                    '📡 Connexion aux indexeurs...',
-                    '📡 Interrogation de ' + INDEXER_COUNT + ' indexeur' + (INDEXER_COUNT > 1 ? 's' : '') + '...',
-                    '🔍 Recherche de torrents en cours...',
-                    '🔍 Analyse des résultats...',
+                    FILM_I18N.search_idx_connect,
+                    idxQueryMsg(INDEXER_COUNT),
+                    FILM_I18N.search_torrents_searching,
+                    FILM_I18N.search_torrents_analysing,
                   ];
                   var msgIdx = Math.min(Math.floor(releaseTimer / 8), msgs.length - 1);
-                  showSearchFeedback(msgs[msgIdx] + ' (' + releaseTimer + 's)', 'info', true);
+                  showSearchFeedback(msgs[msgIdx] + tpl(FILM_I18N.search_progress_elapsed_tpl, {SEC: releaseTimer}), 'info', true);
                 }, 1000);
 
                 ajaxGet('/medias/films/' + currentId + '/releases')
@@ -1915,37 +2169,37 @@
                   var total = (releases || []).length;
 
                   if (approved.length > 0) {
-                    showSearchFeedback('📥 ' + total + ' résultat(s) trouvé(s), ' + approved.length + ' valide(s) — grab du meilleur...', 'info', true);
+                    showSearchFeedback(tpl(FILM_I18N.search_results_grab_best_tpl, {TOTAL: total, APPR: approved.length}), 'info', true);
                     var best = approved[0];
                     ajaxPost('/medias/films/' + currentId + '/grab', { guid: best.guid, indexerId: best.indexerId })
                     .then(function(gd) {
                       if (gd.ok) {
-                        showSearchFeedback('✅ Téléchargement lancé via ' + best.indexer + ' : ' + best.title.substring(0, 50), 'success', false);
+                        showSearchFeedback(tpl(FILM_I18N.search_grab_started_tpl, {INDEXER: best.indexer, TITLE: best.title.substring(0, 50)}), 'success', false);
                       } else {
-                        showSearchFeedback('⚠️ ' + approved.length + ' torrent(s) trouvé(s) mais grab échoué : ' + (gd.error || '?') + '. Utilisez la recherche interactive pour choisir manuellement.', 'warning', false);
+                        showSearchFeedback(tpl(FILM_I18N.search_grab_failed_manual_tpl, {COUNT: approved.length, ERR: gd.error || '?'}), 'warning', false);
                       }
                       setTimeout(hideSearchFeedback, 10000);
                     }).catch(function() {
-                      showSearchFeedback('⚠️ Erreur réseau lors du grab. Utilisez la recherche interactive.', 'warning', false);
+                      showSearchFeedback(FILM_I18N.search_grab_network_error, 'warning', false);
                       setTimeout(hideSearchFeedback, 8000);
                     });
                   } else if (total > 0) {
-                    showSearchFeedback('⚠️ ' + total + ' résultat(s) trouvé(s) mais aucun ne correspond au profil qualité. Utilisez la recherche interactive pour voir les détails.', 'warning', false);
+                    showSearchFeedback(tpl(FILM_I18N.search_no_quality_match_tpl, {COUNT: total}), 'warning', false);
                     setTimeout(hideSearchFeedback, 10000);
                   } else {
-                    showSearchFeedback('⚠️ Aucun torrent trouvé sur les indexeurs pour ce film.', 'warning', false);
+                    showSearchFeedback(FILM_I18N.search_no_torrent_found, 'warning', false);
                     setTimeout(hideSearchFeedback, 8000);
                   }
                 }).catch(function() {
                   clearInterval(releaseCountdown);
-                  showSearchFeedback('⚠️ Timeout des indexeurs. Réessayez ou utilisez la recherche interactive.', 'warning', false);
+                  showSearchFeedback(FILM_I18N.search_indexer_timeout, 'warning', false);
                   setTimeout(hideSearchFeedback, 8000);
                 });
               }
             }).catch(function() {
               btn.disabled = false;
               btn.innerHTML = SEARCH_ICON;
-              showSearchFeedback('✅ Recherche terminée', 'success', false);
+              showSearchFeedback(FILM_I18N.search_completed, 'success', false);
               setTimeout(hideSearchFeedback, 5000);
             });
 
@@ -1953,15 +2207,15 @@
             stopPoll();
             btn.disabled = false;
             btn.innerHTML = SEARCH_ICON;
-            var errMsg = cmd.message || 'Erreur inconnue';
-            showSearchFeedback('❌ Recherche échouée : ' + errMsg, 'danger', false);
+            var errMsg = cmd.message || FILM_I18N.unknown_error;
+            showSearchFeedback(tpl(FILM_I18N.search_failed_tpl, {ERR: errMsg}), 'danger', false);
             setTimeout(hideSearchFeedback, 8000);
           } else {
             // En cours — messages progressifs
             var dots = '.'.repeat((pollCount % 3) + 1);
             var elapsed = pollCount * 3;
-            var msg = '📡 Interrogation de ' + INDEXER_COUNT + ' indexeur' + (INDEXER_COUNT > 1 ? 's' : '') + dots;
-            if (elapsed >= 10) msg += ' (' + elapsed + 's)';
+            var msg = idxQueryMsg(INDEXER_COUNT).replace(/\.\.\.$/, dots);
+            if (elapsed >= 10) msg += tpl(FILM_I18N.search_progress_elapsed_tpl, {SEC: elapsed});
             showSearchFeedback(msg, 'info', true);
           }
         });
@@ -1970,7 +2224,7 @@
     .catch(function () {
       btn.disabled = false;
       btn.innerHTML = SEARCH_ICON;
-      showSearchFeedback('❌ Erreur réseau — impossible de contacter Radarr', 'danger', false);
+      showSearchFeedback(FILM_I18N.search_network_error, 'danger', false);
     });
   });
 
@@ -2000,7 +2254,7 @@
       tableWrap.style.display = '';
     })
     .catch(function () {
-      loading.innerHTML = '<span class="text-danger">Erreur lors du chargement (timeout ou indexeurs indisponibles).</span>';
+      loading.innerHTML = '<span class="text-danger">' + esc({{ 'media.films.detail.loading_error'|trans|json_encode|raw }}) + '</span>';
     });
   });
 
@@ -2016,7 +2270,7 @@
       var scoreClass = r.customFormatScore > 0 ? 'text-success fw-medium' : (r.customFormatScore < 0 ? 'text-danger' : 'text-muted');
       var scoreTooltip = (r.scoreDetails || []).map(function(d) {
         return d.name + ': ' + (d.score >= 0 ? '+' : '') + d.score;
-      }).join('\n') || 'Aucun format custom';
+      }).join('\n') || FILM_I18N.no_release_for_grab;
       var fmtBadges = (r.scoreDetails || []).map(function(d) {
         return '<span class="badge bg-purple-lt me-1" style="font-size:.65rem" title="' + esc(d.name) + ': ' + (d.score >= 0 ? '+' : '') + d.score + '">' + esc(d.name) + '</span>';
       }).join('');
@@ -2096,11 +2350,11 @@
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
         btn.className = 'btn btn-sm btn-success py-0 px-2';
         // Feedback visible en haut de la section releases
-        showSearchFeedback('📥 Téléchargement lancé : ' + relTitle + ' — la progression apparaîtra dans la barre en haut de page', 'success', false);
+        showSearchFeedback(tpl(FILM_I18N.grab_launched_tpl, {TITLE: relTitle}), 'success', false);
       } else {
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
         btn.className = 'btn btn-sm btn-danger py-0 px-2';
-        showSearchFeedback('❌ Échec du grab — ' + (data.error || 'erreur inconnue'), 'danger', false);
+        showSearchFeedback(tpl(FILM_I18N.grab_failed_err_tpl, {ERR: data.error || FILM_I18N.unknown_error}), 'danger', false);
         btn.disabled = false;
       }
     })
@@ -2116,13 +2370,13 @@
     if (!currentId) return;
     var btn = this;
     btn.disabled = true;
-    showSearchFeedback('Actualisation en cours...', 'info', true);
+    showSearchFeedback(FILM_I18N.refresh_in_progress, 'info', true);
 
     ajaxPost('/medias/films/' + currentId + '/refresh')
     .then(function (data) {
       if (!data.ok || !data.cmdId) {
         btn.disabled = false;
-        showSearchFeedback('Erreur lors du lancement', 'danger', false);
+        showSearchFeedback(FILM_I18N.refresh_launch_error, 'danger', false);
         return;
       }
       pollTimer = setInterval(function () {
@@ -2132,7 +2386,7 @@
           if (st === 'completed') {
             stopPoll();
             btn.disabled = false;
-            showSearchFeedback('Actualisation terminée !', 'success', false);
+            showSearchFeedback(FILM_I18N.refresh_done, 'success', false);
             setTimeout(hideSearchFeedback, 4000);
             // Refresh infos du film
             ajaxGet('/medias/films/' + currentId + '/info').then(function(movie) {
@@ -2148,14 +2402,14 @@
           } else if (st === 'failed') {
             stopPoll();
             btn.disabled = false;
-            showSearchFeedback('Échec de l\'actualisation', 'danger', false);
+            showSearchFeedback(FILM_I18N.refresh_failed, 'danger', false);
           }
         });
       }, 2000);
     })
     .catch(function () {
       btn.disabled = false;
-      showSearchFeedback('Erreur réseau', 'danger', false);
+      showSearchFeedback(FILM_I18N.network_error, 'danger', false);
     });
   });
 
@@ -2233,26 +2487,29 @@
       var mTags = m.tags || [];
 
       var html = '<div class="p-3" style="font-size:.85rem;max-width:500px;margin:0 auto;">';
-      html += '<h4 class="mb-3" style="font-size:.95rem;">Modifier — ' + esc(m.title || '') + '</h4>';
+      html += '<h4 class="mb-3" style="font-size:.95rem;">' + esc(tpl(FILM_I18N.edit_modified_title_tpl, {TITLE: m.title || ''})) + '</h4>';
 
       // Surveillé
       html += '<div class="mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="edit-monitored"' + (m.monitored ? ' checked' : '') + '>';
-      html += '<label class="form-check-label" for="edit-monitored"><strong>Surveillé</strong></label>';
-      html += '<div class="text-muted small">Télécharger le film si disponible</div></div></div>';
+      html += '<label class="form-check-label" for="edit-monitored"><strong>' + esc(FILM_I18N.edit_monitored) + '</strong></label>';
+      html += '<div class="text-muted small">' + esc(FILM_I18N.edit_monitored_help) + '</div></div></div>';
 
       // Disponibilité minimale
       var availOpts = [
-        {v:'announced', l:'Annoncé'}, {v:'inCinemas', l:'En salles'}, {v:'released', l:'Sorti'}, {v:'preDB', l:'PreDB'}
+        {v:'announced', l: FILM_I18N.announced},
+        {v:'inCinemas', l: FILM_I18N.in_cinemas},
+        {v:'released', l: {{ 'media.films.bulk.availability_released'|trans|json_encode|raw }}},
+        {v:'preDB', l:'PreDB'}
       ];
-      html += '<div class="mb-3"><label class="form-label">Disponibilité minimale</label>';
+      html += '<div class="mb-3"><label class="form-label">' + esc(FILM_I18N.edit_availability) + '</label>';
       html += '<select class="form-select form-select-sm" id="edit-availability">';
       availOpts.forEach(function(o) {
-        html += '<option value="' + o.v + '"' + (m.minimumAvailability === o.v ? ' selected' : '') + '>' + o.l + '</option>';
+        html += '<option value="' + o.v + '"' + (m.minimumAvailability === o.v ? ' selected' : '') + '>' + esc(o.l) + '</option>';
       });
       html += '</select></div>';
 
       // Profil de qualité
-      html += '<div class="mb-3"><label class="form-label">Profil de qualité</label>';
+      html += '<div class="mb-3"><label class="form-label">' + esc(FILM_I18N.edit_quality) + '</label>';
       html += '<select class="form-select form-select-sm" id="edit-qualityProfile">';
       profiles.forEach(function(p) {
         html += '<option value="' + p.id + '"' + (p.id === m.qualityProfileId ? ' selected' : '') + '>' + esc(p.name) + '</option>';
@@ -2260,17 +2517,17 @@
       html += '</select></div>';
 
       // Chemin
-      html += '<div class="mb-3"><label class="form-label">Chemin</label>';
+      html += '<div class="mb-3"><label class="form-label">' + esc(FILM_I18N.edit_path) + '</label>';
       html += '<div class="input-group input-group-sm">';
       html += '<input type="text" class="form-control form-control-sm" id="edit-path" value="' + esc(m.path || '') + '">';
-      html += '<button class="btn btn-outline-secondary" type="button" id="edit-path-browse" title="Explorateur"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>';
-      html += '<button class="btn btn-outline-secondary" type="button" id="edit-path-update" title="Mettre à jour le chemin"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg></button>';
+      html += '<button class="btn btn-outline-secondary" type="button" id="edit-path-browse" title="' + esc(FILM_I18N.edit_explorer) + '"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>';
+      html += '<button class="btn btn-outline-secondary" type="button" id="edit-path-update" title="' + esc(FILM_I18N.edit_update_path) + '"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg></button>';
       html += '</div>';
       html += '<div id="edit-path-browser" style="display:none;border:1px solid var(--tblr-border-color);border-radius:0 0 .25rem .25rem;max-height:200px;overflow-y:auto;background:var(--tblr-bg-surface);"></div>';
       html += '</div>';
 
       // Tags
-      html += '<div class="mb-3"><label class="form-label">Étiquettes</label>';
+      html += '<div class="mb-3"><label class="form-label">' + esc(FILM_I18N.edit_tags) + '</label>';
       html += '<div class="d-flex flex-wrap gap-1 mb-2" id="edit-tags-container">';
       allTags.forEach(function(t) {
         var checked = mTags.indexOf(t.id) !== -1;
@@ -2279,14 +2536,14 @@
         html += '</label>';
       });
       html += '</div>';
-      html += '<div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" id="edit-tag-input" placeholder="Nouvelle étiquette...">';
+      html += '<div class="input-group input-group-sm"><input type="text" class="form-control form-control-sm" id="edit-tag-input" placeholder="' + esc(FILM_I18N.edit_tag_placeholder) + '">';
       html += '<button class="btn btn-outline-secondary" type="button" id="edit-tag-add">+</button></div></div>';
 
       // Boutons
       html += '<div class="d-flex justify-content-between align-items-center mt-3 mb-2">';
-      html += '<button class="btn btn-danger btn-sm" id="edit-delete-movie">Supprimer</button>';
-      html += '<div class="d-flex gap-2"><button class="btn btn-secondary btn-sm" id="edit-cancel">Annuler</button>';
-      html += '<button class="btn btn-primary btn-sm" id="edit-save">Sauvegarder</button></div>';
+      html += '<button class="btn btn-danger btn-sm" id="edit-delete-movie">' + esc(FILM_I18N.edit_delete) + '</button>';
+      html += '<div class="d-flex gap-2"><button class="btn btn-secondary btn-sm" id="edit-cancel">' + esc(FILM_I18N.edit_cancel) + '</button>';
+      html += '<button class="btn btn-primary btn-sm" id="edit-save">' + esc(FILM_I18N.edit_save) + '</button></div>';
       html += '</div></div>';
 
       content.innerHTML = html;
@@ -2344,7 +2601,7 @@
             h += '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
             h += '<span>' + esc(d.name) + '</span></a>';
           });
-          if (!dirs.length) h += '<div class="p-2 text-muted small">Dossier vide</div>';
+          if (!dirs.length) h += '<div class="p-2 text-muted small">' + esc(FILM_I18N.edit_empty_folder) + '</div>';
           browser.innerHTML = h;
           browser.querySelectorAll('.browse-dir').forEach(function(a) {
             a.addEventListener('click', function(ev) {
@@ -2361,9 +2618,9 @@
       });
       document.getElementById('edit-path-update').addEventListener('click', function() {
         var newPath = document.getElementById('edit-path').value;
-        if (!newPath || !confirm('Mettre à jour le chemin vers :\n' + newPath)) return;
+        if (!newPath || !confirm(tpl(FILM_I18N.edit_update_path_confirm_tpl, {PATH: newPath}))) return;
         ajaxPost('/medias/films/' + currentId + '/edit', { path: newPath }).then(function(data) {
-          if (data.ok) showPageBanner('✅ Chemin mis à jour.', 'success');
+          if (data.ok) showPageBanner(FILM_I18N.banner_path_update, 'success');
         });
       });
 
@@ -2378,8 +2635,8 @@
 
       // Delete
       document.getElementById('edit-delete-movie').addEventListener('click', function() {
-        if (!confirm('Supprimer « ' + (m.title || '') + ' » ?')) return;
-        var deleteFiles = confirm('Supprimer également les fichiers sur le disque ?');
+        if (!confirm(tpl(FILM_I18N.edit_delete_confirm_tpl, {TITLE: m.title || ''}))) return;
+        var deleteFiles = confirm(FILM_I18N.edit_delete_files_confirm);
         ajaxPost('/medias/films/' + currentId + '/delete', { deleteFiles: deleteFiles }).then(function() {
           var card = grid.querySelector('[data-id="' + currentId + '"]');
           if (card) card.remove();
@@ -2404,12 +2661,12 @@
           tags: selectedTags
         }).then(function(data) {
           saveBtn.disabled = false;
-          saveBtn.innerHTML = 'Sauvegarder';
+          saveBtn.innerHTML = FILM_I18N.edit_save;
           if (data.ok) {
             var fb = document.getElementById('edit-card-feedback');
             fb.className = 'alert alert-success m-3';
             fb.style.display = '';
-            fb.textContent = '✅ Film modifié.';
+            fb.textContent = FILM_I18N.edit_saved;
             setTimeout(function() { fb.style.display = 'none'; }, 3000);
             if (data.movie) {
               currentMovie = data.movie;
@@ -2434,16 +2691,16 @@
             var fb = document.getElementById('edit-card-feedback');
             fb.className = 'alert alert-danger m-3';
             fb.style.display = '';
-            fb.textContent = '❌ Erreur : ' + (data.error || 'inconnue');
+            fb.textContent = tpl(FILM_I18N.edit_error_tpl, {ERR: data.error || FILM_I18N.unknown_error});
           }
         }).catch(function() {
           saveBtn.disabled = false;
-          saveBtn.innerHTML = 'Sauvegarder';
+          saveBtn.innerHTML = FILM_I18N.edit_save;
         });
       });
     }).catch(function() {
       loading.style.display = 'none';
-      content.innerHTML = '<div class="p-3 text-danger small">Erreur chargement configuration.</div>';
+      content.innerHTML = '<div class="p-3 text-danger small">' + esc(FILM_I18N.edit_config_error) + '</div>';
       content.style.display = '';
     });
   }
@@ -2467,27 +2724,27 @@
 
   function doDelete(deleteFiles, removeFromRadarr) {
     if (!currentId) return;
-    deleteStatusMsg('Suppression en cours...', 'muted');
+    deleteStatusMsg(FILM_I18N.delete_in_progress, 'muted');
 
     if (removeFromRadarr) {
       ajaxPost('/medias/films/' + currentId + '/delete', { deleteFiles: deleteFiles })
       .then(function (data) {
         if (data.ok) {
-          deleteStatusMsg('✅ Supprimé !', 'success');
+          deleteStatusMsg(FILM_I18N.delete_success, 'success');
           setTimeout(function() {
             location.reload();
           }, 800);
-        } else { deleteStatusMsg('Erreur lors de la suppression.', 'danger'); }
-      }).catch(function () { deleteStatusMsg('Erreur réseau.', 'danger'); });
+        } else { deleteStatusMsg(FILM_I18N.delete_error_msg, 'danger'); }
+      }).catch(function () { deleteStatusMsg(FILM_I18N.network_error, 'danger'); });
     } else {
       ajaxGet('/medias/films/' + currentId + '/files')
       .then(function (files) {
-        if (!files || !files.length) { deleteStatusMsg('Aucun fichier trouvé.', 'danger'); return Promise.reject('no file'); }
+        if (!files || !files.length) { deleteStatusMsg(FILM_I18N.no_file_found, 'danger'); return Promise.reject('no file'); }
         return ajaxPost('/medias/films/files/' + files[0].id + '/delete');
       })
       .then(function (data) {
         if (data && data.ok) {
-          deleteStatusMsg('✅ Fichier supprimé !', 'success');
+          deleteStatusMsg(FILM_I18N.file_delete_success, 'success');
           currentMovie.hasFile = false;
           currentMovie.movieFile = null;
           populateLeftCol(currentMovie);
@@ -2504,7 +2761,7 @@
               var col = currentMovie.monitored ? (unavail ? '#6366f1' : '#f59e0b') : '#6b7280';
               dot.style.background = col;
               dot.style.boxShadow = currentMovie.monitored ? '0 0 6px ' + col : 'none';
-              dot.title = currentMovie.monitored ? (unavail ? 'Suivi — indisponible' : 'Suivi — manquant') : 'Non suivi';
+              dot.title = currentMovie.monitored ? (unavail ? tpl(FILM_I18N.monitored_indisp_tpl, {STATUS: ''}).replace(/\s*\(\s*\)\s*/, '').trim() : FILM_I18N.monitored_missing) : FILM_I18N.unmonitored;
             }
             try { var m = JSON.parse(card.dataset.movie); m.hasFile = false; m.movieFile = null; card.dataset.movie = JSON.stringify(m); } catch(e) {}
           }
@@ -2513,19 +2770,19 @@
           if (techEl) techEl.style.display = 'none';
           var renameEl = document.getElementById('film-rename-info');
           if (renameEl) renameEl.style.display = 'none';
-        } else { deleteStatusMsg('Erreur lors de la suppression.', 'danger'); }
-      }).catch(function (err) { if (err !== 'no file') deleteStatusMsg('Erreur réseau.', 'danger'); });
+        } else { deleteStatusMsg(FILM_I18N.delete_error_msg, 'danger'); }
+      }).catch(function (err) { if (err !== 'no file') deleteStatusMsg(FILM_I18N.network_error, 'danger'); });
     }
   }
 
   document.getElementById('btn-delete-file-only').addEventListener('click', function () {
     var title = currentMovie ? currentMovie.title : '';
-    if (!confirm('Supprimer le fichier de « ' + title + ' » du disque ?\n\n⚠️ Cette action est irréversible.')) return;
+    if (!confirm(tpl(FILM_I18N.del_file_confirm_tpl, {TITLE: title}))) return;
     doDelete(true, false);
   });
   document.getElementById('btn-delete-from-radarr').addEventListener('click', function () {
     var title = currentMovie ? currentMovie.title : '';
-    if (!confirm('Supprimer « ' + title + ' » de Radarr ET supprimer le fichier du disque ?\n\n⚠️ Cette action est irréversible.')) return;
+    if (!confirm(tpl(FILM_I18N.del_film_and_file_confirm_tpl, {TITLE: title}))) return;
     doDelete(true, true);
   });
   document.getElementById('btn-delete-radarr-only').addEventListener('click', function () {
@@ -2617,19 +2874,20 @@
   }
 
   /* ── Rename button ── */
+  var RENAME_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> ';
   document.getElementById('btn-rename-file').addEventListener('click', function () {
     if (!currentId) return;
     var btn = this;
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Renommage...';
-    showRenameFeedback('Lancement du renommage...', 'info', true);
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + FILM_I18N.rename_launch;
+    showRenameFeedback(FILM_I18N.rename_launch_start, 'info', true);
 
     ajaxPost('/medias/films/' + currentId + '/rename')
     .then(function (data) {
       if (!data.ok || !data.cmdId) {
         btn.disabled = false;
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Renommer';
-        showRenameFeedback('Erreur lors du lancement du renommage.', 'danger', false);
+        btn.innerHTML = RENAME_SVG + FILM_I18N.rename_label;
+        showRenameFeedback(FILM_I18N.rename_launch_error, 'danger', false);
         return;
       }
 
@@ -2641,8 +2899,8 @@
           if (st === 'completed') {
             clearInterval(renamePoll);
             btn.disabled = false;
-            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Renommer';
-            showRenameFeedback('✅ Renommage terminé !', 'success', false);
+            btn.innerHTML = RENAME_SVG + FILM_I18N.rename_label;
+            showRenameFeedback(FILM_I18N.rename_success, 'success', false);
             // Refetch le film depuis l'API pour mettre à jour les données en cache
             ajaxGet('/medias/films/' + currentId + '/detail')
             .then(function(freshMovie) {
@@ -2665,16 +2923,16 @@
           } else if (st === 'failed') {
             clearInterval(renamePoll);
             btn.disabled = false;
-            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Renommer';
-            showRenameFeedback('Le renommage a échoué : ' + (cmd.message || 'erreur inconnue'), 'danger', false);
+            btn.innerHTML = RENAME_SVG + FILM_I18N.rename_label;
+            showRenameFeedback(tpl(FILM_I18N.rename_failed_tpl, {ERR: cmd.message || FILM_I18N.unknown_error}), 'danger', false);
           }
         });
       }, 2000);
     })
     .catch(function () {
       btn.disabled = false;
-      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg> Renommer';
-      showRenameFeedback('Erreur réseau.', 'danger', false);
+      btn.innerHTML = RENAME_SVG + FILM_I18N.rename_label;
+      showRenameFeedback(FILM_I18N.network_error, 'danger', false);
     });
   });
 
@@ -2756,9 +3014,9 @@
       if (!files.length) {
         var path = currentMovie ? currentMovie.path : '';
         var noFileHtml = '<div class="p-3 small">';
-        noFileHtml += '<div class="text-muted mb-2">Aucun fichier associé à ce film.</div>';
+        noFileHtml += '<div class="text-muted mb-2">' + esc(FILM_I18N.no_file_associated) + '</div>';
         if (path) {
-          noFileHtml += '<div class="mb-1"><strong>Chemin attendu :</strong></div>';
+          noFileHtml += '<div class="mb-1"><strong>' + esc(FILM_I18N.expected_path) + '</strong></div>';
           noFileHtml += '<code class="d-block p-2 rounded" style="background:rgba(0,0,0,.3);font-size:.78rem;word-break:break-all;">' + esc(path) + '</code>';
         }
         noFileHtml += '</div>';
@@ -2771,7 +3029,7 @@
       content.style.display = '';
     }).catch(function () {
       loading.style.display = 'none';
-      content.innerHTML = '<div class="p-3 text-danger small">Erreur lors du chargement.</div>';
+      content.innerHTML = '<div class="p-3 text-danger small">' + esc(FILM_I18N.manage_loading_error) + '</div>';
       content.style.display = '';
     });
   }
@@ -2822,15 +3080,15 @@
 
       var row2 = '<div class="row g-2 align-items-end">' +
         '<div class="col-12 col-sm-4 col-lg-3">' +
-          '<label class="form-label small mb-1">Groupe de release</label>' +
-          '<input type="text" class="form-control form-control-sm fm-release-group" value="' + esc(relGroup) + '" placeholder="ex: MyGroup">' +
+          '<label class="form-label small mb-1">' + esc(FILM_I18N.release_group_label) + '</label>' +
+          '<input type="text" class="form-control form-control-sm fm-release-group" value="' + esc(relGroup) + '" placeholder="' + esc(FILM_I18N.release_group_placeholder) + '">' +
         '</div>' +
         '<div class="col-12 col-sm-4 col-lg-3">' +
-          '<label class="form-label small mb-1">Qualité</label>' +
+          '<label class="form-label small mb-1">' + esc(FILM_I18N.tech_quality) + '</label>' +
           '<select class="form-select form-select-sm fm-quality-select">' + qualOpts + '</select>' +
         '</div>' +
         '<div class="col-12 col-sm-4 col-lg-6">' +
-          '<label class="form-label small mb-1">Langues</label>' +
+          '<label class="form-label small mb-1">' + esc(FILM_I18N.tech_languages) + '</label>' +
           '<div class="d-flex flex-wrap gap-1">' + langChecks + '</div>' +
         '</div>' +
         '</div>';
@@ -2839,13 +3097,13 @@
       var row3 = '<div class="d-flex gap-2 mt-3 align-items-center">' +
         '<button class="btn btn-primary btn-sm fm-save-btn" data-file-id="' + fileId + '" style="display:none">' +
           '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>' +
-          'Sauvegarder</button>' +
+          esc(FILM_I18N.save) + '</button>' +
         '<button class="btn btn-outline-secondary btn-sm fm-rename-btn" data-movie-id="' + (currentId || '') + '">' +
           '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>' +
-          'Renommer</button>' +
+          esc(FILM_I18N.rename_label) + '</button>' +
         '<button class="btn btn-outline-danger btn-sm ms-auto fm-delete-btn" data-file-id="' + fileId + '">' +
           '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>' +
-          'Supprimer fichier</button>' +
+          esc(FILM_I18N.delete_file_btn) + '</button>' +
         '</div>';
 
       wrap.innerHTML = row1 + row2 + row3;
@@ -2884,13 +3142,13 @@
     container.querySelectorAll('.fm-delete-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var fId = btn.dataset.fileId;
-        if (!confirm('Supprimer ce fichier du disque ?\n\nCette action est irréversible.')) return;
+        if (!confirm(FILM_I18N.delete_file_confirm)) return;
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
         ajaxPost('/medias/films/files/' + fId + '/delete')
         .then(function (data) {
           if (data && data.ok) {
-            showFileManagerFeedback('Fichier supprimé.', 'success');
+            showFileManagerFeedback(FILM_I18N.file_deleted, 'success');
             currentMovie.hasFile = false;
             currentMovie.movieFile = null;
             populateLeftCol(currentMovie);
@@ -2906,12 +3164,12 @@
               try { var m = JSON.parse(card.dataset.movie); m.hasFile = false; m.movieFile = null; card.dataset.movie = JSON.stringify(m); } catch(e) {}
             }
           } else {
-            showFileManagerFeedback('Erreur lors de la suppression.', 'danger');
+            showFileManagerFeedback(FILM_I18N.delete_error, 'danger');
             btn.disabled = false;
-            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg> Supprimer fichier';
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg> ' + FILM_I18N.delete_file_btn;
           }
         }).catch(function () {
-          showFileManagerFeedback('Erreur réseau.', 'danger');
+          showFileManagerFeedback(FILM_I18N.network_error, 'danger');
           btn.disabled = false;
         });
       });
@@ -2978,7 +3236,7 @@
     });
 
     if (!langs.length) {
-      showFileManagerFeedback('Sélectionnez au moins une langue.', 'warning');
+      showFileManagerFeedback(FILM_I18N.pick_language, 'warning');
       return;
     }
 
@@ -2992,12 +3250,12 @@
     };
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sauvegarde...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + FILM_I18N.saving;
 
     ajaxPost('/medias/films/files/' + fileId + '/update', payload)
     .then(function (data) {
       if (data.ok) {
-        showFileManagerFeedback('Modifications sauvegardées.', 'success');
+        showFileManagerFeedback(FILM_I18N.saved, 'success');
         btn.style.display = 'none';
         // Update orig values for dirty detection
         wrap.dataset.origQuality  = String(selectedQualId);
@@ -3018,14 +3276,14 @@
           populateRightCol(currentMovie);
         }
       } else {
-        showFileManagerFeedback('Erreur : ' + (data.error || 'inconnue'), 'danger');
+        showFileManagerFeedback(tpl(FILM_I18N.save_error_tpl, {ERR: data.error || FILM_I18N.unknown_error}), 'danger');
       }
       btn.disabled = false;
-      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Sauvegarder';
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ' + FILM_I18N.save;
     }).catch(function () {
-      showFileManagerFeedback('Erreur réseau.', 'danger');
+      showFileManagerFeedback(FILM_I18N.network_error, 'danger');
       btn.disabled = false;
-      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Sauvegarder';
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ' + FILM_I18N.save;
     });
   }
 
@@ -3090,13 +3348,13 @@
     count.textContent = items.length;
 
     var html = '<div class="table-responsive"><table class="table table-vcenter table-sm card-table"><thead><tr>' +
-      '<th>Film</th><th>Qualité</th><th style="min-width:180px">Progression</th><th>Statut</th><th class="text-end">Actions</th>' +
+      '<th>' + esc(FILM_I18N.q_movie) + '</th><th>' + esc(FILM_I18N.q_quality) + '</th><th style="min-width:180px">' + esc(FILM_I18N.q_progress) + '</th><th>' + esc(FILM_I18N.q_status) + '</th><th class="text-end">' + esc(FILM_I18N.q_actions) + '</th>' +
       '</tr></thead><tbody>';
 
     items.forEach(function(q) {
       var pct = q.size > 0 ? Math.round((q.size - q.sizeleft) / q.size * 100) : 0;
       var sizeMo = q.size ? Math.round(q.size / 1048576) : 0;
-      var sizeLabel = sizeMo > 1024 ? (sizeMo / 1024).toFixed(1) + ' Go' : sizeMo + ' Mo';
+      var sizeLabel = sizeMo > 1024 ? (sizeMo / 1024).toFixed(1) + ' ' + FILM_I18N.gb_suffix : sizeMo + ' ' + FILM_I18N.mo_suffix;
       var state = q.trackedState || '';
       var status = q.trackedStatus || '';
 
@@ -3113,49 +3371,49 @@
       if (state === 'importBlocked' && importingCmdIds.size > 0) {
         progHtml = '<div class="d-flex align-items-center gap-2">' +
           '<div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:100%;background:#9b59b6;animation:pulse 1.5s infinite"></div></div>' +
-          '<span style="color:#9b59b6" class="small fw-medium">Import...</span></div>';
+          '<span style="color:#9b59b6" class="small fw-medium">' + esc(FILM_I18N.q_importing) + '</span></div>';
       } else if (state === 'importPending') {
         progHtml = '<div class="d-flex align-items-center gap-2">' +
           '<div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:100%;background:#38bdf8"></div></div>' +
-          '<span style="color:#38bdf8" class="small fw-medium">En attente d\'import</span></div>';
+          '<span style="color:#38bdf8" class="small fw-medium">' + esc(FILM_I18N.q_import_pending) + '</span></div>';
       } else if (state === 'importBlocked') {
         progHtml = '<div class="d-flex align-items-center gap-2">' +
           '<div class="queue-progress flex-grow-1"><div class="queue-progress-bar bg-warning" style="width:100%"></div></div>' +
-          '<span class="text-warning small fw-medium">Import bloqué</span></div>';
+          '<span class="text-warning small fw-medium">' + esc(FILM_I18N.q_import_blocked) + '</span></div>';
       } else if (state === 'importing') {
         progHtml = '<div class="d-flex align-items-center gap-2">' +
           '<div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:100%;background:#9b59b6"></div></div>' +
-          '<span style="color:#9b59b6" class="small fw-medium">Import...</span></div>';
+          '<span style="color:#9b59b6" class="small fw-medium">' + esc(FILM_I18N.q_importing) + '</span></div>';
       } else if (pct >= 100 && q.status === 'completed') {
         progHtml = '<div class="d-flex align-items-center gap-2">' +
           '<div class="queue-progress flex-grow-1"><div class="queue-progress-bar bg-success" style="width:100%"></div></div>' +
-          '<span class="text-success small fw-medium">100%</span></div>';
+          '<span class="text-success small fw-medium">' + esc(FILM_I18N.q_completed_pct) + '</span></div>';
       } else {
         progHtml = '<div class="d-flex align-items-center gap-2">' +
           '<div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:' + pct + '%"></div></div>' +
           '<span class="text-muted small">' + pct + '%</span></div>' +
           '<div class="text-muted" style="font-size:.7rem">' + sizeLabel +
-          (q.eta ? ' — ETA ' + new Date(q.eta).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) : '') + '</div>';
+          (q.eta ? FILM_I18N.q_eta_prefix + new Date(q.eta).toLocaleTimeString(document.documentElement.lang || 'fr-FR', {hour:'2-digit',minute:'2-digit'}) : '') + '</div>';
       }
 
       // Status badge — priorité à l'état d'import sur le statut DL
       var statusHtml = '';
       if (state === 'importBlocked' && importingCmdIds.size > 0) {
-        statusHtml = '<span class="badge bg-purple-lt text-purple">📦 Import en cours</span>';
+        statusHtml = '<span class="badge bg-purple-lt text-purple">' + esc(FILM_I18N.q_status_importing) + '</span>';
       } else if (state === 'importPending') {
-        statusHtml = '<span class="badge bg-info-lt text-info">⏳ En attente d\'import</span>';
+        statusHtml = '<span class="badge bg-info-lt text-info">' + esc(FILM_I18N.q_status_pending) + '</span>';
       } else if (state === 'importBlocked') {
-        statusHtml = '<span class="badge bg-warning-lt text-warning">⚠️ Import bloqué</span>';
+        statusHtml = '<span class="badge bg-warning-lt text-warning">' + esc(FILM_I18N.q_status_blocked) + '</span>';
       } else if (status === 'warning') {
-        statusHtml = '<span class="badge bg-warning-lt text-warning">⚠️ ' + esc(q.status) + '</span>';
+        statusHtml = '<span class="badge bg-warning-lt text-warning">' + esc(FILM_I18N.q_status_warning_prefix) + esc(q.status) + '</span>';
       } else if (status === 'error') {
-        statusHtml = '<span class="badge bg-danger-lt text-danger">✗ ' + esc(q.status) + '</span>';
+        statusHtml = '<span class="badge bg-danger-lt text-danger">' + esc(FILM_I18N.q_status_error_prefix) + esc(q.status) + '</span>';
       } else if (q.status === 'completed' && state === 'importing') {
-        statusHtml = '<span class="badge bg-purple-lt text-purple">📦 Import en cours</span>';
+        statusHtml = '<span class="badge bg-purple-lt text-purple">' + esc(FILM_I18N.q_status_importing) + '</span>';
       } else if (q.status === 'completed') {
-        statusHtml = '<span class="badge bg-success-lt text-success">✓ Terminé</span>';
+        statusHtml = '<span class="badge bg-success-lt text-success">' + esc(FILM_I18N.q_status_completed) + '</span>';
       } else if (q.status === 'downloading') {
-        statusHtml = '<span class="badge bg-primary-lt">⬇️ Téléchargement</span>';
+        statusHtml = '<span class="badge bg-primary-lt">' + esc(FILM_I18N.q_status_downloading) + '</span>';
       } else {
         statusHtml = '<span class="badge bg-secondary-lt">' + esc(q.status) + '</span>';
       }
@@ -3163,14 +3421,14 @@
       // Actions
       var actHtml = '';
       if (state === 'importBlocked') {
-        actHtml += '<button class="btn btn-ghost-primary btn-icon btn-queue-import" data-id="' + q.id + '" data-movie-id="' + q.movieId + '" data-path="' + esc(q.outputPath || '') + '" title="Forcer l\'import">' +
+        actHtml += '<button class="btn btn-ghost-primary btn-icon btn-queue-import" data-id="' + q.id + '" data-movie-id="' + q.movieId + '" data-path="' + esc(q.outputPath || '') + '" title="' + esc(FILM_I18N.q_action_force_import) + '">' +
           '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
       }
       if (q.status === 'delay' || q.status === 'queued') {
-        actHtml += '<button class="btn btn-ghost-success btn-icon btn-queue-grab" data-id="' + q.id + '" title="Forcer le téléchargement">' +
+        actHtml += '<button class="btn btn-ghost-success btn-icon btn-queue-grab" data-id="' + q.id + '" title="' + esc(FILM_I18N.q_action_force_download) + '">' +
           '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>';
       }
-      actHtml += '<button class="btn btn-ghost-danger btn-icon btn-queue-delete" data-id="' + q.id + '" data-title="' + esc(q.title) + '" title="Supprimer">' +
+      actHtml += '<button class="btn btn-ghost-danger btn-icon btn-queue-delete" data-id="' + q.id + '" data-title="' + esc(q.title) + '" title="' + esc(FILM_I18N.q_action_delete) + '">' +
         '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>';
 
       html += '<tr><td>' + esc(q.title) + (q.year ? ' <span class="text-muted">(' + q.year + ')</span>' : '') + msgs + '</td>' +
@@ -3198,8 +3456,8 @@
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></span>';
 
         // Mettre à jour visuellement la ligne
-        if (progCell) progCell.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:100%;background:#9b59b6;animation:pulse 1.5s infinite"></div></div><span style="color:#9b59b6" class="small fw-medium">Import...</span></div>';
-        if (statusCell) statusCell.innerHTML = '<span class="badge bg-purple-lt text-purple">📦 Import en cours</span>';
+        if (progCell) progCell.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:100%;background:#9b59b6;animation:pulse 1.5s infinite"></div></div><span style="color:#9b59b6" class="small fw-medium">' + esc(FILM_I18N.q_importing) + '</span></div>';
+        if (statusCell) statusCell.innerHTML = '<span class="badge bg-purple-lt text-purple">' + esc(FILM_I18N.q_status_importing) + '</span>';
 
         ajaxPost('/medias/films/queue/' + queueId + '/import', {})
         .then(function(data) {
@@ -3209,13 +3467,13 @@
                 var st = (cmd.status || '').toLowerCase();
                 var msg = cmd.message || '';
                 if (progCell && st === 'started') {
-                  progCell.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:100%;background:#9b59b6;animation:pulse 1.5s infinite"></div></div><span style="color:#9b59b6" class="small fw-medium">' + (msg || 'Import...') + '</span></div>';
+                  progCell.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:100%;background:#9b59b6;animation:pulse 1.5s infinite"></div></div><span style="color:#9b59b6" class="small fw-medium">' + esc(msg || FILM_I18N.q_importing) + '</span></div>';
                 }
                 if (st === 'completed') {
                   clearInterval(importPoll);
                   importingQueueIds.delete(queueId);
-                  if (progCell) progCell.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="queue-progress flex-grow-1"><div class="queue-progress-bar bg-success" style="width:100%"></div></div><span class="text-success small fw-medium">✓ Importé</span></div>';
-                  if (statusCell) statusCell.innerHTML = '<span class="badge bg-success-lt text-success">✓ Importé</span>';
+                  if (progCell) progCell.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="queue-progress flex-grow-1"><div class="queue-progress-bar bg-success" style="width:100%"></div></div><span class="text-success small fw-medium">' + esc(FILM_I18N.q_import_done_status) + '</span></div>';
+                  if (statusCell) statusCell.innerHTML = '<span class="badge bg-success-lt text-success">' + esc(FILM_I18N.q_import_done_status) + '</span>';
                   btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>';
                   ajaxPost('/medias/films/queue/' + queueId + '/delete', { blacklist: false, skipReimport: true }).catch(function(){});
                   if (btn.dataset.movieId) ajaxPost('/medias/films/' + btn.dataset.movieId + '/rescan', {}).catch(function(){});
@@ -3223,8 +3481,8 @@
                 } else if (st === 'failed') {
                   clearInterval(importPoll);
                   importingQueueIds.delete(queueId);
-                  if (progCell) progCell.innerHTML = '<span class="text-danger small">❌ ' + (msg || 'Import échoué') + '</span>';
-                  if (statusCell) statusCell.innerHTML = '<span class="badge bg-danger-lt text-danger">✗ Échoué</span>';
+                  if (progCell) progCell.innerHTML = '<span class="text-danger small">' + esc(tpl(FILM_I18N.q_import_failed_tpl, {MSG: msg || FILM_I18N.q_import_failed_short})) + '</span>';
+                  if (statusCell) statusCell.innerHTML = '<span class="badge bg-danger-lt text-danger">' + esc(FILM_I18N.q_import_failed_status) + '</span>';
                   btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
                   btn.disabled = false;
                   setTimeout(refreshQueue, 2000);
@@ -3233,13 +3491,13 @@
             }, 2000);
           } else {
             importingQueueIds.delete(queueId);
-            if (progCell) progCell.innerHTML = '<span class="text-danger small">❌ ' + (data.error || 'Erreur') + '</span>';
+            if (progCell) progCell.innerHTML = '<span class="text-danger small">' + esc(tpl(FILM_I18N.q_error_generic_tpl, {ERR: data.error || FILM_I18N.q_error})) + '</span>';
             btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
             btn.disabled = false;
           }
         }).catch(function() {
           importingQueueIds.delete(queueId);
-          if (progCell) progCell.innerHTML = '<span class="text-danger small">❌ Erreur réseau</span>';
+          if (progCell) progCell.innerHTML = '<span class="text-danger small">' + esc(FILM_I18N.q_network_error) + '</span>';
           btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
           btn.disabled = false;
         });
@@ -3273,11 +3531,11 @@
         optRow.className = 'queue-delete-options';
         optRow.innerHTML = '<td colspan="5" class="py-2 px-3" style="background:var(--tblr-bg-surface-secondary)">' +
           '<div class="d-flex align-items-center gap-3 flex-wrap">' +
-            '<span class="small fw-medium">Supprimer « ' + esc(title) + ' » :</span>' +
-            '<label class="form-check form-check-inline mb-0"><input class="form-check-input" type="checkbox" id="qd-remove-' + queueId + '"><span class="form-check-label small">Supprimer du client de téléchargement</span></label>' +
-            '<label class="form-check form-check-inline mb-0"><input class="form-check-input" type="checkbox" id="qd-blocklist-' + queueId + '"><span class="form-check-label small">Ajouter à la blocklist</span></label>' +
-            '<button class="btn btn-danger btn-sm qd-confirm">Confirmer</button>' +
-            '<button class="btn btn-ghost-secondary btn-sm qd-cancel">Annuler</button>' +
+            '<span class="small fw-medium">' + esc(tpl(FILM_I18N.q_delete_msg_tpl, {TITLE: title})) + '</span>' +
+            '<label class="form-check form-check-inline mb-0"><input class="form-check-input" type="checkbox" id="qd-remove-' + queueId + '"><span class="form-check-label small">' + esc(FILM_I18N.q_delete_remove_client) + '</span></label>' +
+            '<label class="form-check form-check-inline mb-0"><input class="form-check-input" type="checkbox" id="qd-blocklist-' + queueId + '"><span class="form-check-label small">' + esc(FILM_I18N.q_delete_blocklist) + '</span></label>' +
+            '<button class="btn btn-danger btn-sm qd-confirm">' + esc(FILM_I18N.q_delete_confirm) + '</button>' +
+            '<button class="btn btn-ghost-secondary btn-sm qd-cancel">' + esc(FILM_I18N.q_delete_cancel) + '</button>' +
           '</div></td>';
         row.after(optRow);
 
@@ -3320,12 +3578,12 @@
       // Commandes utilisateur → bandeau page persistant
       if (!RADARR_POLL_CMDS[cmd.name]) return;
       var label = cmd.name;
-      if (cmd.name === 'MoviesSearch') label = 'Recherche film(s)';
-      else if (cmd.name === 'MissingMoviesSearch') label = 'Recherche films manquants';
-      else if (cmd.name === 'RenameMovie') label = 'Renommage';
-      else if (cmd.name === 'ManualImport') label = 'Import manuel';
+      if (cmd.name === 'MoviesSearch') label = FILM_I18N.w_cmd_search;
+      else if (cmd.name === 'MissingMoviesSearch') label = FILM_I18N.w_cmd_missing_search;
+      else if (cmd.name === 'RenameMovie') label = FILM_I18N.w_cmd_rename;
+      else if (cmd.name === 'ManualImport') label = FILM_I18N.w_cmd_import;
 
-      showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> 🔍 ' + label + ' — en cours...', 'info');
+      showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_in_progress_tpl, {LBL: label}), 'info');
 
       var pollCount = 0;
       var pollCmd = setInterval(function() {
@@ -3343,11 +3601,11 @@
             var dl = msg.match(/(\d+) reports downloaded/);
             var dlCount = dl ? parseInt(dl[1]) : 0;
             if (dlCount > 0) {
-              showPageBanner('✅ ' + label + ' — ' + dlCount + ' téléchargement(s) lancé(s). Vérifiez la queue.', 'success');
+              showPageBanner(tpl(FILM_I18N.w_cmd_dl_ok_tpl, {LBL: label, COUNT: dlCount}), 'success');
             } else if (cmd.name === 'ManualImport') {
-              showPageBanner('✅ Import terminé.', 'success');
+              showPageBanner(FILM_I18N.w_cmd_import_done, 'success');
             } else {
-              showPageBanner('⚠️ ' + label + ' — terminé, aucun résultat trouvé.', 'warning');
+              showPageBanner(tpl(FILM_I18N.w_cmd_nothing_tpl, {LBL: label}), 'warning');
             }
             refreshQueue();
           } else if (status === 'failed') {
@@ -3356,10 +3614,10 @@
               importingCmdIds.delete(cmd.id);
               importingQueueIds.clear();
             }
-            showPageBanner('❌ ' + label + ' — échoué : ' + (msg || 'erreur inconnue'), 'danger');
+            showPageBanner(tpl(FILM_I18N.w_cmd_failed_tpl, {LBL: label, ERR: msg || FILM_I18N.unknown_error}), 'danger');
           } else {
-            var display = msg || ('en cours... (' + elapsed + 's)');
-            showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> 🔍 ' + label + ' — ' + display, 'info');
+            var display = msg || tpl(FILM_I18N.w_search_in_progress_tpl, {SEC: elapsed});
+            showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_elapsed_tpl, {LBL: label, MSG: display}), 'info');
           }
         });
       }, 2000);
@@ -3388,7 +3646,7 @@
 
             // Mettre à jour la pastille : orange/gris → vert
             var dot = card.querySelector('.status-dot');
-            if (dot) { dot.style.background = '#22c55e'; dot.title = 'Téléchargé'; }
+            if (dot) { dot.style.background = '#22c55e'; dot.title = FILM_I18N.downloaded; }
 
             // Mettre à jour le data-movie en cache
             try {
@@ -3403,7 +3661,7 @@
               var badge = document.createElement('span');
               badge.className = 'badge bg-success import-badge';
               badge.style.cssText = 'position:absolute;top:4px;right:4px;font-size:.65rem;z-index:5;';
-              badge.textContent = '✓ Importé';
+              badge.textContent = FILM_I18N.q_import_done_badge;
               card.appendChild(badge);
               setTimeout(function() { badge.remove(); }, 8000);
             }
@@ -3470,7 +3728,7 @@
     .then(function (movies) {
       loading.style.display = 'none';
       if (!movies.length) {
-        results.innerHTML = '<div class="col-12 text-muted text-center py-3">Aucun résultat</div>';
+        results.innerHTML = '<div class="col-12 text-muted text-center py-3">' + esc(FILM_I18N.m_no_results) + '</div>';
         return;
       }
       movies.slice(0, 20).forEach(function (m) {
@@ -3483,12 +3741,12 @@
           '<div class="d-flex gap-3 p-3 rounded border ' + (exists ? 'opacity-50' : '') + ' result-item" ' +
           'style="cursor:' + (exists ? 'not-allowed' : 'pointer') + ';transition:background .15s"' +
           (exists ? '' : ' data-tmdb="' + (m.tmdbId || '') + '" data-title="' + esc(m.title || '') + '" data-year="' + (m.year || '') + '"') + '>' +
-            (m.poster ? '<img src="' + esc(m.poster) + '" alt="" style="width:70px;height:105px;object-fit:cover;border-radius:.4rem;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.3)">' : '<div style="width:70px;height:105px;background:var(--tblr-bg-surface-secondary);border-radius:.4rem;flex-shrink:0;display:flex;align-items:center;justify-content:center"><span class="text-muted" style="font-size:.6rem">Pas d\'affiche</span></div>') +
+            (m.poster ? '<img src="' + esc(m.poster) + '" alt="" style="width:70px;height:105px;object-fit:cover;border-radius:.4rem;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.3)">' : '<div style="width:70px;height:105px;background:var(--tblr-bg-surface-secondary);border-radius:.4rem;flex-shrink:0;display:flex;align-items:center;justify-content:center"><span class="text-muted" style="font-size:.6rem">' + esc(FILM_I18N.m_no_poster) + '</span></div>') +
             '<div style="min-width:0;flex:1">' +
               '<div class="d-flex align-items-center gap-2">' +
                 '<span class="fw-medium">' + esc(m.title || '—') + '</span>' +
                 (m.year ? '<span class="text-muted">(' + m.year + ')</span>' : '') +
-                (exists ? '<span class="badge bg-success-lt text-success ms-auto">Déjà dans Radarr</span>' : '') +
+                (exists ? '<span class="badge bg-success-lt text-success ms-auto">' + esc(FILM_I18N.m_already_radarr) + '</span>' : '') +
               '</div>' +
               '<div class="mt-1">' + genres + (runtime ? '<span class="text-muted small ms-1">' + runtime + '</span>' : '') + '</div>' +
               '<div class="text-muted small mt-1" style="line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">' + esc(m.overview || '') + '</div>' +
@@ -3500,7 +3758,7 @@
     })
     .catch(function () {
       loading.style.display = 'none';
-      results.innerHTML = '<div class="col-12 text-danger text-center py-3">Erreur lors de la recherche</div>';
+      results.innerHTML = '<div class="col-12 text-danger text-center py-3">' + esc(FILM_I18N.m_search_error) + '</div>';
     });
   }
 
@@ -3552,7 +3810,7 @@
     } else if (configData) {
       var qualSel   = document.getElementById('add-quality-select');
       var folderSel = document.getElementById('add-folder-select');
-      if (!qualSel.options.length || qualSel.options[0].text === 'Chargement…') {
+      if (!qualSel.options.length || qualSel.options[0].text === FILM_I18N.m_loading) {
         qualSel.innerHTML = ''; folderSel.innerHTML = '';
         (configData.qualityProfiles || []).forEach(function (qp) {
           var opt = document.createElement('option'); opt.value = qp.id; opt.textContent = qp.name;
@@ -3589,12 +3847,12 @@
     var monitored = document.getElementById('add-monitored').checked;
 
     if (!qualVal || !folderVal) {
-      result.className = 'mt-3 alert alert-warning'; result.classList.remove('d-none'); result.innerHTML = '⚠️ Sélectionnez une qualité et un dossier.'; return;
+      result.className = 'mt-3 alert alert-warning'; result.classList.remove('d-none'); result.innerHTML = FILM_I18N.m_pick_quality_folder; return;
     }
 
     btn.disabled = true;
     result.className = 'mt-3 alert alert-info'; result.classList.remove('d-none');
-    result.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Ajout en cours…';
+    result.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ' + FILM_I18N.m_adding;
 
     ajaxPost('/medias/films/add', {
       tmdbId:           parseInt(selectedMovie.tmdbId),
@@ -3609,13 +3867,13 @@
         var movieId = d.movieId || d.id;
         var movieTitle = selectedMovie.title;
         result.className = 'mt-3 alert alert-success';
-        result.innerHTML = '✅ «' + movieTitle + '» ajouté à Radarr !';
+        result.innerHTML = tpl(FILM_I18N.m_added_success_tpl, {TITLE: movieTitle});
 
         if (monitored && movieId) {
           // Radarr cherche automatiquement via addOptions.searchForMovie
           // On poll la queue/historique pour afficher le résultat
           result.className = 'mt-3 alert alert-info';
-          result.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ✅ «' + movieTitle + '» ajouté — 🔍 Radarr recherche sur ' + INDEXER_COUNT + ' indexeur' + (INDEXER_COUNT > 1 ? 's' : '') + '...';
+          result.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.m_added_searching_tpl, {TITLE: movieTitle, COUNT: INDEXER_COUNT});
 
           // Poll rapide : max 20 polls × 3s = 60s pour la détection initiale
           var pollCount = 0;
@@ -3624,7 +3882,7 @@
             pollCount++;
             var elapsed = pollCount * 3;
             var dots = '.'.repeat((pollCount % 3) + 1);
-            result.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> 🔍 Radarr recherche' + dots + (elapsed >= 9 ? ' (' + elapsed + 's)' : '');
+            result.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.m_searching_dots_tpl, {DOTS: dots}) + (elapsed >= 9 ? tpl(FILM_I18N.m_searching_elapsed_tpl, {SEC: elapsed}) : '');
 
             Promise.all([
               ajaxGet('/medias/films/queue?_t=' + Date.now()),
@@ -3649,24 +3907,24 @@
                 clearInterval(addPoll);
                 var src = inQueue[0].indexer || '';
                 result.className = 'mt-3 alert alert-success';
-                result.innerHTML = '✅ «' + movieTitle + '» — 📥 Téléchargement lancé' + (src ? ' via ' + src : '') + ' ! Rechargement...';
+                result.innerHTML = tpl(FILM_I18N.m_dl_started_tpl, {TITLE: movieTitle, SRC: src ? tpl(FILM_I18N.m_via_prefix_tpl, {SRC: src}) : ''});
                 setTimeout(function() { location.reload(); }, 1500);
               } else if (recentFails.length > 0) {
                 clearInterval(addPoll);
                 result.className = 'mt-3 alert alert-danger';
-                result.innerHTML = '❌ «' + movieTitle + '» — Le téléchargement a échoué. Vérifiez qBittorrent et réessayez via la recherche interactive.';
+                result.innerHTML = tpl(FILM_I18N.m_dl_failed_tpl, {TITLE: movieTitle});
                 setTimeout(function() { location.reload(); }, 5000);
               } else if (recentGrabs.length > 0 && pollCount >= 10) {
                 // Grabé mais pas dans la queue après 30s — problème client DL
                 clearInterval(addPoll);
                 var src = (recentGrabs[0].data || {}).indexer || '';
                 result.className = 'mt-3 alert alert-warning';
-                result.innerHTML = '⚠️ «' + movieTitle + '» — Torrent capturé' + (src ? ' via ' + src : '') + ' mais pas détecté dans la queue. Vérifiez qBittorrent.';
+                result.innerHTML = tpl(FILM_I18N.m_grab_but_no_queue_tpl, {TITLE: movieTitle, SRC: src ? tpl(FILM_I18N.m_via_prefix_tpl, {SRC: src}) : ''});
                 setTimeout(function() { location.reload(); }, 4000);
               } else if (pollCount >= maxPolls) {
                 clearInterval(addPoll);
                 result.className = 'mt-3 alert alert-warning';
-                result.innerHTML = '⚠️ «' + movieTitle + '» ajouté mais aucun téléchargement détecté. Ouvrez la fiche du film pour lancer une recherche interactive.';
+                result.innerHTML = tpl(FILM_I18N.m_no_download_detected_tpl, {TITLE: movieTitle});
                 setTimeout(function() { location.reload(); }, 4000);
               }
             }).catch(function() {});
@@ -3674,17 +3932,17 @@
         } else {
           // Pas monitored, pas de recherche auto
           result.className = 'mt-3 alert alert-success';
-          result.innerHTML = '✅ «' + movieTitle + '» ajouté (non suivi)';
+          result.innerHTML = tpl(FILM_I18N.m_added_not_monitored_tpl, {TITLE: movieTitle});
           setTimeout(function() { location.reload(); }, 2000);
         }
         selectedMovie = null;
       } else {
-        result.className = 'mt-3 alert alert-danger'; result.innerHTML = '❌ Erreur — le film existe peut-être déjà.';
+        result.className = 'mt-3 alert alert-danger'; result.innerHTML = FILM_I18N.m_add_error_duplicate;
         btn.disabled = false;
       }
     })
     .catch(function () {
-      result.className = 'mt-3 alert alert-danger'; result.innerHTML = '❌ Erreur réseau';
+      result.className = 'mt-3 alert alert-danger'; result.innerHTML = FILM_I18N.m_network_error;
       btn.disabled = false;
     });
   });
@@ -3694,7 +3952,7 @@
      ══════════════════════════════════════════════════════════════════════════ */
   function pollFilmCmd(cmdId, label) {
     var pollCount = 0;
-    showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> 🔍 ' + label + ' — en cours...', 'info');
+    showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_in_progress_tpl, {LBL: label}), 'info');
     var timer = setInterval(function() {
       pollCount++;
       ajaxGet('/medias/films/command/' + cmdId).then(function(cmd) {
@@ -3702,13 +3960,13 @@
         var msg = cmd.message || '';
         if (st === 'completed') {
           clearInterval(timer);
-          showPageBanner('✅ ' + label + ' — terminé.', 'success');
+          showPageBanner(tpl(FILM_I18N.w_cmd_done_tpl, {LBL: label}), 'success');
         } else if (st === 'failed') {
           clearInterval(timer);
-          showPageBanner('❌ ' + label + ' — échoué : ' + (msg || 'erreur'), 'danger');
+          showPageBanner(tpl(FILM_I18N.w_cmd_failed_tpl, {LBL: label, ERR: msg || FILM_I18N.unknown_error}), 'danger');
         } else {
-          var display = msg || ('en cours... (' + (pollCount * 2) + 's)');
-          showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> 🔍 ' + label + ' — ' + display, 'info');
+          var display = msg || tpl(FILM_I18N.w_search_in_progress_tpl, {SEC: pollCount * 2});
+          showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_elapsed_tpl, {LBL: label, MSG: display}), 'info');
         }
       });
     }, 2000);
@@ -3718,8 +3976,8 @@
     var btn = this; btn.disabled = true;
     ajaxPost('/medias/films/command/refresh-all', {}).then(function(d) {
       btn.disabled = false;
-      if (d.ok && d.cmdId) pollFilmCmd(d.cmdId, 'Actualisation bibliothèque');
-      else showPageBanner('❌ Erreur.', 'danger');
+      if (d.ok && d.cmdId) pollFilmCmd(d.cmdId, FILM_I18N.w_refresh_label);
+      else showPageBanner(FILM_I18N.w_generic_error, 'danger');
     }).catch(function() { btn.disabled = false; });
   });
 
@@ -3727,8 +3985,8 @@
     var btn = this; btn.disabled = true;
     ajaxPost('/medias/films/command/rss-sync', {}).then(function(d) {
       btn.disabled = false;
-      if (d.ok && d.cmdId) pollFilmCmd(d.cmdId, 'Sync. RSS');
-      else showPageBanner('❌ Erreur.', 'danger');
+      if (d.ok && d.cmdId) pollFilmCmd(d.cmdId, FILM_I18N.w_rss_label);
+      else showPageBanner(FILM_I18N.w_generic_error, 'danger');
     }).catch(function() { btn.disabled = false; });
   });
 
@@ -3761,9 +4019,9 @@
       return matchSearch && matchStatus && matchQuality && matchGenre && matchLanguage;
     });
     var groups = {
-      'downloaded': { label: '✅ Téléchargés', items: [] },
-      'missing': { label: '⚠️ Manquants', items: [] },
-      'unmonitored': { label: '👁 Non suivis', items: [] }
+      'downloaded': { label: '✅ ' + FILM_I18N.shelf_downloaded, items: [] },
+      'missing': { label: '⚠️ ' + FILM_I18N.shelf_missing, items: [] },
+      'unmonitored': { label: '👁 ' + FILM_I18N.shelf_unmonitored, items: [] }
     };
     cards.forEach(function(c) {
       var d = c.dataset;
@@ -3903,7 +4161,7 @@
         var svg = btn.querySelector('svg');
         svg.setAttribute('fill', newMon ? '#6366f1' : 'none');
         svg.setAttribute('stroke', newMon ? '#6366f1' : 'rgba(255,255,255,.5)');
-        btn.title = newMon ? 'Ne plus suivre' : 'Suivre';
+        btn.title = newMon ? FILM_I18N.unfollow : FILM_I18N.follow;
         var card = grid.querySelector('.media-card[data-id="' + id + '"]');
         if (card) {
           card.dataset.monitored = newMon ? '1' : '0';
@@ -3967,7 +4225,7 @@
     if (selectMode) {
       grid.classList.add('select-mode');
       btn.classList.replace('btn-outline-secondary', 'btn-primary');
-      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg> Annuler';
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg> ' + esc(FILM_I18N.cancel_select);
       tableCols.forEach(function(c) { c.style.display = ''; });
       updateBulkBar();
     } else {
@@ -4069,7 +4327,7 @@
     document.getElementById('bulk-edit-quality').value = '';
     document.getElementById('bulk-edit-avail').value = '';
     document.getElementById('bulk-edit-root').value = '';
-    document.getElementById('bulk-edit-info').textContent = selectedIds.size + ' film(s) sélectionné(s)';
+    document.getElementById('bulk-edit-info').textContent = tpl(FILM_I18N.b_edit_hint_tpl, {COUNT: selectedIds.size});
     openBulkModal('modal-bulk-edit');
   });
 
@@ -4086,10 +4344,10 @@
     if (root) payload.rootFolderPath = root;
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     ajaxPost('/medias/films/bulk/edit', payload).then(function(d) {
-      btn.disabled = false; btn.innerHTML = 'Sauvegarder';
+      btn.disabled = false; btn.innerHTML = FILM_I18N.b_save;
       closeBulkModal('modal-bulk-edit');
-      if (d.ok) { showPageBanner('✅ ' + ids.length + ' film(s) modifié(s).', 'success'); setTimeout(function() { location.reload(); }, 1500); }
-      else showPageBanner('❌ Erreur : ' + (d.error || 'inconnue'), 'danger');
+      if (d.ok) { showPageBanner(tpl(FILM_I18N.w_bulk_modified_tpl, {COUNT: ids.length}), 'success'); setTimeout(function() { location.reload(); }, 1500); }
+      else showPageBanner(tpl(FILM_I18N.edit_error_tpl, {ERR: d.error || FILM_I18N.unknown_error}), 'danger');
     });
   });
 
@@ -4106,10 +4364,10 @@
           '<label class="form-check-label small" for="bulk-tag-' + t.id + '">' + esc(t.label) + '</label>';
         list.appendChild(div);
       });
-      if (!(config.tags || []).length) list.innerHTML = '<span class="text-muted small">Aucun tag défini</span>';
+      if (!(config.tags || []).length) list.innerHTML = '<span class="text-muted small">' + esc(FILM_I18N.b_no_tag_defined) + '</span>';
     });
     document.getElementById('bulk-tags-action').value = 'add';
-    document.getElementById('bulk-tags-info').textContent = selectedIds.size + ' film(s) sélectionné(s)';
+    document.getElementById('bulk-tags-info').textContent = tpl(FILM_I18N.b_edit_hint_tpl, {COUNT: selectedIds.size});
     openBulkModal('modal-bulk-tags');
   });
 
@@ -4119,10 +4377,10 @@
     if (!tagIds.length) return;
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     ajaxPost('/medias/films/bulk/edit', { movieIds: ids, tags: tagIds, applyTags: document.getElementById('bulk-tags-action').value }).then(function(d) {
-      btn.disabled = false; btn.innerHTML = 'Appliquer';
+      btn.disabled = false; btn.innerHTML = FILM_I18N.b_apply;
       closeBulkModal('modal-bulk-tags');
-      if (d.ok) showPageBanner('✅ Étiquettes mises à jour pour ' + ids.length + ' film(s).', 'success');
-      else showPageBanner('❌ Erreur.', 'danger');
+      if (d.ok) showPageBanner(tpl(FILM_I18N.w_bulk_tags_ok_tpl, {COUNT: ids.length}), 'success');
+      else showPageBanner(FILM_I18N.w_generic_error, 'danger');
     });
   });
 
@@ -4173,17 +4431,17 @@
           content.style.display = '';
           if (totalOk > 0) {
             okDiv.style.display = '';
-            document.getElementById('bulk-rename-ok-text').textContent = totalOk + ' film(s) déjà correctement nommé(s).';
+            document.getElementById('bulk-rename-ok-text').textContent = tpl(FILM_I18N.b_correctly_named_tpl, {COUNT: totalOk});
           }
           if (html) {
             changes.innerHTML = html;
           }
           if (!totalChanges) {
             goBtn.disabled = true;
-            goBtn.textContent = 'Tout est déjà correct';
+            goBtn.textContent = FILM_I18N.b_all_correct;
           } else {
             goBtn.disabled = false;
-            goBtn.textContent = 'Organiser ' + totalChanges + ' fichier(s)';
+            goBtn.textContent = tpl(FILM_I18N.b_organise_files_tpl, {COUNT: totalChanges});
           }
         }
       }).catch(function() { loaded++; });
@@ -4197,7 +4455,7 @@
     renameMovieIds.forEach(function(mid) {
       ajaxPost('/medias/films/' + mid + '/rename', {}).then(function() {
         done++;
-        if (done >= renameMovieIds.length) { btn.disabled = false; btn.innerHTML = 'Organiser'; closeBulkModal('modal-bulk-rename'); showPageBanner('✅ Renommage lancé pour ' + renameMovieIds.length + ' film(s).', 'success'); }
+        if (done >= renameMovieIds.length) { btn.disabled = false; btn.innerHTML = FILM_I18N.b_organise; closeBulkModal('modal-bulk-rename'); showPageBanner(tpl(FILM_I18N.w_bulk_rename_ok_tpl, {COUNT: renameMovieIds.length}), 'success'); }
       }).catch(function() { done++; });
     });
   });
@@ -4217,10 +4475,10 @@
     var ids = Array.from(selectedIds).map(Number);
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     ajaxPost('/medias/films/bulk/delete', { movieIds: ids, deleteFiles: document.getElementById('bulk-delete-files').checked, addExclusion: document.getElementById('bulk-delete-exclude').checked }).then(function(d) {
-      btn.disabled = false; btn.innerHTML = 'Supprimer';
+      btn.disabled = false; btn.innerHTML = FILM_I18N.b_delete;
       closeBulkModal('modal-bulk-delete');
-      if (d.ok) { ids.forEach(function(mid) { var c = grid.querySelector('[data-id="' + mid + '"]'); if (c) c.remove(); }); clearSelection(); showPageBanner('✅ ' + ids.length + ' film(s) supprimé(s).', 'success'); applyFilters(); }
-      else showPageBanner('❌ Erreur.', 'danger');
+      if (d.ok) { ids.forEach(function(mid) { var c = grid.querySelector('[data-id="' + mid + '"]'); if (c) c.remove(); }); clearSelection(); showPageBanner(tpl(FILM_I18N.w_bulk_delete_ok_tpl, {COUNT: ids.length}), 'success'); applyFilters(); }
+      else showPageBanner(FILM_I18N.w_generic_error, 'danger');
     });
   });
 
