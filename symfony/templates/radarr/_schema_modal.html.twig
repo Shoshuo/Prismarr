@@ -23,22 +23,22 @@
 
         {# Sélecteur d'implémentation (masqué en mode édition) #}
         <div id="{{ modal_id }}-impl-wrap" class="mb-3">
-          <label class="form-label fw-medium">Type</label>
+          <label class="form-label fw-medium">{{ 'media.arr_admin.schema_modal.type'|trans }}</label>
           <select id="{{ modal_id }}-impl-select" class="form-select">
-            <option value="">— Choisir un type —</option>
+            <option value="">{{ 'media.arr_admin.schema_modal.type_placeholder'|trans }}</option>
           </select>
         </div>
 
         {# Champ nom (toujours présent) #}
         <div class="mb-3">
-          <label class="form-label fw-medium">Nom <span class="text-danger">*</span></label>
-          <input type="text" id="{{ modal_id }}-name" class="form-control" placeholder="Mon indexeur...">
+          <label class="form-label fw-medium">{{ 'media.arr_admin.schema_modal.name_label'|trans }} <span class="text-danger">*</span></label>
+          <input type="text" id="{{ modal_id }}-name" class="form-control" placeholder="{{ 'media.arr_admin.schema_modal.name_placeholder'|trans }}">
         </div>
 
         {% if (mode ?? 'default') == 'notification' %}
         {# Triggers de notification (remplis dynamiquement depuis le schema supportsOn*) #}
         <div id="{{ modal_id }}-triggers" class="d-none mb-3">
-          <label class="form-label fw-medium">Événements déclencheurs</label>
+          <label class="form-label fw-medium">{{ 'media.arr_admin.schema_modal.triggers_label'|trans }}</label>
           <div id="{{ modal_id }}-triggers-list" class="row g-2"></div>
         </div>
         {% else %}
@@ -47,18 +47,18 @@
           <div class="d-flex flex-wrap gap-3">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="{{ modal_id }}-enableRss" checked>
-              <label class="form-check-label" for="{{ modal_id }}-enableRss">RSS</label>
+              <label class="form-check-label" for="{{ modal_id }}-enableRss">{{ 'media.arr_admin.schema_modal.opt_rss'|trans }}</label>
             </div>
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="{{ modal_id }}-enableAutoSearch" checked>
-              <label class="form-check-label" for="{{ modal_id }}-enableAutoSearch">Recherche auto</label>
+              <label class="form-check-label" for="{{ modal_id }}-enableAutoSearch">{{ 'media.arr_admin.schema_modal.opt_auto_search'|trans }}</label>
             </div>
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="{{ modal_id }}-enableInteractive" checked>
-              <label class="form-check-label" for="{{ modal_id }}-enableInteractive">Recherche interactive</label>
+              <label class="form-check-label" for="{{ modal_id }}-enableInteractive">{{ 'media.arr_admin.schema_modal.opt_interactive_search'|trans }}</label>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <label class="form-label mb-0 small" for="{{ modal_id }}-priority">Priorité</label>
+              <label class="form-label mb-0 small" for="{{ modal_id }}-priority">{{ 'media.arr_admin.schema_modal.opt_priority'|trans }}</label>
               <input type="number" class="form-control form-control-sm" id="{{ modal_id }}-priority" value="25" style="width:70px;">
             </div>
           </div>
@@ -70,16 +70,16 @@
 
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'media.arr_admin.schema_modal.cancel'|trans }}</button>
         {% if test_url is defined and test_url %}
         <button type="button" class="btn btn-outline-primary" id="{{ modal_id }}-test" disabled>
           <span class="spinner-border spinner-border-sm d-none me-1" id="{{ modal_id }}-test-spinner"></span>
-          Tester
+          {{ 'media.arr_admin.schema_modal.test'|trans }}
         </button>
         {% endif %}
         <button type="button" class="btn btn-primary" id="{{ modal_id }}-save" disabled>
           <span class="spinner-border spinner-border-sm d-none me-1" id="{{ modal_id }}-spinner"></span>
-          Enregistrer
+          {{ 'media.arr_admin.schema_modal.save'|trans }}
         </button>
       </div>
     </div>
@@ -97,6 +97,70 @@
   var TITLE_ADD  = {{ modal_title_add|json_encode|raw }};
   var TITLE_EDIT = {{ modal_title_edit|json_encode|raw }};
 
+  var I18N = {
+    path_placeholder: {{ 'media.arr_admin.schema_modal.path_placeholder'|trans|json_encode|raw }},
+    csv_help: {{ 'media.arr_admin.schema_modal.csv_help'|trans|json_encode|raw }},
+    csv_placeholder: {{ 'media.arr_admin.schema_modal.csv_placeholder'|trans|json_encode|raw }},
+    cats_placeholder: {{ 'media.arr_admin.schema_modal.cats_placeholder'|trans|json_encode|raw }},
+    trigger: {
+      onGrab: {{ 'media.arr_admin.schema_modal.trigger.on_grab'|trans|json_encode|raw }},
+      onDownload: {{ 'media.arr_admin.schema_modal.trigger.on_download'|trans|json_encode|raw }},
+      onUpgrade: {{ 'media.arr_admin.schema_modal.trigger.on_upgrade'|trans|json_encode|raw }},
+      onRename: {{ 'media.arr_admin.schema_modal.trigger.on_rename'|trans|json_encode|raw }},
+      onMovieAdded: {{ 'media.arr_admin.schema_modal.trigger.on_movie_added'|trans|json_encode|raw }},
+      onMovieDelete: {{ 'media.arr_admin.schema_modal.trigger.on_movie_delete'|trans|json_encode|raw }},
+      onMovieFileDelete: {{ 'media.arr_admin.schema_modal.trigger.on_movie_file_delete'|trans|json_encode|raw }},
+      onMovieFileDeleteForUpgrade: {{ 'media.arr_admin.schema_modal.trigger.on_movie_file_delete_for_upgrade'|trans|json_encode|raw }},
+      onHealthIssue: {{ 'media.arr_admin.schema_modal.trigger.on_health_issue'|trans|json_encode|raw }},
+      onHealthRestored: {{ 'media.arr_admin.schema_modal.trigger.on_health_restored'|trans|json_encode|raw }},
+      onApplicationUpdate: {{ 'media.arr_admin.schema_modal.trigger.on_application_update'|trans|json_encode|raw }},
+      onManualInteractionRequired: {{ 'media.arr_admin.schema_modal.trigger.on_manual_interaction_required'|trans|json_encode|raw }},
+      includeHealthWarnings: {{ 'media.arr_admin.schema_modal.trigger.include_health_warnings'|trans|json_encode|raw }}
+    },
+    newznab: {
+      tv: {{ 'media.arr_admin.schema_modal.newznab.tv'|trans|json_encode|raw }},
+      films: {{ 'media.arr_admin.schema_modal.newznab.films'|trans|json_encode|raw }},
+      audio: {{ 'media.arr_admin.schema_modal.newznab.audio'|trans|json_encode|raw }},
+      pc: {{ 'media.arr_admin.schema_modal.newznab.pc'|trans|json_encode|raw }},
+      tv_sport: {{ 'media.arr_admin.schema_modal.newznab.tv_sport'|trans|json_encode|raw }},
+      xxx: {{ 'media.arr_admin.schema_modal.newznab.xxx'|trans|json_encode|raw }},
+      books: {{ 'media.arr_admin.schema_modal.newznab.books'|trans|json_encode|raw }},
+      other: {{ 'media.arr_admin.schema_modal.newznab.other'|trans|json_encode|raw }},
+      films_foreign: {{ 'media.arr_admin.schema_modal.newznab.films_foreign'|trans|json_encode|raw }},
+      films_other: {{ 'media.arr_admin.schema_modal.newznab.films_other'|trans|json_encode|raw }},
+      films_sd: {{ 'media.arr_admin.schema_modal.newznab.films_sd'|trans|json_encode|raw }},
+      films_hd: {{ 'media.arr_admin.schema_modal.newznab.films_hd'|trans|json_encode|raw }},
+      films_uhd: {{ 'media.arr_admin.schema_modal.newznab.films_uhd'|trans|json_encode|raw }},
+      films_bluray: {{ 'media.arr_admin.schema_modal.newznab.films_bluray'|trans|json_encode|raw }},
+      films_3d: {{ 'media.arr_admin.schema_modal.newznab.films_3d'|trans|json_encode|raw }},
+      films_dvd: {{ 'media.arr_admin.schema_modal.newznab.films_dvd'|trans|json_encode|raw }},
+      films_webdl: {{ 'media.arr_admin.schema_modal.newznab.films_webdl'|trans|json_encode|raw }},
+      anime: {{ 'media.arr_admin.schema_modal.newznab.anime'|trans|json_encode|raw }},
+      doc: {{ 'media.arr_admin.schema_modal.newznab.doc'|trans|json_encode|raw }},
+      tv_webdl: {{ 'media.arr_admin.schema_modal.newznab.tv_webdl'|trans|json_encode|raw }},
+      tv_foreign: {{ 'media.arr_admin.schema_modal.newznab.tv_foreign'|trans|json_encode|raw }},
+      tv_sd: {{ 'media.arr_admin.schema_modal.newznab.tv_sd'|trans|json_encode|raw }},
+      tv_hd: {{ 'media.arr_admin.schema_modal.newznab.tv_hd'|trans|json_encode|raw }},
+      tv_uhd: {{ 'media.arr_admin.schema_modal.newznab.tv_uhd'|trans|json_encode|raw }},
+      tv_other: {{ 'media.arr_admin.schema_modal.newznab.tv_other'|trans|json_encode|raw }},
+      tv_sport_sub: {{ 'media.arr_admin.schema_modal.newznab.tv_sport_sub'|trans|json_encode|raw }},
+      tv_anime: {{ 'media.arr_admin.schema_modal.newznab.tv_anime'|trans|json_encode|raw }},
+      tv_doc: {{ 'media.arr_admin.schema_modal.newznab.tv_doc'|trans|json_encode|raw }}
+    },
+    error_schema_http_tpl: {{ 'media.arr_admin.schema_modal.error_schema_http_tpl'|trans({status: '__STATUS__'})|json_encode|raw }},
+    error_schema_none_radarr: {{ 'media.arr_admin.schema_modal.error_schema_none_radarr'|trans|json_encode|raw }},
+    error_schema_none_sonarr: {{ 'media.arr_admin.schema_modal.error_schema_none_sonarr'|trans|json_encode|raw }},
+    error_schema_generic: {{ 'media.arr_admin.schema_modal.error_schema_generic'|trans|json_encode|raw }},
+    error_name_required: {{ 'media.arr_admin.schema_modal.error_name_required'|trans|json_encode|raw }},
+    error_impl_missing: {{ 'media.arr_admin.schema_modal.error_impl_missing'|trans|json_encode|raw }},
+    error_form_init: {{ 'media.arr_admin.schema_modal.error_form_init'|trans|json_encode|raw }},
+    error_save: {{ 'media.arr_admin.schema_modal.error_save'|trans|json_encode|raw }},
+    error_network_tpl: {{ 'media.arr_admin.schema_modal.error_network_tpl'|trans({message: '__MSG__'})|json_encode|raw }},
+    error_network_test: {{ 'media.arr_admin.schema_modal.error_network_test'|trans|json_encode|raw }},
+    test_success: {{ 'media.arr_admin.schema_modal.test_success'|trans|json_encode|raw }},
+    test_failure: {{ 'media.arr_admin.schema_modal.test_failure'|trans|json_encode|raw }}
+  };
+
   var modalEl = document.getElementById(MID);
   if (!modalEl) return;
 
@@ -106,13 +170,36 @@
 
   function el(id) { return document.getElementById(MID + '-' + id); }
 
-  // Mapping Newznab standard (catégories indexeurs Prowlarr/Torznab)
+  // Mapping Newznab standard (catégories indexeurs Prowlarr/Torznab) — libellés traduits
   var NEWZNAB_CATS = {
-    1000:'TV',2000:'Films',3000:'Audio',4000:'PC',5000:'TV-Sport',6000:'XXX',7000:'Livres',8000:'Autre',
-    2010:'Films/Étranger',2020:'Films/Autre',2030:'Films/SD',2040:'Films/HD',2045:'Films/UHD',
-    2050:'Films/Blu-Ray',2060:'Films/3D',2070:'Films/DVD',2080:'Films/WEB-DL',
-    5070:'Anime',5080:'Documentaire',
-    1010:'TV/WEB-DL',1020:'TV/Étranger',1030:'TV/SD',1040:'TV/HD',1045:'TV/UHD',1050:'TV/Autre',1060:'TV/Sport',1070:'TV/Anime',1080:'TV/Documentaire'
+    1000: I18N.newznab.tv,
+    2000: I18N.newznab.films,
+    3000: I18N.newznab.audio,
+    4000: I18N.newznab.pc,
+    5000: I18N.newznab.tv_sport,
+    6000: I18N.newznab.xxx,
+    7000: I18N.newznab.books,
+    8000: I18N.newznab.other,
+    2010: I18N.newznab.films_foreign,
+    2020: I18N.newznab.films_other,
+    2030: I18N.newznab.films_sd,
+    2040: I18N.newznab.films_hd,
+    2045: I18N.newznab.films_uhd,
+    2050: I18N.newznab.films_bluray,
+    2060: I18N.newznab.films_3d,
+    2070: I18N.newznab.films_dvd,
+    2080: I18N.newznab.films_webdl,
+    5070: I18N.newznab.anime,
+    5080: I18N.newznab.doc,
+    1010: I18N.newznab.tv_webdl,
+    1020: I18N.newznab.tv_foreign,
+    1030: I18N.newznab.tv_sd,
+    1040: I18N.newznab.tv_hd,
+    1045: I18N.newznab.tv_uhd,
+    1050: I18N.newznab.tv_other,
+    1060: I18N.newznab.tv_sport_sub,
+    1070: I18N.newznab.tv_anime,
+    1080: I18N.newznab.tv_doc
   };
 
   // ── Rendu d'un champ ────────────────────────────────────────────────────
@@ -184,8 +271,8 @@
           }).join('');
           input = '<div class="schema-field d-flex flex-wrap gap-1" data-name="' + field.name + '" data-field-type="multicheck" id="' + id + '">' + checks2 + '</div>';
         } else if (isArray) {
-          input = '<input class="form-control schema-field" type="text" id="' + id + '" data-name="' + field.name + '" data-field-type="csv" value="' + val.join(', ') + '" placeholder="Ex: 2000, 2010, 2030">';
-          if (!field.helpText) field.helpText = 'Entrez les valeurs séparées par des virgules';
+          input = '<input class="form-control schema-field" type="text" id="' + id + '" data-name="' + field.name + '" data-field-type="csv" value="' + val.join(', ') + '" placeholder="' + I18N.cats_placeholder + '">';
+          if (!field.helpText) field.helpText = I18N.csv_help;
         } else if (options.length > 0) {
           var opts = options.map(function(o){
             return '<option value="' + o.value + '"' + (o.value == val ? ' selected' : '') + '>' + o.name + (o.hint ? ' ' + o.hint : '') + '</option>';
@@ -200,8 +287,8 @@
       case 'tag':
       case 'tagSelect':
         if (isArray) val = val.join(', ');
-        input = '<input class="form-control schema-field" type="text" id="' + id + '" data-name="' + field.name + '" data-field-type="csv" value="' + (val != null ? val : '') + '" placeholder="Valeurs séparées par des virgules">';
-        if (!field.helpText) field.helpText = 'Entrez les valeurs séparées par des virgules';
+        input = '<input class="form-control schema-field" type="text" id="' + id + '" data-name="' + field.name + '" data-field-type="csv" value="' + (val != null ? val : '') + '" placeholder="' + I18N.csv_placeholder + '">';
+        if (!field.helpText) field.helpText = I18N.csv_help;
         break;
 
       case 'number':
@@ -213,7 +300,7 @@
         break;
 
       case 'path':
-        input = '<input class="form-control schema-field" type="text" id="' + id + '" data-name="' + field.name + '" data-field-type="text" value="' + (isArray ? '' : (val != null ? val : '')) + '" placeholder="/chemin/vers/dossier">';
+        input = '<input class="form-control schema-field" type="text" id="' + id + '" data-name="' + field.name + '" data-field-type="text" value="' + (isArray ? '' : (val != null ? val : '')) + '" placeholder="' + I18N.path_placeholder + '">';
         break;
 
       case 'url':
@@ -236,24 +323,28 @@
     if (schemaCache) return Promise.resolve(schemaCache);
     return fetch(SCHEMA_URL, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
       .then(function(r){
-        if (!r.ok) { showFeedback('Erreur chargement schéma (HTTP ' + r.status + ')', 'danger'); return []; }
+        if (!r.ok) { showFeedback(I18N.error_schema_http_tpl.replace('__STATUS__', r.status), 'danger'); return []; }
         return r.json();
       })
       .then(function(data){
         schemaCache = Array.isArray(data) ? data : [];
-        if (!schemaCache.length) showFeedback('Aucun type disponible — vérifiez la connexion à Radarr.', 'warning');
+        // Auto-détecte Radarr vs Sonarr depuis l'URL du schéma pour afficher le bon message
+        if (!schemaCache.length) {
+          var isSonarr = SCHEMA_URL.indexOf('/sonarr/') !== -1;
+          showFeedback(isSonarr ? I18N.error_schema_none_sonarr : I18N.error_schema_none_radarr, 'warning');
+        }
         return schemaCache;
       })
       .catch(function(err){
         console.error('loadSchema error:', err);
-        showFeedback('Impossible de charger le schéma.', 'danger');
+        showFeedback(I18N.error_schema_generic, 'danger');
         return [];
       });
   }
 
   function populateImplSelect(schemas) {
     var sel = el('impl-select');
-    sel.innerHTML = '<option value="">— Choisir un type —</option>';
+    sel.innerHTML = '<option value="">' + {{ 'media.arr_admin.schema_modal.type_placeholder'|trans|json_encode|raw }} + '</option>';
     schemas.forEach(function(s, i){
       var opt = document.createElement('option');
       opt.value = i;
@@ -262,15 +353,8 @@
     });
   }
 
-  // Notification trigger labels
-  var TRIGGER_LABELS = {
-    onGrab: 'Récupération', onDownload: 'Téléchargement', onUpgrade: 'Mise à niveau',
-    onRename: 'Renommage', onMovieAdded: 'Film ajouté', onMovieDelete: 'Film supprimé',
-    onMovieFileDelete: 'Fichier supprimé', onMovieFileDeleteForUpgrade: 'Fichier supprimé (upgrade)',
-    onHealthIssue: 'Problème de santé', onHealthRestored: 'Santé rétablie',
-    onApplicationUpdate: 'Mise à jour appli', onManualInteractionRequired: 'Interaction manuelle',
-    includeHealthWarnings: 'Inclure avertissements'
-  };
+  // Notification trigger labels (libellés traduits via I18N)
+  var TRIGGER_LABELS = I18N.trigger;
 
   function renderTriggers(schema, existingItem) {
     var wrap = el('triggers-list');
@@ -312,7 +396,7 @@
   function collectPayload() {
     if (!currentImpl) return null;
     var name = el('name').value.trim();
-    if (!name) { showFeedback('Le nom est obligatoire.', 'warning'); return null; }
+    if (!name) { showFeedback(I18N.error_name_required, 'warning'); return null; }
 
     // Collecter les valeurs des champs visibles depuis le DOM
     var visibleValues = {};
@@ -415,7 +499,7 @@
           }
           var schema = schemas.find(function(s){ return s.implementation === editingItem.implementation; }) || schemas[0];
           if (schema) renderFields(schema, editingItem.fields || []);
-          else showFeedback('Type d\'implémentation introuvable dans le schéma.', 'warning');
+          else showFeedback(I18N.error_impl_missing, 'warning');
         } else {
           document.getElementById(MID + '-title').textContent = TITLE_ADD;
           el('impl-wrap').classList.remove('d-none');
@@ -435,7 +519,7 @@
       });
     } catch (err) {
       console.error('show.bs.modal error:', err);
-      showFeedback('Erreur lors de l\'initialisation du formulaire.', 'danger');
+      showFeedback(I18N.error_form_init, 'danger');
     }
   });
 
@@ -469,13 +553,13 @@
         // Succès : recharger la page immédiatement
         location.reload();
       } else {
-        showFeedback(data.error || 'Erreur lors de l\'enregistrement.', 'danger');
+        showFeedback(data.error || I18N.error_save, 'danger');
         el('save').disabled = false;
       }
       spinner.classList.add('d-none');
     }).catch(function(err){
       console.error('Save error:', err);
-      showFeedback('Erreur réseau : ' + (err.message || err), 'danger');
+      showFeedback(I18N.error_network_tpl.replace('__MSG__', (err.message || err)), 'danger');
       el('save').disabled = false;
       spinner.classList.add('d-none');
     });
@@ -502,11 +586,11 @@
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: JSON.stringify(payload)
       }).then(function(r){ return r.json(); }).then(function(data){
-        showFeedback(data.ok ? 'Test réussi ✓' : (data.error || 'Échec du test.'), data.ok ? 'success' : 'danger');
+        showFeedback(data.ok ? I18N.test_success : (data.error || I18N.test_failure), data.ok ? 'success' : 'danger');
         testBtn.disabled = false;
         spinner.classList.add('d-none');
       }).catch(function(){
-        showFeedback('Erreur réseau lors du test.', 'danger');
+        showFeedback(I18N.error_network_test, 'danger');
         testBtn.disabled = false;
         spinner.classList.add('d-none');
       });

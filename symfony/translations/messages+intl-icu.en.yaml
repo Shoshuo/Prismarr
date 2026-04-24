@@ -2003,6 +2003,226 @@ media:
       empty: No log available
       level_info: info
 
+  arr_admin:
+    quality:
+      title_radarr: Quality — Radarr
+      title_sonarr: Quality — Sonarr
+      page_title: Quality
+      error_unreachable_radarr: Unable to reach Radarr.
+      error_unreachable_sonarr: Unable to reach Sonarr.
+      profiles_section: Quality Profiles
+      profiles_count_tpl: "{count, plural, one {# profile} other {# profiles}}"
+      add: Add
+      empty_profiles: No profile.
+      col_name: Name
+      col_cutoff: Cutoff
+      col_qualities: Included Qualities
+      col_actions: Actions
+      edit: Edit
+      delete: Delete
+      definitions_section: Quality Definitions
+      definitions_count_tpl: "{count, plural, one {# quality} other {# qualities}}"
+      save: Save
+      empty_definitions: No definition.
+      def_quality: Quality
+      def_title: Title
+      def_rate: Bitrate
+      def_values: Min / Pref. / Max
+      modal_new: New Quality Profile
+      modal_edit: Edit Profile
+      name_label: Name
+      name_placeholder: "Ex: HD-1080p, Ultra-HD..."
+      upgrade_allowed: Upgrades Allowed
+      language: Language
+      language_any: Any
+      min_format_score: Min Format Score
+      cutoff_format_score: Cutoff Format Score
+      custom_formats_subsection: Custom Formats
+      custom_formats_help: Set a score for each custom format.
+      qualities_subsection: Qualities
+      qualities_help: Check the allowed qualities. The top-to-bottom order represents the upgrade priority (top = best). Groups contain several equivalent sub-qualities.
+      cutoff_label: Cutoff
+      cutoff_placeholder: "-- Select --"
+      cutoff_help_radarr: Radarr stops looking for a better quality once the cutoff is reached.
+      cutoff_help_sonarr: Sonarr stops looking for a better quality once the cutoff is reached.
+      cancel: Cancel
+      save_modal: Save
+      drag_reorder: Drag to reorder
+      group_name: Group
+      format_fallback_tpl: "Format {id}"
+      language_fallback_tpl: "Language {id}"
+      error_save_def: Error while saving definitions.
+      error_save_profile: Error while saving.
+      error_delete: Error while deleting.
+      error_network: Network error.
+      error_name_required: Name is required.
+      confirm_delete_tpl: 'Delete profile "{name}"?'
+      size_min_tooltip: Minimum size
+      size_pref_tooltip: Preferred size
+      size_max_tooltip: Maximum size
+    custom_formats:
+      title_radarr: Custom Formats — Radarr
+      title_sonarr: Custom Formats — Sonarr
+      page_title: Custom Formats
+      error_unreachable_radarr: Unable to reach Radarr.
+      error_unreachable_sonarr: Unable to reach Sonarr.
+      card_title: Custom Formats
+      add: Add
+      empty: No custom format.
+      col_name: Name
+      col_conditions: Conditions
+      col_include_renaming: Include When Renaming
+      col_actions: Actions
+      none: None
+      yes: Yes
+      no: No
+      edit: Edit
+      delete: Delete
+      modal_new: New Custom Format
+      modal_edit_tpl: "Edit: {name}"
+      modal_edit_fallback: Format
+      name_label: Name
+      name_placeholder: "Ex: HDR10, Remux, FLAC..."
+      include_renaming: Include when renaming
+      conditions_section: Conditions (Specifications)
+      add_condition: Add condition
+      empty_conditions: 'No condition. Click "Add condition" to begin.'
+      cancel: Cancel
+      save: Save
+      create: Create
+      condition_tpl: "Condition #{index}"
+      condition_type: Condition Type
+      condition_type_placeholder: "-- Choose a type --"
+      condition_name: Condition Name
+      condition_name_placeholder: "Name..."
+      negate: Negate
+      required: Required
+      error_load_schema_radarr: Unable to load condition types from Radarr.
+      error_load_schema_sonarr: Unable to load condition types from Sonarr.
+      error_load_schema_short: Unable to load condition types.
+      error_save: Error while saving.
+      error_delete: Error while deleting.
+      error_network_tpl: "Network error: {message}"
+      error_network: Network error.
+      error_name_required: Name is required.
+      confirm_delete_tpl: 'Delete format "{name}"?'
+    delay_profiles:
+      title_radarr: Delay Profiles — Radarr
+      title_sonarr: Delay Profiles — Sonarr
+      page_title: Delay Profiles
+      error_unreachable_radarr: Unable to reach Radarr.
+      error_unreachable_sonarr: Unable to reach Sonarr.
+      card_title: Delay Profiles
+      add: Add
+      empty: No delay profile.
+      col_order: Order
+      col_tags: Tags
+      col_usenet: Usenet
+      col_torrent: Torrent
+      col_protocol: Preferred Protocol
+      col_delay_usenet: Usenet Delay (min)
+      col_delay_torrent: Torrent Delay (min)
+      col_bypass_cutoff: Bypass if Cutoff Met
+      col_actions: Actions
+      tags_global: Global
+      yes: Yes
+      no: No
+      default: Default
+      edit: Edit
+      delete: Delete
+      modal_new: New Delay Profile
+      modal_edit_tpl: "Edit profile #{id}"
+      enable_usenet: Enable Usenet
+      enable_torrent: Enable Torrent
+      preferred_protocol: Preferred Protocol
+      usenet_delay: Usenet Delay (min)
+      torrent_delay: Torrent Delay (min)
+      bypass_highest: Bypass if highest quality met
+      bypass_cf_score: Bypass if custom format score exceeded
+      min_cf_score: Min. Custom Format Score
+      tags_label: Tags (IDs, commas)
+      tags_placeholder: "Ex: 1,3,5"
+      tags_help: Tag identifiers, separated by commas.
+      cancel: Cancel
+      create: Create
+      save: Save
+      error_save: Error while saving.
+      error_delete: Error while deleting.
+      error_network_tpl: "Network error: {message}"
+      confirm_delete: Delete this delay profile?
+    schema_modal:
+      type: Type
+      type_placeholder: "— Choose a type —"
+      name_label: Name
+      name_placeholder: "My indexer..."
+      triggers_label: Notification Triggers
+      opt_rss: RSS
+      opt_auto_search: Auto Search
+      opt_interactive_search: Interactive Search
+      opt_priority: Priority
+      cancel: Cancel
+      test: Test
+      save: Save
+      path_placeholder: "/path/to/folder"
+      csv_help: Enter comma-separated values
+      csv_placeholder: "Comma-separated values"
+      cats_placeholder: "Ex: 2000, 2010, 2030"
+      trigger:
+        on_grab: Grab
+        on_download: Download
+        on_upgrade: Upgrade
+        on_rename: Rename
+        on_movie_added: Movie added
+        on_movie_delete: Movie deleted
+        on_movie_file_delete: File deleted
+        on_movie_file_delete_for_upgrade: File deleted (upgrade)
+        on_health_issue: Health issue
+        on_health_restored: Health restored
+        on_application_update: App update
+        on_manual_interaction_required: Manual interaction
+        include_health_warnings: Include warnings
+      newznab:
+        tv: TV
+        films: Movies
+        audio: Audio
+        pc: PC
+        tv_sport: TV-Sport
+        xxx: XXX
+        books: Books
+        other: Other
+        films_foreign: Movies/Foreign
+        films_other: Movies/Other
+        films_sd: Movies/SD
+        films_hd: Movies/HD
+        films_uhd: Movies/UHD
+        films_bluray: Movies/Blu-Ray
+        films_3d: Movies/3D
+        films_dvd: Movies/DVD
+        films_webdl: Movies/WEB-DL
+        anime: Anime
+        doc: Documentary
+        tv_webdl: TV/WEB-DL
+        tv_foreign: TV/Foreign
+        tv_sd: TV/SD
+        tv_hd: TV/HD
+        tv_uhd: TV/UHD
+        tv_other: TV/Other
+        tv_sport_sub: TV/Sport
+        tv_anime: TV/Anime
+        tv_doc: TV/Documentary
+      error_schema_http_tpl: "Schema load error (HTTP {status})"
+      error_schema_none_radarr: "No type available — check connection to Radarr."
+      error_schema_none_sonarr: "No type available — check connection to Sonarr."
+      error_schema_generic: Unable to load schema.
+      error_name_required: Name is required.
+      error_impl_missing: Implementation type not found in schema.
+      error_form_init: Error while initializing the form.
+      error_save: Error while saving.
+      error_network_tpl: "Network error: {message}"
+      error_network_test: Network error during test.
+      test_success: "Test successful ✓"
+      test_failure: Test failed.
+
 watchlist_page:
   back_to_discover: Discover
   count_titles: '{count, plural, one {# title} other {# titles}}'

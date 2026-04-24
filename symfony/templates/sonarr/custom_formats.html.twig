@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Formats custom — Sonarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.custom_formats.title_sonarr'|trans }}{% endblock %}
 
 {% block stylesheets %}
 <style>
@@ -29,12 +29,12 @@
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Formats personnalisés</h2>
+        <h2 class="page-title">{{ 'media.arr_admin.custom_formats.page_title'|trans }}</h2>
       </div>
       <div class="col-auto ms-auto d-flex gap-2 align-items-center">
         <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modal-cf">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
-          Ajouter
+          {{ 'media.arr_admin.custom_formats.add'|trans }}
         </button>
         {% include 'media/_sonarr_nav.html.twig' %}
       </div>
@@ -46,30 +46,30 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Sonarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.custom_formats.error_unreachable_sonarr'|trans }}</div>
 {% endif %}
 
 <div id="cf-feedback" class="alert d-none mb-3"></div>
 
 <div class="card">
   <div class="card-header">
-    <h3 class="card-title">Formats personnalisés</h3>
+    <h3 class="card-title">{{ 'media.arr_admin.custom_formats.card_title'|trans }}</h3>
     <div class="card-options">
       <span class="badge bg-secondary-lt">{{ formats|length }}</span>
     </div>
   </div>
   <div class="card-body p-0">
     {% if formats is empty %}
-      <div class="text-muted text-center py-5">Aucun format personnalisé.</div>
+      <div class="text-muted text-center py-5">{{ 'media.arr_admin.custom_formats.empty'|trans }}</div>
     {% else %}
       <div class="table-responsive">
         <table class="table table-vcenter mb-0">
           <thead>
             <tr>
-              <th>Nom</th>
-              <th>Conditions</th>
-              <th>Inclure si renommage</th>
-              <th class="text-end">Actions</th>
+              <th>{{ 'media.arr_admin.custom_formats.col_name'|trans }}</th>
+              <th>{{ 'media.arr_admin.custom_formats.col_conditions'|trans }}</th>
+              <th>{{ 'media.arr_admin.custom_formats.col_include_renaming'|trans }}</th>
+              <th class="text-end">{{ 'media.arr_admin.custom_formats.col_actions'|trans }}</th>
             </tr>
           </thead>
           <tbody>
@@ -86,25 +86,25 @@
                     </span>
                   {% endfor %}
                 {% else %}
-                  <span class="text-muted">Aucune</span>
+                  <span class="text-muted">{{ 'media.arr_admin.custom_formats.none'|trans }}</span>
                 {% endif %}
               </td>
               <td>
                 {% if fmt.includeCustomFormatWhenRenaming ?? false %}
-                  <span class="badge bg-success-lt text-success">Oui</span>
+                  <span class="badge bg-success-lt text-success">{{ 'media.arr_admin.custom_formats.yes'|trans }}</span>
                 {% else %}
-                  <span class="badge bg-secondary-lt">Non</span>
+                  <span class="badge bg-secondary-lt">{{ 'media.arr_admin.custom_formats.no'|trans }}</span>
                 {% endif %}
               </td>
               <td class="text-end d-flex gap-2 justify-content-end">
                 <button class="btn btn-ghost-secondary btn-icon"
                         data-bs-toggle="modal" data-bs-target="#modal-cf"
-                        data-edit-item="{{ fmt|json_encode|e('html_attr') }}" title="Modifier">
+                        data-edit-item="{{ fmt|json_encode|e('html_attr') }}" title="{{ 'media.arr_admin.custom_formats.edit'|trans }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                 </button>
                 <button class="btn btn-ghost-danger btn-icon btn-cf-delete"
                         data-id="{{ fmt.id }}"
-                        data-name="{{ fmt.name ?? '' }}" title="Supprimer">
+                        data-name="{{ fmt.name ?? '' }}" title="{{ 'media.arr_admin.custom_formats.delete'|trans }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                 </button>
               </td>
@@ -125,37 +125,37 @@
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modal-cf-title">Nouveau format personnalisé</h5>
+        <h5 class="modal-title" id="modal-cf-title">{{ 'media.arr_admin.custom_formats.modal_new'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div class="mb-3">
-          <label class="form-label fw-medium">Nom <span class="text-danger">*</span></label>
-          <input type="text" id="cf-name" class="form-control" placeholder="Ex: HDR10, Remux, FLAC...">
+          <label class="form-label fw-medium">{{ 'media.arr_admin.custom_formats.name_label'|trans }} <span class="text-danger">*</span></label>
+          <input type="text" id="cf-name" class="form-control" placeholder="{{ 'media.arr_admin.custom_formats.name_placeholder'|trans }}">
         </div>
         <div class="form-check mb-3">
           <input class="form-check-input" type="checkbox" id="cf-include-renaming">
-          <label class="form-check-label" for="cf-include-renaming">Inclure dans le renommage</label>
+          <label class="form-check-label" for="cf-include-renaming">{{ 'media.arr_admin.custom_formats.include_renaming'|trans }}</label>
         </div>
 
         <hr>
         <div class="d-flex align-items-center justify-content-between mb-2">
-          <h6 class="mb-0">Conditions (Specifications)</h6>
+          <h6 class="mb-0">{{ 'media.arr_admin.custom_formats.conditions_section'|trans }}</h6>
           <button type="button" class="btn btn-outline-primary btn-sm" id="btn-add-spec">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
-            Ajouter une condition
+            {{ 'media.arr_admin.custom_formats.add_condition'|trans }}
           </button>
         </div>
         <div id="cf-specs-container"></div>
-        <div id="cf-no-specs" class="text-muted small text-center py-3">Aucune condition. Cliquez sur "Ajouter une condition" pour commencer.</div>
+        <div id="cf-no-specs" class="text-muted small text-center py-3">{{ 'media.arr_admin.custom_formats.empty_conditions'|trans }}</div>
 
         <div id="cf-modal-feedback" class="alert d-none mt-3"></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'media.arr_admin.custom_formats.cancel'|trans }}</button>
         <button type="button" class="btn btn-primary" id="btn-cf-save">
           <span class="spinner-border spinner-border-sm d-none me-1" id="cf-spinner"></span>
-          Enregistrer
+          {{ 'media.arr_admin.custom_formats.save'|trans }}
         </button>
       </div>
     </div>
@@ -166,6 +166,29 @@
 {% block javascripts %}
 <script>
 (function(){
+  var I18N = {
+    modal_new: {{ 'media.arr_admin.custom_formats.modal_new'|trans|json_encode|raw }},
+    modal_edit_tpl: {{ 'media.arr_admin.custom_formats.modal_edit_tpl'|trans({name: '__NAME__'})|json_encode|raw }},
+    modal_edit_fallback: {{ 'media.arr_admin.custom_formats.modal_edit_fallback'|trans|json_encode|raw }},
+    save: {{ 'media.arr_admin.custom_formats.save'|trans|json_encode|raw }},
+    create: {{ 'media.arr_admin.custom_formats.create'|trans|json_encode|raw }},
+    condition_tpl: {{ 'media.arr_admin.custom_formats.condition_tpl'|trans({index: '__INDEX__'})|json_encode|raw }},
+    condition_type: {{ 'media.arr_admin.custom_formats.condition_type'|trans|json_encode|raw }},
+    condition_type_placeholder: {{ 'media.arr_admin.custom_formats.condition_type_placeholder'|trans|json_encode|raw }},
+    condition_name: {{ 'media.arr_admin.custom_formats.condition_name'|trans|json_encode|raw }},
+    condition_name_placeholder: {{ 'media.arr_admin.custom_formats.condition_name_placeholder'|trans|json_encode|raw }},
+    negate: {{ 'media.arr_admin.custom_formats.negate'|trans|json_encode|raw }},
+    required: {{ 'media.arr_admin.custom_formats.required'|trans|json_encode|raw }},
+    error_load_schema_full: {{ 'media.arr_admin.custom_formats.error_load_schema_sonarr'|trans|json_encode|raw }},
+    error_load_schema_short: {{ 'media.arr_admin.custom_formats.error_load_schema_short'|trans|json_encode|raw }},
+    error_save: {{ 'media.arr_admin.custom_formats.error_save'|trans|json_encode|raw }},
+    error_delete: {{ 'media.arr_admin.custom_formats.error_delete'|trans|json_encode|raw }},
+    error_network_tpl: {{ 'media.arr_admin.custom_formats.error_network_tpl'|trans({message: '__MSG__'})|json_encode|raw }},
+    error_network: {{ 'media.arr_admin.custom_formats.error_network'|trans|json_encode|raw }},
+    error_name_required: {{ 'media.arr_admin.custom_formats.error_name_required'|trans|json_encode|raw }},
+    confirm_delete_tpl: {{ 'media.arr_admin.custom_formats.confirm_delete_tpl'|trans({name: '__NAME__'})|json_encode|raw }}
+  };
+
   var SCHEMA_URL = {{ path('sonarr_custom_format_schema')|json_encode|raw }};
   var SAVE_URL   = {{ path('sonarr_custom_format_add')|json_encode|raw }};
   var feedback   = document.getElementById('cf-feedback');
@@ -258,7 +281,7 @@
     card.dataset.specIdx = idx;
 
     // Build implementation select
-    var implOptions = '<option value="">-- Choisir un type --</option>';
+    var implOptions = '<option value="">' + I18N.condition_type_placeholder + '</option>';
     schemas.forEach(function(s, i) {
       var selected = (existingSpec && existingSpec.implementation === s.implementation) ? ' selected' : '';
       implOptions += '<option value="' + i + '"' + selected + '>' + (s.implementationName || s.implementation || '?') + '</option>';
@@ -269,29 +292,29 @@
     var requiredChecked = (existingSpec && existingSpec.required) ? ' checked' : '';
 
     card.innerHTML = '<div class="spec-header">'
-      + '<span class="spec-title">Condition #' + (idx + 1) + '</span>'
+      + '<span class="spec-title">' + I18N.condition_tpl.replace('__INDEX__', (idx + 1)) + '</span>'
       + '<button type="button" class="btn btn-ghost-danger btn-sm btn-remove-spec">'
       + '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>'
       + '</button>'
       + '</div>'
       + '<div class="row g-2 mb-2">'
       + '<div class="col-md-6">'
-      + '<label class="form-label small">Type de condition</label>'
+      + '<label class="form-label small">' + I18N.condition_type + '</label>'
       + '<select class="form-select form-select-sm spec-impl-select">' + implOptions + '</select>'
       + '</div>'
       + '<div class="col-md-6">'
-      + '<label class="form-label small">Nom de la condition</label>'
-      + '<input type="text" class="form-control form-control-sm spec-name-input" value="' + nameVal + '" placeholder="Nom...">'
+      + '<label class="form-label small">' + I18N.condition_name + '</label>'
+      + '<input type="text" class="form-control form-control-sm spec-name-input" value="' + nameVal + '" placeholder="' + I18N.condition_name_placeholder + '">'
       + '</div>'
       + '</div>'
       + '<div class="d-flex gap-3 mb-2">'
       + '<div class="form-check">'
       + '<input class="form-check-input spec-negate-check" type="checkbox"' + negateChecked + '>'
-      + '<label class="form-check-label small">Inverser (Negate)</label>'
+      + '<label class="form-check-label small">' + I18N.negate + '</label>'
       + '</div>'
       + '<div class="form-check">'
       + '<input class="form-check-input spec-required-check" type="checkbox"' + requiredChecked + '>'
-      + '<label class="form-check-label small">Requis</label>'
+      + '<label class="form-check-label small">' + I18N.required + '</label>'
       + '</div>'
       + '</div>'
       + '<div class="spec-fields-container"></div>';
@@ -391,20 +414,20 @@
     editingItem = raw ? JSON.parse(raw) : null;
 
     if (editingItem) {
-      document.getElementById('modal-cf-title').textContent = 'Modifier : ' + (editingItem.name || 'Format');
+      document.getElementById('modal-cf-title').textContent = I18N.modal_edit_tpl.replace('__NAME__', (editingItem.name || I18N.modal_edit_fallback));
       document.getElementById('cf-name').value = editingItem.name || '';
       document.getElementById('cf-include-renaming').checked = editingItem.includeCustomFormatWhenRenaming || false;
-      document.getElementById('btn-cf-save').textContent = 'Enregistrer';
+      document.getElementById('btn-cf-save').textContent = I18N.save;
     } else {
-      document.getElementById('modal-cf-title').textContent = 'Nouveau format personnalisé';
+      document.getElementById('modal-cf-title').textContent = I18N.modal_new;
       document.getElementById('cf-name').value = '';
       document.getElementById('cf-include-renaming').checked = false;
-      document.getElementById('btn-cf-save').textContent = 'Créer';
+      document.getElementById('btn-cf-save').textContent = I18N.create;
     }
 
     var schemas = await loadSchema();
     if (schemas.length === 0) {
-      showModalFeedback('Impossible de charger les types de conditions depuis Sonarr.', 'warning');
+      showModalFeedback(I18N.error_load_schema_full, 'warning');
     }
 
     // Populate existing specs if editing
@@ -420,7 +443,7 @@
   document.getElementById('btn-add-spec').addEventListener('click', async function() {
     var schemas = await loadSchema();
     if (schemas.length === 0) {
-      showModalFeedback('Impossible de charger les types de conditions.', 'warning');
+      showModalFeedback(I18N.error_load_schema_short, 'warning');
       return;
     }
     createSpecCard(schemas, null);
@@ -431,7 +454,7 @@
     hideModalFeedback();
     var name = document.getElementById('cf-name').value.trim();
     if (!name) {
-      showModalFeedback('Le nom est obligatoire.', 'warning');
+      showModalFeedback(I18N.error_name_required, 'warning');
       return;
     }
 
@@ -465,11 +488,11 @@
         location.reload();
         return;
       } else {
-        showModalFeedback(data.error || 'Erreur lors de l\'enregistrement.', 'danger');
+        showModalFeedback(data.error || I18N.error_save, 'danger');
         saveBtn.disabled = false;
       }
     } catch(err) {
-      showModalFeedback('Erreur réseau : ' + (err.message || err), 'danger');
+      showModalFeedback(I18N.error_network_tpl.replace('__MSG__', (err.message || err)), 'danger');
       saveBtn.disabled = false;
     } finally {
       if (spinner) spinner.classList.add('d-none');
@@ -480,7 +503,7 @@
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('.btn-cf-delete');
     if (!btn) return;
-    if (!confirm('Supprimer le format "' + btn.dataset.name + '" ?')) return;
+    if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', btn.dataset.name))) return;
     fetch('/sonarr/formats/' + btn.dataset.id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
@@ -488,9 +511,9 @@
     }).then(function(r){ return r.json(); })
       .then(function(data){
         if (data.ok) location.reload();
-        else showPageFeedback('Erreur lors de la suppression.', 'danger');
+        else showPageFeedback(I18N.error_delete, 'danger');
       })
-      .catch(function(){ showPageFeedback('Erreur réseau.', 'danger'); });
+      .catch(function(){ showPageFeedback(I18N.error_network, 'danger'); });
   });
 })();
 </script>

@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Qualite — Sonarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.quality.title_sonarr'|trans }}{% endblock %}
 
 {% block stylesheets %}
 <style>
@@ -118,7 +118,7 @@
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Qualite</h2>
+        <h2 class="page-title">{{ 'media.arr_admin.quality.page_title'|trans }}</h2>
       </div>
       <div class="col-auto ms-auto d-flex gap-2 align-items-center">
         {% include 'media/_sonarr_nav.html.twig' %}
@@ -131,7 +131,7 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Radarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.quality.error_unreachable_sonarr'|trans }}</div>
 {% endif %}
 
 <div id="quality-feedback" class="alert d-none mb-3"></div>
@@ -142,27 +142,27 @@
 <div class="col-12">
   <div class="card">
     <div class="card-header">
-      <h3 class="card-title">Profils de qualite</h3>
+      <h3 class="card-title">{{ 'media.arr_admin.quality.profiles_section'|trans }}</h3>
       <div class="card-options d-flex gap-2 align-items-center">
-        <span class="badge bg-secondary-lt">{{ profiles|length }} profil(s)</span>
+        <span class="badge bg-secondary-lt">{{ 'media.arr_admin.quality.profiles_count_tpl'|trans({count: profiles|length}) }}</span>
         <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modal-profile" data-action="create">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
-          Ajouter
+          {{ 'media.arr_admin.quality.add'|trans }}
         </button>
       </div>
     </div>
     <div class="card-body p-0">
       {% if profiles is empty %}
-        <div class="text-muted text-center py-4">Aucun profil.</div>
+        <div class="text-muted text-center py-4">{{ 'media.arr_admin.quality.empty_profiles'|trans }}</div>
       {% else %}
         <div class="table-responsive">
           <table class="table table-vcenter mb-0">
             <thead>
               <tr>
-                <th>Nom</th>
-                <th>Cutoff</th>
-                <th>Qualites incluses</th>
-                <th class="text-end">Actions</th>
+                <th>{{ 'media.arr_admin.quality.col_name'|trans }}</th>
+                <th>{{ 'media.arr_admin.quality.col_cutoff'|trans }}</th>
+                <th>{{ 'media.arr_admin.quality.col_qualities'|trans }}</th>
+                <th class="text-end">{{ 'media.arr_admin.quality.col_actions'|trans }}</th>
               </tr>
             </thead>
             <tbody>
@@ -195,12 +195,12 @@
                   <div class="d-flex gap-1 justify-content-end">
                     <button class="btn btn-ghost-secondary btn-icon btn-profile-edit"
                             data-bs-toggle="modal" data-bs-target="#modal-profile"
-                            data-profile="{{ profile|json_encode|e('html_attr') }}" title="Modifier">
+                            data-profile="{{ profile|json_encode|e('html_attr') }}" title="{{ 'media.arr_admin.quality.edit'|trans }}">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                     </button>
                     <button class="btn btn-ghost-danger btn-icon btn-profile-delete"
                             data-id="{{ profile.id }}"
-                            data-name="{{ profile.name ?? '' }}" title="Supprimer">
+                            data-name="{{ profile.name ?? '' }}" title="{{ 'media.arr_admin.quality.delete'|trans }}">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                     </button>
                   </div>
@@ -219,24 +219,24 @@
 <div class="col-12">
   <div class="card">
     <div class="card-header">
-      <h3 class="card-title">Definitions de qualite</h3>
+      <h3 class="card-title">{{ 'media.arr_admin.quality.definitions_section'|trans }}</h3>
       <div class="card-options d-flex gap-2 align-items-center">
-        <span class="badge bg-secondary-lt">{{ definitions|length }} qualite(s)</span>
+        <span class="badge bg-secondary-lt">{{ 'media.arr_admin.quality.definitions_count_tpl'|trans({count: definitions|length}) }}</span>
         <button class="btn btn-primary btn-sm" id="btn-save-definitions">
           <span class="spinner-border spinner-border-sm d-none me-1" id="def-spinner"></span>
-          Enregistrer
+          {{ 'media.arr_admin.quality.save'|trans }}
         </button>
       </div>
     </div>
     <div class="card-body p-0">
       {% if definitions is empty %}
-        <div class="text-muted text-center py-4">Aucune definition.</div>
+        <div class="text-muted text-center py-4">{{ 'media.arr_admin.quality.empty_definitions'|trans }}</div>
       {% else %}
         <div class="quality-def-row fw-medium" style="background:var(--tblr-bg-surface-secondary);">
-          <div class="quality-def-name">Qualite</div>
-          <div class="quality-def-title">Titre</div>
-          <div class="quality-def-slider-wrap text-center" style="font-size:.8rem;">Débit</div>
-          <div class="quality-def-values text-center">Min / Préf. / Max</div>
+          <div class="quality-def-name">{{ 'media.arr_admin.quality.def_quality'|trans }}</div>
+          <div class="quality-def-title">{{ 'media.arr_admin.quality.def_title'|trans }}</div>
+          <div class="quality-def-slider-wrap text-center" style="font-size:.8rem;">{{ 'media.arr_admin.quality.def_rate'|trans }}</div>
+          <div class="quality-def-values text-center">{{ 'media.arr_admin.quality.def_values'|trans }}</div>
         </div>
         <div id="definitions-container">
         {% for def in definitions %}
@@ -288,7 +288,7 @@
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modal-profile-title">Nouveau profil de qualite</h5>
+        <h5 class="modal-title" id="modal-profile-title">{{ 'media.arr_admin.quality.modal_new'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -299,21 +299,21 @@
           {# ── Colonne gauche : parametres generaux + formats ── #}
           <div class="col-md-5">
             <div class="mb-3">
-              <label class="form-label fw-medium">Nom <span class="text-danger">*</span></label>
-              <input type="text" id="profile-name" class="form-control" placeholder="Ex: HD-1080p, Ultra-HD...">
+              <label class="form-label fw-medium">{{ 'media.arr_admin.quality.name_label'|trans }} <span class="text-danger">*</span></label>
+              <input type="text" id="profile-name" class="form-control" placeholder="{{ 'media.arr_admin.quality.name_placeholder'|trans }}">
             </div>
 
             <div class="mb-3">
               <label class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="profile-upgrade-allowed">
-                <span class="form-check-label fw-medium">Mise a niveau autorisee</span>
+                <span class="form-check-label fw-medium">{{ 'media.arr_admin.quality.upgrade_allowed'|trans }}</span>
               </label>
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-medium">Langue</label>
+              <label class="form-label fw-medium">{{ 'media.arr_admin.quality.language'|trans }}</label>
               <select id="profile-language" class="form-select form-select-sm">
-                <option value="-1">Any</option>
+                <option value="-1">{{ 'media.arr_admin.quality.language_any'|trans }}</option>
               </select>
             </div>
 
@@ -321,19 +321,19 @@
 
             <div class="row g-2 mb-3">
               <div class="col-6">
-                <label class="form-label small fw-medium">Score min format</label>
+                <label class="form-label small fw-medium">{{ 'media.arr_admin.quality.min_format_score'|trans }}</label>
                 <input type="number" id="profile-min-format-score" class="form-control form-control-sm" value="0">
               </div>
               <div class="col-6">
-                <label class="form-label small fw-medium">Score cutoff format</label>
+                <label class="form-label small fw-medium">{{ 'media.arr_admin.quality.cutoff_format_score'|trans }}</label>
                 <input type="number" id="profile-cutoff-format-score" class="form-control form-control-sm" value="0">
               </div>
             </div>
 
             <hr>
 
-            <h6 class="mb-2">Formats personnalises</h6>
-            <div class="small text-muted mb-2">Definissez un score pour chaque format custom.</div>
+            <h6 class="mb-2">{{ 'media.arr_admin.quality.custom_formats_subsection'|trans }}</h6>
+            <div class="small text-muted mb-2">{{ 'media.arr_admin.quality.custom_formats_help'|trans }}</div>
             <div id="profile-custom-formats" style="max-height:300px; overflow-y:auto;">
               {# Rempli par JS #}
             </div>
@@ -341,18 +341,17 @@
 
           {# ── Colonne droite : qualites ── #}
           <div class="col-md-7">
-            <h6 class="mb-1">Qualites</h6>
+            <h6 class="mb-1">{{ 'media.arr_admin.quality.qualities_subsection'|trans }}</h6>
             <div class="small text-muted mb-3">
-              Cochez les qualites autorisees. L'ordre de haut en bas represente la priorite de mise a niveau (haut = meilleur).
-              Les groupes contiennent plusieurs sous-qualites equivalentes.
+              {{ 'media.arr_admin.quality.qualities_help'|trans }}
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-medium">Cutoff</label>
+              <label class="form-label fw-medium">{{ 'media.arr_admin.quality.cutoff_label'|trans }}</label>
               <select id="profile-cutoff" class="form-select form-select-sm">
-                <option value="">-- Selectionner --</option>
+                <option value="">{{ 'media.arr_admin.quality.cutoff_placeholder'|trans }}</option>
               </select>
-              <div class="form-text">Radarr arrete de chercher une meilleure qualite une fois le cutoff atteint.</div>
+              <div class="form-text">{{ 'media.arr_admin.quality.cutoff_help_sonarr'|trans }}</div>
             </div>
 
             <div id="profile-qualities-list">
@@ -365,12 +364,12 @@
       <div class="modal-footer d-flex">
         <button type="button" class="btn btn-danger me-auto d-none" id="btn-profile-delete-modal">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-          Supprimer
+          {{ 'media.arr_admin.quality.delete'|trans }}
         </button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'media.arr_admin.quality.cancel'|trans }}</button>
         <button type="button" class="btn btn-primary ms-2" id="btn-profile-save">
           <span class="spinner-border spinner-border-sm d-none me-1" id="profile-spinner"></span>
-          Sauvegarder
+          {{ 'media.arr_admin.quality.save_modal'|trans }}
         </button>
       </div>
     </div>
@@ -381,6 +380,26 @@
 {% block javascripts %}
 <script>
 (function(){
+
+var I18N = {
+  error_save_def: {{ 'media.arr_admin.quality.error_save_def'|trans|json_encode|raw }},
+  error_save_profile: {{ 'media.arr_admin.quality.error_save_profile'|trans|json_encode|raw }},
+  error_delete: {{ 'media.arr_admin.quality.error_delete'|trans|json_encode|raw }},
+  error_network: {{ 'media.arr_admin.quality.error_network'|trans|json_encode|raw }},
+  error_name_required: {{ 'media.arr_admin.quality.error_name_required'|trans|json_encode|raw }},
+  modal_new: {{ 'media.arr_admin.quality.modal_new'|trans|json_encode|raw }},
+  modal_edit: {{ 'media.arr_admin.quality.modal_edit'|trans|json_encode|raw }},
+  language_any: {{ 'media.arr_admin.quality.language_any'|trans|json_encode|raw }},
+  language_fallback: {{ 'media.arr_admin.quality.language_fallback_tpl'|trans({id: '__ID__'})|json_encode|raw }},
+  format_fallback: {{ 'media.arr_admin.quality.format_fallback_tpl'|trans({id: '__ID__'})|json_encode|raw }},
+  drag_reorder: {{ 'media.arr_admin.quality.drag_reorder'|trans|json_encode|raw }},
+  group_name: {{ 'media.arr_admin.quality.group_name'|trans|json_encode|raw }},
+  cutoff_placeholder: {{ 'media.arr_admin.quality.cutoff_placeholder'|trans|json_encode|raw }},
+  size_min_tooltip: {{ 'media.arr_admin.quality.size_min_tooltip'|trans|json_encode|raw }},
+  size_pref_tooltip: {{ 'media.arr_admin.quality.size_pref_tooltip'|trans|json_encode|raw }},
+  size_max_tooltip: {{ 'media.arr_admin.quality.size_max_tooltip'|trans|json_encode|raw }},
+  confirm_delete_tpl: {{ 'media.arr_admin.quality.confirm_delete_tpl'|trans({name: '__NAME__'})|json_encode|raw }}
+};
 
 var feedback = document.getElementById('quality-feedback');
 function showFeedback(msg, type) {
@@ -451,9 +470,9 @@ function initSlider(row) {
     inMin.value  = toGiBh(mn).toFixed(1);
     inPref.value = toGiBh(pf).toFixed(1);
     inMax.value  = toGiBh(mx).toFixed(1);
-    inMin.title  = buildTooltip('Taille minimum', mn);
-    inPref.title = buildTooltip('Taille préférée', pf);
-    inMax.title  = buildTooltip('Taille maximum', mx);
+    inMin.title  = buildTooltip(I18N.size_min_tooltip, mn);
+    inPref.title = buildTooltip(I18N.size_pref_tooltip, pf);
+    inMax.title  = buildTooltip(I18N.size_max_tooltip, mx);
   }
 
   /* Update sliders + fills from inputs */
@@ -477,9 +496,9 @@ function initSlider(row) {
     fillGreen.style.width = Math.max(0, pctPref - pctMin) + '%';
     fillBlue.style.left   = pctPref + '%';
     fillBlue.style.width  = Math.max(0, pctMax - pctPref) + '%';
-    inMin.title  = buildTooltip('Taille minimum', mn);
-    inPref.title = buildTooltip('Taille préférée', pf);
-    inMax.title  = buildTooltip('Taille maximum', mx);
+    inMin.title  = buildTooltip(I18N.size_min_tooltip, mn);
+    inPref.title = buildTooltip(I18N.size_pref_tooltip, pf);
+    inMax.title  = buildTooltip(I18N.size_max_tooltip, mx);
   }
 
   rMin.addEventListener('input', function() {
@@ -531,11 +550,11 @@ document.getElementById('btn-save-definitions').addEventListener('click', functi
   .then(function(data){
     spinner.classList.add('d-none');
     if (data.ok) { location.reload(); return; }
-    showFeedback('Erreur lors de la sauvegarde des definitions.', 'danger');
+    showFeedback(I18N.error_save_def, 'danger');
   })
   .catch(function(){
     spinner.classList.add('d-none');
-    showFeedback('Erreur reseau.', 'danger');
+    showFeedback(I18N.error_network, 'danger');
   });
 });
 
@@ -559,7 +578,7 @@ function buildQualityRow(item, index) {
   grip.className = 'text-muted';
   grip.style.cssText = 'cursor:grab;font-size:.7rem;letter-spacing:1px;user-select:none;';
   grip.textContent = '⠿';
-  grip.title = 'Glisser pour réordonner';
+  grip.title = I18N.drag_reorder;
   div.appendChild(grip);
 
   var checkbox = document.createElement('input');
@@ -576,7 +595,7 @@ function buildQualityRow(item, index) {
     content.className = 'flex-fill d-flex align-items-center flex-wrap gap-1';
     var groupLabel = document.createElement('span');
     groupLabel.className = 'fw-medium small';
-    groupLabel.textContent = item.name || 'Groupe';
+    groupLabel.textContent = item.name || I18N.group_name;
     content.appendChild(groupLabel);
 
     item.items.forEach(function(sub) {
@@ -614,7 +633,7 @@ function getItemCutoffLabel(item) {
 function rebuildCutoffDropdown() {
   var cutoffSelect = document.getElementById('profile-cutoff');
   var prevValue = cutoffSelect.value;
-  cutoffSelect.innerHTML = '<option value="">-- Selectionner --</option>';
+  cutoffSelect.innerHTML = '<option value="">' + I18N.cutoff_placeholder + '</option>';
 
   var rows = document.querySelectorAll('#profile-qualities-list [data-item-index]');
   rows.forEach(function(row) {
@@ -641,7 +660,7 @@ modalEl.addEventListener('show.bs.modal', function(ev) {
   var profile = isEdit ? JSON.parse(profileData) : null;
   currentEditProfile = profile;
 
-  document.getElementById('modal-profile-title').textContent = isEdit ? 'Modifier le profil' : 'Nouveau profil de qualite';
+  document.getElementById('modal-profile-title').textContent = isEdit ? I18N.modal_edit : I18N.modal_new;
   document.getElementById('profile-edit-id').value = isEdit ? profile.id : '';
   document.getElementById('profile-name').value = isEdit ? (profile.name || '') : '';
   document.getElementById('profile-upgrade-allowed').checked = isEdit ? (profile.upgradeAllowed || false) : true;
@@ -664,7 +683,7 @@ modalEl.addEventListener('show.bs.modal', function(ev) {
   allLanguages.forEach(function(lang) {
     var opt = document.createElement('option');
     opt.value = lang.id;
-    opt.textContent = lang.name || ('Langue ' + lang.id);
+    opt.textContent = lang.name || I18N.language_fallback.replace('__ID__', lang.id);
     if (isEdit && profile.language && profile.language.id == lang.id) opt.selected = true;
     else if (!isEdit && lang.id == -1) opt.selected = true;
     langSelect.appendChild(opt);
@@ -684,7 +703,7 @@ modalEl.addEventListener('show.bs.modal', function(ev) {
     row.className = 'd-flex align-items-center gap-2 mb-1';
     var label = document.createElement('span');
     label.className = 'flex-fill small';
-    label.textContent = cf.name || ('Format ' + cf.id);
+    label.textContent = cf.name || I18N.format_fallback.replace('__ID__', cf.id);
     row.appendChild(label);
     var input = document.createElement('input');
     input.type = 'number';
@@ -796,7 +815,7 @@ modalEl.addEventListener('show.bs.modal', function(ev) {
 
   /* Build cutoff dropdown */
   var cutoffSelect = document.getElementById('profile-cutoff');
-  cutoffSelect.innerHTML = '<option value="">-- Selectionner --</option>';
+  cutoffSelect.innerHTML = '<option value="">' + I18N.cutoff_placeholder + '</option>';
   sourceItems.forEach(function(item, idx) {
     if (!item.allowed) return;
     var cId = getItemCutoffId(item);
@@ -828,11 +847,11 @@ document.getElementById('btn-profile-save').addEventListener('click', function()
   /* Language */
   var langSelect = document.getElementById('profile-language');
   var langId = parseInt(langSelect.value);
-  var langName = langSelect.options[langSelect.selectedIndex] ? langSelect.options[langSelect.selectedIndex].textContent : 'Any';
+  var langName = langSelect.options[langSelect.selectedIndex] ? langSelect.options[langSelect.selectedIndex].textContent : I18N.language_any;
 
   if (!name) {
     spinner.classList.add('d-none');
-    showModalFeedback('Le nom est obligatoire.');
+    showModalFeedback(I18N.error_name_required);
     return;
   }
 
@@ -898,11 +917,11 @@ document.getElementById('btn-profile-save').addEventListener('click', function()
   .then(function(data){
     spinner.classList.add('d-none');
     if (data.ok) { location.reload(); return; }
-    showModalFeedback(data.error || 'Erreur lors de la sauvegarde.');
+    showModalFeedback(data.error || I18N.error_save_profile);
   })
   .catch(function(){
     spinner.classList.add('d-none');
-    showModalFeedback('Erreur reseau.');
+    showModalFeedback(I18N.error_network);
   });
 });
 
@@ -911,7 +930,7 @@ document.getElementById('btn-profile-save').addEventListener('click', function()
 document.getElementById('btn-profile-delete-modal').addEventListener('click', function() {
   var id = this.getAttribute('data-id');
   var name = this.getAttribute('data-name');
-  if (!confirm('Supprimer le profil "' + name + '" ?')) return;
+  if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', name))) return;
   fetch('/sonarr/qualite/profils/' + id + '/supprimer', {
     method: 'POST',
     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
@@ -920,10 +939,10 @@ document.getElementById('btn-profile-delete-modal').addEventListener('click', fu
   .then(function(r){ return r.json(); })
   .then(function(data){
     if (data.ok) { location.reload(); return; }
-    showModalFeedback('Erreur lors de la suppression.');
+    showModalFeedback(I18N.error_delete);
   })
   .catch(function(){
-    showModalFeedback('Erreur reseau.');
+    showModalFeedback(I18N.error_network);
   });
 });
 
@@ -931,7 +950,7 @@ document.getElementById('btn-profile-delete-modal').addEventListener('click', fu
 
 document.querySelectorAll('.btn-profile-delete').forEach(function(btn) {
   btn.addEventListener('click', function() {
-    if (!confirm('Supprimer le profil "' + btn.dataset.name + '" ?')) return;
+    if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', btn.dataset.name))) return;
     fetch('/sonarr/qualite/profils/' + btn.dataset.id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
@@ -940,7 +959,7 @@ document.querySelectorAll('.btn-profile-delete').forEach(function(btn) {
     .then(function(r){ return r.json(); })
     .then(function(data){
       if (data.ok) { location.reload(); return; }
-      showFeedback('Erreur lors de la suppression.', 'danger');
+      showFeedback(I18N.error_delete, 'danger');
     });
   });
 });

@@ -2002,6 +2002,226 @@ media:
       empty: Aucun log disponible
       level_info: info
 
+  arr_admin:
+    quality:
+      title_radarr: Qualité — Radarr
+      title_sonarr: Qualité — Sonarr
+      page_title: Qualité
+      error_unreachable_radarr: Impossible de joindre Radarr.
+      error_unreachable_sonarr: Impossible de joindre Sonarr.
+      profiles_section: Profils de qualité
+      profiles_count_tpl: "{count, plural, one {# profil} other {# profils}}"
+      add: Ajouter
+      empty_profiles: Aucun profil.
+      col_name: Nom
+      col_cutoff: Cutoff
+      col_qualities: Qualités incluses
+      col_actions: Actions
+      edit: Modifier
+      delete: Supprimer
+      definitions_section: Définitions de qualité
+      definitions_count_tpl: "{count, plural, one {# qualité} other {# qualités}}"
+      save: Enregistrer
+      empty_definitions: Aucune définition.
+      def_quality: Qualité
+      def_title: Titre
+      def_rate: Débit
+      def_values: Min / Préf. / Max
+      modal_new: Nouveau profil de qualité
+      modal_edit: Modifier le profil
+      name_label: Nom
+      name_placeholder: "Ex: HD-1080p, Ultra-HD..."
+      upgrade_allowed: Mise à niveau autorisée
+      language: Langue
+      language_any: Any
+      min_format_score: Score min format
+      cutoff_format_score: Score cutoff format
+      custom_formats_subsection: Formats personnalisés
+      custom_formats_help: Définissez un score pour chaque format custom.
+      qualities_subsection: Qualités
+      qualities_help: Cochez les qualités autorisées. L'ordre de haut en bas représente la priorité de mise à niveau (haut = meilleur). Les groupes contiennent plusieurs sous-qualités équivalentes.
+      cutoff_label: Cutoff
+      cutoff_placeholder: "-- Sélectionner --"
+      cutoff_help_radarr: Radarr arrête de chercher une meilleure qualité une fois le cutoff atteint.
+      cutoff_help_sonarr: Sonarr arrête de chercher une meilleure qualité une fois le cutoff atteint.
+      cancel: Annuler
+      save_modal: Sauvegarder
+      drag_reorder: Glisser pour réordonner
+      group_name: Groupe
+      format_fallback_tpl: "Format {id}"
+      language_fallback_tpl: "Langue {id}"
+      error_save_def: Erreur lors de la sauvegarde des définitions.
+      error_save_profile: Erreur lors de la sauvegarde.
+      error_delete: Erreur lors de la suppression.
+      error_network: Erreur réseau.
+      error_name_required: Le nom est obligatoire.
+      confirm_delete_tpl: "Supprimer le profil « {name} » ?"
+      size_min_tooltip: Taille minimum
+      size_pref_tooltip: Taille préférée
+      size_max_tooltip: Taille maximum
+    custom_formats:
+      title_radarr: Formats custom — Radarr
+      title_sonarr: Formats custom — Sonarr
+      page_title: Formats personnalisés
+      error_unreachable_radarr: Impossible de joindre Radarr.
+      error_unreachable_sonarr: Impossible de joindre Sonarr.
+      card_title: Formats personnalisés
+      add: Ajouter
+      empty: Aucun format personnalisé.
+      col_name: Nom
+      col_conditions: Conditions
+      col_include_renaming: Inclure si renommage
+      col_actions: Actions
+      none: Aucune
+      yes: Oui
+      no: Non
+      edit: Modifier
+      delete: Supprimer
+      modal_new: Nouveau format personnalisé
+      modal_edit_tpl: "Modifier : {name}"
+      modal_edit_fallback: Format
+      name_label: Nom
+      name_placeholder: "Ex: HDR10, Remux, FLAC..."
+      include_renaming: Inclure dans le renommage
+      conditions_section: Conditions (Specifications)
+      add_condition: Ajouter une condition
+      empty_conditions: Aucune condition. Cliquez sur « Ajouter une condition » pour commencer.
+      cancel: Annuler
+      save: Enregistrer
+      create: Créer
+      condition_tpl: "Condition #{index}"
+      condition_type: Type de condition
+      condition_type_placeholder: "-- Choisir un type --"
+      condition_name: Nom de la condition
+      condition_name_placeholder: "Nom..."
+      negate: Inverser (Negate)
+      required: Requis
+      error_load_schema_radarr: Impossible de charger les types de conditions depuis Radarr.
+      error_load_schema_sonarr: Impossible de charger les types de conditions depuis Sonarr.
+      error_load_schema_short: Impossible de charger les types de conditions.
+      error_save: Erreur lors de l'enregistrement.
+      error_delete: Erreur lors de la suppression.
+      error_network_tpl: "Erreur réseau : {message}"
+      error_network: Erreur réseau.
+      error_name_required: Le nom est obligatoire.
+      confirm_delete_tpl: "Supprimer le format « {name} » ?"
+    delay_profiles:
+      title_radarr: Profils de délai — Radarr
+      title_sonarr: Profils de délai — Sonarr
+      page_title: Profils de délai
+      error_unreachable_radarr: Impossible de joindre Radarr.
+      error_unreachable_sonarr: Impossible de joindre Sonarr.
+      card_title: Profils de délai
+      add: Ajouter
+      empty: Aucun profil de délai.
+      col_order: Ordre
+      col_tags: Tags
+      col_usenet: Usenet
+      col_torrent: Torrent
+      col_protocol: Protocole pref.
+      col_delay_usenet: Délai Usenet (min)
+      col_delay_torrent: Délai Torrent (min)
+      col_bypass_cutoff: Bypass si cutoff atteint
+      col_actions: Actions
+      tags_global: Global
+      yes: Oui
+      no: Non
+      default: Défaut
+      edit: Modifier
+      delete: Supprimer
+      modal_new: Nouveau profil de délai
+      modal_edit_tpl: "Modifier le profil #{id}"
+      enable_usenet: Activer Usenet
+      enable_torrent: Activer Torrent
+      preferred_protocol: Protocole préféré
+      usenet_delay: Délai Usenet (min)
+      torrent_delay: Délai Torrent (min)
+      bypass_highest: Bypass si meilleure qualité atteinte
+      bypass_cf_score: Bypass si score format custom dépassé
+      min_cf_score: Score min. format custom
+      tags_label: Tags (IDs, virgules)
+      tags_placeholder: "Ex: 1,3,5"
+      tags_help: Identifiants des tags, séparés par des virgules.
+      cancel: Annuler
+      create: Créer
+      save: Enregistrer
+      error_save: Erreur lors de l'enregistrement.
+      error_delete: Erreur lors de la suppression.
+      error_network_tpl: "Erreur réseau : {message}"
+      confirm_delete: Supprimer ce profil de délai ?
+    schema_modal:
+      type: Type
+      type_placeholder: "— Choisir un type —"
+      name_label: Nom
+      name_placeholder: "Mon indexeur..."
+      triggers_label: Événements déclencheurs
+      opt_rss: RSS
+      opt_auto_search: Recherche auto
+      opt_interactive_search: Recherche interactive
+      opt_priority: Priorité
+      cancel: Annuler
+      test: Tester
+      save: Enregistrer
+      path_placeholder: "/chemin/vers/dossier"
+      csv_help: Entrez les valeurs séparées par des virgules
+      csv_placeholder: "Valeurs séparées par des virgules"
+      cats_placeholder: "Ex: 2000, 2010, 2030"
+      trigger:
+        on_grab: Récupération
+        on_download: Téléchargement
+        on_upgrade: Mise à niveau
+        on_rename: Renommage
+        on_movie_added: Film ajouté
+        on_movie_delete: Film supprimé
+        on_movie_file_delete: Fichier supprimé
+        on_movie_file_delete_for_upgrade: Fichier supprimé (upgrade)
+        on_health_issue: Problème de santé
+        on_health_restored: Santé rétablie
+        on_application_update: Mise à jour appli
+        on_manual_interaction_required: Interaction manuelle
+        include_health_warnings: Inclure avertissements
+      newznab:
+        tv: TV
+        films: Films
+        audio: Audio
+        pc: PC
+        tv_sport: TV-Sport
+        xxx: XXX
+        books: Livres
+        other: Autre
+        films_foreign: Films/Étranger
+        films_other: Films/Autre
+        films_sd: Films/SD
+        films_hd: Films/HD
+        films_uhd: Films/UHD
+        films_bluray: Films/Blu-Ray
+        films_3d: Films/3D
+        films_dvd: Films/DVD
+        films_webdl: Films/WEB-DL
+        anime: Anime
+        doc: Documentaire
+        tv_webdl: TV/WEB-DL
+        tv_foreign: TV/Étranger
+        tv_sd: TV/SD
+        tv_hd: TV/HD
+        tv_uhd: TV/UHD
+        tv_other: TV/Autre
+        tv_sport_sub: TV/Sport
+        tv_anime: TV/Anime
+        tv_doc: TV/Documentaire
+      error_schema_http_tpl: "Erreur chargement schéma (HTTP {status})"
+      error_schema_none_radarr: "Aucun type disponible — vérifiez la connexion à Radarr."
+      error_schema_none_sonarr: "Aucun type disponible — vérifiez la connexion à Sonarr."
+      error_schema_generic: Impossible de charger le schéma.
+      error_name_required: Le nom est obligatoire.
+      error_impl_missing: Type d'implémentation introuvable dans le schéma.
+      error_form_init: Erreur lors de l'initialisation du formulaire.
+      error_save: Erreur lors de l'enregistrement.
+      error_network_tpl: "Erreur réseau : {message}"
+      error_network_test: Erreur réseau lors du test.
+      test_success: "Test réussi ✓"
+      test_failure: Échec du test.
+
 watchlist_page:
   back_to_discover: Découverte
   count_titles: '{count, plural, one {# titre} other {# titres}}'

@@ -1,18 +1,18 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Profils de delai — Sonarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.delay_profiles.title_sonarr'|trans }}{% endblock %}
 
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Profils de delai</h2>
+        <h2 class="page-title">{{ 'media.arr_admin.delay_profiles.page_title'|trans }}</h2>
       </div>
       <div class="col-auto ms-auto d-flex gap-2 align-items-center">
         <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modal-dp">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
-          Ajouter
+          {{ 'media.arr_admin.delay_profiles.add'|trans }}
         </button>
         {% include 'media/_sonarr_nav.html.twig' %}
       </div>
@@ -24,35 +24,35 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Sonarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.delay_profiles.error_unreachable_sonarr'|trans }}</div>
 {% endif %}
 
 <div id="delay-feedback" class="alert d-none mb-3"></div>
 
 <div class="card">
   <div class="card-header">
-    <h3 class="card-title">Profils de delai</h3>
+    <h3 class="card-title">{{ 'media.arr_admin.delay_profiles.card_title'|trans }}</h3>
     <div class="card-options">
       <span class="badge bg-secondary-lt">{{ profiles|length }}</span>
     </div>
   </div>
   <div class="card-body p-0">
     {% if profiles is empty %}
-      <div class="text-muted text-center py-5">Aucun profil de delai.</div>
+      <div class="text-muted text-center py-5">{{ 'media.arr_admin.delay_profiles.empty'|trans }}</div>
     {% else %}
       <div class="table-responsive">
         <table class="table table-vcenter mb-0">
           <thead>
             <tr>
-              <th>Ordre</th>
-              <th>Tags</th>
-              <th>Usenet</th>
-              <th>Torrent</th>
-              <th>Protocole pref.</th>
-              <th>Delai Usenet (min)</th>
-              <th>Delai Torrent (min)</th>
-              <th>Bypass si cutoff atteint</th>
-              <th class="text-end">Actions</th>
+              <th>{{ 'media.arr_admin.delay_profiles.col_order'|trans }}</th>
+              <th>{{ 'media.arr_admin.delay_profiles.col_tags'|trans }}</th>
+              <th>{{ 'media.arr_admin.delay_profiles.col_usenet'|trans }}</th>
+              <th>{{ 'media.arr_admin.delay_profiles.col_torrent'|trans }}</th>
+              <th>{{ 'media.arr_admin.delay_profiles.col_protocol'|trans }}</th>
+              <th>{{ 'media.arr_admin.delay_profiles.col_delay_usenet'|trans }}</th>
+              <th>{{ 'media.arr_admin.delay_profiles.col_delay_torrent'|trans }}</th>
+              <th>{{ 'media.arr_admin.delay_profiles.col_bypass_cutoff'|trans }}</th>
+              <th class="text-end">{{ 'media.arr_admin.delay_profiles.col_actions'|trans }}</th>
             </tr>
           </thead>
           <tbody>
@@ -65,21 +65,21 @@
                     <span class="badge bg-secondary-lt me-1">{{ tag }}</span>
                   {% endfor %}
                 {% else %}
-                  <span class="text-muted small">Global</span>
+                  <span class="text-muted small">{{ 'media.arr_admin.delay_profiles.tags_global'|trans }}</span>
                 {% endif %}
               </td>
               <td>
                 {% if profile.enableUsenet ?? false %}
-                  <span class="badge bg-success-lt text-success">Oui</span>
+                  <span class="badge bg-success-lt text-success">{{ 'media.arr_admin.delay_profiles.yes'|trans }}</span>
                 {% else %}
-                  <span class="badge bg-secondary-lt">Non</span>
+                  <span class="badge bg-secondary-lt">{{ 'media.arr_admin.delay_profiles.no'|trans }}</span>
                 {% endif %}
               </td>
               <td>
                 {% if profile.enableTorrent ?? false %}
-                  <span class="badge bg-success-lt text-success">Oui</span>
+                  <span class="badge bg-success-lt text-success">{{ 'media.arr_admin.delay_profiles.yes'|trans }}</span>
                 {% else %}
-                  <span class="badge bg-secondary-lt">Non</span>
+                  <span class="badge bg-secondary-lt">{{ 'media.arr_admin.delay_profiles.no'|trans }}</span>
                 {% endif %}
               </td>
               <td class="text-muted">{{ profile.preferredProtocol ?? '—' }}</td>
@@ -87,24 +87,24 @@
               <td class="text-muted">{{ profile.torrentDelay ?? '—' }}</td>
               <td>
                 {% if profile.bypassIfHighestQuality ?? false %}
-                  <span class="badge bg-success-lt text-success">Oui</span>
+                  <span class="badge bg-success-lt text-success">{{ 'media.arr_admin.delay_profiles.yes'|trans }}</span>
                 {% else %}
-                  <span class="badge bg-secondary-lt">Non</span>
+                  <span class="badge bg-secondary-lt">{{ 'media.arr_admin.delay_profiles.no'|trans }}</span>
                 {% endif %}
               </td>
               <td class="text-end d-flex gap-2 justify-content-end">
                 <button class="btn btn-ghost-secondary btn-icon"
                         data-bs-toggle="modal" data-bs-target="#modal-dp"
-                        data-edit-item="{{ profile|json_encode|e('html_attr') }}" title="Modifier">
+                        data-edit-item="{{ profile|json_encode|e('html_attr') }}" title="{{ 'media.arr_admin.delay_profiles.edit'|trans }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                 </button>
                 {% if profile.id is defined and profiles|length > 1 %}
                   <button class="btn btn-ghost-danger btn-icon btn-delay-delete"
-                          data-id="{{ profile.id }}" title="Supprimer">
+                          data-id="{{ profile.id }}" title="{{ 'media.arr_admin.delay_profiles.delete'|trans }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                   </button>
                 {% else %}
-                  <span class="text-muted small">Defaut</span>
+                  <span class="text-muted small">{{ 'media.arr_admin.delay_profiles.default'|trans }}</span>
                 {% endif %}
               </td>
             </tr>
@@ -124,7 +124,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modal-dp-title">Nouveau profil de delai</h5>
+        <h5 class="modal-title" id="modal-dp-title">{{ 'media.arr_admin.delay_profiles.modal_new'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -132,57 +132,57 @@
           <div class="col-6">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="dp-enable-usenet" checked>
-              <label class="form-check-label" for="dp-enable-usenet">Activer Usenet</label>
+              <label class="form-check-label" for="dp-enable-usenet">{{ 'media.arr_admin.delay_profiles.enable_usenet'|trans }}</label>
             </div>
           </div>
           <div class="col-6">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="dp-enable-torrent" checked>
-              <label class="form-check-label" for="dp-enable-torrent">Activer Torrent</label>
+              <label class="form-check-label" for="dp-enable-torrent">{{ 'media.arr_admin.delay_profiles.enable_torrent'|trans }}</label>
             </div>
           </div>
           <div class="col-12">
-            <label class="form-label fw-medium">Protocole prefere</label>
+            <label class="form-label fw-medium">{{ 'media.arr_admin.delay_profiles.preferred_protocol'|trans }}</label>
             <select class="form-select form-select-sm" id="dp-preferred-protocol">
               <option value="usenet">Usenet</option>
               <option value="torrent">Torrent</option>
             </select>
           </div>
           <div class="col-6">
-            <label class="form-label fw-medium">Delai Usenet (min)</label>
+            <label class="form-label fw-medium">{{ 'media.arr_admin.delay_profiles.usenet_delay'|trans }}</label>
             <input type="number" class="form-control form-control-sm" id="dp-usenet-delay" value="0" min="0">
           </div>
           <div class="col-6">
-            <label class="form-label fw-medium">Delai Torrent (min)</label>
+            <label class="form-label fw-medium">{{ 'media.arr_admin.delay_profiles.torrent_delay'|trans }}</label>
             <input type="number" class="form-control form-control-sm" id="dp-torrent-delay" value="0" min="0">
           </div>
           <div class="col-12">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="dp-bypass-highest">
-              <label class="form-check-label" for="dp-bypass-highest">Bypass si meilleure qualite atteinte</label>
+              <label class="form-check-label" for="dp-bypass-highest">{{ 'media.arr_admin.delay_profiles.bypass_highest'|trans }}</label>
             </div>
           </div>
           <div class="col-12">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="dp-bypass-cf-score">
-              <label class="form-check-label" for="dp-bypass-cf-score">Bypass si score format custom depasse</label>
+              <label class="form-check-label" for="dp-bypass-cf-score">{{ 'media.arr_admin.delay_profiles.bypass_cf_score'|trans }}</label>
             </div>
           </div>
           <div class="col-6">
-            <label class="form-label fw-medium">Score min. format custom</label>
+            <label class="form-label fw-medium">{{ 'media.arr_admin.delay_profiles.min_cf_score'|trans }}</label>
             <input type="number" class="form-control form-control-sm" id="dp-min-cf-score" value="0" min="0">
           </div>
           <div class="col-6">
-            <label class="form-label fw-medium">Tags (IDs, virgules)</label>
-            <input type="text" class="form-control form-control-sm" id="dp-tags" placeholder="Ex: 1,3,5">
-            <small class="text-muted">Identifiants des tags, separes par des virgules.</small>
+            <label class="form-label fw-medium">{{ 'media.arr_admin.delay_profiles.tags_label'|trans }}</label>
+            <input type="text" class="form-control form-control-sm" id="dp-tags" placeholder="{{ 'media.arr_admin.delay_profiles.tags_placeholder'|trans }}">
+            <small class="text-muted">{{ 'media.arr_admin.delay_profiles.tags_help'|trans }}</small>
           </div>
         </div>
         <div id="dp-modal-feedback" class="alert d-none mt-3"></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-primary" id="btn-dp-save">Creer</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'media.arr_admin.delay_profiles.cancel'|trans }}</button>
+        <button type="button" class="btn btn-primary" id="btn-dp-save">{{ 'media.arr_admin.delay_profiles.create'|trans }}</button>
       </div>
     </div>
   </div>
@@ -192,6 +192,17 @@
 {% block javascripts %}
 <script>
 (function(){
+  var I18N = {
+    modal_new: {{ 'media.arr_admin.delay_profiles.modal_new'|trans|json_encode|raw }},
+    modal_edit_tpl: {{ 'media.arr_admin.delay_profiles.modal_edit_tpl'|trans({id: '__ID__'})|json_encode|raw }},
+    save: {{ 'media.arr_admin.delay_profiles.save'|trans|json_encode|raw }},
+    create: {{ 'media.arr_admin.delay_profiles.create'|trans|json_encode|raw }},
+    error_save: {{ 'media.arr_admin.delay_profiles.error_save'|trans|json_encode|raw }},
+    error_delete: {{ 'media.arr_admin.delay_profiles.error_delete'|trans|json_encode|raw }},
+    error_network_tpl: {{ 'media.arr_admin.delay_profiles.error_network_tpl'|trans({message: '__MSG__'})|json_encode|raw }},
+    confirm_delete: {{ 'media.arr_admin.delay_profiles.confirm_delete'|trans|json_encode|raw }}
+  };
+
   var feedback = document.getElementById('delay-feedback');
   var editingItem = null;
 
@@ -219,7 +230,7 @@
     editingItem = raw ? JSON.parse(raw) : null;
 
     if (editingItem) {
-      document.getElementById('modal-dp-title').textContent = 'Modifier le profil #' + editingItem.id;
+      document.getElementById('modal-dp-title').textContent = I18N.modal_edit_tpl.replace('__ID__', editingItem.id);
       document.getElementById('dp-enable-usenet').checked = editingItem.enableUsenet !== false;
       document.getElementById('dp-enable-torrent').checked = editingItem.enableTorrent !== false;
       document.getElementById('dp-preferred-protocol').value = editingItem.preferredProtocol || 'usenet';
@@ -229,9 +240,9 @@
       document.getElementById('dp-bypass-cf-score').checked = editingItem.bypassIfAboveCustomFormatScore || false;
       document.getElementById('dp-min-cf-score').value = editingItem.minimumCustomFormatScore || 0;
       document.getElementById('dp-tags').value = (editingItem.tags || []).join(',');
-      document.getElementById('btn-dp-save').textContent = 'Enregistrer';
+      document.getElementById('btn-dp-save').textContent = I18N.save;
     } else {
-      document.getElementById('modal-dp-title').textContent = 'Nouveau profil de delai';
+      document.getElementById('modal-dp-title').textContent = I18N.modal_new;
       document.getElementById('dp-enable-usenet').checked = true;
       document.getElementById('dp-enable-torrent').checked = true;
       document.getElementById('dp-preferred-protocol').value = 'usenet';
@@ -241,7 +252,7 @@
       document.getElementById('dp-bypass-cf-score').checked = false;
       document.getElementById('dp-min-cf-score').value = 0;
       document.getElementById('dp-tags').value = '';
-      document.getElementById('btn-dp-save').textContent = 'Creer';
+      document.getElementById('btn-dp-save').textContent = I18N.create;
     }
   });
 
@@ -284,17 +295,17 @@
       if (data.ok) {
         location.reload();
       } else {
-        showModalFeedback(data.error || 'Erreur lors de l\'enregistrement.', 'danger');
+        showModalFeedback(data.error || I18N.error_save, 'danger');
       }
     })
     .catch(function(err){
-      showModalFeedback('Erreur reseau : ' + (err.message || err), 'danger');
+      showModalFeedback(I18N.error_network_tpl.replace('__MSG__', (err.message || err)), 'danger');
     });
   });
 
   document.querySelectorAll('.btn-delay-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      if (!confirm('Supprimer ce profil de delai ?')) return;
+      if (!confirm(I18N.confirm_delete)) return;
       fetch('/sonarr/profils-delai/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
@@ -303,7 +314,7 @@
       .then(function(r){ return r.json(); })
       .then(function(data){
         if (data.ok) location.reload();
-        else showFeedback('Erreur lors de la suppression.', 'danger');
+        else showFeedback(I18N.error_delete, 'danger');
       });
     });
   });
