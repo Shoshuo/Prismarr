@@ -6,6 +6,8 @@ use App\Repository\SettingRepository;
 use App\Repository\UserRepository;
 use App\Service\ConfigService;
 use App\Service\HealthService;
+use App\Service\Media\JellyseerrClient;
+use App\Service\Media\ProwlarrClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use Doctrine\DBAL\Connection;
@@ -67,6 +69,46 @@ class AdminSettingsController extends AbstractController
             ['key' => 'gluetun_protocol', 'type' => 'text',     'label' => 'admin.field.protocol'],
         ],
     ];
+
+    /**
+     * Curated language lists for services that don't expose a /language
+     * endpoint (Prowlarr, Jellyseerr). Values are the codes the service
+     * actually accepts; labels are translated client-side via Twig (we
+     * keep the native autonyms here so they stay readable in any locale).
+     *
+     * @var array<string, string>
+     */
+    private const PROWLARR_UI_LANGUAGES = [
+        'en' => 'English',
+        'fr' => 'Français',
+        'de' => 'Deutsch',
+        'es' => 'Español',
+        'it' => 'Italiano',
+        'pt' => 'Português',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    private const JELLYSEERR_UI_LANGUAGES = [
+        'en' => 'English',
+        'fr' => 'Français',
+        'de' => 'Deutsch',
+        'es' => 'Español',
+        'it' => 'Italiano',
+        'pt' => 'Português',
+        'ja' => '日本語',
+        'ko' => '한국어',
+        'zh' => '中文',
+        'ru' => 'Русский',
+    ];
+
+    /**
+     * Jellyseerr stores the UI language per-user. We push our admin's
+     * preference to the Jellyseerr admin account, which is always id 1
+     * on a fresh install (see Jellyseerr migrations).
+     */
+    private const JELLYSEERR_ADMIN_USER_ID = 1;
 
     private const SERVICE_LABELS = [
         'tmdb'        => 'TMDb',
@@ -253,6 +295,7 @@ class AdminSettingsController extends AbstractController
             'timezones'          => \DateTimeZone::listIdentifiers(),
             'system_info'        => $this->systemInfo(),
             'export_counts'      => $this->exportCounts(),
+            'languages'          => $this->loadServiceLanguages(),
             'errors'             => $errors,
         ]);
     }
@@ -309,9 +352,11 @@ class AdminSettingsController extends AbstractController
     public static function getSubscribedServices(): array
     {
         return array_merge(parent::getSubscribedServices(), [
-            RadarrClient::class    => RadarrClient::class,
-            SonarrClient::class    => SonarrClient::class,
-            UserRepository::class  => UserRepository::class,
+            RadarrClient::class     => RadarrClient::class,
+            SonarrClient::class     => SonarrClient::class,
+            ProwlarrClient::class   => ProwlarrClient::class,
+            JellyseerrClient::class => JellyseerrClient::class,
+            UserRepository::class   => UserRepository::class,
         ]);
     }
 
@@ -337,6 +382,199 @@ class AdminSettingsController extends AbstractController
             'ok'      => $ok,
             'service' => self::SERVICE_LABELS[$service],
         ]);
+    }
+
+    #[Route('/languages/save', name: 'languages_save', methods: ['POST'])]
+    public function languagesSave(Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('admin_languages', (string) $request->request->get('_csrf_token'))) {
+            $this->addFlash('danger', $this->translator?->trans('flash.csrf.invalid') ?? 'Jeton CSRF invalide, réessayez.');
+            return $this->redirectToRoute('admin_settings_index');
+        }
+
+        $payload  = $request->request->all();
+        $failed   = [];
+        $changed  = false;
+
+        // Prismarr settings (BDD)
+        $prismarrUi   = (string) ($payload['prismarr_ui'] ?? '');
+        $prismarrMeta = (string) ($payload['prismarr_metadata'] ?? '');
+
+        if ($prismarrUi !== '' && in_array($prismarrUi, ['fr', 'en'], true)) {
+            $this->settings->set('display_language', $prismarrUi);
+            $changed = true;
+        }
+        if ($prismarrMeta !== '' && in_array($prismarrMeta, ['fr-FR', 'en-US'], true)) {
+            $this->settings->set('display_metadata_language', $prismarrMeta);
+            $changed = true;
+        }
+        // Invalidate cache so DisplayPreferencesService picks up the new values
+        if ($changed) {
+            try { $this->appCache->clear(); } catch (\Throwable) {}
+        }
+
+        // Radarr UI lang (push via API)
+        if ($this->config->get('radarr_url') && $this->config->get('radarr_api_key') && isset($payload['radarr_ui'])) {
+            try {
+                /** @var RadarrClient $radarr */
+                $radarr = $this->container->get(RadarrClient::class);
+                $ui     = $radarr->getUiConfig() ?? [];
+                $newId  = (int) $payload['radarr_ui'];
+                if ($newId > 0 && ($ui['uiLanguage'] ?? null) !== $newId) {
+                    $ui['uiLanguage'] = $newId;
+                    $radarr->updateUiConfig($ui);
+                }
+            } catch (\Throwable $e) {
+                $failed[] = 'Radarr';
+                $this->logger->warning('AdminSettings languagesSave radarr failed', ['message' => $e->getMessage()]);
+            }
+        }
+
+        // Sonarr UI lang
+        if ($this->config->get('sonarr_url') && $this->config->get('sonarr_api_key') && isset($payload['sonarr_ui'])) {
+            try {
+                /** @var SonarrClient $sonarr */
+                $sonarr = $this->container->get(SonarrClient::class);
+                $ui     = $sonarr->getUiConfig() ?? [];
+                $newId  = (int) $payload['sonarr_ui'];
+                if ($newId > 0 && ($ui['uiLanguage'] ?? null) !== $newId) {
+                    $ui['uiLanguage'] = $newId;
+                    $sonarr->updateUiConfig($ui);
+                }
+            } catch (\Throwable $e) {
+                $failed[] = 'Sonarr';
+                $this->logger->warning('AdminSettings languagesSave sonarr failed', ['message' => $e->getMessage()]);
+            }
+        }
+
+        // Prowlarr UI lang (string code)
+        if ($this->config->get('prowlarr_url') && $this->config->get('prowlarr_api_key') && isset($payload['prowlarr_ui'])) {
+            try {
+                /** @var ProwlarrClient $prowlarr */
+                $prowlarr = $this->container->get(ProwlarrClient::class);
+                $ui       = $prowlarr->getUiConfig() ?? [];
+                $newCode  = (string) $payload['prowlarr_ui'];
+                if (isset(self::PROWLARR_UI_LANGUAGES[$newCode]) && ($ui['uiLanguage'] ?? null) !== $newCode) {
+                    $ui['uiLanguage'] = $newCode;
+                    $prowlarr->updateUiConfig($ui);
+                }
+            } catch (\Throwable $e) {
+                $failed[] = 'Prowlarr';
+                $this->logger->warning('AdminSettings languagesSave prowlarr failed', ['message' => $e->getMessage()]);
+            }
+        }
+
+        // Jellyseerr UI lang (per-user, admin id 1)
+        if ($this->config->get('jellyseerr_url') && $this->config->get('jellyseerr_api_key') && isset($payload['jellyseerr_ui'])) {
+            try {
+                /** @var JellyseerrClient $jellyseerr */
+                $jellyseerr = $this->container->get(JellyseerrClient::class);
+                $newCode    = (string) $payload['jellyseerr_ui'];
+                if (isset(self::JELLYSEERR_UI_LANGUAGES[$newCode])) {
+                    $jellyseerr->updateUserSettings(self::JELLYSEERR_ADMIN_USER_ID, ['locale' => $newCode]);
+                }
+            } catch (\Throwable $e) {
+                $failed[] = 'Jellyseerr';
+                $this->logger->warning('AdminSettings languagesSave jellyseerr failed', ['message' => $e->getMessage()]);
+            }
+        }
+
+        if ($failed === []) {
+            $this->addFlash('success', $this->translator?->trans('admin.languages.saved_success') ?? 'Langues mises à jour.');
+        } else {
+            $this->addFlash('warning', $this->translator?->trans('admin.languages.partial_error', ['services' => implode(', ', $failed)]) ?? 'Sauvegarde partielle : ' . implode(', ', $failed) . ' ont échoué.');
+        }
+
+        return $this->redirectToRoute('admin_settings_index');
+    }
+
+    /**
+     * Fetches the current UI language + the list of available languages
+     * for each connected *Arr service. Best-effort: each service is wrapped
+     * in try/catch so a single dead service doesn't break the page.
+     *
+     * @return array<string, array{configured: bool, current: string|int|null, available: array<string|int, string>, error: bool}>
+     */
+    private function loadServiceLanguages(): array
+    {
+        $out = [
+            'radarr'     => ['configured' => false, 'current' => null, 'available' => [], 'error' => false],
+            'sonarr'     => ['configured' => false, 'current' => null, 'available' => [], 'error' => false],
+            'prowlarr'   => ['configured' => false, 'current' => null, 'available' => self::PROWLARR_UI_LANGUAGES, 'error' => false],
+            'jellyseerr' => ['configured' => false, 'current' => null, 'available' => self::JELLYSEERR_UI_LANGUAGES, 'error' => false],
+        ];
+
+        // Radarr: id-based language list, /api/v3/language + /api/v3/config/ui
+        if ($this->config->get('radarr_url') && $this->config->get('radarr_api_key')) {
+            $out['radarr']['configured'] = true;
+            try {
+                /** @var RadarrClient $radarr */
+                $radarr = $this->container->get(RadarrClient::class);
+                $ui     = $radarr->getUiConfig() ?? [];
+                $langs  = $radarr->getLanguages();
+                $out['radarr']['current']   = $ui['uiLanguage'] ?? null;
+                $out['radarr']['available'] = [];
+                foreach ($langs as $l) {
+                    if (isset($l['id'], $l['name'])) {
+                        $out['radarr']['available'][(int) $l['id']] = (string) $l['name'];
+                    }
+                }
+            } catch (\Throwable $e) {
+                $out['radarr']['error'] = true;
+                $this->logger->warning('AdminSettings loadLanguages radarr failed', ['message' => $e->getMessage()]);
+            }
+        }
+
+        // Sonarr: same pattern
+        if ($this->config->get('sonarr_url') && $this->config->get('sonarr_api_key')) {
+            $out['sonarr']['configured'] = true;
+            try {
+                /** @var SonarrClient $sonarr */
+                $sonarr = $this->container->get(SonarrClient::class);
+                $ui     = $sonarr->getUiConfig() ?? [];
+                $langs  = $sonarr->getLanguages();
+                $out['sonarr']['current']   = $ui['uiLanguage'] ?? null;
+                $out['sonarr']['available'] = [];
+                foreach ($langs as $l) {
+                    if (isset($l['id'], $l['name'])) {
+                        $out['sonarr']['available'][(int) $l['id']] = (string) $l['name'];
+                    }
+                }
+            } catch (\Throwable $e) {
+                $out['sonarr']['error'] = true;
+                $this->logger->warning('AdminSettings loadLanguages sonarr failed', ['message' => $e->getMessage()]);
+            }
+        }
+
+        // Prowlarr: ISO codes (no /language endpoint), curated list
+        if ($this->config->get('prowlarr_url') && $this->config->get('prowlarr_api_key')) {
+            $out['prowlarr']['configured'] = true;
+            try {
+                /** @var ProwlarrClient $prowlarr */
+                $prowlarr = $this->container->get(ProwlarrClient::class);
+                $ui = $prowlarr->getUiConfig() ?? [];
+                $out['prowlarr']['current'] = $ui['uiLanguage'] ?? null;
+            } catch (\Throwable $e) {
+                $out['prowlarr']['error'] = true;
+                $this->logger->warning('AdminSettings loadLanguages prowlarr failed', ['message' => $e->getMessage()]);
+            }
+        }
+
+        // Jellyseerr: per-user setting, we drive the admin user (id 1)
+        if ($this->config->get('jellyseerr_url') && $this->config->get('jellyseerr_api_key')) {
+            $out['jellyseerr']['configured'] = true;
+            try {
+                /** @var JellyseerrClient $jellyseerr */
+                $jellyseerr = $this->container->get(JellyseerrClient::class);
+                $main = $jellyseerr->getUserSettingsMain(self::JELLYSEERR_ADMIN_USER_ID) ?? [];
+                $out['jellyseerr']['current'] = $main['locale'] ?? null;
+            } catch (\Throwable $e) {
+                $out['jellyseerr']['error'] = true;
+                $this->logger->warning('AdminSettings loadLanguages jellyseerr failed', ['message' => $e->getMessage()]);
+            }
+        }
+
+        return $out;
     }
 
     /**

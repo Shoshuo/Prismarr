@@ -246,6 +246,15 @@
           </svg>
           {{ 'admin.nav.display'|trans }}
         </a>
+        <a href="#section-languages" data-settings-nav="section-languages">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 5h7"/><path d="M9 3v2c0 4.418 -2.239 8 -5 8"/>
+            <path d="M5 9c0 2.144 2.952 3.908 6.7 4"/>
+            <path d="M12 20l4 -9l4 9"/><path d="M19.1 18h-6.2"/>
+          </svg>
+          {{ 'admin.languages.tab_label'|trans }}
+        </a>
 
         <a href="#section-backup" data-settings-nav="section-backup">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -524,7 +533,151 @@
           </div>
         </form>
 
-        {# ─── Section 3 : Sauvegarde / Restauration ──────────── #}
+        {# ─── Section 3 : Langues unifiées ────────────────────── #}
+        <section id="section-languages" class="settings-group" data-section>
+          <div class="settings-group-title">{{ 'admin.languages.tab_label'|trans }}</div>
+          <p class="settings-group-desc">{{ 'admin.languages.description'|trans }}</p>
+
+          <form action="{{ path('admin_settings_languages_save') }}" method="post">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_languages') }}">
+
+            {# ── Prismarr ── #}
+            <div class="service-card">
+              <div class="service-card-head" style="margin-bottom:.75rem;">
+                <div class="service-card-icon" style="background: var(--tblr-primary);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                       fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 5h7"/><path d="M9 3v2c0 4.418 -2.239 8 -5 8"/>
+                    <path d="M5 9c0 2.144 2.952 3.908 6.7 4"/>
+                    <path d="M12 20l4 -9l4 9"/><path d="M19.1 18h-6.2"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="service-card-title">{{ 'admin.languages.prismarr_section'|trans }}</p>
+                </div>
+              </div>
+
+              <div class="display-grid">
+                <div class="display-row">
+                  <label class="display-label" for="prismarr_ui">{{ 'admin.languages.prismarr_ui_label'|trans }}</label>
+                  <div>
+                    <select id="prismarr_ui" name="prismarr_ui" class="form-select form-select-sm">
+                      <option value="fr" {% if display_values.display_language == 'fr' %}selected{% endif %}>Français</option>
+                      <option value="en" {% if display_values.display_language == 'en' %}selected{% endif %}>English</option>
+                    </select>
+                    <small class="text-secondary d-block mt-1">{{ 'admin.languages.prismarr_ui_help'|trans }}</small>
+                  </div>
+                </div>
+                <div class="display-row">
+                  <label class="display-label" for="prismarr_metadata">{{ 'admin.languages.prismarr_metadata_label'|trans }}</label>
+                  <div>
+                    <select id="prismarr_metadata" name="prismarr_metadata" class="form-select form-select-sm">
+                      <option value="fr-FR" {% if display_values.display_metadata_language == 'fr-FR' %}selected{% endif %}>Français (fr-FR)</option>
+                      <option value="en-US" {% if display_values.display_metadata_language == 'en-US' %}selected{% endif %}>English (en-US)</option>
+                    </select>
+                    <small class="text-secondary d-block mt-1">{{ 'admin.languages.prismarr_metadata_help'|trans }}</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {# ── Services connectés ── #}
+            <div class="service-card" style="margin-top:1rem;">
+              <div class="service-card-head" style="margin-bottom:.75rem;">
+                <div class="service-card-icon" style="background:#6366f1;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                       fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9z"/>
+                    <path d="M12 12l8 -4.5"/><path d="M12 12l0 9"/><path d="M12 12l-8 -4.5"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="service-card-title">{{ 'admin.languages.services_section'|trans }}</p>
+                </div>
+              </div>
+
+              <div class="display-grid">
+                {# Radarr #}
+                <div class="display-row">
+                  <label class="display-label" for="radarr_ui">{{ 'admin.languages.radarr_ui_label'|trans }}</label>
+                  {% if not languages.radarr.configured %}
+                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.not_configured'|trans }}">
+                  {% elseif languages.radarr.error %}
+                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.unreachable'|trans }}">
+                  {% else %}
+                    <select id="radarr_ui" name="radarr_ui" class="form-select form-select-sm">
+                      {% for id, name in languages.radarr.available %}
+                        <option value="{{ id }}" {% if languages.radarr.current == id %}selected{% endif %}>{{ name }}</option>
+                      {% endfor %}
+                    </select>
+                  {% endif %}
+                </div>
+
+                {# Sonarr #}
+                <div class="display-row">
+                  <label class="display-label" for="sonarr_ui">{{ 'admin.languages.sonarr_ui_label'|trans }}</label>
+                  {% if not languages.sonarr.configured %}
+                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.not_configured'|trans }}">
+                  {% elseif languages.sonarr.error %}
+                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.unreachable'|trans }}">
+                  {% else %}
+                    <select id="sonarr_ui" name="sonarr_ui" class="form-select form-select-sm">
+                      {% for id, name in languages.sonarr.available %}
+                        <option value="{{ id }}" {% if languages.sonarr.current == id %}selected{% endif %}>{{ name }}</option>
+                      {% endfor %}
+                    </select>
+                  {% endif %}
+                </div>
+
+                {# Prowlarr #}
+                <div class="display-row">
+                  <label class="display-label" for="prowlarr_ui">{{ 'admin.languages.prowlarr_ui_label'|trans }}</label>
+                  {% if not languages.prowlarr.configured %}
+                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.not_configured'|trans }}">
+                  {% elseif languages.prowlarr.error %}
+                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.unreachable'|trans }}">
+                  {% else %}
+                    <select id="prowlarr_ui" name="prowlarr_ui" class="form-select form-select-sm">
+                      {% for code, name in languages.prowlarr.available %}
+                        <option value="{{ code }}" {% if languages.prowlarr.current == code %}selected{% endif %}>{{ name }}</option>
+                      {% endfor %}
+                    </select>
+                  {% endif %}
+                </div>
+
+                {# Jellyseerr #}
+                <div class="display-row">
+                  <label class="display-label" for="jellyseerr_ui">{{ 'admin.languages.jellyseerr_ui_label'|trans }}</label>
+                  {% if not languages.jellyseerr.configured %}
+                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.not_configured'|trans }}">
+                  {% elseif languages.jellyseerr.error %}
+                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.unreachable'|trans }}">
+                  {% else %}
+                    <div>
+                      <select id="jellyseerr_ui" name="jellyseerr_ui" class="form-select form-select-sm">
+                        {% for code, name in languages.jellyseerr.available %}
+                          <option value="{{ code }}" {% if languages.jellyseerr.current == code %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                      </select>
+                      <small class="text-secondary d-block mt-1">{{ 'admin.languages.info_jellyseerr_per_user'|trans }}</small>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="alert alert-info mt-3" style="font-size:.78rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                {{ 'admin.languages.info_existing_items'|trans }}
+              </div>
+            </div>
+
+            <div class="settings-footer mt-3">
+              <button type="submit" class="btn btn-primary">{{ 'admin.languages.save_btn'|trans }}</button>
+            </div>
+          </form>
+        </section>
+
+        {# ─── Section 4 : Sauvegarde / Restauration ──────────── #}
         <section id="section-backup" class="settings-group" data-section>
             <div class="settings-group-title">{{ 'admin.backup.title'|trans }}</div>
             <p class="settings-group-desc">{{ 'admin.backup.description'|trans|raw }}</p>

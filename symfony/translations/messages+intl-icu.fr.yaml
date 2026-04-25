@@ -485,6 +485,26 @@ admin:
       unreachable: Injoignable
       error: Erreur
     test: Tester
+  languages:
+    tab_label: Langues
+    description: 'Centralise les paramètres de langue de Prismarr et des services connectés. Les modifications côté Radarr/Sonarr/Prowlarr/Jellyseerr sont poussées via leurs API.'
+    prismarr_section: Prismarr
+    prismarr_ui_label: Langue de l'interface
+    prismarr_ui_help: 'Langue affichée dans Prismarr. Les utilisateurs ne peuvent pas changer leur propre langue (paramètre admin uniquement).'
+    prismarr_metadata_label: Langue des métadonnées TMDb
+    prismarr_metadata_help: 'Langue des titres, synopsis et fiches récupérées depuis TMDb (pour la page Découverte et les fiches enrichies).'
+    services_section: Services connectés
+    radarr_ui_label: Radarr — Langue UI
+    sonarr_ui_label: Sonarr — Langue UI
+    prowlarr_ui_label: Prowlarr — Langue UI
+    jellyseerr_ui_label: Jellyseerr — Langue UI (admin)
+    not_configured: Service non configuré
+    unreachable: Service injoignable
+    save_btn: Enregistrer les langues
+    saved_success: Langues mises à jour.
+    partial_error: 'Sauvegarde partielle : {services} ont échoué.'
+    info_jellyseerr_per_user: La langue Jellyseerr est par-utilisateur. Cette modification s'applique au compte admin (id 1).
+    info_existing_items: 'Astuce : changer la langue d''un service ne retraduit pas les indexers/notifications/clients déjà créés. Pour cela il faut les recréer.'
   display:
     title: Affichage
     description: 'Préférences d''affichage personnelles (fuseau horaire, format de date, thème, densité) et visibilité des sections du menu latéral.'

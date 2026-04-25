@@ -486,6 +486,26 @@ admin:
       unreachable: Unreachable
       error: Error
     test: Test
+  languages:
+    tab_label: Languages
+    description: 'Central control for Prismarr UI language and connected services. Changes to Radarr/Sonarr/Prowlarr/Jellyseerr are pushed via their APIs.'
+    prismarr_section: Prismarr
+    prismarr_ui_label: Interface language
+    prismarr_ui_help: 'Language displayed in Prismarr. Users cannot change their own language (admin-only setting).'
+    prismarr_metadata_label: TMDb metadata language
+    prismarr_metadata_help: 'Language for titles, overviews and metadata fetched from TMDb (for the Discover page and enriched cards).'
+    services_section: Connected services
+    radarr_ui_label: Radarr — UI language
+    sonarr_ui_label: Sonarr — UI language
+    prowlarr_ui_label: Prowlarr — UI language
+    jellyseerr_ui_label: Jellyseerr — UI language (admin)
+    not_configured: Service not configured
+    unreachable: Service unreachable
+    save_btn: Save languages
+    saved_success: Languages updated.
+    partial_error: 'Partial save: {services} failed.'
+    info_jellyseerr_per_user: Jellyseerr language is per-user. This change applies to the admin account (id 1).
+    info_existing_items: 'Tip: changing a service language does not retranslate indexers/notifications/clients that were already created. To retranslate them you need to recreate them.'
   display:
     title: Display
     description: 'Personal display preferences (timezone, date format, theme, density) and sidebar section visibility.'
