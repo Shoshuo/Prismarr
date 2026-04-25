@@ -1,5 +1,7 @@
-# Prismarr — traductions FR (source de vérité, ne pas supprimer une clé sans la retirer aussi de messages.en.yaml).
-# Convention : clés hiérarchiques sous la forme `section.sous_section.element`.
+# Prismarr — traductions FR (première traduction, pas la source de vérité).
+# La source de vérité est messages+intl-icu.en.yaml — ajouter les nouvelles clés
+# d'abord côté EN puis traduire ici. Convention : clés hiérarchiques sous la
+# forme `section.sous_section.element`.
 
 common:
   action:

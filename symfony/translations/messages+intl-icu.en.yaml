@@ -1,6 +1,8 @@
-# Prismarr — English translations. Parallel structure to messages.fr.yaml.
-# When adding a new key: ALWAYS update both files so the fallback chain stays
-# clean (missing key → fallback to fr → visible French leak in the EN UI).
+# Prismarr — English translations (SOURCE OF TRUTH).
+# Add new keys here FIRST, then translate to messages+intl-icu.fr.yaml.
+# Symfony's default_locale is `en` and the fallback chain is `[en]`, so a
+# missing key in fr.yaml falls back to this file silently — but a missing
+# key in en.yaml leaks the raw translation key into the UI.
 
 common:
   action:
