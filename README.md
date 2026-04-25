@@ -28,25 +28,22 @@
 
 ## About
 
-Running a media stack at home means living in a tab graveyard: one for
-qBittorrent, one for Radarr, another for Sonarr, then Prowlarr, Jellyseerr,
-TMDb… **Prismarr** collapses all of that into a single Symfony 8 interface.
+**Prismarr** brings qBittorrent, Radarr, Sonarr, Prowlarr, Jellyseerr and
+TMDb together in a single modern Symfony interface. No more juggling six
+tabs to manage your library.
 
-It's not a replacement for Radarr or Sonarr — those run side by side and
+It's not a replacement for Radarr or Sonarr - those run side by side and
 keep doing what they do best. Prismarr is the unified control surface:
 one search bar that hits the local library and TMDb, one calendar that
 merges movie releases and episode airs, one dashboard that surfaces what
 matters today (a recent download, a pending request, a trending pick),
-and one settings page where every API key lives — never on disk in plain
+and one settings page where every API key lives - never on disk in plain
 text and never in environment variables.
 
 The whole thing ships as a single Docker container with SQLite inside.
 First boot opens a 7-step wizard: create the admin, plug your services in,
 done. No external database, no Redis, no per-service `.env` files. Pull
 the image, mount one volume, you're up.
-
-Built for homelabs that want polish without a docker-compose.yml the size
-of a small novel.
 
 ---
 
@@ -153,7 +150,7 @@ API keys, qBittorrent password, service URLs), display preferences and
 language are stored in the SQLite database (`setting` table). They never
 appear in environment variables or in any committable file.
 
-Two framework-level secrets — `APP_SECRET` and `MERCURE_JWT_SECRET` — are
+Two framework-level secrets - `APP_SECRET` and `MERCURE_JWT_SECRET` - are
 auto-generated on first boot and persisted inside the volume at
 `var/data/.env.local`. They never leave the volume; you don't have to set,
 rotate or back them up manually.
@@ -252,7 +249,7 @@ and not a bind mount onto a directory owned by root.
 
 ## Roadmap
 
-### v1.0 — Public release
+### v1.0 - Public release
 - [x] 7-step setup wizard
 - [x] Authentication with login rate-limiter
 - [x] Doctrine migrations (clean upgrades)
@@ -263,14 +260,14 @@ and not a bind mount onto a directory owned by root.
 - [x] Dashboard, Calendar (month / week / day + iCal export), Profile page
 - [x] Published on Docker Hub
 
-### v1.x — Improvements
+### v1.x - Improvements
 - [ ] Multi-user roles (read-only viewer vs admin)
 - [ ] Jellyfin widget (live sessions + stats)
 - [ ] Discord / Ntfy / Telegram notifications
 - [ ] Historical bandwidth graphs
 - [ ] Public REST API for third-party integrations
 
-### v2.0 — Automation
+### v2.0 - Automation
 - [ ] Auto-import of an existing library
 - [ ] Custom processing rules
 - [ ] Optional MariaDB / PostgreSQL backend
@@ -294,12 +291,12 @@ on `amd64` and `arm64`.
 
 ## Contributing
 
-Contributions are welcome — please open an issue first to discuss the scope
+Contributions are welcome - please open an issue first to discuss the scope
 before submitting a PR.
 
 - **Contributor guide**: [CONTRIBUTING.md](CONTRIBUTING.md) (Definition of Done + golden rules)
 - **Code of conduct**: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) (Contributor Covenant 2.1)
-- **Security vulnerability**: [SECURITY.md](SECURITY.md) — please **do not** open a public issue, contact by email
+- **Security vulnerability**: [SECURITY.md](SECURITY.md) - please **do not** open a public issue, contact by email
 - **Changelog**: [CHANGELOG.md](CHANGELOG.md)
 
 Before any commit: `make check` (PHP lint + Twig lint + full PHPUnit suite).
@@ -308,7 +305,7 @@ Before any commit: `make check` (PHP lint + Twig lint + full PHPUnit suite).
 
 ## License
 
-[AGPL-3.0](LICENSE) — you may use, modify and redistribute Prismarr freely,
+[AGPL-3.0](LICENSE) - you may use, modify and redistribute Prismarr freely,
 including in self-hosted production. Derivatives must remain open source
 under the same license.
 

@@ -28,27 +28,23 @@
 
 ## À propos
 
-Faire tourner une stack médias chez soi, c'est vivre dans un cimetière
-d'onglets : un pour qBittorrent, un pour Radarr, un autre pour Sonarr,
-puis Prowlarr, Jellyseerr, TMDb… **Prismarr** rassemble tout ça dans une
-seule interface Symfony 8.
+**Prismarr** réunit qBittorrent, Radarr, Sonarr, Prowlarr, Jellyseerr et
+TMDb dans une seule interface Symfony moderne. Plus besoin de jongler
+entre six onglets pour gérer votre bibliothèque.
 
-Ce n'est pas un remplaçant de Radarr ou de Sonarr — ces services tournent
+Ce n'est pas un remplaçant de Radarr ou de Sonarr - ces services tournent
 en parallèle et continuent de faire ce qu'ils font de mieux. Prismarr est
 la surface de contrôle unifiée : une barre de recherche qui couvre la
 bibliothèque locale et TMDb, un calendrier qui fusionne sorties films et
 épisodes, un dashboard qui remonte ce qui compte aujourd'hui (un téléchargement
 récent, une requête en attente, une tendance), et une page paramètres où
-chaque clé API est stockée — jamais en clair sur disque, jamais en variable
+chaque clé API est stockée - jamais en clair sur disque, jamais en variable
 d'environnement.
 
 Le tout dans un seul container Docker avec SQLite embarqué. Au premier
 démarrage, un wizard 7 étapes : créer l'admin, brancher les services,
 terminé. Pas de BDD externe, pas de Redis, pas de fichiers `.env` par
 service. Pull de l'image, un volume monté, c'est en route.
-
-Conçu pour les homelabs qui veulent du soigné sans un docker-compose.yml
-de la taille d'un petit roman.
 
 ---
 
@@ -161,7 +157,7 @@ préférences d'affichage et la langue sont stockés dans la BDD SQLite
 (table `setting`). Ils n'apparaissent jamais dans les variables
 d'environnement ni dans aucun fichier committable.
 
-Deux secrets framework — `APP_SECRET` et `MERCURE_JWT_SECRET` — sont
+Deux secrets framework - `APP_SECRET` et `MERCURE_JWT_SECRET` - sont
 auto-générés au premier démarrage et persistés dans le volume sous
 `var/data/.env.local`. Ils ne quittent jamais le volume ; aucun besoin de
 les définir, faire tourner ou sauvegarder à la main.
@@ -261,7 +257,7 @@ mount sur un répertoire appartenant à root.
 
 ## Roadmap
 
-### v1.0 — Release publique
+### v1.0 - Release publique
 - [x] Wizard de setup 7 étapes
 - [x] Authentification avec rate-limiter login
 - [x] Migrations Doctrine (mises à jour propres)
@@ -272,14 +268,14 @@ mount sur un répertoire appartenant à root.
 - [x] Dashboard, Calendrier (mois / semaine / jour + export iCal), Profil
 - [x] Publiée sur Docker Hub
 
-### v1.x — Améliorations
+### v1.x - Améliorations
 - [ ] Multi-utilisateurs avec rôles (lecture seule vs admin)
 - [ ] Widget Jellyfin (sessions live + stats)
 - [ ] Notifications Discord / Ntfy / Telegram
 - [ ] Graphiques historiques de bande passante
 - [ ] API REST publique pour intégrations tierces
 
-### v2.0 — Automation
+### v2.0 - Automation
 - [ ] Auto-import d'une bibliothèque existante
 - [ ] Règles de traitement personnalisées
 - [ ] Backend MariaDB / PostgreSQL en option
@@ -303,12 +299,12 @@ Un seul container Docker embarque tout. L'image fait `~282 Mo` et tourne sur
 
 ## Contribuer
 
-Les contributions sont les bienvenues — merci d'ouvrir une issue d'abord pour
+Les contributions sont les bienvenues - merci d'ouvrir une issue d'abord pour
 discuter du scope avant de soumettre une PR.
 
 - **Guide contributeur** : [CONTRIBUTING.md](CONTRIBUTING.md) (Definition of Done + règles d'or)
 - **Code de conduite** : [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) (Contributor Covenant 2.1)
-- **Vulnérabilité de sécurité** : [SECURITY.md](SECURITY.md) — **ne pas** ouvrir d'issue publique, contact par email
+- **Vulnérabilité de sécurité** : [SECURITY.md](SECURITY.md) - **ne pas** ouvrir d'issue publique, contact par email
 - **Changelog** : [CHANGELOG.md](CHANGELOG.md)
 
 Avant tout commit : `make check` (lint PHP + lint Twig + suite PHPUnit complète).
@@ -317,7 +313,7 @@ Avant tout commit : `make check` (lint PHP + lint Twig + suite PHPUnit complète
 
 ## Licence
 
-[AGPL-3.0](LICENSE) — vous pouvez utiliser, modifier et redistribuer Prismarr
+[AGPL-3.0](LICENSE) - vous pouvez utiliser, modifier et redistribuer Prismarr
 librement, y compris en self-hosted production. Les dérivés doivent rester
 open source sous la même licence.
 
