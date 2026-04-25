@@ -3094,6 +3094,248 @@ media:
       gb_suffix: GB
       size_gb_tpl: '{size} GB'
 
+qbittorrent:
+  page_title: Downloads
+  error_unreachable: Unable to reach qBittorrent.
+  stats:
+    total: Total
+    downloading: Downloading
+    seeding: Seeding
+    stalled: Stalled
+    paused: Paused
+    errored: Errors
+    total_downloaded: Total downloaded
+    total_uploaded: Total uploaded
+    session: Session
+    free_space: Free
+    peak_dl: 'Peak ↓'
+    peak_up: 'Peak ↑'
+  vpn:
+    label: VPN
+    port_vpn: VPN port
+    port_qbt: qBit port
+    sync_ok: '✓ Sync'
+    sync_ko: '✗ Out of sync'
+    sync_unknown: '—'
+    sync_title_match: 'qBit is listening on the Gluetun forwarded port'
+    sync_title_desync_tpl: "Gluetun port-update did not push port __VPN__ to qBit (currently __QBT__)"
+    sync_title_unknown: 'Port forwarding or qBit unavailable'
+  session:
+    label: Session
+    ratio: Ratio
+  filters:
+    search_placeholder: 'Search...'
+    all: All
+    active: '⚡ Active'
+    active_title: 'Torrents with speed > 0'
+    downloading: Downloading
+    seeding: Seeding
+    stalled: Stalled
+    paused: Paused
+    completed: Completed
+    error: Errors
+    category_label: 'Category:'
+    category_all: All
+    tag_label: 'Tag:'
+    tag_all: All
+    sort_label: 'Sort:'
+    select_all: Select all
+  count_tpl: '{count, plural, one {# torrent} other {# torrents}}'
+  sort:
+    added_desc: 'Added (newest → oldest)'
+    added_asc: 'Added (oldest → newest)'
+    name_asc: 'Name (A → Z)'
+    name_desc: 'Name (Z → A)'
+    size_desc: 'Size (↓)'
+    size_asc: 'Size (↑)'
+    progress_desc: 'Progress (↓)'
+    dlspeed_desc: 'DL speed (↓)'
+    upspeed_desc: 'UP speed (↓)'
+    ratio_desc: 'Ratio (↓)'
+    seeds_desc: 'Seeds (↓)'
+  view:
+    aria_label: "Display mode"
+    list: List
+    list_title: List view
+    table: Table
+    table_title: Table view
+    compact: Compact
+    compact_title: Compact view
+  table:
+    name: Name
+    size: Size
+    progress: '%'
+    dl_speed: DL/s
+    up_speed: UP/s
+    seeds: Seeds
+    ratio: Ratio
+    added: Added
+    actions: Actions
+  pagination:
+    per_page: 'Per page:'
+    info_tpl: '__FROM__–__TO__ / __TOTAL__'
+  toolbar:
+    add: Add
+    add_title: Add a torrent
+    pause_all_title: Pause all
+    resume_all_title: Resume all
+  state:
+    downloading: Downloading
+    seeding: Seeding
+    paused: Paused
+    queued: Queued
+    checking: Checking
+    error: Error
+    completed: Completed
+    stalled: Stalled
+    moving: Moving
+    unknown: Unknown state
+  row:
+    title_seeds_leechers: 'Seeds / Leechers'
+    title_ratio: Ratio
+    title_added_tpl: 'Added on __DATE__'
+    title_radarr: View in Radarr
+    title_sonarr: View in Sonarr
+    pause_title: Pause
+    resume_title: Resume
+    delete_title: Delete
+  bulk:
+    selected_tpl: '{count, plural, one {# selected} other {# selected}}'
+    resume: Resume
+    pause: Pause
+    delete: Delete
+    recheck: Recheck
+    category_placeholder: 'Category...'
+    cancel: Cancel
+  empty:
+    no_match: 'No torrent matches these criteria.'
+  modal_detail:
+    loading: 'Loading...'
+    tab_general: General
+    tab_files: Files
+    tab_trackers: Trackers
+    tab_peers: Peers
+    files:
+      col_name: Name
+      col_size: Size
+      col_progress: Progress
+      col_priority: Priority
+      empty: No files
+      prio_skip: Skip
+      prio_normal: Normal
+      prio_high: High
+      prio_max: Max
+    trackers:
+      col_url: URL
+      col_status: Status
+      col_seeds: Seeds
+      col_leechs: Leechers
+      empty: No trackers
+      status_disabled: Disabled
+      status_not_contacted: Not contacted
+      status_ok: OK
+      status_running: Running
+      status_error: Error
+    peers:
+      col_ip: IP
+      col_client: Client
+      col_progress: '%'
+      col_dl: DL
+      col_up: UP
+      empty: No peers connected
+    props:
+      downloaded: Downloaded
+      uploaded: Uploaded
+      ratio: Ratio
+      dl_speed: DL speed
+      up_speed: UP speed
+      eta: Time left
+      seeds_tpl: '__N__ / __TOTAL__'
+      seeds: Seeds
+      peers: Peers
+      total_size: Total size
+      added: Added
+      completed: Completed
+      save_path: Save folder
+    actions:
+      pause: Pause
+      resume: Resume
+      recheck: Recheck
+      reannounce: Reannounce
+      delete: Delete
+    error_load: Loading error
+  modal_add:
+    title: Add a torrent
+    urls_label: 'Magnet link or .torrent URL'
+    urls_placeholder: 'magnet:?xt=urn:btih:... or https://...'
+    urls_hint: 'One link per line to add multiple torrents.'
+    files_label: 'Or .torrent files'
+    drop_text: 'Drag your <strong>.torrent</strong> files here'
+    drop_browse: 'or click to browse'
+    file_remove_title: Remove
+    category_label: Category
+    category_none: None
+    start_label: Start
+    start_now: Start immediately
+    start_paused: Add paused
+    cancel: Cancel
+    submit: Add
+  modal_delete:
+    title: Delete
+    msg_single: 'Delete this torrent?'
+    msg_named_tpl: 'Delete "__NAME__"?'
+    msg_bulk_tpl: '{count, plural, one {Delete # torrent?} other {Delete # torrents?}}'
+    delete_files: 'Also delete files'
+    cancel: Cancel
+    confirm: Delete
+  toast:
+    action_sent: 'Action sent'
+    network_error: 'Network error'
+    failed_tpl: 'Failed: __ERROR__'
+    error_generic: error
+    paused: 'Torrent paused'
+    resumed: 'Torrent resumed'
+    recheck_started: 'Recheck started'
+    reannounce_sent: 'Reannounce sent'
+    bulk_resumed_tpl: '{count, plural, one {# torrent resumed} other {# torrents resumed}}'
+    bulk_paused_tpl: '{count, plural, one {# torrent paused} other {# torrents paused}}'
+    bulk_recheck_tpl: '{count, plural, one {Rechecking # torrent} other {Rechecking # torrents}}'
+    bulk_deleted_tpl: '{count, plural, one {# torrent deleted} other {# torrents deleted}}'
+    bulk_deleted_with_files_suffix: ' + files'
+    pause_all: 'All torrents paused'
+    resume_all: 'All torrents resumed'
+    add_files_ok_tpl: '{count, plural, one {# file added} other {# files added}}'
+    add_files_ko: 'File upload failed'
+    add_url_ok: 'Torrent(s) added'
+    add_url_ko: 'URL add failed'
+    add_required: 'Add a magnet/URL or a .torrent file'
+    file_ignored_tpl: 'Ignored (not .torrent): __NAME__'
+    cat_resolve_search: 'Searching...'
+    cat_resolve_no_match_tpl: 'No match found for "__NAME__"'
+    cat_resolve_error: 'Resolution error'
+  date:
+    just_now: 'just now'
+    minutes_ago_tpl: '__N__min ago'
+    hours_ago_tpl: '__N__h ago'
+    days_ago_tpl: '__N__d ago'
+    months_ago_tpl: '__N__ months ago'
+    years_ago_tpl: '{count, plural, one {# year ago} other {# years ago}}'
+  units:
+    gb: GB
+    mb: MB
+    kb: KB
+    bytes: B
+    mb_per_s: MB/s
+    kb_per_s: KB/s
+    bytes_per_s: B/s
+    eta_tpl: '__H__h__M__m'
+    duration_days_tpl: '__D__d __H__h'
+    duration_hours_tpl: '__H__h __M__m'
+    duration_minutes_tpl: '__M__m'
+    uptime_hours_tpl: '__H__h __M__m'
+    uptime_minutes_tpl: '__M__ min'
+    uptime_seconds_tpl: '__S__s'
+
 watchlist_page:
   back_to_discover: Discover
   count_titles: '{count, plural, one {# title} other {# titles}}'

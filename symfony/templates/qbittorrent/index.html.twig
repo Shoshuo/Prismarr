@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
-{% block title %}Téléchargements{% endblock %}
-{% block page_title %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f67ba" stroke-width="2"><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path d="M7 11l5 5 5-5"/><path d="M12 4v12"/></svg> Téléchargements{% endblock %}
+{% block title %}{{ 'qbittorrent.page_title'|trans }}{% endblock %}
+{% block page_title %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f67ba" stroke-width="2"><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path d="M7 11l5 5 5-5"/><path d="M12 4v12"/></svg> {{ 'qbittorrent.page_title'|trans }}{% endblock %}
 
 {% block stylesheets %}
 <style>
@@ -310,14 +310,14 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
                 <span class="qbt-connection" id="qbt-conn-dot"></span>
                 <span class="stat-val text-secondary" id="qbt-stat-total">{{ stats.total ?? 0 }}</span>
             </div>
-            <div class="stat-lbl mt-1">Total</div>
+            <div class="stat-lbl mt-1">{{ 'qbittorrent.stats.total'|trans }}</div>
             <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5"><circle cx="12" cy="12" r="9"/></svg>
         </div></div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
         <div class="card card-sm qbt-stat-card"><div class="card-body">
             <span class="stat-val" style="color:#3b82f6" id="qbt-stat-dl">{{ stats.downloading ?? 0 }}</span>
-            <div class="stat-lbl mt-1">En cours</div>
+            <div class="stat-lbl mt-1">{{ 'qbittorrent.stats.downloading'|trans }}</div>
             <div class="stat-speed" style="color:#3b82f6" id="qbt-speed-dl">&nbsp;</div>
             <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5"><path d="M12 3v13m-5-5l5 5 5-5"/></svg>
         </div></div>
@@ -325,7 +325,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     <div class="col-6 col-md-4 col-lg-2">
         <div class="card card-sm qbt-stat-card"><div class="card-body">
             <span class="stat-val" style="color:#22c55e" id="qbt-stat-seed">{{ stats.seeding ?? 0 }}</span>
-            <div class="stat-lbl mt-1">Partage</div>
+            <div class="stat-lbl mt-1">{{ 'qbittorrent.stats.seeding'|trans }}</div>
             <div class="stat-speed" style="color:#22c55e" id="qbt-speed-up">&nbsp;</div>
             <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="1.5"><path d="M12 21V8m-5 5l5-5 5 5"/></svg>
         </div></div>
@@ -333,21 +333,21 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     <div class="col-6 col-md-4 col-lg-2">
         <div class="card card-sm qbt-stat-card"><div class="card-body">
             <span class="stat-val" style="color:#f97316" id="qbt-stat-stalled">0</span>
-            <div class="stat-lbl mt-1">En attente</div>
+            <div class="stat-lbl mt-1">{{ 'qbittorrent.stats.stalled'|trans }}</div>
             <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
         </div></div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
         <div class="card card-sm qbt-stat-card"><div class="card-body">
             <span class="stat-val" style="color:#f59e0b" id="qbt-stat-paused">{{ stats.paused ?? 0 }}</span>
-            <div class="stat-lbl mt-1">Pause</div>
+            <div class="stat-lbl mt-1">{{ 'qbittorrent.stats.paused'|trans }}</div>
             <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
         </div></div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
         <div class="card card-sm qbt-stat-card"><div class="card-body">
             <span class="stat-val" style="color:#ef4444" id="qbt-stat-error">{{ stats.errored ?? 0 }}</span>
-            <div class="stat-lbl mt-1">Erreurs</div>
+            <div class="stat-lbl mt-1">{{ 'qbittorrent.stats.errored'|trans }}</div>
             <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v4m0 4h.01"/></svg>
         </div></div>
     </div>
@@ -361,12 +361,12 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         <div class="card card-sm qbt-stat-card qbt-total-card"><div class="card-body">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
-                    <div class="stat-lbl">Téléchargé total</div>
-                    <span class="stat-val" style="color:#3b82f6" id="qbt-total-dl">{{ ((stats.dl_alltime ?? 0) / 1073741824)|number_format(1) }} Go</span>
+                    <div class="stat-lbl">{{ 'qbittorrent.stats.total_downloaded'|trans }}</div>
+                    <span class="stat-val" style="color:#3b82f6" id="qbt-total-dl">{{ ((stats.dl_alltime ?? 0) / 1073741824)|number_format(1) }} {{ 'qbittorrent.units.gb'|trans }}</span>
                 </div>
                 <div class="text-end" style="font-size:.68rem;color:var(--tblr-text-secondary);line-height:1.3;">
-                    <div>Session</div>
-                    <strong id="qbt-session-dl" style="color:#3b82f6;font-family:'SF Mono',Menlo,monospace;">{{ ((stats.dl_session ?? 0) / 1073741824)|number_format(1) }} Go</strong>
+                    <div>{{ 'qbittorrent.stats.session'|trans }}</div>
+                    <strong id="qbt-session-dl" style="color:#3b82f6;font-family:'SF Mono',Menlo,monospace;">{{ ((stats.dl_session ?? 0) / 1073741824)|number_format(1) }} {{ 'qbittorrent.units.gb'|trans }}</strong>
                 </div>
             </div>
             <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5"><path d="M12 3v13m-5-5l5 5 5-5"/><path d="M4 20h16"/></svg>
@@ -376,12 +376,12 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         <div class="card card-sm qbt-stat-card qbt-total-card"><div class="card-body">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
-                    <div class="stat-lbl">Uploadé total</div>
-                    <span class="stat-val" style="color:#22c55e" id="qbt-total-up">{{ ((stats.up_alltime ?? 0) / 1073741824)|number_format(1) }} Go</span>
+                    <div class="stat-lbl">{{ 'qbittorrent.stats.total_uploaded'|trans }}</div>
+                    <span class="stat-val" style="color:#22c55e" id="qbt-total-up">{{ ((stats.up_alltime ?? 0) / 1073741824)|number_format(1) }} {{ 'qbittorrent.units.gb'|trans }}</span>
                 </div>
                 <div class="text-end" style="font-size:.68rem;color:var(--tblr-text-secondary);line-height:1.3;">
-                    <div>Session</div>
-                    <strong id="qbt-session-up" style="color:#22c55e;font-family:'SF Mono',Menlo,monospace;">{{ ((stats.up_session ?? 0) / 1073741824)|number_format(1) }} Go</strong>
+                    <div>{{ 'qbittorrent.stats.session'|trans }}</div>
+                    <strong id="qbt-session-up" style="color:#22c55e;font-family:'SF Mono',Menlo,monospace;">{{ ((stats.up_session ?? 0) / 1073741824)|number_format(1) }} {{ 'qbittorrent.units.gb'|trans }}</strong>
                 </div>
             </div>
             <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="1.5"><path d="M12 21V8m-5 5l5-5 5 5"/><path d="M4 4h16"/></svg>
@@ -394,7 +394,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
                 <div style="min-width:0;flex:1;">
                     <div class="stat-lbl d-flex align-items-center gap-1">
                         <span class="qbt-vpn-dot" id="qbt-vpn-dot"></span>
-                        <span>VPN</span>
+                        <span>{{ 'qbittorrent.vpn.label'|trans }}</span>
                         <span class="qbt-vpn-provider" id="qbt-vpn-provider" style="font-size:.6rem;color:var(--tblr-text-secondary);text-transform:none;letter-spacing:0;font-weight:500;">{{ vpn.organization ?? '—' }}</span>
                     </div>
                     <span class="stat-val" style="color:#14b8a6;font-size:1.05rem;font-family:'SF Mono',Menlo,monospace;" id="qbt-vpn-ip">{{ vpn.public_ip ?? '—' }}</span>
@@ -404,8 +404,8 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
                     </div>
                 </div>
                 <div class="text-end" style="font-size:.66rem;color:var(--tblr-text-secondary);line-height:1.4;white-space:nowrap;">
-                    <div>Port VPN <strong id="qbt-vpn-port" style="color:#14b8a6;font-family:'SF Mono',Menlo,monospace;">{{ vpn.forwarded_port ?? '—' }}</strong></div>
-                    <div>Port qBit <strong id="qbt-qbt-port" style="color:var(--tblr-body-color);font-family:'SF Mono',Menlo,monospace;">{{ vpn.qbt_port ?? '—' }}</strong></div>
+                    <div>{{ 'qbittorrent.vpn.port_vpn'|trans }} <strong id="qbt-vpn-port" style="color:#14b8a6;font-family:'SF Mono',Menlo,monospace;">{{ vpn.forwarded_port ?? '—' }}</strong></div>
+                    <div>{{ 'qbittorrent.vpn.port_qbt'|trans }} <strong id="qbt-qbt-port" style="color:var(--tblr-body-color);font-family:'SF Mono',Menlo,monospace;">{{ vpn.qbt_port ?? '—' }}</strong></div>
                     <div id="qbt-port-sync-wrap" style="margin-top:2px;">
                         <span id="qbt-port-sync" class="qbt-port-badge"></span>
                     </div>
@@ -420,15 +420,15 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <div class="stat-lbl d-flex align-items-center gap-1">
-                        <span>Session</span>
+                        <span>{{ 'qbittorrent.session.label'|trans }}</span>
                         <span id="qbt-session-uptime" style="font-size:.6rem;color:var(--tblr-text-secondary);text-transform:none;letter-spacing:0;font-weight:500;">·&nbsp;—</span>
                     </div>
-                    <span class="stat-val" style="color:#a259ff;font-size:1.05rem;">Ratio <span id="qbt-total-ratio" style="font-family:'SF Mono',Menlo,monospace;">{{ (stats.global_ratio ?? 0)|number_format(2) }}</span></span>
+                    <span class="stat-val" style="color:#a259ff;font-size:1.05rem;">{{ 'qbittorrent.session.ratio'|trans }} <span id="qbt-total-ratio" style="font-family:'SF Mono',Menlo,monospace;">{{ (stats.global_ratio ?? 0)|number_format(2) }}</span></span>
                 </div>
                 <div class="text-end" style="font-size:.68rem;color:var(--tblr-text-secondary);line-height:1.3;white-space:nowrap;">
-                    <div>Pic ↓ <strong id="qbt-peak-dl" style="color:#3b82f6;font-family:'SF Mono',Menlo,monospace;">—</strong></div>
-                    <div>Pic ↑ <strong id="qbt-peak-up" style="color:#22c55e;font-family:'SF Mono',Menlo,monospace;">—</strong></div>
-                    <div>Dispo <strong id="qbt-free-space" style="color:var(--tblr-body-color);font-family:'SF Mono',Menlo,monospace;">{{ ((stats.free_space ?? 0) / 1073741824)|number_format(0) }} Go</strong></div>
+                    <div>{{ 'qbittorrent.stats.peak_dl'|trans }} <strong id="qbt-peak-dl" style="color:#3b82f6;font-family:'SF Mono',Menlo,monospace;">—</strong></div>
+                    <div>{{ 'qbittorrent.stats.peak_up'|trans }} <strong id="qbt-peak-up" style="color:#22c55e;font-family:'SF Mono',Menlo,monospace;">—</strong></div>
+                    <div>{{ 'qbittorrent.stats.free_space'|trans }} <strong id="qbt-free-space" style="color:var(--tblr-body-color);font-family:'SF Mono',Menlo,monospace;">{{ ((stats.free_space ?? 0) / 1073741824)|number_format(0) }} {{ 'qbittorrent.units.gb'|trans }}</strong></div>
                 </div>
             </div>
             <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#a259ff" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
@@ -446,28 +446,28 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
                 <span class="input-icon-addon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><path d="M21 21l-6-6"/></svg>
                 </span>
-                <input type="text" id="qbt-search" class="form-control form-control-sm" placeholder="Rechercher..." autocomplete="off">
+                <input type="text" id="qbt-search" class="form-control form-control-sm" placeholder="{{ 'qbittorrent.filters.search_placeholder'|trans }}" autocomplete="off">
             </div>
             <div class="d-flex gap-1 flex-wrap">
-                <button class="btn btn-sm qbt-filter-btn active" data-filter="all">Tous</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="active" title="Torrents avec vitesse &gt; 0">⚡ Actifs</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="downloading">En cours</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="seeding">Partage</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="stalled">En attente</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="paused">Pause</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="completed">Terminés</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="error">Erreurs</button>
+                <button class="btn btn-sm qbt-filter-btn active" data-filter="all">{{ 'qbittorrent.filters.all'|trans }}</button>
+                <button class="btn btn-sm qbt-filter-btn" data-filter="active" title="{{ 'qbittorrent.filters.active_title'|trans }}">{{ 'qbittorrent.filters.active'|trans }}</button>
+                <button class="btn btn-sm qbt-filter-btn" data-filter="downloading">{{ 'qbittorrent.filters.downloading'|trans }}</button>
+                <button class="btn btn-sm qbt-filter-btn" data-filter="seeding">{{ 'qbittorrent.filters.seeding'|trans }}</button>
+                <button class="btn btn-sm qbt-filter-btn" data-filter="stalled">{{ 'qbittorrent.filters.stalled'|trans }}</button>
+                <button class="btn btn-sm qbt-filter-btn" data-filter="paused">{{ 'qbittorrent.filters.paused'|trans }}</button>
+                <button class="btn btn-sm qbt-filter-btn" data-filter="completed">{{ 'qbittorrent.filters.completed'|trans }}</button>
+                <button class="btn btn-sm qbt-filter-btn" data-filter="error">{{ 'qbittorrent.filters.error'|trans }}</button>
             </div>
-            <span class="text-muted small ms-auto" id="qbt-count">{{ torrents|length }} torrents</span>
+            <span class="text-muted small ms-auto" id="qbt-count">{{ 'qbittorrent.count_tpl'|trans({count: torrents|length}) }}</span>
             <div class="d-flex gap-1">
-                <button class="btn btn-sm btn-primary" id="qbt-btn-add" title="Ajouter un torrent" style="background:#2f67ba;border-color:#2f67ba;">
+                <button class="btn btn-sm btn-primary" id="qbt-btn-add" title="{{ 'qbittorrent.toolbar.add_title'|trans }}" style="background:#2f67ba;border-color:#2f67ba;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-                    Ajouter
+                    {{ 'qbittorrent.toolbar.add'|trans }}
                 </button>
-                <button class="btn btn-sm btn-outline-secondary" id="qbt-btn-pause-all" title="Tout mettre en pause">
+                <button class="btn btn-sm btn-outline-secondary" id="qbt-btn-pause-all" title="{{ 'qbittorrent.toolbar.pause_all_title'|trans }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h4v16H6z"/><path d="M14 4h4v16h-4z"/></svg>
                 </button>
-                <button class="btn btn-sm btn-outline-secondary" id="qbt-btn-resume-all" title="Tout reprendre">
+                <button class="btn btn-sm btn-outline-secondary" id="qbt-btn-resume-all" title="{{ 'qbittorrent.toolbar.resume_all_title'|trans }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16l13-8z"/></svg>
                 </button>
             </div>
@@ -475,59 +475,59 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         <div class="d-flex align-items-center gap-2 mt-2 pt-2 flex-wrap" style="border-top:1px solid var(--tblr-border-color);">
             <label class="form-check mb-0" style="font-size:.75rem;">
                 <input type="checkbox" class="form-check-input" id="qbt-select-all">
-                <span class="form-check-label">Tout sélectionner</span>
+                <span class="form-check-label">{{ 'qbittorrent.filters.select_all'|trans }}</span>
             </label>
             <div class="d-flex align-items-center gap-2" style="font-size:.72rem;">
-                <span class="text-muted" style="white-space:nowrap;font-weight:500;">Catégorie :</span>
+                <span class="text-muted" style="white-space:nowrap;font-weight:500;">{{ 'qbittorrent.filters.category_label'|trans }}</span>
                 <select id="qbt-cat-filter" class="form-select form-select-sm" style="min-width:140px;font-size:.75rem;padding:3px 24px 3px 8px;">
-                    <option value="">Toutes</option>
+                    <option value="">{{ 'qbittorrent.filters.category_all'|trans }}</option>
                     {% for key, cat in categories %}<option value="{{ key }}">{{ cat.name ?? key }}</option>{% endfor %}
                 </select>
             </div>
             {% if tags is not empty %}
             <div class="d-flex align-items-center gap-2" style="font-size:.72rem;">
-                <span class="text-muted" style="white-space:nowrap;font-weight:500;">Tag :</span>
+                <span class="text-muted" style="white-space:nowrap;font-weight:500;">{{ 'qbittorrent.filters.tag_label'|trans }}</span>
                 <select id="qbt-tag-filter" class="form-select form-select-sm" style="min-width:120px;font-size:.75rem;padding:3px 24px 3px 8px;">
-                    <option value="">Tous</option>
+                    <option value="">{{ 'qbittorrent.filters.tag_all'|trans }}</option>
                     {% for tag in tags %}<option value="{{ tag }}">{{ tag }}</option>{% endfor %}
                 </select>
             </div>
             {% endif %}
             <div class="ms-auto d-flex align-items-center gap-2 flex-shrink-0" id="qbt-list-sort-wrap">
-                <span class="text-muted" style="font-size:.78rem;white-space:nowrap;font-weight:500;">Tri :</span>
+                <span class="text-muted" style="font-size:.78rem;white-space:nowrap;font-weight:500;">{{ 'qbittorrent.filters.sort_label'|trans }}</span>
                 <select id="qbt-list-sort" class="form-select form-select-sm" style="min-width:210px;font-size:.78rem;padding:4px 28px 4px 10px;">
-                    <option value="added|1">Ajout (récent → ancien)</option>
-                    <option value="added|0">Ajout (ancien → récent)</option>
-                    <option value="name|0">Nom (A → Z)</option>
-                    <option value="name|1">Nom (Z → A)</option>
-                    <option value="size|1">Taille (↓)</option>
-                    <option value="size|0">Taille (↑)</option>
-                    <option value="progress|1">Progression (↓)</option>
-                    <option value="dlspeed|1">Vitesse DL (↓)</option>
-                    <option value="upspeed|1">Vitesse UP (↓)</option>
-                    <option value="ratio|1">Ratio (↓)</option>
-                    <option value="seeds|1">Seeds (↓)</option>
+                    <option value="added|1">{{ 'qbittorrent.sort.added_desc'|trans }}</option>
+                    <option value="added|0">{{ 'qbittorrent.sort.added_asc'|trans }}</option>
+                    <option value="name|0">{{ 'qbittorrent.sort.name_asc'|trans }}</option>
+                    <option value="name|1">{{ 'qbittorrent.sort.name_desc'|trans }}</option>
+                    <option value="size|1">{{ 'qbittorrent.sort.size_desc'|trans }}</option>
+                    <option value="size|0">{{ 'qbittorrent.sort.size_asc'|trans }}</option>
+                    <option value="progress|1">{{ 'qbittorrent.sort.progress_desc'|trans }}</option>
+                    <option value="dlspeed|1">{{ 'qbittorrent.sort.dlspeed_desc'|trans }}</option>
+                    <option value="upspeed|1">{{ 'qbittorrent.sort.upspeed_desc'|trans }}</option>
+                    <option value="ratio|1">{{ 'qbittorrent.sort.ratio_desc'|trans }}</option>
+                    <option value="seeds|1">{{ 'qbittorrent.sort.seeds_desc'|trans }}</option>
                 </select>
             </div>
-            <div class="qbt-view-switcher" role="group" aria-label="Mode d'affichage">
-                <button type="button" class="qbt-view-btn active" data-view="list" title="Vue liste">
+            <div class="qbt-view-switcher" role="group" aria-label="{{ 'qbittorrent.view.aria_label'|trans }}">
+                <button type="button" class="qbt-view-btn active" data-view="list" title="{{ 'qbittorrent.view.list_title'|trans }}">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-                    Liste
+                    {{ 'qbittorrent.view.list'|trans }}
                 </button>
-                <button type="button" class="qbt-view-btn" data-view="table" title="Vue tableau">
+                <button type="button" class="qbt-view-btn" data-view="table" title="{{ 'qbittorrent.view.table_title'|trans }}">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v14H3zM3 10h18M3 15h18M10 5v14"/></svg>
-                    Tableau
+                    {{ 'qbittorrent.view.table'|trans }}
                 </button>
-                <button type="button" class="qbt-view-btn" data-view="compact" title="Vue compacte">
+                <button type="button" class="qbt-view-btn" data-view="compact" title="{{ 'qbittorrent.view.compact_title'|trans }}">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-                    Compact
+                    {{ 'qbittorrent.view.compact'|trans }}
                 </button>
             </div>
         </div>
         {# 3e ligne de la card : pagination #}
         <div id="qbt-pagination-bar" class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2 pt-2" style="display:none;border-top:1px solid var(--tblr-border-color);">
             <div class="d-flex align-items-center gap-2 flex-shrink-0" style="font-size:.78rem;">
-                <span class="text-muted" style="white-space:nowrap;font-weight:500;">Par page :</span>
+                <span class="text-muted" style="white-space:nowrap;font-weight:500;">{{ 'qbittorrent.pagination.per_page'|trans }}</span>
                 <select id="qbt-per-page" class="form-select form-select-sm" style="min-width:90px;font-size:.78rem;padding:4px 28px 4px 10px;">
                     <option value="25">25</option>
                     <option value="50" selected>50</option>
@@ -547,15 +547,15 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
 <div id="qbt-table-header">
     <div></div>
     <div></div>
-    <div class="qbt-sort active" data-sort="name">Nom <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
-    <div class="qbt-sort" data-sort="size" style="justify-content:flex-end">Taille <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
-    <div class="qbt-sort" data-sort="progress" style="justify-content:center">% <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
-    <div class="qbt-sort" data-sort="dlspeed" style="justify-content:flex-end">DL/s <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
-    <div class="qbt-sort" data-sort="upspeed" style="justify-content:flex-end">UP/s <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
-    <div class="qbt-sort" data-sort="num_seeds" style="justify-content:flex-end">Seeds <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
-    <div class="qbt-sort" data-sort="ratio" style="justify-content:flex-end">Ratio <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
-    <div class="qbt-sort" data-sort="added" style="justify-content:flex-end">Ajouté <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
-    <div style="text-align:center">Actions</div>
+    <div class="qbt-sort active" data-sort="name">{{ 'qbittorrent.table.name'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="qbt-sort" data-sort="size" style="justify-content:flex-end">{{ 'qbittorrent.table.size'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="qbt-sort" data-sort="progress" style="justify-content:center">{{ 'qbittorrent.table.progress'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="qbt-sort" data-sort="dlspeed" style="justify-content:flex-end">{{ 'qbittorrent.table.dl_speed'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="qbt-sort" data-sort="upspeed" style="justify-content:flex-end">{{ 'qbittorrent.table.up_speed'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="qbt-sort" data-sort="num_seeds" style="justify-content:flex-end">{{ 'qbittorrent.table.seeds'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="qbt-sort" data-sort="ratio" style="justify-content:flex-end">{{ 'qbittorrent.table.ratio'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="qbt-sort" data-sort="added" style="justify-content:flex-end">{{ 'qbittorrent.table.added'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div style="text-align:center">{{ 'qbittorrent.table.actions'|trans }}</div>
 </div>
 
 {# ══════════════════════════════════════════════════════════════════════════
@@ -569,29 +569,29 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
 
 <div id="qbt-empty" class="card" style="display:none;"><div class="qbt-empty">
     <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path d="M7 11l5 5 5-5"/><path d="M12 4v12"/></svg>
-    <p>Aucun torrent ne correspond à ces critères.</p>
+    <p>{{ 'qbittorrent.empty.no_match'|trans }}</p>
 </div></div>
 
 {# Barre bulk #}
 <div class="qbt-bulk-bar" id="qbt-bulk-bar">
-    <span class="fw-bold" style="font-size:.82rem;color:#2f67ba;"><span id="qbt-bulk-count">0</span> sélectionné(s)</span>
+    <span class="fw-bold" style="font-size:.82rem;color:#2f67ba;" id="qbt-bulk-count-label">{{ 'qbittorrent.bulk.selected_tpl'|trans({count: 0}) }}</span>
     <button class="btn btn-sm btn-outline-primary" id="qbt-bulk-resume">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16l13-8z"/></svg> Reprendre
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16l13-8z"/></svg> {{ 'qbittorrent.bulk.resume'|trans }}
     </button>
     <button class="btn btn-sm btn-outline-warning" id="qbt-bulk-pause">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h4v16H6z"/><path d="M14 4h4v16h-4z"/></svg> Pause
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h4v16H6z"/><path d="M14 4h4v16h-4z"/></svg> {{ 'qbittorrent.bulk.pause'|trans }}
     </button>
     <button class="btn btn-sm btn-outline-danger" id="qbt-bulk-delete">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12"/><path d="M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg> Supprimer
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12"/><path d="M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg> {{ 'qbittorrent.bulk.delete'|trans }}
     </button>
     <button class="btn btn-sm btn-outline-info" id="qbt-bulk-recheck">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg> Vérifier
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg> {{ 'qbittorrent.bulk.recheck'|trans }}
     </button>
     <select class="form-select form-select-sm" id="qbt-bulk-cat" style="min-width:160px;font-size:.78rem;padding:3px 28px 3px 10px;">
-        <option value="">Catégorie...</option>
+        <option value="">{{ 'qbittorrent.bulk.category_placeholder'|trans }}</option>
         {% for key, cat in categories %}<option value="{{ key }}">{{ cat.name ?? key }}</option>{% endfor %}
     </select>
-    <button class="btn btn-sm btn-ghost-secondary ms-auto" id="qbt-bulk-clear">Annuler</button>
+    <button class="btn btn-sm btn-ghost-secondary ms-auto" id="qbt-bulk-clear">{{ 'qbittorrent.bulk.cancel'|trans }}</button>
 </div>
 
 </div>{# /container-xl #}
@@ -608,10 +608,10 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     </div>
     <div class="modal-body p-0">
         <ul class="nav nav-tabs qbt-detail-tab px-3 pt-2" role="tablist">
-            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#qbt-tab-general">Général</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#qbt-tab-files">Fichiers</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#qbt-tab-trackers">Trackers</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#qbt-tab-peers">Peers</a></li>
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#qbt-tab-general">{{ 'qbittorrent.modal_detail.tab_general'|trans }}</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#qbt-tab-files">{{ 'qbittorrent.modal_detail.tab_files'|trans }}</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#qbt-tab-trackers">{{ 'qbittorrent.modal_detail.tab_trackers'|trans }}</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#qbt-tab-peers">{{ 'qbittorrent.modal_detail.tab_peers'|trans }}</a></li>
         </ul>
         <div class="tab-content p-3">
             <div class="tab-pane active" id="qbt-tab-general">
@@ -620,7 +620,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             <div class="tab-pane" id="qbt-tab-files">
                 <div class="table-responsive">
                     <table class="table table-vcenter mb-0" style="font-size:.78rem;">
-                        <thead><tr><th>Nom</th><th style="width:80px">Taille</th><th style="width:110px">Progression</th><th style="width:90px">Priorité</th></tr></thead>
+                        <thead><tr><th>{{ 'qbittorrent.modal_detail.files.col_name'|trans }}</th><th style="width:80px">{{ 'qbittorrent.modal_detail.files.col_size'|trans }}</th><th style="width:110px">{{ 'qbittorrent.modal_detail.files.col_progress'|trans }}</th><th style="width:90px">{{ 'qbittorrent.modal_detail.files.col_priority'|trans }}</th></tr></thead>
                         <tbody id="qbt-detail-files"></tbody>
                     </table>
                 </div>
@@ -628,7 +628,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             <div class="tab-pane" id="qbt-tab-trackers">
                 <div class="table-responsive">
                     <table class="table table-vcenter mb-0" style="font-size:.78rem;">
-                        <thead><tr><th>URL</th><th style="width:90px">Statut</th><th style="width:60px">Seeds</th><th style="width:60px">Leechs</th></tr></thead>
+                        <thead><tr><th>{{ 'qbittorrent.modal_detail.trackers.col_url'|trans }}</th><th style="width:90px">{{ 'qbittorrent.modal_detail.trackers.col_status'|trans }}</th><th style="width:60px">{{ 'qbittorrent.modal_detail.trackers.col_seeds'|trans }}</th><th style="width:60px">{{ 'qbittorrent.modal_detail.trackers.col_leechs'|trans }}</th></tr></thead>
                         <tbody id="qbt-detail-trackers"></tbody>
                     </table>
                 </div>
@@ -636,7 +636,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             <div class="tab-pane" id="qbt-tab-peers">
                 <div class="table-responsive">
                     <table class="table table-vcenter mb-0" style="font-size:.75rem;">
-                        <thead><tr><th>IP</th><th>Client</th><th style="width:60px">%</th><th style="width:80px">DL</th><th style="width:80px">UP</th></tr></thead>
+                        <thead><tr><th>{{ 'qbittorrent.modal_detail.peers.col_ip'|trans }}</th><th>{{ 'qbittorrent.modal_detail.peers.col_client'|trans }}</th><th style="width:60px">{{ 'qbittorrent.modal_detail.peers.col_progress'|trans }}</th><th style="width:80px">{{ 'qbittorrent.modal_detail.peers.col_dl'|trans }}</th><th style="width:80px">{{ 'qbittorrent.modal_detail.peers.col_up'|trans }}</th></tr></thead>
                         <tbody id="qbt-detail-peers"></tbody>
                     </table>
                 </div>
@@ -659,48 +659,48 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     <div class="modal-header">
         <h5 class="modal-title" style="font-size:.9rem;">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f67ba" stroke-width="2" style="vertical-align:-3px;margin-right:4px;"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-            Ajouter un torrent
+            {{ 'qbittorrent.modal_add.title'|trans }}
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
     <div class="modal-body">
         <div class="mb-3">
-            <label class="form-label">Lien magnet ou URL .torrent</label>
-            <textarea class="form-control" id="qbt-add-urls" rows="3" wrap="soft" placeholder="magnet:?xt=urn:btih:... ou https://..." style="font-family:'SF Mono',Menlo,monospace;font-size:.78rem;word-break:break-all;"></textarea>
-            <div class="form-hint">Un lien par ligne pour ajouter plusieurs torrents.</div>
+            <label class="form-label">{{ 'qbittorrent.modal_add.urls_label'|trans }}</label>
+            <textarea class="form-control" id="qbt-add-urls" rows="3" wrap="soft" placeholder="{{ 'qbittorrent.modal_add.urls_placeholder'|trans }}" style="font-family:'SF Mono',Menlo,monospace;font-size:.78rem;word-break:break-all;"></textarea>
+            <div class="form-hint">{{ 'qbittorrent.modal_add.urls_hint'|trans }}</div>
         </div>
         {# Zone drag-drop fichiers .torrent #}
         <div class="mb-3">
-            <label class="form-label">Ou fichiers .torrent</label>
+            <label class="form-label">{{ 'qbittorrent.modal_add.files_label'|trans }}</label>
             <div id="qbt-drop-zone" class="qbt-drop-zone">
                 <input type="file" id="qbt-file-input" accept=".torrent" multiple style="display:none;">
                 <div class="qbt-drop-inner">
                     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><path d="M7 9l5 -5l5 5"/><path d="M12 4l0 12"/></svg>
-                    <div class="qbt-drop-text">Glissez vos fichiers <strong>.torrent</strong> ici<br><span class="text-muted" style="font-size:.72rem;">ou cliquez pour parcourir</span></div>
+                    <div class="qbt-drop-text">{{ 'qbittorrent.modal_add.drop_text'|trans|raw }}<br><span class="text-muted" style="font-size:.72rem;">{{ 'qbittorrent.modal_add.drop_browse'|trans }}</span></div>
                 </div>
                 <ul id="qbt-drop-files" class="qbt-drop-files"></ul>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-6">
-                <label class="form-label">Catégorie</label>
+                <label class="form-label">{{ 'qbittorrent.modal_add.category_label'|trans }}</label>
                 <select class="form-select form-select-sm" id="qbt-add-category">
-                    <option value="">Aucune</option>
+                    <option value="">{{ 'qbittorrent.modal_add.category_none'|trans }}</option>
                     {% for key, cat in categories %}<option value="{{ key }}">{{ cat.name ?? key }}</option>{% endfor %}
                 </select>
             </div>
             <div class="col-6">
-                <label class="form-label">Démarrage</label>
+                <label class="form-label">{{ 'qbittorrent.modal_add.start_label'|trans }}</label>
                 <select class="form-select form-select-sm" id="qbt-add-paused">
-                    <option value="false">Démarrer immédiatement</option>
-                    <option value="true">Ajouter en pause</option>
+                    <option value="false">{{ 'qbittorrent.modal_add.start_now'|trans }}</option>
+                    <option value="true">{{ 'qbittorrent.modal_add.start_paused'|trans }}</option>
                 </select>
             </div>
         </div>
     </div>
     <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-primary" id="qbt-add-submit" style="background:#2f67ba;border-color:#2f67ba;">Ajouter</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'qbittorrent.modal_add.cancel'|trans }}</button>
+        <button type="button" class="btn btn-primary" id="qbt-add-submit" style="background:#2f67ba;border-color:#2f67ba;">{{ 'qbittorrent.modal_add.submit'|trans }}</button>
     </div>
 </div>
 </div>
@@ -713,19 +713,19 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
 <div class="modal-dialog modal-sm">
 <div class="modal-content">
     <div class="modal-header">
-        <h5 class="modal-title text-danger" style="font-size:.9rem;">Supprimer</h5>
+        <h5 class="modal-title text-danger" style="font-size:.9rem;">{{ 'qbittorrent.modal_delete.title'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
     <div class="modal-body">
-        <p style="font-size:.82rem;" id="qbt-delete-msg">Supprimer ce torrent ?</p>
+        <p style="font-size:.82rem;" id="qbt-delete-msg">{{ 'qbittorrent.modal_delete.msg_single'|trans }}</p>
         <label class="form-check">
             <input type="checkbox" class="form-check-input" id="qbt-delete-files">
-            <span class="form-check-label">Supprimer aussi les fichiers</span>
+            <span class="form-check-label">{{ 'qbittorrent.modal_delete.delete_files'|trans }}</span>
         </label>
     </div>
     <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-danger" id="qbt-delete-confirm">Supprimer</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'qbittorrent.modal_delete.cancel'|trans }}</button>
+        <button type="button" class="btn btn-danger" id="qbt-delete-confirm">{{ 'qbittorrent.modal_delete.confirm'|trans }}</button>
     </div>
 </div>
 </div>
@@ -743,10 +743,16 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
    ══════════════════════════════════════════════════════════════════════════ #}
 {% macro torrent_row(t) %}
 {% set state_label = {
-    'downloading': 'Téléchargement', 'seeding': 'Partage', 'paused': 'Pause',
-    'queued': 'File', 'checking': 'Vérification', 'error': 'Erreur',
-    'completed': 'Terminé', 'stalled': 'En attente', 'moving': 'Déplacement',
-    'unknown': 'État inconnu'
+    'downloading': 'qbittorrent.state.downloading'|trans,
+    'seeding':     'qbittorrent.state.seeding'|trans,
+    'paused':      'qbittorrent.state.paused'|trans,
+    'queued':      'qbittorrent.state.queued'|trans,
+    'checking':    'qbittorrent.state.checking'|trans,
+    'error':       'qbittorrent.state.error'|trans,
+    'completed':   'qbittorrent.state.completed'|trans,
+    'stalled':     'qbittorrent.state.stalled'|trans,
+    'moving':      'qbittorrent.state.moving'|trans,
+    'unknown':     'qbittorrent.state.unknown'|trans
 }[t.state] ?? t.state %}
 {% set cat = t.category|lower %}
 {% set ico_type = cat in ['films', 'movies', 'radarr'] ? 'movie' : (cat in ['tv', 'tv-sonarr', 'series', 'sonarr'] ? 'tv' : 'generic') %}
@@ -783,12 +789,12 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             <div class="qbt-name" title="{{ t.name }}">{{ t.name }}</div>
             {% if t.category %}
                 {% if cat in ['films', 'movies', 'radarr'] %}
-                <span class="qbt-tag qbt-tag-radarr qbt-cat-link" data-pipeline="radarr" data-name="{{ t.name|e('html_attr') }}" data-hash="{{ t.hash }}" title="Voir dans Radarr">
+                <span class="qbt-tag qbt-tag-radarr qbt-cat-link" data-pipeline="radarr" data-name="{{ t.name|e('html_attr') }}" data-hash="{{ t.hash }}" title="{{ 'qbittorrent.row.title_radarr'|trans }}">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>
                     {{ t.category }}
                 </span>
                 {% elseif cat in ['tv', 'tv-sonarr', 'series', 'sonarr'] %}
-                <span class="qbt-tag qbt-tag-sonarr qbt-cat-link" data-pipeline="sonarr" data-name="{{ t.name|e('html_attr') }}" data-hash="{{ t.hash }}" title="Voir dans Sonarr">
+                <span class="qbt-tag qbt-tag-sonarr qbt-cat-link" data-pipeline="sonarr" data-name="{{ t.name|e('html_attr') }}" data-hash="{{ t.hash }}" title="{{ 'qbittorrent.row.title_sonarr'|trans }}">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M8 3l4 3 4-3"/></svg>
                     {{ t.category }}
                 </span>
@@ -803,37 +809,37 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         <div class="qbt-stats-line">
             <span class="item"><strong>{{ t.progress }}%</strong></span>
             <span class="sep"></span>
-            <span class="item">{{ (t.size / 1073741824)|number_format(2) }} Go</span>
+            <span class="item">{{ (t.size / 1073741824)|number_format(2) }} {{ 'qbittorrent.units.gb'|trans }}</span>
             <span class="sep"></span>
             <span class="item">{{ state_label }}</span>
             {% if t.dlspeed > 0 %}
             <span class="sep"></span>
-            <span class="item dl-speed">&#8595; {% if t.dlspeed >= 1048576 %}{{ (t.dlspeed / 1048576)|number_format(1) }} Mo/s{% else %}{{ (t.dlspeed / 1024)|number_format(0) }} Ko/s{% endif %}</span>
+            <span class="item dl-speed">&#8595; {% if t.dlspeed >= 1048576 %}{{ (t.dlspeed / 1048576)|number_format(1) }} {{ 'qbittorrent.units.mb_per_s'|trans }}{% else %}{{ (t.dlspeed / 1024)|number_format(0) }} {{ 'qbittorrent.units.kb_per_s'|trans }}{% endif %}</span>
             {% endif %}
             {% if t.upspeed > 0 %}
             <span class="sep"></span>
-            <span class="item up-speed">&#8593; {% if t.upspeed >= 1048576 %}{{ (t.upspeed / 1048576)|number_format(1) }} Mo/s{% else %}{{ (t.upspeed / 1024)|number_format(0) }} Ko/s{% endif %}</span>
+            <span class="item up-speed">&#8593; {% if t.upspeed >= 1048576 %}{{ (t.upspeed / 1048576)|number_format(1) }} {{ 'qbittorrent.units.mb_per_s'|trans }}{% else %}{{ (t.upspeed / 1024)|number_format(0) }} {{ 'qbittorrent.units.kb_per_s'|trans }}{% endif %}</span>
             {% endif %}
             {% if t.state == 'downloading' and t.eta < 8640000 %}
             <span class="sep"></span>
             <span class="item">⏱ {{ (t.eta / 3600)|round(0,'floor') }}h{{ ((t.eta % 3600) / 60)|round }}m</span>
             {% endif %}
             <span class="sep"></span>
-            <span class="item" title="Seeds / Leechers">🌱 {{ t.num_seeds }}/{{ t.num_leechs ?? 0 }}</span>
+            <span class="item" title="{{ 'qbittorrent.row.title_seeds_leechers'|trans }}">🌱 {{ t.num_seeds }}/{{ t.num_leechs ?? 0 }}</span>
             <span class="sep"></span>
-            <span class="item" title="Ratio">⚖ {{ (t.ratio ?? 0)|number_format(2) }}</span>
+            <span class="item" title="{{ 'qbittorrent.row.title_ratio'|trans }}">⚖ {{ (t.ratio ?? 0)|number_format(2) }}</span>
             {% if t.added_on %}
             <span class="sep"></span>
-            <span class="item" title="Ajouté le {{ t.added_on|date('d/m/Y H:i') }}">📅 {{ t.added_on|date('d/m/y') }}</span>
+            <span class="item" title="{{ 'qbittorrent.row.title_added_tpl'|trans|replace({'__DATE__': t.added_on|date('d/m/Y H:i')}) }}">📅 {{ t.added_on|date('d/m/y') }}</span>
             {% endif %}
         </div>
     </div>
 
     {# Cellules mode tableau #}
-    <div class="qbt-table-cell qbt-cell-size">{{ (t.size / 1073741824)|number_format(2) }} Go</div>
+    <div class="qbt-table-cell qbt-cell-size">{{ (t.size / 1073741824)|number_format(2) }} {{ 'qbittorrent.units.gb'|trans }}</div>
     <div class="qbt-table-cell qbt-cell-progress"><div class="qbt-cell-progress-fill" style="width:{{ t.progress }}%"></div><span>{{ t.progress }}%</span></div>
-    <div class="qbt-table-cell qbt-cell-dl">{% if t.dlspeed > 0 %}{% if t.dlspeed >= 1048576 %}{{ (t.dlspeed / 1048576)|number_format(1) }} Mo/s{% else %}{{ (t.dlspeed / 1024)|number_format(0) }} Ko/s{% endif %}{% else %}—{% endif %}</div>
-    <div class="qbt-table-cell qbt-cell-up">{% if t.upspeed > 0 %}{% if t.upspeed >= 1048576 %}{{ (t.upspeed / 1048576)|number_format(1) }} Mo/s{% else %}{{ (t.upspeed / 1024)|number_format(0) }} Ko/s{% endif %}{% else %}—{% endif %}</div>
+    <div class="qbt-table-cell qbt-cell-dl">{% if t.dlspeed > 0 %}{% if t.dlspeed >= 1048576 %}{{ (t.dlspeed / 1048576)|number_format(1) }} {{ 'qbittorrent.units.mb_per_s'|trans }}{% else %}{{ (t.dlspeed / 1024)|number_format(0) }} {{ 'qbittorrent.units.kb_per_s'|trans }}{% endif %}{% else %}—{% endif %}</div>
+    <div class="qbt-table-cell qbt-cell-up">{% if t.upspeed > 0 %}{% if t.upspeed >= 1048576 %}{{ (t.upspeed / 1048576)|number_format(1) }} {{ 'qbittorrent.units.mb_per_s'|trans }}{% else %}{{ (t.upspeed / 1024)|number_format(0) }} {{ 'qbittorrent.units.kb_per_s'|trans }}{% endif %}{% else %}—{% endif %}</div>
     <div class="qbt-table-cell">{{ t.num_seeds }}</div>
     <div class="qbt-table-cell">{{ (t.ratio ?? 0)|number_format(2) }}</div>
     <div class="qbt-table-cell qbt-cell-added" data-added="{{ t.added_on ?? 0 }}">{% if t.added_on %}{{ t.added_on|date('d/m/y') }}{% else %}—{% endif %}</div>
@@ -843,11 +849,11 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
 
     <div class="qbt-row-actions">
         {% if t.state == 'paused' %}
-        <button class="btn btn-sm btn-ghost-success qbt-act" data-action="resume" data-hash="{{ t.hash }}" title="Reprendre"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16l13-8z"/></svg></button>
+        <button class="btn btn-sm btn-ghost-success qbt-act" data-action="resume" data-hash="{{ t.hash }}" title="{{ 'qbittorrent.row.resume_title'|trans }}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16l13-8z"/></svg></button>
         {% else %}
-        <button class="btn btn-sm btn-ghost-warning qbt-act" data-action="pause" data-hash="{{ t.hash }}" title="Pause"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h4v16H6z"/><path d="M14 4h4v16h-4z"/></svg></button>
+        <button class="btn btn-sm btn-ghost-warning qbt-act" data-action="pause" data-hash="{{ t.hash }}" title="{{ 'qbittorrent.row.pause_title'|trans }}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h4v16H6z"/><path d="M14 4h4v16h-4z"/></svg></button>
         {% endif %}
-        <button class="btn btn-sm btn-ghost-danger qbt-act" data-action="delete" data-hash="{{ t.hash }}" data-name="{{ t.name|e('html_attr') }}" title="Supprimer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12"/><path d="M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg></button>
+        <button class="btn btn-sm btn-ghost-danger qbt-act" data-action="delete" data-hash="{{ t.hash }}" data-name="{{ t.name|e('html_attr') }}" title="{{ 'qbittorrent.row.delete_title'|trans }}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12"/><path d="M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg></button>
     </div>
 </div>
 {% endmacro %}
@@ -857,47 +863,219 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
 <script>
 (function(){
     var BASE = '{{ path("app_qbittorrent_index") }}';
+    var LOCALE = {{ app.request.locale|default('fr')|json_encode|raw }};
     var refreshTimer = null;
     var currentFilter = 'all';
     var selectedHashes = {};
     var deleteTarget = { hashes: [], mode: 'single' };
 
+    var QBT_I18N = {
+        units: {
+            gb: {{ 'qbittorrent.units.gb'|trans|json_encode|raw }},
+            mb: {{ 'qbittorrent.units.mb'|trans|json_encode|raw }},
+            kb: {{ 'qbittorrent.units.kb'|trans|json_encode|raw }},
+            bytes: {{ 'qbittorrent.units.bytes'|trans|json_encode|raw }},
+            mb_per_s: {{ 'qbittorrent.units.mb_per_s'|trans|json_encode|raw }},
+            kb_per_s: {{ 'qbittorrent.units.kb_per_s'|trans|json_encode|raw }},
+            bytes_per_s: {{ 'qbittorrent.units.bytes_per_s'|trans|json_encode|raw }}
+        },
+        state: {
+            downloading: {{ 'qbittorrent.state.downloading'|trans|json_encode|raw }},
+            seeding:     {{ 'qbittorrent.state.seeding'|trans|json_encode|raw }},
+            paused:      {{ 'qbittorrent.state.paused'|trans|json_encode|raw }},
+            queued:      {{ 'qbittorrent.state.queued'|trans|json_encode|raw }},
+            checking:    {{ 'qbittorrent.state.checking'|trans|json_encode|raw }},
+            error:       {{ 'qbittorrent.state.error'|trans|json_encode|raw }},
+            completed:   {{ 'qbittorrent.state.completed'|trans|json_encode|raw }},
+            stalled:     {{ 'qbittorrent.state.stalled'|trans|json_encode|raw }},
+            moving:      {{ 'qbittorrent.state.moving'|trans|json_encode|raw }},
+            unknown:     {{ 'qbittorrent.state.unknown'|trans|json_encode|raw }}
+        },
+        row: {
+            radarr_title:  {{ 'qbittorrent.row.title_radarr'|trans|json_encode|raw }},
+            sonarr_title:  {{ 'qbittorrent.row.title_sonarr'|trans|json_encode|raw }},
+            pause_title:   {{ 'qbittorrent.row.pause_title'|trans|json_encode|raw }},
+            resume_title:  {{ 'qbittorrent.row.resume_title'|trans|json_encode|raw }},
+            delete_title:  {{ 'qbittorrent.row.delete_title'|trans|json_encode|raw }},
+            seeds_leech:   {{ 'qbittorrent.row.title_seeds_leechers'|trans|json_encode|raw }},
+            ratio_title:   {{ 'qbittorrent.row.title_ratio'|trans|json_encode|raw }},
+            added_title_tpl: {{ 'qbittorrent.row.title_added_tpl'|trans|json_encode|raw }}
+        },
+        vpn: {
+            sync_ok:    {{ 'qbittorrent.vpn.sync_ok'|trans|json_encode|raw }},
+            sync_ko:    {{ 'qbittorrent.vpn.sync_ko'|trans|json_encode|raw }},
+            sync_unknown: {{ 'qbittorrent.vpn.sync_unknown'|trans|json_encode|raw }},
+            sync_title_match:    {{ 'qbittorrent.vpn.sync_title_match'|trans|json_encode|raw }},
+            sync_title_desync_tpl: {{ 'qbittorrent.vpn.sync_title_desync_tpl'|trans|json_encode|raw }},
+            sync_title_unknown:  {{ 'qbittorrent.vpn.sync_title_unknown'|trans|json_encode|raw }}
+        },
+        modal_detail: {
+            loading:     {{ 'qbittorrent.modal_detail.loading'|trans|json_encode|raw }},
+            error_load:  {{ 'qbittorrent.modal_detail.error_load'|trans|json_encode|raw }},
+            files_empty:    {{ 'qbittorrent.modal_detail.files.empty'|trans|json_encode|raw }},
+            trackers_empty: {{ 'qbittorrent.modal_detail.trackers.empty'|trans|json_encode|raw }},
+            peers_empty:    {{ 'qbittorrent.modal_detail.peers.empty'|trans|json_encode|raw }},
+            prio_skip:   {{ 'qbittorrent.modal_detail.files.prio_skip'|trans|json_encode|raw }},
+            prio_normal: {{ 'qbittorrent.modal_detail.files.prio_normal'|trans|json_encode|raw }},
+            prio_high:   {{ 'qbittorrent.modal_detail.files.prio_high'|trans|json_encode|raw }},
+            prio_max:    {{ 'qbittorrent.modal_detail.files.prio_max'|trans|json_encode|raw }},
+            tracker_status: {
+                '0': {{ 'qbittorrent.modal_detail.trackers.status_disabled'|trans|json_encode|raw }},
+                '1': {{ 'qbittorrent.modal_detail.trackers.status_not_contacted'|trans|json_encode|raw }},
+                '2': {{ 'qbittorrent.modal_detail.trackers.status_ok'|trans|json_encode|raw }},
+                '3': {{ 'qbittorrent.modal_detail.trackers.status_running'|trans|json_encode|raw }},
+                '4': {{ 'qbittorrent.modal_detail.trackers.status_error'|trans|json_encode|raw }}
+            },
+            props: {
+                downloaded: {{ 'qbittorrent.modal_detail.props.downloaded'|trans|json_encode|raw }},
+                uploaded:   {{ 'qbittorrent.modal_detail.props.uploaded'|trans|json_encode|raw }},
+                ratio:      {{ 'qbittorrent.modal_detail.props.ratio'|trans|json_encode|raw }},
+                dl_speed:   {{ 'qbittorrent.modal_detail.props.dl_speed'|trans|json_encode|raw }},
+                up_speed:   {{ 'qbittorrent.modal_detail.props.up_speed'|trans|json_encode|raw }},
+                eta:        {{ 'qbittorrent.modal_detail.props.eta'|trans|json_encode|raw }},
+                seeds:      {{ 'qbittorrent.modal_detail.props.seeds'|trans|json_encode|raw }},
+                peers:      {{ 'qbittorrent.modal_detail.props.peers'|trans|json_encode|raw }},
+                total_size: {{ 'qbittorrent.modal_detail.props.total_size'|trans|json_encode|raw }},
+                added:      {{ 'qbittorrent.modal_detail.props.added'|trans|json_encode|raw }},
+                completed:  {{ 'qbittorrent.modal_detail.props.completed'|trans|json_encode|raw }},
+                save_path:  {{ 'qbittorrent.modal_detail.props.save_path'|trans|json_encode|raw }}
+            },
+            actions: {
+                pause:      {{ 'qbittorrent.modal_detail.actions.pause'|trans|json_encode|raw }},
+                resume:     {{ 'qbittorrent.modal_detail.actions.resume'|trans|json_encode|raw }},
+                recheck:    {{ 'qbittorrent.modal_detail.actions.recheck'|trans|json_encode|raw }},
+                reannounce: {{ 'qbittorrent.modal_detail.actions.reannounce'|trans|json_encode|raw }},
+                'delete':   {{ 'qbittorrent.modal_detail.actions.delete'|trans|json_encode|raw }}
+            }
+        },
+        modal_delete: {
+            msg_single:    {{ 'qbittorrent.modal_delete.msg_single'|trans|json_encode|raw }},
+            msg_named_tpl: {{ 'qbittorrent.modal_delete.msg_named_tpl'|trans|json_encode|raw }},
+            msg_bulk_one:  {{ 'qbittorrent.modal_delete.msg_bulk_tpl'|trans({count: 1})|json_encode|raw }},
+            msg_bulk_many: {{ 'qbittorrent.modal_delete.msg_bulk_tpl'|trans({count: 42})|json_encode|raw }}
+        },
+        bulk: {
+            sel_one:  {{ 'qbittorrent.bulk.selected_tpl'|trans({count: 1})|json_encode|raw }},
+            sel_many: {{ 'qbittorrent.bulk.selected_tpl'|trans({count: 42})|json_encode|raw }}
+        },
+        count: {
+            one:  {{ 'qbittorrent.count_tpl'|trans({count: 1})|json_encode|raw }},
+            many: {{ 'qbittorrent.count_tpl'|trans({count: 42})|json_encode|raw }}
+        },
+        pagination: {
+            info_tpl: {{ 'qbittorrent.pagination.info_tpl'|trans|json_encode|raw }}
+        },
+        toast: {
+            action_sent:    {{ 'qbittorrent.toast.action_sent'|trans|json_encode|raw }},
+            network_error:  {{ 'qbittorrent.toast.network_error'|trans|json_encode|raw }},
+            failed_tpl:     {{ 'qbittorrent.toast.failed_tpl'|trans|json_encode|raw }},
+            error_generic:  {{ 'qbittorrent.toast.error_generic'|trans|json_encode|raw }},
+            paused:         {{ 'qbittorrent.toast.paused'|trans|json_encode|raw }},
+            resumed:        {{ 'qbittorrent.toast.resumed'|trans|json_encode|raw }},
+            recheck_started:{{ 'qbittorrent.toast.recheck_started'|trans|json_encode|raw }},
+            reannounce_sent:{{ 'qbittorrent.toast.reannounce_sent'|trans|json_encode|raw }},
+            bulk_resumed_one:  {{ 'qbittorrent.toast.bulk_resumed_tpl'|trans({count: 1})|json_encode|raw }},
+            bulk_resumed_many: {{ 'qbittorrent.toast.bulk_resumed_tpl'|trans({count: 42})|json_encode|raw }},
+            bulk_paused_one:   {{ 'qbittorrent.toast.bulk_paused_tpl'|trans({count: 1})|json_encode|raw }},
+            bulk_paused_many:  {{ 'qbittorrent.toast.bulk_paused_tpl'|trans({count: 42})|json_encode|raw }},
+            bulk_recheck_one:  {{ 'qbittorrent.toast.bulk_recheck_tpl'|trans({count: 1})|json_encode|raw }},
+            bulk_recheck_many: {{ 'qbittorrent.toast.bulk_recheck_tpl'|trans({count: 42})|json_encode|raw }},
+            bulk_deleted_one:  {{ 'qbittorrent.toast.bulk_deleted_tpl'|trans({count: 1})|json_encode|raw }},
+            bulk_deleted_many: {{ 'qbittorrent.toast.bulk_deleted_tpl'|trans({count: 42})|json_encode|raw }},
+            bulk_deleted_with_files_suffix: {{ 'qbittorrent.toast.bulk_deleted_with_files_suffix'|trans|json_encode|raw }},
+            pause_all:      {{ 'qbittorrent.toast.pause_all'|trans|json_encode|raw }},
+            resume_all:     {{ 'qbittorrent.toast.resume_all'|trans|json_encode|raw }},
+            add_files_ok_one:  {{ 'qbittorrent.toast.add_files_ok_tpl'|trans({count: 1})|json_encode|raw }},
+            add_files_ok_many: {{ 'qbittorrent.toast.add_files_ok_tpl'|trans({count: 42})|json_encode|raw }},
+            add_files_ko:   {{ 'qbittorrent.toast.add_files_ko'|trans|json_encode|raw }},
+            add_url_ok:     {{ 'qbittorrent.toast.add_url_ok'|trans|json_encode|raw }},
+            add_url_ko:     {{ 'qbittorrent.toast.add_url_ko'|trans|json_encode|raw }},
+            add_required:   {{ 'qbittorrent.toast.add_required'|trans|json_encode|raw }},
+            file_ignored_tpl: {{ 'qbittorrent.toast.file_ignored_tpl'|trans|json_encode|raw }},
+            cat_resolve_search:      {{ 'qbittorrent.toast.cat_resolve_search'|trans|json_encode|raw }},
+            cat_resolve_no_match_tpl:{{ 'qbittorrent.toast.cat_resolve_no_match_tpl'|trans|json_encode|raw }},
+            cat_resolve_error:       {{ 'qbittorrent.toast.cat_resolve_error'|trans|json_encode|raw }}
+        },
+        date: {
+            just_now:        {{ 'qbittorrent.date.just_now'|trans|json_encode|raw }},
+            minutes_ago_tpl: {{ 'qbittorrent.date.minutes_ago_tpl'|trans|json_encode|raw }},
+            hours_ago_tpl:   {{ 'qbittorrent.date.hours_ago_tpl'|trans|json_encode|raw }},
+            days_ago_tpl:    {{ 'qbittorrent.date.days_ago_tpl'|trans|json_encode|raw }},
+            months_ago_tpl:  {{ 'qbittorrent.date.months_ago_tpl'|trans|json_encode|raw }},
+            years_ago_one:   {{ 'qbittorrent.date.years_ago_tpl'|trans({count: 1})|json_encode|raw }},
+            years_ago_many:  {{ 'qbittorrent.date.years_ago_tpl'|trans({count: 42})|json_encode|raw }}
+        },
+        uptime: {
+            hm_tpl:      {{ 'qbittorrent.units.uptime_hours_tpl'|trans|json_encode|raw }},
+            min_tpl:     {{ 'qbittorrent.units.uptime_minutes_tpl'|trans|json_encode|raw }},
+            sec_tpl:     {{ 'qbittorrent.units.uptime_seconds_tpl'|trans|json_encode|raw }}
+        },
+        eta_tpl:           {{ 'qbittorrent.units.eta_tpl'|trans|json_encode|raw }},
+        duration_d_tpl:    {{ 'qbittorrent.units.duration_days_tpl'|trans|json_encode|raw }},
+        duration_h_tpl:    {{ 'qbittorrent.units.duration_hours_tpl'|trans|json_encode|raw }},
+        duration_m_tpl:    {{ 'qbittorrent.units.duration_minutes_tpl'|trans|json_encode|raw }}
+    };
+
+    /** Helper template : remplace tous les __KEY__ par les valeurs du map */
+    function tpl(template, map) {
+        var s = String(template == null ? '' : template);
+        for (var k in map) {
+            if (Object.prototype.hasOwnProperty.call(map, k)) {
+                s = s.split('__' + k + '__').join(map[k]);
+            }
+        }
+        return s;
+    }
+
+    /** Helper plural : choisit la chaîne ICU one/many et substitue # par le compte */
+    function plural(n, oneStr, manyStr) {
+        var s = (n === 1 ? oneStr : manyStr);
+        return String(s == null ? n : s).replace(/#/g, n);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
     function fmtSize(bytes) {
-        if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' Go';
-        if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' Mo';
-        if (bytes >= 1024) return (bytes / 1024).toFixed(0) + ' Ko';
-        return bytes + ' o';
+        if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' ' + QBT_I18N.units.gb;
+        if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' ' + QBT_I18N.units.mb;
+        if (bytes >= 1024) return (bytes / 1024).toFixed(0) + ' ' + QBT_I18N.units.kb;
+        return bytes + ' ' + QBT_I18N.units.bytes;
     }
     function fmtSpeed(bytes) {
-        if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' Mo/s';
-        if (bytes >= 1024) return (bytes / 1024).toFixed(0) + ' Ko/s';
-        return bytes > 0 ? bytes + ' o/s' : '-';
+        if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' ' + QBT_I18N.units.mb_per_s;
+        if (bytes >= 1024) return (bytes / 1024).toFixed(0) + ' ' + QBT_I18N.units.kb_per_s;
+        return bytes > 0 ? bytes + ' ' + QBT_I18N.units.bytes_per_s : '-';
     }
     function fmtEta(sec) {
         if (!sec || sec >= 8640000) return '∞';
         var h = Math.floor(sec / 3600);
         var m = Math.round((sec % 3600) / 60);
-        return h + 'h' + (m < 10 ? '0' : '') + m + 'm';
+        return tpl(QBT_I18N.eta_tpl, { H: h, M: (m < 10 ? '0' : '') + m });
     }
     function fmtDuration(sec) {
         if (!sec || sec < 0) return '-';
         var d = Math.floor(sec / 86400);
         var h = Math.floor((sec % 86400) / 3600);
         var m = Math.floor((sec % 3600) / 60);
-        if (d > 0) return d + 'j ' + h + 'h';
-        if (h > 0) return h + 'h ' + m + 'm';
-        return m + 'm';
+        if (d > 0) return tpl(QBT_I18N.duration_d_tpl, { D: d, H: h });
+        if (h > 0) return tpl(QBT_I18N.duration_h_tpl, { H: h, M: m });
+        return tpl(QBT_I18N.duration_m_tpl, { M: m });
     }
     function fmtDate(ts) {
         if (!ts || ts < 0) return '-';
         var d = new Date(ts * 1000);
-        return d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+        var loc = (LOCALE === 'en') ? 'en-US' : 'fr-FR';
+        return d.toLocaleDateString(loc) + ' ' + d.toLocaleTimeString(loc, {hour:'2-digit',minute:'2-digit'});
     }
     function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
-    var STATE_LABELS = { downloading:'Téléchargement', seeding:'Partage', paused:'Pause', queued:'File', checking:'Vérification', error:'Erreur', completed:'Terminé', stalled:'En attente', moving:'Déplacement', unknown:'État inconnu' };
-    var TRACKER_STATUS = { 0: '<span class="badge bg-secondary-lt">Désactivé</span>', 1: '<span class="badge bg-warning-lt">Non contacté</span>', 2: '<span class="badge bg-success-lt">OK</span>', 3: '<span class="badge bg-info-lt">En cours</span>', 4: '<span class="badge bg-danger-lt">Erreur</span>' };
+    var STATE_LABELS = QBT_I18N.state;
+    var TRACKER_STATUS = {
+        0: '<span class="badge bg-secondary-lt">' + escapeHtml(QBT_I18N.modal_detail.tracker_status['0']) + '</span>',
+        1: '<span class="badge bg-warning-lt">'   + escapeHtml(QBT_I18N.modal_detail.tracker_status['1']) + '</span>',
+        2: '<span class="badge bg-success-lt">'   + escapeHtml(QBT_I18N.modal_detail.tracker_status['2']) + '</span>',
+        3: '<span class="badge bg-info-lt">'      + escapeHtml(QBT_I18N.modal_detail.tracker_status['3']) + '</span>',
+        4: '<span class="badge bg-danger-lt">'    + escapeHtml(QBT_I18N.modal_detail.tracker_status['4']) + '</span>'
+    };
 
     var RADARR_CATS = ['films', 'movies', 'radarr'];
     var SONARR_CATS = ['tv', 'tv-sonarr', 'series', 'sonarr'];
@@ -906,9 +1084,9 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     function buildPauseResumeBtn(hash, state) {
         var open = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">';
         if (state === 'paused') {
-            return '<button class="btn btn-sm btn-ghost-success qbt-act" data-action="resume" data-hash="'+hash+'" title="Reprendre">'+open+'<path d="M7 4v16l13-8z"/></svg></button>';
+            return '<button class="btn btn-sm btn-ghost-success qbt-act" data-action="resume" data-hash="'+hash+'" title="'+escapeHtml(QBT_I18N.row.resume_title)+'">'+open+'<path d="M7 4v16l13-8z"/></svg></button>';
         }
-        return '<button class="btn btn-sm btn-ghost-warning qbt-act" data-action="pause" data-hash="'+hash+'" title="Pause">'+open+'<path d="M6 4h4v16H6z"/><path d="M14 4h4v16h-4z"/></svg></button>';
+        return '<button class="btn btn-sm btn-ghost-warning qbt-act" data-action="pause" data-hash="'+hash+'" title="'+escapeHtml(QBT_I18N.row.pause_title)+'">'+open+'<path d="M6 4h4v16H6z"/><path d="M14 4h4v16h-4z"/></svg></button>';
     }
 
     function buildCatTag(category, torrentName, hash) {
@@ -916,12 +1094,12 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         var safeCat  = escapeHtml(category);
         var safeName = escapeHtml(torrentName || '');
         if (RADARR_CATS.indexOf(cat) !== -1) {
-            return '<span class="qbt-tag qbt-tag-radarr qbt-cat-link" data-pipeline="radarr" data-name="' + safeName + '" data-hash="' + hash + '" title="Voir dans Radarr">'
+            return '<span class="qbt-tag qbt-tag-radarr qbt-cat-link" data-pipeline="radarr" data-name="' + safeName + '" data-hash="' + hash + '" title="' + escapeHtml(QBT_I18N.row.radarr_title) + '">'
                 + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>'
                 + safeCat + '</span>';
         }
         if (SONARR_CATS.indexOf(cat) !== -1) {
-            return '<span class="qbt-tag qbt-tag-sonarr qbt-cat-link" data-pipeline="sonarr" data-name="' + safeName + '" data-hash="' + hash + '" title="Voir dans Sonarr">'
+            return '<span class="qbt-tag qbt-tag-sonarr qbt-cat-link" data-pipeline="sonarr" data-name="' + safeName + '" data-hash="' + hash + '" title="' + escapeHtml(QBT_I18N.row.sonarr_title) + '">'
                 + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M8 3l4 3 4-3"/></svg>'
                 + safeCat + '</span>';
         }
@@ -970,15 +1148,16 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             .then(function(d){
                 var ok = d && d.ok !== false && !d.error;
                 if (window._prismarrToast) {
+                    var errMsg = (d && d.error) ? d.error : QBT_I18N.toast.error_generic;
                     window._prismarrToast(
-                        ok ? (successMsg || 'Action envoyée') : ('Échec : ' + (d && d.error ? d.error : 'erreur')),
+                        ok ? (successMsg || QBT_I18N.toast.action_sent) : tpl(QBT_I18N.toast.failed_tpl, { ERROR: errMsg }),
                         ok ? 'success' : 'danger'
                     );
                 }
                 return d;
             })
             .catch(function(){
-                if (window._prismarrToast) window._prismarrToast('Erreur réseau', 'danger');
+                if (window._prismarrToast) window._prismarrToast(QBT_I18N.toast.network_error, 'danger');
             })
             .finally(function(){
                 if (btn) {
@@ -1069,9 +1248,9 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         var s = Math.floor(ms / 1000);
         var h = Math.floor(s / 3600);
         var m = Math.floor((s % 3600) / 60);
-        if (h > 0) return h + 'h ' + m + 'm';
-        if (m > 0) return m + ' min';
-        return s + 's';
+        if (h > 0) return tpl(QBT_I18N.uptime.hm_tpl, { H: h, M: m });
+        if (m > 0) return tpl(QBT_I18N.uptime.min_tpl, { M: m });
+        return tpl(QBT_I18N.uptime.sec_tpl, { S: s });
     }
 
     function updateStats(s) {
@@ -1084,13 +1263,13 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         var dot = document.getElementById('qbt-conn-dot');
         if (dot) dot.className = 'qbt-connection ' + (s.connection === 'connected' ? 'connected' : s.connection === 'firewalled' ? 'firewalled' : 'disconnected');
         // Totaux globaux
-        function fmtGo(bytes) { return (bytes / 1073741824).toFixed(1) + ' Go'; }
+        function fmtGo(bytes) { return (bytes / 1073741824).toFixed(1) + ' ' + QBT_I18N.units.gb; }
         set('qbt-total-dl', fmtGo(s.dl_alltime || 0));
         set('qbt-total-up', fmtGo(s.up_alltime || 0));
         set('qbt-session-dl', fmtGo(s.dl_session || 0));
         set('qbt-session-up', fmtGo(s.up_session || 0));
         set('qbt-total-ratio', (s.global_ratio || 0).toFixed(2));
-        set('qbt-free-space', ((s.free_space || 0) / 1073741824).toFixed(0) + ' Go');
+        set('qbt-free-space', ((s.free_space || 0) / 1073741824).toFixed(0) + ' ' + QBT_I18N.units.gb);
         // Pics DL/UP
         if (s.dl_speed > peakDl) { peakDl = s.dl_speed; set('qbt-peak-dl', fmtSpeed(peakDl)); }
         if (s.up_speed > peakUp) { peakUp = s.up_speed; set('qbt-peak-up', fmtSpeed(peakUp)); }
@@ -1104,16 +1283,16 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         if (!badge) return;
         if (portSync === true) {
             badge.className = 'qbt-port-badge match';
-            badge.textContent = '✓ Sync';
-            badge.title = 'qBit écoute bien sur le port forwarded Gluetun';
+            badge.textContent = QBT_I18N.vpn.sync_ok;
+            badge.title = QBT_I18N.vpn.sync_title_match;
         } else if (portSync === false) {
             badge.className = 'qbt-port-badge desync';
-            badge.textContent = '✗ Désync';
-            badge.title = 'port-update Gluetun n\'a pas poussé le port ' + vpnPort + ' vers qBit (actuellement ' + qbtPort + ')';
+            badge.textContent = QBT_I18N.vpn.sync_ko;
+            badge.title = tpl(QBT_I18N.vpn.sync_title_desync_tpl, { VPN: vpnPort, QBT: qbtPort });
         } else {
             badge.className = 'qbt-port-badge unknown';
-            badge.textContent = '—';
-            badge.title = 'Port forwarding ou qBit indisponible';
+            badge.textContent = QBT_I18N.vpn.sync_unknown;
+            badge.title = QBT_I18N.vpn.sync_title_unknown;
         }
     }
 
@@ -1192,8 +1371,8 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
 
         var from = p.total === 0 ? 0 : ((p.page - 1) * p.perPage + 1);
         var to   = Math.min(p.page * p.perPage, p.total);
-        if (info) info.textContent = from + '–' + to + ' / ' + p.total;
-        if (cnt)  cnt.textContent  = p.total + ' torrent' + (p.total !== 1 ? 's' : '');
+        if (info) info.textContent = tpl(QBT_I18N.pagination.info_tpl, { FROM: from, TO: to, TOTAL: p.total });
+        if (cnt)  cnt.textContent  = plural(p.total, QBT_I18N.count.one, QBT_I18N.count.many);
 
         // Construction des liens avec ellipses
         var html = '';
@@ -1277,12 +1456,13 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     function fmtRelativeDate(ts) {
         if (!ts) return '—';
         var diff = Math.floor(Date.now() / 1000) - ts;
-        if (diff < 60) return 'à l\'instant';
-        if (diff < 3600) return 'il y a ' + Math.floor(diff / 60) + 'min';
-        if (diff < 86400) return 'il y a ' + Math.floor(diff / 3600) + 'h';
-        if (diff < 2592000) return 'il y a ' + Math.floor(diff / 86400) + 'j';
-        if (diff < 31536000) return 'il y a ' + Math.floor(diff / 2592000) + ' mois';
-        return 'il y a ' + Math.floor(diff / 31536000) + ' an' + (Math.floor(diff / 31536000) > 1 ? 's' : '');
+        if (diff < 60) return QBT_I18N.date.just_now;
+        if (diff < 3600)    return tpl(QBT_I18N.date.minutes_ago_tpl, { N: Math.floor(diff / 60) });
+        if (diff < 86400)   return tpl(QBT_I18N.date.hours_ago_tpl,   { N: Math.floor(diff / 3600) });
+        if (diff < 2592000) return tpl(QBT_I18N.date.days_ago_tpl,    { N: Math.floor(diff / 86400) });
+        if (diff < 31536000) return tpl(QBT_I18N.date.months_ago_tpl, { N: Math.floor(diff / 2592000) });
+        var years = Math.floor(diff / 31536000);
+        return plural(years, QBT_I18N.date.years_ago_one, QBT_I18N.date.years_ago_many);
     }
     function fmtShortDate(ts) {
         if (!ts) return '—';
@@ -1307,9 +1487,12 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         if (t.dlspeed > 0) html += '<span class="sep"></span><span class="item dl-speed">&#8595; ' + fmtSpeed(t.dlspeed) + '</span>';
         if (t.upspeed > 0) html += '<span class="sep"></span><span class="item up-speed">&#8593; ' + fmtSpeed(t.upspeed) + '</span>';
         if (t.state === 'downloading' && t.eta < 8640000) html += '<span class="sep"></span><span class="item">⏱ ' + fmtEta(t.eta) + '</span>';
-        html += '<span class="sep"></span><span class="item" title="Seeds / Leechers">🌱 ' + t.num_seeds + '/' + leech + '</span>';
-        html += '<span class="sep"></span><span class="item" title="Ratio">⚖ ' + ratio + '</span>';
-        if (t.added_on) html += '<span class="sep"></span><span class="item" title="Ajouté le ' + fmtLongDate(t.added_on) + '">📅 ' + fmtRelativeDate(t.added_on) + '</span>';
+        html += '<span class="sep"></span><span class="item" title="' + escapeHtml(QBT_I18N.row.seeds_leech) + '">🌱 ' + t.num_seeds + '/' + leech + '</span>';
+        html += '<span class="sep"></span><span class="item" title="' + escapeHtml(QBT_I18N.row.ratio_title) + '">⚖ ' + ratio + '</span>';
+        if (t.added_on) {
+            var addedTitle = tpl(QBT_I18N.row.added_title_tpl, { DATE: fmtLongDate(t.added_on) });
+            html += '<span class="sep"></span><span class="item" title="' + escapeHtml(addedTitle) + '">📅 ' + fmtRelativeDate(t.added_on) + '</span>';
+        }
         return html;
     }
 
@@ -1348,7 +1531,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             + '<div class="qbt-table-cell qbt-cell-added" title="' + fmtShortDate(t.added_on) + '">' + fmtShortDate(t.added_on) + '</div>'
             + '<div class="qbt-compact-pct">' + t.progress + '%</div>'
             + '<div class="qbt-row-actions">'+pauseResume
-            +   '<button class="btn btn-sm btn-ghost-danger qbt-act" data-action="delete" data-hash="'+t.hash+'" data-name="'+escapeHtml(t.name)+'" title="Supprimer"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12"/><path d="M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg></button>'
+            +   '<button class="btn btn-sm btn-ghost-danger qbt-act" data-action="delete" data-hash="'+t.hash+'" data-name="'+escapeHtml(t.name)+'" title="'+escapeHtml(QBT_I18N.row.delete_title)+'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12"/><path d="M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg></button>'
             + '</div>';
         return div;
     }
@@ -1474,12 +1657,12 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         var action = btn.dataset.action;
         var hash = btn.dataset.hash;
 
-        if (action === 'pause') qbtAction(btn, BASE + '/api/torrent/' + hash + '/pause', null, 'Torrent mis en pause').then(refreshData);
-        else if (action === 'resume') qbtAction(btn, BASE + '/api/torrent/' + hash + '/resume', null, 'Torrent repris').then(refreshData);
+        if (action === 'pause') qbtAction(btn, BASE + '/api/torrent/' + hash + '/pause', null, QBT_I18N.toast.paused).then(refreshData);
+        else if (action === 'resume') qbtAction(btn, BASE + '/api/torrent/' + hash + '/resume', null, QBT_I18N.toast.resumed).then(refreshData);
         else if (action === 'delete') {
             deleteTarget = { hashes: [hash], mode: 'single' };
             var msg = document.getElementById('qbt-delete-msg');
-            if (msg) msg.textContent = 'Supprimer "' + (btn.dataset.name || hash).substring(0, 60) + '" ?';
+            if (msg) msg.textContent = tpl(QBT_I18N.modal_delete.msg_named_tpl, { NAME: (btn.dataset.name || hash).substring(0, 60) });
             document.getElementById('qbt-delete-files').checked = false;
             document.getElementById('qbt-delete-trigger').click();
         }
@@ -1497,7 +1680,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         if (!pipeline || !hash) return;
         // Feedback visuel
         var original = tag.innerHTML;
-        tag.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:10px;height:10px;border-width:1px;"></span> Recherche...';
+        tag.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:10px;height:10px;border-width:1px;"></span> ' + escapeHtml(QBT_I18N.toast.cat_resolve_search);
         fetch(BASE + '/api/resolve/' + pipeline + '/' + hash, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(function(r){ return r.json(); })
             .then(function(d){
@@ -1505,12 +1688,12 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
                     window.location.href = d.url;
                 } else {
                     tag.innerHTML = original;
-                    if (window._prismarrToast) window._prismarrToast('Aucun match trouvé pour "' + (name || '').substring(0, 50) + '"', 'warning');
+                    if (window._prismarrToast) window._prismarrToast(tpl(QBT_I18N.toast.cat_resolve_no_match_tpl, { NAME: (name || '').substring(0, 50) }), 'warning');
                 }
             })
             .catch(function(){
                 tag.innerHTML = original;
-                if (window._prismarrToast) window._prismarrToast('Erreur de résolution', 'danger');
+                if (window._prismarrToast) window._prismarrToast(QBT_I18N.toast.cat_resolve_error, 'danger');
             });
     });
 
@@ -1523,8 +1706,8 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     });
 
     function openDetail(hash) {
-        document.getElementById('qbt-detail-title').textContent = 'Chargement...';
-        document.getElementById('qbt-detail-props').innerHTML = '<div class="col-12 text-center text-muted py-3">Chargement...</div>';
+        document.getElementById('qbt-detail-title').textContent = QBT_I18N.modal_detail.loading;
+        document.getElementById('qbt-detail-props').innerHTML = '<div class="col-12 text-center text-muted py-3">' + escapeHtml(QBT_I18N.modal_detail.loading) + '</div>';
         document.getElementById('qbt-detail-files').innerHTML = '';
         document.getElementById('qbt-detail-trackers').innerHTML = '';
         document.getElementById('qbt-detail-peers').innerHTML = '';
@@ -1534,7 +1717,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         fetch(BASE + '/api/torrent/' + hash, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(function(r) { return r.json(); })
         .then(function(data) { renderDetail(hash, data); })
-        .catch(function() { document.getElementById('qbt-detail-props').innerHTML = '<div class="col-12 text-center text-danger py-3">Erreur de chargement</div>'; });
+        .catch(function() { document.getElementById('qbt-detail-props').innerHTML = '<div class="col-12 text-center text-danger py-3">' + escapeHtml(QBT_I18N.modal_detail.error_load) + '</div>'; });
     }
 
     function renderDetail(hash, data) {
@@ -1542,25 +1725,26 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         document.getElementById('qbt-detail-title').textContent = p.name || hash;
 
         // ── Propriétés simplifiées ──
+        var pp = QBT_I18N.modal_detail.props;
         var props = [
-            ['Téléchargé', fmtSize(p.total_downloaded || 0)],
-            ['Envoyé', fmtSize(p.total_uploaded || 0)],
-            ['Ratio', (p.share_ratio || 0).toFixed(2)],
-            ['Vitesse DL', fmtSpeed(p.dl_speed || 0)],
-            ['Vitesse UP', fmtSpeed(p.up_speed || 0)],
-            ['Temps restant', (p.eta || 0) >= 8640000 ? '-' : fmtDuration(p.eta)],
-            ['Seeds', (p.seeds || 0) + ' / ' + (p.seeds_total || 0)],
-            ['Peers', (p.peers || 0) + ' / ' + (p.peers_total || 0)],
-            ['Taille totale', fmtSize(p.total_size || 0)],
-            ['Ajouté', fmtDate(p.addition_date)],
-            ['Complété', fmtDate(p.completion_date)],
+            [pp.downloaded, fmtSize(p.total_downloaded || 0)],
+            [pp.uploaded,   fmtSize(p.total_uploaded || 0)],
+            [pp.ratio,      (p.share_ratio || 0).toFixed(2)],
+            [pp.dl_speed,   fmtSpeed(p.dl_speed || 0)],
+            [pp.up_speed,   fmtSpeed(p.up_speed || 0)],
+            [pp.eta,        (p.eta || 0) >= 8640000 ? '-' : fmtDuration(p.eta)],
+            [pp.seeds,      (p.seeds || 0) + ' / ' + (p.seeds_total || 0)],
+            [pp.peers,      (p.peers || 0) + ' / ' + (p.peers_total || 0)],
+            [pp.total_size, fmtSize(p.total_size || 0)],
+            [pp.added,      fmtDate(p.addition_date)],
+            [pp.completed,  fmtDate(p.completion_date)],
         ];
         var html = '';
         for (var i = 0; i < props.length; i++) {
-            html += '<div class="col-6 col-md-4"><div class="qbt-prop-card"><div class="qbt-prop-label">' + props[i][0] + '</div><div class="qbt-prop-value">' + props[i][1] + '</div></div></div>';
+            html += '<div class="col-6 col-md-4"><div class="qbt-prop-card"><div class="qbt-prop-label">' + escapeHtml(props[i][0]) + '</div><div class="qbt-prop-value">' + props[i][1] + '</div></div></div>';
         }
         if (p.save_path) {
-            html += '<div class="col-12"><div class="qbt-prop-card"><div class="qbt-prop-label">Dossier de sauvegarde</div><div class="qbt-prop-value" style="font-family:monospace;font-size:.75rem;word-break:break-all;">' + escapeHtml(p.save_path) + '</div></div></div>';
+            html += '<div class="col-12"><div class="qbt-prop-card"><div class="qbt-prop-label">' + escapeHtml(pp.save_path) + '</div><div class="qbt-prop-value" style="font-family:monospace;font-size:.75rem;word-break:break-all;">' + escapeHtml(p.save_path) + '</div></div></div>';
         }
         document.getElementById('qbt-detail-props').innerHTML = html;
 
@@ -1577,15 +1761,15 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
                     + '<td>' + fmtSize(f.size || 0) + '</td>'
                     + '<td><div class="d-flex align-items-center gap-2"><div class="qbt-mini-bar"><div style="width:' + fprog + '%"></div></div><span style="font-size:.7rem;">' + fprog + '%</span></div></td>'
                     + '<td><select class="form-select form-select-sm qbt-file-prio" data-hash="' + hash + '" data-id="' + (f.index !== undefined ? f.index : fi) + '" style="min-width:110px;font-size:.75rem;padding:3px 24px 3px 8px;height:auto;">'
-                    + '<option value="0"' + (f.priority === 0 ? ' selected' : '') + '>Ignorer</option>'
-                    + '<option value="1"' + (f.priority === 1 ? ' selected' : '') + '>Normal</option>'
-                    + '<option value="6"' + (f.priority === 6 ? ' selected' : '') + '>Haute</option>'
-                    + '<option value="7"' + (f.priority === 7 ? ' selected' : '') + '>Max</option>'
+                    + '<option value="0"' + (f.priority === 0 ? ' selected' : '') + '>' + escapeHtml(QBT_I18N.modal_detail.prio_skip)   + '</option>'
+                    + '<option value="1"' + (f.priority === 1 ? ' selected' : '') + '>' + escapeHtml(QBT_I18N.modal_detail.prio_normal) + '</option>'
+                    + '<option value="6"' + (f.priority === 6 ? ' selected' : '') + '>' + escapeHtml(QBT_I18N.modal_detail.prio_high)   + '</option>'
+                    + '<option value="7"' + (f.priority === 7 ? ' selected' : '') + '>' + escapeHtml(QBT_I18N.modal_detail.prio_max)    + '</option>'
                     + '</select></td></tr>';
             }
             filesEl.innerHTML = fhtml;
         } else {
-            filesEl.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Aucun fichier</td></tr>';
+            filesEl.innerHTML = '<tr><td colspan="4" class="text-center text-muted">' + escapeHtml(QBT_I18N.modal_detail.files_empty) + '</td></tr>';
         }
 
         // ── Trackers ──
@@ -1603,7 +1787,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
                     + '<td>' + (tr.num_leeches || 0) + '</td>'
                     + '</tr>';
             }
-            trackersEl.innerHTML = thtml || '<tr><td colspan="4" class="text-center text-muted">Aucun tracker</td></tr>';
+            trackersEl.innerHTML = thtml || '<tr><td colspan="4" class="text-center text-muted">' + escapeHtml(QBT_I18N.modal_detail.trackers_empty) + '</td></tr>';
         }
 
         // ── Peers ──
@@ -1625,20 +1809,20 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             }
             peersEl.innerHTML = phtml;
         } else {
-            peersEl.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Aucun peer connecté</td></tr>';
+            peersEl.innerHTML = '<tr><td colspan="5" class="text-center text-muted">' + escapeHtml(QBT_I18N.modal_detail.peers_empty) + '</td></tr>';
         }
 
         // ── Actions — boutons conditionnés selon l'état du torrent ──
         var row = document.querySelector('.qbt-torrent[data-hash="'+hash+'"]');
         var state = row ? row.dataset.state : '';
         var pauseResumeBtn = state === 'paused'
-            ? '<button class="btn btn-sm btn-outline-success qbt-detail-act" data-action="resume" data-hash="'+hash+'"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16l13-8z"/></svg> Reprendre</button>'
-            : '<button class="btn btn-sm btn-outline-warning qbt-detail-act" data-action="pause" data-hash="'+hash+'"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h4v16H6z"/><path d="M14 4h4v16h-4z"/></svg> Pause</button>';
+            ? '<button class="btn btn-sm btn-outline-success qbt-detail-act" data-action="resume" data-hash="'+hash+'"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16l13-8z"/></svg> '+escapeHtml(QBT_I18N.modal_detail.actions.resume)+'</button>'
+            : '<button class="btn btn-sm btn-outline-warning qbt-detail-act" data-action="pause" data-hash="'+hash+'"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h4v16H6z"/><path d="M14 4h4v16h-4z"/></svg> '+escapeHtml(QBT_I18N.modal_detail.actions.pause)+'</button>';
         document.getElementById('qbt-detail-actions').innerHTML = ''
             + pauseResumeBtn
-            + '<button class="btn btn-sm btn-outline-info qbt-detail-act" data-action="recheck" data-hash="'+hash+'"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg> Vérifier</button>'
-            + '<button class="btn btn-sm btn-outline-secondary qbt-detail-act" data-action="reannounce" data-hash="'+hash+'"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9 -9m-9 9l3 -3m-3 3l3 3"/></svg> Réannoncer</button>'
-            + '<button class="btn btn-sm btn-outline-danger qbt-detail-act ms-auto" data-action="delete" data-hash="'+hash+'"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12"/></svg> Supprimer</button>';
+            + '<button class="btn btn-sm btn-outline-info qbt-detail-act" data-action="recheck" data-hash="'+hash+'"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg> '+escapeHtml(QBT_I18N.modal_detail.actions.recheck)+'</button>'
+            + '<button class="btn btn-sm btn-outline-secondary qbt-detail-act" data-action="reannounce" data-hash="'+hash+'"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9 -9m-9 9l3 -3m-3 3l3 3"/></svg> '+escapeHtml(QBT_I18N.modal_detail.actions.reannounce)+'</button>'
+            + '<button class="btn btn-sm btn-outline-danger qbt-detail-act ms-auto" data-action="delete" data-hash="'+hash+'"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12"/></svg> '+escapeHtml(QBT_I18N.modal_detail.actions['delete'])+'</button>';
     }
 
     // ── Actions modal détail ────────────────────────────────────────────────
@@ -1650,13 +1834,13 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
 
         if (action === 'delete') {
             deleteTarget = { hashes: [hash], mode: 'single' };
-            document.getElementById('qbt-delete-msg').textContent = 'Supprimer ce torrent ?';
+            document.getElementById('qbt-delete-msg').textContent = QBT_I18N.modal_delete.msg_single;
             document.getElementById('qbt-delete-files').checked = false;
             document.getElementById('qbt-delete-trigger').click();
             return;
         }
-        var labels = { pause:'Torrent mis en pause', resume:'Torrent repris', recheck:'Vérification lancée', reannounce:'Réannonce envoyée' };
-        qbtAction(btn, BASE + '/api/torrent/' + hash + '/' + action, null, labels[action] || 'Action envoyée').then(refreshData);
+        var labels = { pause: QBT_I18N.toast.paused, resume: QBT_I18N.toast.resumed, recheck: QBT_I18N.toast.recheck_started, reannounce: QBT_I18N.toast.reannounce_sent };
+        qbtAction(btn, BASE + '/api/torrent/' + hash + '/' + action, null, labels[action] || QBT_I18N.toast.action_sent).then(refreshData);
     });
 
     // ── Priorité fichier ────────────────────────────────────────────────────
@@ -1698,20 +1882,20 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     function updateBulkBar() {
         var count = Object.keys(selectedHashes).length;
         var bar = document.getElementById('qbt-bulk-bar');
-        var cnt = document.getElementById('qbt-bulk-count');
-        if (cnt) cnt.textContent = count;
+        var lbl = document.getElementById('qbt-bulk-count-label');
+        if (lbl) lbl.textContent = plural(count, QBT_I18N.bulk.sel_one, QBT_I18N.bulk.sel_many);
         if (bar) bar.classList.toggle('show', count > 0);
     }
 
     function getSelectedHashes() { return Object.keys(selectedHashes); }
 
     function bindBulk(id, fn) { var el = document.getElementById(id); if (el) el.onclick = function(e){ fn(e.currentTarget); }; }
-    bindBulk('qbt-bulk-resume', function(btn){ var h = getSelectedHashes(); qbtAction(btn, BASE + '/api/bulk/resume',  { hashes: h }, h.length + ' torrent(s) repris').then(refreshData); });
-    bindBulk('qbt-bulk-pause',  function(btn){ var h = getSelectedHashes(); qbtAction(btn, BASE + '/api/bulk/pause',   { hashes: h }, h.length + ' torrent(s) en pause').then(refreshData); });
-    bindBulk('qbt-bulk-recheck',function(btn){ var h = getSelectedHashes(); qbtAction(btn, BASE + '/api/bulk/recheck', { hashes: h }, 'Vérification de ' + h.length + ' torrent(s)').then(refreshData); });
+    bindBulk('qbt-bulk-resume', function(btn){ var h = getSelectedHashes(); qbtAction(btn, BASE + '/api/bulk/resume',  { hashes: h }, plural(h.length, QBT_I18N.toast.bulk_resumed_one, QBT_I18N.toast.bulk_resumed_many)).then(refreshData); });
+    bindBulk('qbt-bulk-pause',  function(btn){ var h = getSelectedHashes(); qbtAction(btn, BASE + '/api/bulk/pause',   { hashes: h }, plural(h.length, QBT_I18N.toast.bulk_paused_one, QBT_I18N.toast.bulk_paused_many)).then(refreshData); });
+    bindBulk('qbt-bulk-recheck',function(btn){ var h = getSelectedHashes(); qbtAction(btn, BASE + '/api/bulk/recheck', { hashes: h }, plural(h.length, QBT_I18N.toast.bulk_recheck_one, QBT_I18N.toast.bulk_recheck_many)).then(refreshData); });
     bindBulk('qbt-bulk-delete', function(){
         deleteTarget = { hashes: getSelectedHashes(), mode: 'bulk' };
-        document.getElementById('qbt-delete-msg').textContent = 'Supprimer ' + deleteTarget.hashes.length + ' torrent(s) ?';
+        document.getElementById('qbt-delete-msg').textContent = plural(deleteTarget.hashes.length, QBT_I18N.modal_delete.msg_bulk_one, QBT_I18N.modal_delete.msg_bulk_many);
         document.getElementById('qbt-delete-files').checked = false;
         document.getElementById('qbt-delete-trigger').click();
     });
@@ -1737,7 +1921,8 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         var deleteFiles = document.getElementById('qbt-delete-files').checked;
         var url = deleteTarget.mode === 'bulk' ? BASE + '/api/bulk/delete' : BASE + '/api/torrent/' + deleteTarget.hashes[0] + '/delete';
         var body = deleteTarget.mode === 'bulk' ? { hashes: deleteTarget.hashes, deleteFiles: deleteFiles } : { deleteFiles: deleteFiles };
-        var msg = deleteTarget.hashes.length + ' torrent(s) supprimé(s)' + (deleteFiles ? ' + fichiers' : '');
+        var msg = plural(deleteTarget.hashes.length, QBT_I18N.toast.bulk_deleted_one, QBT_I18N.toast.bulk_deleted_many)
+            + (deleteFiles ? QBT_I18N.toast.bulk_deleted_with_files_suffix : '');
 
         qbtAction(btn, url, body, msg).then(function() {
             document.querySelector('#qbt-modal-delete .btn-close').click();
@@ -1758,8 +1943,8 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     };
 
     // ── Pause all / Resume all ──────────────────────────────────────────────
-    bindBulk('qbt-btn-pause-all',  function(btn){ qbtAction(btn, BASE + '/api/bulk/pause',  { hashes: ['all'] }, 'Tous les torrents en pause').then(refreshData); });
-    bindBulk('qbt-btn-resume-all', function(btn){ qbtAction(btn, BASE + '/api/bulk/resume', { hashes: ['all'] }, 'Tous les torrents repris').then(refreshData); });
+    bindBulk('qbt-btn-pause-all',  function(btn){ qbtAction(btn, BASE + '/api/bulk/pause',  { hashes: ['all'] }, QBT_I18N.toast.pause_all).then(refreshData); });
+    bindBulk('qbt-btn-resume-all', function(btn){ qbtAction(btn, BASE + '/api/bulk/resume', { hashes: ['all'] }, QBT_I18N.toast.resume_all).then(refreshData); });
 
     // ── Ajout torrent ───────────────────────────────────────────────────────
     // ── Ajouter torrent : reset URL + fichiers ──
@@ -1775,13 +1960,15 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     var dropZone = document.getElementById('qbt-drop-zone');
     var fileInput = document.getElementById('qbt-file-input');
 
+    var FILE_REMOVE_TITLE = {{ 'qbittorrent.modal_add.file_remove_title'|trans|json_encode|raw }};
+
     function renderPendingFiles() {
         var ul = document.getElementById('qbt-drop-files');
         if (!ul) return;
         if (!pendingTorrentFiles.length) { ul.innerHTML = ''; return; }
         var html = '';
         pendingTorrentFiles.forEach(function(f, i){
-            html += '<li>📄 <strong>' + escapeHtml(f.name) + '</strong> <span class="text-muted" style="font-size:.7rem;">(' + fmtSize(f.size) + ')</span><span class="remove" data-i="' + i + '" title="Retirer">×</span></li>';
+            html += '<li>📄 <strong>' + escapeHtml(f.name) + '</strong> <span class="text-muted" style="font-size:.7rem;">(' + fmtSize(f.size) + ')</span><span class="remove" data-i="' + i + '" title="' + escapeHtml(FILE_REMOVE_TITLE) + '">×</span></li>';
         });
         ul.innerHTML = html;
     }
@@ -1790,7 +1977,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         for (var i = 0; i < fileList.length; i++) {
             var f = fileList[i];
             if (f.name.toLowerCase().endsWith('.torrent')) pendingTorrentFiles.push(f);
-            else if (window._prismarrToast) window._prismarrToast('Ignoré (pas .torrent) : ' + f.name, 'warning');
+            else if (window._prismarrToast) window._prismarrToast(tpl(QBT_I18N.toast.file_ignored_tpl, { NAME: f.name }), 'warning');
         }
         renderPendingFiles();
     }
@@ -1824,7 +2011,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         var hasUrls = urls.length > 0;
 
         if (!hasFiles && !hasUrls) {
-            if (window._prismarrToast) window._prismarrToast('Ajoute un magnet/URL ou un fichier .torrent', 'warning');
+            if (window._prismarrToast) window._prismarrToast(QBT_I18N.toast.add_required, 'warning');
             return;
         }
 
@@ -1852,7 +2039,12 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             filesDone = fetch(BASE + '/api/add-file', { method: 'POST', body: fd })
                 .then(function(r){ return r.json(); })
                 .then(function(d){
-                    if (window._prismarrToast) window._prismarrToast(d && d.ok ? (d.count + ' fichier(s) ajouté(s)') : 'Échec upload fichier', d && d.ok ? 'success' : 'danger');
+                    if (window._prismarrToast) {
+                        var msg = (d && d.ok)
+                            ? plural(d.count, QBT_I18N.toast.add_files_ok_one, QBT_I18N.toast.add_files_ok_many)
+                            : QBT_I18N.toast.add_files_ko;
+                        window._prismarrToast(msg, d && d.ok ? 'success' : 'danger');
+                    }
                     return d && d.ok;
                 })
                 .catch(function(){ return false; });
@@ -1864,7 +2056,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
                 return qbtPost(BASE + '/api/add', { urls: urls, category: cat || null, paused: paused })
                     .then(function(d){
                         var ok = d && d.ok;
-                        var msg = ok ? 'Torrent(s) ajouté(s)' : ((d && d.error) ? d.error : 'Échec ajout URL');
+                        var msg = ok ? QBT_I18N.toast.add_url_ok : ((d && d.error) ? d.error : QBT_I18N.toast.add_url_ko);
                         if (window._prismarrToast) window._prismarrToast(msg, ok ? 'success' : 'danger');
                         return ok;
                     })
