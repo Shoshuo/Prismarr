@@ -47,6 +47,56 @@ the image, mount one volume, you're up.
 
 ---
 
+## Project status
+
+Prismarr is maintained by a single developer in spare time. The codebase
+is production-ready - I run it on my own homelab daily - but support,
+bug fixes and new features land when I have the bandwidth. There is no
+SLA, no commercial backing and no team behind this. If you need rock-solid
+24/7 support for a homelab dashboard, this is probably not the right
+project for you.
+
+That said: issues, PRs and translations are very welcome, and the
+[CHANGELOG](CHANGELOG.md) is kept up to date.
+
+---
+
+## Why Prismarr?
+
+The selfhosted dashboard space is crowded. Here's where Prismarr fits and
+where the others might suit you better:
+
+- **[Organizr](https://organizr.app/)** - HTPC-focused, iframes the
+  underlying services into tabs. Excellent if you want each service's
+  full UI inside one page; less so if you want a unified library view
+  rather than six side-by-side dashboards.
+- **[Heimdall](https://heimdall.site/)**, **[Homer](https://github.com/bastienwirtz/homer)**,
+  **[Homepage](https://gethomepage.dev/)** - bookmark-style launchers
+  with widgets. Lightweight and fast; they don't *understand* your
+  library, they just link to other apps.
+- **[Homarr](https://homarr.dev/)** - drag-and-drop launcher with rich
+  widgets. Closer to Prismarr in spirit but still a launcher: Radarr is
+  a tile, not a page.
+- **[Overseerr](https://overseerr.dev/) / [Jellyseerr](https://github.com/Fallenbagel/jellyseerr)** -
+  request frontends. Prismarr embeds Jellyseerr as one component among
+  others; if requests are *all* you need, Jellyseerr alone is enough.
+- **Servarr web UIs themselves** - the most powerful option. Prismarr
+  doesn't replace them; it sits on top and gives you a unified search,
+  calendar, dashboard and download view.
+
+**Pick Prismarr if** you want a single Symfony app that *consumes* the
+APIs of your existing stack, gives you one search box across the local
+library and TMDb, one calendar that merges movie and episode releases,
+one dashboard that surfaces what matters today, and one settings page
+where every API key lives - all in one Docker container with SQLite, no
+external dependencies.
+
+**Pick something else if** you want iframes (Organizr), pure bookmarks
+(Heimdall / Homer / Homepage), drag-and-drop dashboards (Homarr) or just
+a request UI (Jellyseerr).
+
+---
+
 ## Features
 
 ### Unified media management
@@ -289,6 +339,54 @@ on `amd64` and `arm64`.
 
 ---
 
+## FAQ
+
+**Why PHP / Symfony?**
+Because the developer (me) is comfortable with it and Symfony 8 lets a
+solo dev ship a polished, testable, batteries-included web app fast.
+The runtime is FrankenPHP in worker mode, so the per-request overhead
+is small. Performance is a non-issue at homelab scale.
+
+**Does Prismarr include Plex / Jellyfin / Emby?**
+No. Prismarr is a control surface for Servarr-style stacks
+(Radarr / Sonarr / Prowlarr / Jellyseerr / qBittorrent / TMDb). The
+media server itself is not embedded. A Jellyfin widget is on the
+v1.x roadmap.
+
+**ARM / Raspberry Pi support?**
+Yes. The image is built for `linux/amd64` and `linux/arm64`. It runs
+on a Raspberry Pi 4/5, an Apple Silicon Mac, or any arm64 NAS.
+
+**Does Prismarr need internet access?**
+Only for TMDb (cover art, metadata, discovery) and the Servarr
+services you point it at. The app itself works fully on a LAN; if
+you don't configure TMDb, the Discovery page is the only feature
+that goes dark.
+
+**Can I run it behind a reverse proxy?**
+Yes. Set `TRUSTED_PROXIES` to your proxy network (see Configuration).
+HSTS and Permissions-Policy headers are emitted by the embedded
+Caddy.
+
+**Where are my API keys stored? Is it safe?**
+In the SQLite database (table `setting`). The database lives in the
+`prismarr_data` Docker volume, never in environment variables, never
+in any file under version control. The export feature strips every
+key matching `api_key`, `password` or `secret` so accidentally
+sharing your config is safe.
+
+**How do I back up my install?**
+Snapshot the `prismarr_data` Docker volume (one-liner in the
+Configuration section). It contains the SQLite DB, the auto-generated
+secrets, sessions, cache and avatars - everything needed to restore.
+
+**Can I contribute a translation in another language?**
+Yes - duplicate `symfony/translations/messages+intl-icu.en.yaml` to
+your locale (e.g. `messages+intl-icu.de.yaml`), translate, and open
+a PR. The setup wizard will pick up the new locale automatically.
+
+---
+
 ## Contributing
 
 Contributions are welcome - please open an issue first to discuss the scope
@@ -322,6 +420,12 @@ Inspired by the remarkable work of:
 And, on a more personal note: thank you to my friends and family for the
 patience, the encouragement, and for asking "so when does it ship?" often
 enough to keep me going. This release is for you.
+
+---
+
+## Star history
+
+[![Star history](https://api.star-history.com/svg?repos=Shoshuo/Prismarr&type=Date)](https://star-history.com/#Shoshuo/Prismarr&Date)
 
 ---
 

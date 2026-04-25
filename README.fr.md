@@ -48,6 +48,61 @@ service. Pull de l'image, un volume monté, c'est en route.
 
 ---
 
+## Statut du projet
+
+Prismarr est maintenu par un seul développeur sur son temps libre. Le code
+est production-ready - je le fais tourner sur mon propre homelab au
+quotidien - mais le support, les corrections de bugs et les nouvelles
+fonctionnalités arrivent quand j'ai la bande passante. Pas de SLA, pas de
+soutien commercial, pas d'équipe derrière. Si vous avez besoin d'un support
+24/7 béton pour un dashboard homelab, ce n'est probablement pas le bon
+projet pour vous.
+
+Ceci dit : les issues, PR et traductions sont les bienvenues, et le
+[CHANGELOG](CHANGELOG.md) est tenu à jour.
+
+---
+
+## Pourquoi Prismarr ?
+
+L'espace des dashboards selfhosted est encombré. Voici où Prismarr se
+place et où les autres pourraient mieux vous convenir :
+
+- **[Organizr](https://organizr.app/)** - orienté HTPC, embarque les
+  services en iframes dans des onglets. Excellent si vous voulez l'UI
+  complète de chaque service dans une seule page ; moins adapté si vous
+  voulez une vue unifiée de la bibliothèque plutôt que six dashboards
+  côte à côte.
+- **[Heimdall](https://heimdall.site/)**, **[Homer](https://github.com/bastienwirtz/homer)**,
+  **[Homepage](https://gethomepage.dev/)** - launchers façon bookmarks
+  avec widgets. Léger et rapide ; ils ne *comprennent* pas votre
+  bibliothèque, ils pointent juste vers les autres apps.
+- **[Homarr](https://homarr.dev/)** - launcher drag-and-drop avec widgets
+  riches. Plus proche de Prismarr dans l'esprit mais reste un launcher :
+  Radarr est une tuile, pas une page.
+- **[Overseerr](https://overseerr.dev/) / [Jellyseerr](https://github.com/Fallenbagel/jellyseerr)** -
+  frontends de requêtes. Prismarr embarque Jellyseerr comme un composant
+  parmi d'autres ; si les requêtes sont *tout* ce qu'il vous faut,
+  Jellyseerr seul suffit.
+- **Les UIs web des Servarr eux-mêmes** - l'option la plus puissante.
+  Prismarr ne les remplace pas ; il s'installe par-dessus et donne une
+  recherche, un calendrier, un dashboard et une vue téléchargements
+  unifiés.
+
+**Choisissez Prismarr si** vous voulez une seule app Symfony qui
+*consomme* les APIs de votre stack existante, vous donne une seule barre
+de recherche couvrant la bibliothèque locale et TMDb, un seul calendrier
+qui fusionne sorties films et épisodes, un seul dashboard qui remonte ce
+qui compte aujourd'hui, et une seule page paramètres où chaque clé API
+vit - le tout dans un container Docker avec SQLite, sans dépendances
+externes.
+
+**Choisissez autre chose si** vous voulez des iframes (Organizr), des
+pures bookmarks (Heimdall / Homer / Homepage), des dashboards
+drag-and-drop (Homarr), ou juste une UI de requêtes (Jellyseerr).
+
+---
+
 ## Fonctionnalités
 
 ### Gestion médias unifiée
@@ -297,6 +352,58 @@ Un seul container Docker embarque tout. L'image fait `~282 Mo` et tourne sur
 
 ---
 
+## FAQ
+
+**Pourquoi PHP / Symfony ?**
+Parce que le développeur (moi) est à l'aise avec, et que Symfony 8
+permet à un dev solo de livrer une app web soignée, testable et
+batteries-included rapidement. Le runtime est FrankenPHP en mode
+worker, donc l'overhead par requête est faible. La performance n'est
+pas un problème à l'échelle d'un homelab.
+
+**Prismarr inclut-il Plex / Jellyfin / Emby ?**
+Non. Prismarr est une surface de contrôle pour les stacks de type
+Servarr (Radarr / Sonarr / Prowlarr / Jellyseerr / qBittorrent / TMDb).
+Le serveur média lui-même n'est pas embarqué. Un widget Jellyfin est
+prévu sur la roadmap v1.x.
+
+**Support ARM / Raspberry Pi ?**
+Oui. L'image est buildée pour `linux/amd64` et `linux/arm64`. Elle
+tourne sur Raspberry Pi 4/5, Mac Apple Silicon, ou n'importe quel NAS
+arm64.
+
+**Prismarr a-t-il besoin d'internet ?**
+Uniquement pour TMDb (jaquettes, métadonnées, découverte) et les
+services Servarr vers lesquels vous le pointez. L'app elle-même
+fonctionne entièrement en LAN ; sans clé TMDb, seule la page Découverte
+ne s'allume pas.
+
+**Puis-je le faire tourner derrière un reverse proxy ?**
+Oui. Définir `TRUSTED_PROXIES` sur le réseau du proxy (voir
+Configuration). Les headers HSTS et Permissions-Policy sont émis par
+le Caddy embarqué.
+
+**Où sont stockées mes clés API ? Est-ce sécurisé ?**
+Dans la BDD SQLite (table `setting`). La BDD vit dans le volume Docker
+`prismarr_data`, jamais en variables d'environnement, jamais dans un
+fichier versionné. La fonction d'export retire toutes les clés
+matchant `api_key`, `password` ou `secret`, donc partager sa config
+par accident est sûr.
+
+**Comment je backup mon install ?**
+Snapshot du volume Docker `prismarr_data` (one-liner dans la section
+Configuration). Il contient la BDD SQLite, les secrets auto-générés,
+les sessions, le cache et les avatars - tout ce qu'il faut pour
+restaurer.
+
+**Puis-je contribuer une traduction dans une autre langue ?**
+Oui - dupliquez `symfony/translations/messages+intl-icu.en.yaml` vers
+votre locale (par ex. `messages+intl-icu.de.yaml`), traduisez, et
+ouvrez une PR. Le setup wizard détectera automatiquement la nouvelle
+locale.
+
+---
+
 ## Contribuer
 
 Les contributions sont les bienvenues - merci d'ouvrir une issue d'abord pour
@@ -331,6 +438,12 @@ Et, sur une note plus personnelle : merci à mes amis et ma famille pour
 leur patience, leurs encouragements, et pour avoir demandé "ça sort
 quand ?" assez souvent pour me faire tenir la cadence. Cette release
 est pour vous.
+
+---
+
+## Historique des étoiles
+
+[![Historique des étoiles](https://api.star-history.com/svg?repos=Shoshuo/Prismarr&type=Date)](https://star-history.com/#Shoshuo/Prismarr&Date)
 
 ---
 
