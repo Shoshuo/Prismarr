@@ -31,7 +31,7 @@
 <div class="container-xl">
 
 {% if error %}
-    <div class="alert alert-danger">Impossible de contacter Prowlarr.</div>
+    <div class="alert alert-danger">{{ 'prowlarr.common.error_unreachable'|trans }}</div>
 {% endif %}
 
 <div class="card">
@@ -40,22 +40,22 @@
         <div class="card-options">
             <button class="btn btn-sm btn-primary pw-add-btn" style="background:#E88D1A;border-color:#E88D1A;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 5v14M5 12h14"/></svg>
-                Ajouter
+                {{ 'prowlarr.common.add'|trans }}
             </button>
         </div>
     </div>
     <div class="table-responsive">
         <table class="table table-vcenter card-table table-sm">
             <thead><tr>
-                <th>Nom</th>
-                <th>Type</th>
+                <th>{{ 'prowlarr.common.name'|trans }}</th>
+                <th>{{ 'prowlarr.common.type'|trans }}</th>
                 {% block extra_headers %}{% endblock %}
-                <th>Statut</th>
-                <th class="text-end">Actions</th>
+                <th>{{ 'prowlarr.common.status'|trans }}</th>
+                <th class="text-end">{{ 'prowlarr.common.actions'|trans }}</th>
             </tr></thead>
             <tbody>
                 {% if items is empty %}
-                    <tr><td colspan="10" class="text-center text-secondary py-3">Aucun élément configuré.</td></tr>
+                    <tr><td colspan="10" class="text-center text-secondary py-3">{{ 'prowlarr.common.no_items'|trans }}</td></tr>
                 {% else %}
                     {% for item in items %}
                     <tr>
@@ -64,20 +64,20 @@
                         {% block extra_columns %}{% endblock %}
                         <td>
                             {% if item.enable is defined and item.enable %}
-                                <span class="badge bg-green-lt" style="font-size:.55rem;">Actif</span>
+                                <span class="badge bg-green-lt" style="font-size:.55rem;">{{ 'prowlarr.common.active'|trans }}</span>
                             {% else %}
-                                <span class="badge bg-secondary-lt" style="font-size:.55rem;">Désactivé</span>
+                                <span class="badge bg-secondary-lt" style="font-size:.55rem;">{{ 'prowlarr.common.disabled'|trans }}</span>
                             {% endif %}
                         </td>
                         <td class="text-end">
                             <div class="d-flex gap-1 justify-content-end">
-                                <button class="btn btn-sm btn-ghost-secondary p-1 pw-edit-btn" data-id="{{ item.id }}" title="Modifier">
+                                <button class="btn btn-sm btn-ghost-secondary p-1 pw-edit-btn" data-id="{{ item.id }}" title="{{ 'prowlarr.common.edit'|trans }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4l10.5-10.5a2.828 2.828 0 10-4-4L4 16v4M13.5 6.5l4 4"/></svg>
                                 </button>
-                                <button class="btn btn-sm btn-ghost-secondary p-1 pw-test-btn" data-id="{{ item.id }}" title="Tester">
+                                <button class="btn btn-sm btn-ghost-secondary p-1 pw-test-btn" data-id="{{ item.id }}" title="{{ 'prowlarr.common.test'|trans }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5l10-10"/></svg>
                                 </button>
-                                <button class="btn btn-sm btn-ghost-danger p-1 pw-del-btn" data-id="{{ item.id }}" data-name="{{ item.name ?? '' }}" title="Supprimer">
+                                <button class="btn btn-sm btn-ghost-danger p-1 pw-del-btn" data-id="{{ item.id }}" data-name="{{ item.name ?? '' }}" title="{{ 'prowlarr.common.delete'|trans }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
                                 </button>
                             </div>
@@ -95,23 +95,23 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top:2rem;">
         <div class="modal-content" style="background:var(--tblr-bg-surface);">
             <div class="modal-header">
-                <h4 class="modal-title">Ajouter — {{ sectionLabel }}</h4>
+                <h4 class="modal-title">{{ 'prowlarr.schema_modal.add_title_tpl'|trans|replace({'__SECTION__': sectionLabel}) }}</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div id="pw-add-filters">
-                    <input type="text" id="pw-add-search" class="form-control mb-3" placeholder="Rechercher…" autocomplete="off">
+                    <input type="text" id="pw-add-search" class="form-control mb-3" placeholder="{{ 'prowlarr.common.search_placeholder'|trans }}" autocomplete="off">
                 </div>
                 <div id="pw-add-list" class="row g-2" style="max-height:400px;overflow-y:auto;"></div>
                 <div id="pw-add-form" style="display:none;" class="mt-3 p-3 border border-primary rounded">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 id="pw-add-form-title" class="mb-0"></h5>
-                        <button id="pw-add-back" class="btn btn-sm btn-ghost-secondary">Retour</button>
+                        <button id="pw-add-back" class="btn btn-sm btn-ghost-secondary">{{ 'prowlarr.common.back'|trans }}</button>
                     </div>
                     <div id="pw-add-fields"></div>
                     <div class="d-flex gap-2 mt-3">
-                        <button id="pw-add-test" class="btn btn-sm btn-outline-secondary">Tester</button>
-                        <button id="pw-add-save" class="btn btn-sm btn-primary" style="background:#E88D1A;border-color:#E88D1A;">Ajouter</button>
+                        <button id="pw-add-test" class="btn btn-sm btn-outline-secondary">{{ 'prowlarr.common.test'|trans }}</button>
+                        <button id="pw-add-save" class="btn btn-sm btn-primary" style="background:#E88D1A;border-color:#E88D1A;">{{ 'prowlarr.common.add'|trans }}</button>
                     </div>
                     <div id="pw-add-result" class="mt-2 alert d-none" style="font-size:.85rem;"></div>
                 </div>
@@ -125,14 +125,14 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top:2rem;">
         <div class="modal-content" style="background:var(--tblr-bg-surface);">
             <div class="modal-header">
-                <h4 class="modal-title" id="pw-edit-title">Modifier</h4>
+                <h4 class="modal-title" id="pw-edit-title">{{ 'prowlarr.schema_modal.edit_title'|trans }}</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div id="pw-edit-fields"></div>
                 <div class="d-flex gap-2 mt-3">
-                    <button id="pw-edit-test" class="btn btn-sm btn-outline-secondary">Tester</button>
-                    <button id="pw-edit-save" class="btn btn-sm btn-primary" style="background:#E88D1A;border-color:#E88D1A;">Sauvegarder</button>
+                    <button id="pw-edit-test" class="btn btn-sm btn-outline-secondary">{{ 'prowlarr.common.test'|trans }}</button>
+                    <button id="pw-edit-save" class="btn btn-sm btn-primary" style="background:#E88D1A;border-color:#E88D1A;">{{ 'prowlarr.common.save'|trans }}</button>
                 </div>
                 <div id="pw-edit-result" class="mt-2 alert d-none" style="font-size:.85rem;"></div>
             </div>
@@ -156,6 +156,25 @@
     var DELETE_URL = '{{ deleteUrl }}';
     var TEST_URL = '{{ testUrl }}';
 
+    var _I18N = {
+        name: {{ 'prowlarr.common.name'|trans|json_encode|raw }},
+        enabled: {{ 'prowlarr.common.enabled'|trans|json_encode|raw }},
+        confirmDeleteTpl: {{ 'prowlarr.common.confirm_delete_tpl'|trans|json_encode|raw }},
+        editTitleTpl: {{ 'prowlarr.schema_modal.edit_title_tpl'|trans|json_encode|raw }},
+        test: {{ 'prowlarr.common.test'|trans|json_encode|raw }},
+        testing: {{ 'prowlarr.common.testing'|trans|json_encode|raw }},
+        testSuccess: {{ 'prowlarr.common.test_success'|trans|json_encode|raw }},
+        testFailureTpl: {{ 'prowlarr.common.test_failure_tpl'|trans|json_encode|raw }},
+        save: {{ 'prowlarr.common.save'|trans|json_encode|raw }},
+        saving: {{ 'prowlarr.common.saving'|trans|json_encode|raw }},
+        saved: {{ 'prowlarr.common.saved'|trans|json_encode|raw }},
+        add: {{ 'prowlarr.common.add'|trans|json_encode|raw }},
+        adding: {{ 'prowlarr.common.adding'|trans|json_encode|raw }},
+        added: {{ 'prowlarr.common.saved'|trans|json_encode|raw }},
+        errorTpl: {{ 'prowlarr.common.error_tpl'|trans|json_encode|raw }},
+        noResults: {{ 'prowlarr.common.no_results'|trans|json_encode|raw }}
+    };
+
     function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
     function showAlert(el, cls, msg) { el.className = 'mt-2 alert ' + cls; el.textContent = msg; }
 
@@ -172,8 +191,8 @@
         var h = '';
         if (topLevel) {
             h += '<div class="row g-2 mb-3 pb-3" style="border-bottom:1px solid var(--tblr-border-color);">';
-            h += '<div class="col-12 col-sm-6"><label class="form-label small mb-1">Nom</label><input type="text" class="form-control form-control-sm pw-top" data-top="name" value="' + esc(topLevel.name || '') + '"></div>';
-            h += '<div class="col-6 col-sm-3 d-flex align-items-end"><label class="form-check form-switch mb-1"><input class="form-check-input pw-top" data-top="enable" type="checkbox"' + (topLevel.enable !== false ? ' checked' : '') + '><span class="form-check-label small">Activé</span></label></div>';
+            h += '<div class="col-12 col-sm-6"><label class="form-label small mb-1">' + esc(_I18N.name) + '</label><input type="text" class="form-control form-control-sm pw-top" data-top="name" value="' + esc(topLevel.name || '') + '"></div>';
+            h += '<div class="col-6 col-sm-3 d-flex align-items-end"><label class="form-check form-switch mb-1"><input class="form-check-input pw-top" data-top="enable" type="checkbox"' + (topLevel.enable !== false ? ' checked' : '') + '><span class="form-check-label small">' + esc(_I18N.enabled) + '</span></label></div>';
             h += '</div>';
         }
         h += '<div class="row g-2">';
@@ -223,7 +242,7 @@
     // ── Supprimer ──
     document.querySelectorAll('.pw-del-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            if (!confirm('Supprimer « ' + btn.dataset.name + ' » ?')) return;
+            if (!confirm(_I18N.confirmDeleteTpl.replace('__NAME__', btn.dataset.name))) return;
             fetch(DELETE_URL.replace('{id}', btn.dataset.id), { method: 'POST' })
                 .then(function(r) { return r.json(); })
                 .then(function(d) { if (d.ok) btn.closest('tr').remove(); });
@@ -273,7 +292,7 @@
             var h = ((s.name||'') + ' ' + (s.implementationName||'') + ' ' + (s.description||'')).toLowerCase();
             return q.split(/\s+/).every(function(w) { return h.includes(w); });
         }).slice(0, 40);
-        if (!filtered.length) { c.innerHTML = '<div class="col-12 text-center text-secondary small py-2">Aucun résultat</div>'; return; }
+        if (!filtered.length) { c.innerHTML = '<div class="col-12 text-center text-secondary small py-2">' + esc(_I18N.noResults) + '</div>'; return; }
         c.innerHTML = filtered.map(function(s, i) {
             var name = esc(s.name || s.implementationName || '—');
             return '<div class="col-12 col-sm-6 col-md-4"><div class="card pw-schema-card" data-idx="' + schemaCache.indexOf(s) + '" style="cursor:pointer;"><div class="card-body py-2 px-3"><div class="fw-semibold small">' + name + '</div>' + (s.infoLink ? '<div class="text-secondary" style="font-size:.6rem;">' + esc(s.implementationName || '') + '</div>' : '') + '</div></div></div>';
@@ -301,20 +320,20 @@
         var btn = this, r = document.getElementById('pw-add-result');
         var p = collectTopLevel(document.getElementById('pw-add-fields'), selectedSchema);
         p.fields = collectFields(document.getElementById('pw-add-fields'), selectedSchema.fields || []);
-        btn.disabled = true; btn.textContent = 'Test…';
+        btn.disabled = true; btn.textContent = _I18N.testing;
         fetch(TEST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cleanPayload(p)) })
             .then(function(res) { return res.json(); })
-            .then(function(d) { btn.disabled = false; btn.textContent = 'Tester'; showAlert(r, d.ok ? 'alert-success' : 'alert-danger', d.ok ? 'Connexion réussie !' : 'Échec : ' + (d.error || '—')); });
+            .then(function(d) { btn.disabled = false; btn.textContent = _I18N.test; showAlert(r, d.ok ? 'alert-success' : 'alert-danger', d.ok ? _I18N.testSuccess : _I18N.testFailureTpl.replace('__ERROR__', d.error || '—')); });
     });
 
     document.getElementById('pw-add-save').addEventListener('click', function() {
         var btn = this, r = document.getElementById('pw-add-result');
         var p = collectTopLevel(document.getElementById('pw-add-fields'), selectedSchema);
         p.fields = collectFields(document.getElementById('pw-add-fields'), selectedSchema.fields || []);
-        btn.disabled = true; btn.textContent = 'Ajout…';
+        btn.disabled = true; btn.textContent = _I18N.adding;
         fetch(ADD_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cleanPayload(p)) })
             .then(function(res) { return res.json(); })
-            .then(function(d) { btn.disabled = false; btn.textContent = 'Ajouter'; if (d.ok) { showAlert(r, 'alert-success', 'Ajouté !'); setTimeout(function() { window.location.reload(); }, 800); } else showAlert(r, 'alert-danger', 'Erreur : ' + (d.error || '—')); });
+            .then(function(d) { btn.disabled = false; btn.textContent = _I18N.add; if (d.ok) { showAlert(r, 'alert-success', _I18N.added); setTimeout(function() { window.location.reload(); }, 800); } else showAlert(r, 'alert-danger', _I18N.errorTpl.replace('__ERROR__', d.error || '—')); });
     });
 
     // ── Modal Éditer ──
@@ -329,7 +348,7 @@
                 .then(function(r) { return r.json(); })
                 .then(function(raw) {
                     editRaw = raw;
-                    document.getElementById('pw-edit-title').textContent = 'Modifier — ' + (raw.name || '—');
+                    document.getElementById('pw-edit-title').textContent = _I18N.editTitleTpl.replace('__NAME__', raw.name || '—');
                     renderFields(raw.fields || [], document.getElementById('pw-edit-fields'), raw);
                 });
         });
@@ -339,20 +358,20 @@
         var btn = this, r = document.getElementById('pw-edit-result');
         var p = collectTopLevel(document.getElementById('pw-edit-fields'), editRaw);
         p.fields = collectFields(document.getElementById('pw-edit-fields'), editRaw.fields || []);
-        btn.disabled = true; btn.textContent = 'Test…';
+        btn.disabled = true; btn.textContent = _I18N.testing;
         fetch(TEST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cleanPayload(p)) })
             .then(function(res) { return res.json(); })
-            .then(function(d) { btn.disabled = false; btn.textContent = 'Tester'; showAlert(r, d.ok ? 'alert-success' : 'alert-danger', d.ok ? 'Connexion réussie !' : 'Échec : ' + (d.error || '—')); });
+            .then(function(d) { btn.disabled = false; btn.textContent = _I18N.test; showAlert(r, d.ok ? 'alert-success' : 'alert-danger', d.ok ? _I18N.testSuccess : _I18N.testFailureTpl.replace('__ERROR__', d.error || '—')); });
     });
 
     document.getElementById('pw-edit-save').addEventListener('click', function() {
         var btn = this, r = document.getElementById('pw-edit-result');
         var p = collectTopLevel(document.getElementById('pw-edit-fields'), editRaw);
         p.fields = collectFields(document.getElementById('pw-edit-fields'), editRaw.fields || []);
-        btn.disabled = true; btn.textContent = 'Sauvegarde…';
+        btn.disabled = true; btn.textContent = _I18N.saving;
         fetch(UPDATE_URL.replace('{id}', editRaw.id), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cleanPayload(p)) })
             .then(function(res) { return res.json(); })
-            .then(function(d) { btn.disabled = false; btn.textContent = 'Sauvegarder'; if (d.ok) { showAlert(r, 'alert-success', 'Sauvegardé !'); setTimeout(function() { window.location.reload(); }, 800); } else showAlert(r, 'alert-danger', 'Erreur : ' + (d.error || '—')); });
+            .then(function(d) { btn.disabled = false; btn.textContent = _I18N.save; if (d.ok) { showAlert(r, 'alert-success', _I18N.saved); setTimeout(function() { window.location.reload(); }, 800); } else showAlert(r, 'alert-danger', _I18N.errorTpl.replace('__ERROR__', d.error || '—')); });
     });
 
     // Fermer modals

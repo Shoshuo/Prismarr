@@ -1,5 +1,5 @@
 {% extends 'base.html.twig' %}
-{% block title %}Général — Prowlarr{% endblock %}
+{% block title %}{{ 'prowlarr.general.page_title_full'|trans }}{% endblock %}
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}
 
 {% block body %}
@@ -9,7 +9,7 @@
             <div class="col">
                 <h2 class="page-title d-flex align-items-center gap-2">
                     <svg width="28" height="28" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224 224-100.3 224-224S379.7 32 256 32zm0 400c-97 0-176-79-176-176S159 80 256 80s176 79 176 176-79 176-176 176z" fill="#E88D1A"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136-61-136-136-136zm0 224c-48.6 0-88-39.4-88-88s39.4-88 88-88 88 39.4 88 88-39.4 88-88 88z" fill="#E88D1A"/><circle cx="256" cy="256" r="48" fill="#E88D1A"/></svg>
-                    Général
+                    {{ 'prowlarr.general.title'|trans }}
                 </h2>
             </div>
             <div class="col-auto ms-auto">{% include 'prowlarr/_prowlarr_nav.html.twig' %}</div>
@@ -21,7 +21,7 @@
 <div class="container-xl">
 
 {% if error %}
-    <div class="alert alert-danger">Impossible de contacter Prowlarr.</div>
+    <div class="alert alert-danger">{{ 'prowlarr.common.error_unreachable'|trans }}</div>
 {% endif %}
 
 {% if config %}
@@ -30,21 +30,21 @@
 
         {# ── Host ── #}
         <div class="card mb-3">
-            <div class="card-header"><h3 class="card-title" style="color:#E88D1A;">Host</h3></div>
+            <div class="card-header"><h3 class="card-title" style="color:#E88D1A;">{{ 'prowlarr.general.section_host'|trans }}</h3></div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-sm-6">
-                        <label class="form-label small">Port</label>
+                        <label class="form-label small">{{ 'prowlarr.general.field_port'|trans }}</label>
                         <input type="number" class="form-control form-control-sm pw-cfg" data-key="port" value="{{ config.port ?? 9696 }}">
-                        <div class="form-text" style="font-size:.6rem;color:#f59e0b;">Nécessite un redémarrage</div>
+                        <div class="form-text" style="font-size:.6rem;color:#f59e0b;">{{ 'prowlarr.general.restart_required'|trans }}</div>
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label small">URL Base</label>
-                        <input type="text" class="form-control form-control-sm pw-cfg" data-key="urlBase" value="{{ config.urlBase ?? '' }}" placeholder="Vide par défaut">
-                        <div class="form-text" style="font-size:.6rem;color:#f59e0b;">Nécessite un redémarrage</div>
+                        <label class="form-label small">{{ 'prowlarr.general.field_url_base'|trans }}</label>
+                        <input type="text" class="form-control form-control-sm pw-cfg" data-key="urlBase" value="{{ config.urlBase ?? '' }}" placeholder="{{ 'prowlarr.general.field_url_base_placeholder'|trans }}">
+                        <div class="form-text" style="font-size:.6rem;color:#f59e0b;">{{ 'prowlarr.general.restart_required'|trans }}</div>
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label small">Nom de l'instance</label>
+                        <label class="form-label small">{{ 'prowlarr.general.field_instance_name'|trans }}</label>
                         <input type="text" class="form-control form-control-sm pw-cfg" data-key="instanceName" value="{{ config.instanceName ?? 'Prowlarr' }}">
                     </div>
                 </div>
@@ -53,50 +53,50 @@
 
         {# ── Security ── #}
         <div class="card mb-3">
-            <div class="card-header"><h3 class="card-title" style="color:#E88D1A;">Sécurité</h3></div>
+            <div class="card-header"><h3 class="card-title" style="color:#E88D1A;">{{ 'prowlarr.general.section_security'|trans }}</h3></div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-sm-6">
-                        <label class="form-label small">Authentification</label>
+                        <label class="form-label small">{{ 'prowlarr.general.field_auth_method'|trans }}</label>
                         <select class="form-select form-select-sm pw-cfg" data-key="authenticationMethod">
-                            <option value="none" {{ config.authenticationMethod == 'none' ? 'selected' }}>Aucune</option>
-                            <option value="basic" {{ config.authenticationMethod == 'basic' ? 'selected' }}>Basic (popup)</option>
-                            <option value="forms" {{ config.authenticationMethod == 'forms' ? 'selected' }}>Formulaire</option>
+                            <option value="none" {{ config.authenticationMethod == 'none' ? 'selected' }}>{{ 'prowlarr.general.auth_none'|trans }}</option>
+                            <option value="basic" {{ config.authenticationMethod == 'basic' ? 'selected' }}>{{ 'prowlarr.general.auth_basic'|trans }}</option>
+                            <option value="forms" {{ config.authenticationMethod == 'forms' ? 'selected' }}>{{ 'prowlarr.general.auth_forms'|trans }}</option>
                         </select>
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label small">Authentification requise</label>
+                        <label class="form-label small">{{ 'prowlarr.general.field_auth_required'|trans }}</label>
                         <select class="form-select form-select-sm pw-cfg" data-key="authenticationRequired">
-                            <option value="enabled" {{ config.authenticationRequired == 'enabled' ? 'selected' }}>Activée</option>
-                            <option value="disabledForLocalAddresses" {{ config.authenticationRequired == 'disabledForLocalAddresses' ? 'selected' }}>Désactivée en local</option>
+                            <option value="enabled" {{ config.authenticationRequired == 'enabled' ? 'selected' }}>{{ 'prowlarr.general.auth_required_enabled'|trans }}</option>
+                            <option value="disabledForLocalAddresses" {{ config.authenticationRequired == 'disabledForLocalAddresses' ? 'selected' }}>{{ 'prowlarr.general.auth_required_local'|trans }}</option>
                         </select>
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label small">Nom d'utilisateur</label>
+                        <label class="form-label small">{{ 'prowlarr.general.field_username'|trans }}</label>
                         <input type="text" class="form-control form-control-sm pw-cfg" data-key="username" value="{{ config.username ?? '' }}">
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label small">Validation certificat</label>
+                        <label class="form-label small">{{ 'prowlarr.general.field_cert_validation'|trans }}</label>
                         <select class="form-select form-select-sm pw-cfg" data-key="certificateValidation">
-                            <option value="enabled" {{ config.certificateValidation == 'enabled' ? 'selected' }}>Activée</option>
-                            <option value="disabledForLocalAddresses" {{ config.certificateValidation == 'disabledForLocalAddresses' ? 'selected' }}>Désactivée en local</option>
-                            <option value="disabled" {{ config.certificateValidation == 'disabled' ? 'selected' }}>Désactivée</option>
+                            <option value="enabled" {{ config.certificateValidation == 'enabled' ? 'selected' }}>{{ 'prowlarr.general.cert_enabled'|trans }}</option>
+                            <option value="disabledForLocalAddresses" {{ config.certificateValidation == 'disabledForLocalAddresses' ? 'selected' }}>{{ 'prowlarr.general.cert_local'|trans }}</option>
+                            <option value="disabled" {{ config.certificateValidation == 'disabled' ? 'selected' }}>{{ 'prowlarr.general.cert_disabled'|trans }}</option>
                         </select>
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label small">Mot de passe</label>
+                        <label class="form-label small">{{ 'prowlarr.general.field_password'|trans }}</label>
                         <input type="password" class="form-control form-control-sm pw-cfg" data-key="password" value="{{ config.password ?? '' }}">
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label small">Confirmation mot de passe</label>
+                        <label class="form-label small">{{ 'prowlarr.general.field_password_confirm'|trans }}</label>
                         <input type="password" class="form-control form-control-sm pw-cfg" data-key="passwordConfirmation" value="">
                     </div>
                     <div class="col-12">
-                        <label class="form-label small">Clé API</label>
+                        <label class="form-label small">{{ 'prowlarr.general.field_api_key'|trans }}</label>
                         <div class="d-flex align-items-center gap-2">
                             <div class="input-group input-group-sm" style="max-width:400px;">
                                 <input type="text" class="form-control form-control-sm" value="{{ config.apiKey ?? '' }}" readonly id="api-key-field" style="font-family:monospace;font-size:.75rem;">
-                                <button class="btn btn-outline-secondary" type="button" id="btn-copy-api" title="Copier">
+                                <button class="btn btn-outline-secondary" type="button" id="btn-copy-api" title="{{ 'prowlarr.general.copy_title'|trans }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                                 </button>
                             </div>
@@ -104,7 +104,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5l10-10"/></svg>
                             </span>
                         </div>
-                        <div class="form-text" style="font-size:.6rem;color:#f59e0b;">Nécessite un redémarrage pour régénérer</div>
+                        <div class="form-text" style="font-size:.6rem;color:#f59e0b;">{{ 'prowlarr.general.api_key_help'|trans }}</div>
                     </div>
                 </div>
             </div>
@@ -112,17 +112,17 @@
 
         {# ── Proxy ── #}
         <div class="card mb-3">
-            <div class="card-header"><h3 class="card-title" style="color:#E88D1A;">Proxy</h3></div>
+            <div class="card-header"><h3 class="card-title" style="color:#E88D1A;">{{ 'prowlarr.general.section_proxy'|trans }}</h3></div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-12">
                         <label class="form-check form-switch">
                             <input class="form-check-input pw-cfg" data-key="proxyEnabled" type="checkbox" {{ config.proxyEnabled ? 'checked' }} id="proxy-toggle">
-                            <span class="form-check-label">Utiliser un proxy</span>
+                            <span class="form-check-label">{{ 'prowlarr.general.proxy_use'|trans }}</span>
                         </label>
                     </div>
                     <div class="col-sm-4 proxy-fields" style="{{ not config.proxyEnabled ? 'display:none' }}">
-                        <label class="form-label small">Type</label>
+                        <label class="form-label small">{{ 'prowlarr.general.proxy_type'|trans }}</label>
                         <select class="form-select form-select-sm pw-cfg" data-key="proxyType">
                             <option value="http" {{ config.proxyType == 'http' ? 'selected' }}>HTTP(S)</option>
                             <option value="socks4" {{ config.proxyType == 'socks4' ? 'selected' }}>Socks4</option>
@@ -130,11 +130,11 @@
                         </select>
                     </div>
                     <div class="col-sm-4 proxy-fields" style="{{ not config.proxyEnabled ? 'display:none' }}">
-                        <label class="form-label small">Hostname</label>
+                        <label class="form-label small">{{ 'prowlarr.general.proxy_hostname'|trans }}</label>
                         <input type="text" class="form-control form-control-sm pw-cfg" data-key="proxyHostname" value="{{ config.proxyHostname ?? '' }}">
                     </div>
                     <div class="col-sm-4 proxy-fields" style="{{ not config.proxyEnabled ? 'display:none' }}">
-                        <label class="form-label small">Port</label>
+                        <label class="form-label small">{{ 'prowlarr.general.proxy_port'|trans }}</label>
                         <input type="number" class="form-control form-control-sm pw-cfg" data-key="proxyPort" value="{{ config.proxyPort ?? 8080 }}">
                     </div>
                 </div>
@@ -143,15 +143,15 @@
 
         {# ── Logging ── #}
         <div class="card mb-3">
-            <div class="card-header"><h3 class="card-title" style="color:#E88D1A;">Logging</h3></div>
+            <div class="card-header"><h3 class="card-title" style="color:#E88D1A;">{{ 'prowlarr.general.section_logging'|trans }}</h3></div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-sm-6">
-                        <label class="form-label small">Niveau de log</label>
+                        <label class="form-label small">{{ 'prowlarr.general.log_level'|trans }}</label>
                         <select class="form-select form-select-sm pw-cfg" data-key="logLevel">
-                            <option value="info" {{ config.logLevel == 'info' ? 'selected' }}>Info</option>
-                            <option value="debug" {{ config.logLevel == 'debug' ? 'selected' }}>Debug</option>
-                            <option value="trace" {{ config.logLevel == 'trace' ? 'selected' }}>Trace</option>
+                            <option value="info" {{ config.logLevel == 'info' ? 'selected' }}>{{ 'prowlarr.general.log_info'|trans }}</option>
+                            <option value="debug" {{ config.logLevel == 'debug' ? 'selected' }}>{{ 'prowlarr.general.log_debug'|trans }}</option>
+                            <option value="trace" {{ config.logLevel == 'trace' ? 'selected' }}>{{ 'prowlarr.general.log_trace'|trans }}</option>
                         </select>
                     </div>
                 </div>
@@ -162,7 +162,7 @@
         <div class="d-flex align-items-center gap-3">
             <button class="btn btn-primary" id="btn-save-general" style="background:#E88D1A;border-color:#E88D1A;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                Sauvegarder
+                {{ 'prowlarr.general.save_btn'|trans }}
             </button>
             <span id="save-result" style="display:none;font-size:.8rem;"></span>
         </div>
@@ -178,6 +178,13 @@
 {% block javascripts %}
 <script>
 (function () {
+    var _I18N = {
+        saveBtn: {{ 'prowlarr.general.save_btn'|trans|json_encode|raw }},
+        saving: {{ 'prowlarr.common.saving'|trans|json_encode|raw }},
+        saved: {{ 'prowlarr.general.saved'|trans|json_encode|raw }},
+        error: {{ 'prowlarr.general.save_error'|trans|json_encode|raw }}
+    };
+
     // Copier API Key
     document.getElementById('btn-copy-api').addEventListener('click', function () {
         var val = document.getElementById('api-key-field').value;
@@ -218,7 +225,7 @@
         });
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sauvegarde…';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + _I18N.saving;
 
         fetch('/prowlarr/general/save', {
             method: 'POST',
@@ -228,14 +235,14 @@
         .then(function (r) { return r.json(); })
         .then(function (d) {
             btn.disabled = false;
-            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Sauvegarder';
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> ' + _I18N.saveBtn;
             result.style.display = '';
             if (d.ok) {
                 result.style.color = '#22c55e';
-                result.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M5 12l5 5l10-10"/></svg> Sauvegardé';
+                result.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M5 12l5 5l10-10"/></svg> ' + _I18N.saved;
             } else {
                 result.style.color = '#ef4444';
-                result.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M18 6L6 18M6 6l12 12"/></svg> Erreur';
+                result.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M18 6L6 18M6 6l12 12"/></svg> ' + _I18N.error;
             }
             setTimeout(function () { result.style.display = 'none'; }, 3000);
         });

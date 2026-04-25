@@ -3336,6 +3336,447 @@ qbittorrent:
     uptime_minutes_tpl: '__M__ min'
     uptime_seconds_tpl: '__S__s'
 
+prowlarr:
+  nav:
+    indexers: Indexers
+    history: History
+    settings: Settings
+    system: System
+    integrations: Integrations
+    apps: Applications
+    download_clients: Download Clients
+    notifications: Notifications
+    config: Configuration
+    tags: Tags
+    general: General
+    ui: UI
+    status: Status
+    tasks: Tasks
+    backups: Backups
+    updates: Updates
+    logs: Logs
+  common:
+    error_unreachable: Unable to reach Prowlarr.
+    cannot_reach: Unable to reach Prowlarr
+    name: Name
+    type: Type
+    status: Status
+    actions: Actions
+    enabled: Enabled
+    disabled: Disabled
+    active: Active
+    add: Add
+    edit: Edit
+    test: Test
+    delete: Delete
+    save: Save
+    saved: Saved!
+    cancel: Cancel
+    back: Back
+    close: Close
+    no_results: No results
+    no_items: No items configured.
+    search_placeholder: Search…
+    saving: 'Saving…'
+    adding: 'Adding…'
+    testing: 'Testing…'
+    on: ON
+    off: OFF
+    ok: OK
+    failed: Failed
+    error: Error
+    test_success: Connection successful!
+    test_failure_tpl: 'Failed: __ERROR__'
+    error_tpl: 'Error: __ERROR__'
+    confirm_delete_tpl: 'Delete "__NAME__"?'
+  schema_modal:
+    add_title_tpl: 'Add — __SECTION__'
+    edit_title: Edit
+    edit_title_tpl: 'Edit — __NAME__'
+  index:
+    title: Prowlarr
+    stats_indexers: Indexers
+    stats_active: Active
+    stats_failing: Failing
+    stats_torrent: Torrent
+    stats_usenet: Usenet
+    stats_apps: Applications
+    health_title: Health
+    indexers_card_title: Indexers
+    test_all_btn: Test all
+    test_all_title: Test all indexers
+    test_all_in_progress: 'Testing…'
+    test_all_ok: All OK
+    test_all_errors: Errors detected
+    sync_apps_btn: Sync apps
+    sync_apps_title: Sync with Radarr/Sonarr
+    sync_in_progress: 'Sync…'
+    sync_done: Synced!
+    sync_failed: Failed
+    filter_all: All
+    filter_enabled: Enabled
+    filter_disabled: Disabled
+    filter_torrent: Torrent
+    filter_usenet: Usenet
+    col_name: Name
+    col_protocol: Protocol
+    col_privacy: Privacy
+    col_priority: Priority
+    col_functions: Capabilities
+    col_categories: Categories
+    col_queries: Queries
+    col_grabs: Grabs
+    col_failures: Failures
+    col_health: Health
+    col_added: Added
+    col_actions: Actions
+    empty_indexers: No indexer configured.
+    privacy_private: Private
+    privacy_semi: Semi
+    privacy_semiprivate: Semi-private
+    privacy_public: Public
+    status_disabled: Disabled
+    status_error: Error
+    status_ok: OK
+    toggle_enable_title: Enable
+    toggle_disable_title: Disable
+    search_card_title: Search
+    search_placeholder: 'Search across all indexers…'
+    search_btn: Search
+    searching: 'Searching…'
+    search_no_results: No results
+    search_results_count_tpl: '{count, plural, one {# result} other {# results}}'
+    search_col_title: Title
+    search_col_indexer: Indexer
+    search_col_size: Size
+    search_col_seeds: Seeds
+    search_col_age: Age
+    age_days_tpl: '__D__d'
+    apps_card_title: Connected applications
+    apps_empty: No application
+    apps_connected: Connected
+    modal_add_title: Add an indexer
+    modal_edit_title: Edit indexer
+    modal_search_placeholder: 'Search (e.g. YGG, 1337x…)'
+    filter_protocol: Protocol
+    filter_privacy: Privacy
+    filter_lang: Language
+    filter_category: Category
+    field_name_label: Name
+    field_app_profile: Application profile
+    field_app_profile_loading: 'Loading…'
+    field_priority: Priority
+    field_redirect: Redirect
+    field_tags: Tags
+    field_new_tag: 'New…'
+    field_create_tag_title: Create a tag
+    error_size_units: GB
+    info_tab_details: Details
+    info_tab_categories: Categories
+    info_tab_history: History
+    info_details_heading: Indexer details
+    info_label_type: Type
+    info_label_description: Description
+    info_label_language: Language
+    info_label_protocol: Protocol
+    info_label_privacy: Privacy
+    info_label_urls: URL(s)
+    info_search_capabilities: Search capabilities
+    info_cap_rss: RSS
+    info_cap_raw_search: Raw search
+    info_cap_search: Search
+    info_cap_tv_search: TV search
+    info_cap_movie_search: Movie search
+    info_cap_music_search: Music search
+    info_cap_book_search: Book search
+    info_cap_supported: Supported
+    info_cap_unsupported: Unsupported
+    info_param_q: Text
+    info_param_season: Season
+    info_param_ep: Episode
+    info_param_imdb: IMDb
+    info_param_tmdb: TMDb
+    info_param_tvdb: TVDB
+    info_param_tvmaze: TVMaze
+    info_param_year: Year
+    info_param_genre: Genre
+    info_param_artist: Artist
+    info_param_album: Album
+    info_param_label: Label
+    info_param_title: Title
+    info_param_author: Author
+    info_no_categories: No category
+    info_categories_count_tpl: '{count, plural, one {# category} other {# categories}}'
+    info_col_id: ID
+    info_no_history: No history
+    info_col_date: Date
+    info_col_type: Type
+    info_col_query: Query
+    info_col_source: Source
+    info_event_rss: RSS
+    info_event_query: Query
+    confirm_delete_indexer_tpl: 'Delete indexer "__NAME__"?'
+    indexer_added: Indexer added!
+    error_add_failed: Unable to add
+    error_save_failed: Unable to save
+  apps:
+    title: Applications
+    page_title_full: 'Applications — Prowlarr'
+    info_baseurl: Base URL
+    info_synclevel: Sync level
+    add_btn: Add an application
+    profiles_title: Sync profiles
+    profile_modal_title: Sync profile
+    profile_new_title: New profile
+    profile_edit_title_tpl: 'Edit — __NAME__'
+    profile_name: Name
+    profile_rss: RSS
+    profile_auto_search: Automatic search
+    profile_interactive_search: Interactive search
+    profile_min_seeders: Minimum seeders
+    profile_empty: No profile
+    profile_col_rss: RSS
+    profile_col_auto: Auto search
+    profile_col_interactive: Interactive
+    profile_col_seeders: Min seeders
+    profile_save_error: Error
+    confirm_delete_profile: Delete this profile?
+    sync_disabled: Disabled
+    sync_add_only: Add only
+    sync_full: Full sync
+    sync_level_label: Sync Level
+    field_name: Name
+    add_modal_title: Add an application
+    edit_modal_title: Edit
+  download_clients:
+    title: Download clients
+    page_title_full: 'Download clients — Prowlarr'
+    add_btn: Add a client
+    add_modal_title: Add a download client
+    edit_modal_title: Edit
+    priority_label_tpl: 'Priority: __VALUE__'
+    field_name: Name
+    field_priority: Priority
+  notifications:
+    title: Notifications
+    page_title_full: 'Notifications — Prowlarr'
+    add_btn: Add a notification
+    add_modal_title: Add a notification
+    edit_modal_title: Edit
+    search_placeholder: 'Search (Discord, Telegram, Email…)'
+    empty: No notification configured.
+    triggers_label: Triggers
+    trigger_grab: Grab
+    trigger_health_issue: Health issue
+    trigger_health_restored: Health restored
+    trigger_app_update: App update
+    include_warnings: Include warnings
+    badge_health: Health
+    badge_health_restored: Health restored
+    badge_app_update: Update
+    badge_warnings: Warnings included
+    field_name: Name
+    test_success: Test successful!
+  general:
+    title: General
+    page_title_full: 'General — Prowlarr'
+    section_host: Host
+    section_security: Security
+    section_proxy: Proxy
+    section_logging: Logging
+    field_port: Port
+    field_url_base: URL Base
+    field_url_base_placeholder: Empty by default
+    field_instance_name: Instance name
+    field_auth_method: Authentication
+    auth_none: None
+    auth_basic: Basic (popup)
+    auth_forms: Forms
+    field_auth_required: Authentication required
+    auth_required_enabled: Enabled
+    auth_required_local: Disabled for local
+    field_username: Username
+    field_password: Password
+    field_password_confirm: Password confirmation
+    field_cert_validation: Certificate validation
+    cert_enabled: Enabled
+    cert_local: Disabled for local
+    cert_disabled: Disabled
+    field_api_key: API Key
+    copy_title: Copy
+    api_key_help: Restart required to regenerate
+    restart_required: Restart required
+    proxy_use: Use a proxy
+    proxy_type: Type
+    proxy_hostname: Hostname
+    proxy_port: Port
+    log_level: Log level
+    log_info: Info
+    log_debug: Debug
+    log_trace: Trace
+    save_btn: Save
+    saved: Saved
+    save_error: Error
+  ui:
+    title: UI
+    page_title_full: 'UI — Prowlarr'
+    section_dates: Dates
+    section_style: Style
+    section_language: Language
+    short_date: Short date format
+    long_date: Long date format
+    time_format: Time format
+    show_relative: Show relative dates
+    theme: Theme
+    theme_auto: Auto
+    theme_light: Light
+    theme_dark: Dark
+    color_impaired: Color impaired mode
+    ui_language: Interface language
+    reload_required: Browser reload required
+    save_btn: Save
+    saved: Saved
+    save_error: Error
+  history:
+    title: History
+    page_title_full: 'History — Prowlarr'
+    since_label: 'Since:'
+    filter_btn: Filter
+    empty: No history.
+    col_date: Date
+    col_type: Type
+    col_source: Source
+    col_query: Query
+    col_category: Category
+    col_results: Results
+    col_time: Time
+    col_status: Status
+    event_rss: RSS
+    event_query: Query
+    event_grab: Grab
+    event_auth: Auth
+    status_ok: OK
+    status_failed: Failed
+    elapsed_ms_tpl: '__MS__ms'
+  tags:
+    title: Tags
+    page_title_full: 'Tags — Prowlarr'
+    card_title: Tags
+    new_placeholder: 'New tag…'
+    add_btn: Add
+    col_tag: Tag
+    col_indexers: Indexers
+    col_apps: Applications
+    col_notifications: Notifications
+    col_actions: Actions
+    empty: No tag.
+    feedback_created: Created
+    feedback_error: Error
+    confirm_delete_tpl: 'Delete tag "__LABEL__"?'
+    delete_in_use: This tag is still in use — remove it from indexers/apps before deleting
+  system:
+    title: System status
+    page_title_full: 'System status — Prowlarr'
+    info_card: Information
+    health_card: Health
+    health_ok_badge: OK
+    health_ok: All systems operational
+    info_version: Version
+    info_branch: Branch
+    info_os: OS
+    info_runtime: Runtime
+    info_started: Started
+    info_appdata: App Data
+    info_migration: Migration
+    info_authentication: Authentication
+    documentation: Documentation
+  tasks:
+    title: System tasks
+    page_title_full: 'System tasks — Prowlarr'
+    card_title: Scheduled tasks
+    empty: No task.
+    col_name: Name
+    col_interval: Interval
+    col_last: Last execution
+    col_duration: Duration
+    col_next: Next execution
+    last_never: Never
+    run_title: Run now
+    interval_hours_min_tpl: '__H__h __M__min'
+    interval_hours_tpl: '__H__h'
+    interval_minutes_tpl: '__M__ min'
+    feedback_launched_tpl: 'Task "__NAME__" launched.'
+    feedback_run_error: Error launching task.
+    feedback_network_error: Network error.
+  backups:
+    title: Backups
+    page_title_full: 'Backups — Prowlarr'
+    create_btn: Create a backup
+    create_in_progress: 'Backup in progress...'
+    create_starting: 'Starting backup...'
+    create_done: 'Backup created! Reloading...'
+    create_error: 'Backup failed.'
+    network_error: Network error.
+    card_title: Available backups
+    count_tpl: '{count, plural, one {# backup} other {# backups}}'
+    empty: No backup available.
+    col_name: Name
+    col_type: Type
+    col_size: Size
+    col_date: Date
+    col_actions: Actions
+    type_scheduled: Scheduled
+    type_manual: Manual
+    size_mb_tpl: '__SIZE__ MB'
+    confirm_delete_tpl: 'Delete "__NAME__"?'
+    delete_error: 'Delete failed.'
+    fallback_name: this backup
+  logs:
+    title: Logs
+    page_title_full: 'Logs — Prowlarr'
+    card_title: Recent logs
+    search_placeholder: 'Search…'
+    level_all: All
+    level_info: Info
+    level_debug: Debug
+    level_warn: Warn
+    level_error: Error
+    level_fatal: Fatal
+    empty: No log.
+    col_date: Date
+    col_level: Level
+    col_message: Message
+    col_logger: Logger
+    page_prev: Prev.
+    page_next: Next
+  updates:
+    title: Updates
+    page_title_full: 'Updates — Prowlarr'
+    docker_warning: 'Prowlarr runs in a Docker container. To update, pull the new Docker image (e.g. <code>docker pull</code> or via Portainer).'
+    version_installed: Installed version
+    update_available: Update available
+    up_to_date: Up to date
+    history_title: Version history
+    empty: Prowlarr is up to date.
+    install_in_progress: 'Installation in progress...'
+    install_starting: 'Starting update...'
+    install_launched: 'Update check launched. Refreshing in 5 seconds…'
+    install_error: 'Error launching.'
+    network_error_tpl: 'Network error: __MSG__'
+    network_no_connection: connection failed
+    col_version: Version
+    col_release_date: Release date
+    col_branch: Branch
+    col_status: Status
+    badge_latest: Latest
+    status_installed: Installed
+    status_available: Available
+    status_old: Old
+    install_btn_tpl: 'Install __VERSION__'
+    install_via_docker: Update via Docker
+    changes_new: New
+    changes_fixed: Fixed
+
 watchlist_page:
   back_to_discover: Discover
   count_titles: '{count, plural, one {# title} other {# titles}}'

@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
-{% block title %}Prowlarr{% endblock %}
-{% block page_title %}<svg width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224 224-100.3 224-224S379.7 32 256 32zm0 400c-97 0-176-79-176-176S159 80 256 80s176 79 176 176-79 176-176 176z" fill="#E88D1A"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136-61-136-136-136zm0 224c-48.6 0-88-39.4-88-88s39.4-88 88-88 88 39.4 88 88-39.4 88-88 88z" fill="#E88D1A"/><circle cx="256" cy="256" r="48" fill="#E88D1A"/></svg> Prowlarr{% endblock %}
+{% block title %}{{ 'prowlarr.index.title'|trans }}{% endblock %}
+{% block page_title %}<svg width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224 224-100.3 224-224S379.7 32 256 32zm0 400c-97 0-176-79-176-176S159 80 256 80s176 79 176 176-79 176-176 176z" fill="#E88D1A"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136-61-136-136-136zm0 224c-48.6 0-88-39.4-88-88s39.4-88 88-88 88 39.4 88 88-39.4 88-88 88z" fill="#E88D1A"/><circle cx="256" cy="256" r="48" fill="#E88D1A"/></svg> {{ 'prowlarr.index.title'|trans }}{% endblock %}
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}
 
 {% block stylesheets %}
@@ -53,37 +53,37 @@
     <div class="col-6 col-lg-2">
         <div class="card card-sm"><div class="card-body text-center">
             <div class="pw-stat" style="color:#E88D1A;">{{ stats.total ?? 0 }}</div>
-            <div class="text-secondary small">Indexeurs</div>
+            <div class="text-secondary small">{{ 'prowlarr.index.stats_indexers'|trans }}</div>
         </div></div>
     </div>
     <div class="col-6 col-lg-2">
         <div class="card card-sm"><div class="card-body text-center">
             <div class="pw-stat text-success">{{ stats.enabled ?? 0 }}</div>
-            <div class="text-secondary small">Actifs</div>
+            <div class="text-secondary small">{{ 'prowlarr.index.stats_active'|trans }}</div>
         </div></div>
     </div>
     <div class="col-6 col-lg-2">
         <div class="card card-sm"><div class="card-body text-center">
             <div class="pw-stat text-danger">{{ stats.failing ?? 0 }}</div>
-            <div class="text-secondary small">En erreur</div>
+            <div class="text-secondary small">{{ 'prowlarr.index.stats_failing'|trans }}</div>
         </div></div>
     </div>
     <div class="col-6 col-lg-2">
         <div class="card card-sm"><div class="card-body text-center">
             <div class="pw-stat" style="color:var(--tblr-primary);">{{ stats.torrent ?? 0 }}</div>
-            <div class="text-secondary small">Torrent</div>
+            <div class="text-secondary small">{{ 'prowlarr.index.stats_torrent'|trans }}</div>
         </div></div>
     </div>
     <div class="col-6 col-lg-2">
         <div class="card card-sm"><div class="card-body text-center">
             <div class="pw-stat" style="color:#0ea5e9;">{{ stats.usenet ?? 0 }}</div>
-            <div class="text-secondary small">Usenet</div>
+            <div class="text-secondary small">{{ 'prowlarr.index.stats_usenet'|trans }}</div>
         </div></div>
     </div>
     <div class="col-6 col-lg-2">
         <div class="card card-sm"><div class="card-body text-center">
             <div class="pw-stat" style="color:#22c55e;">{{ apps|length }}</div>
-            <div class="text-secondary small">Applications</div>
+            <div class="text-secondary small">{{ 'prowlarr.index.stats_apps'|trans }}</div>
         </div></div>
     </div>
 </div>
@@ -94,7 +94,7 @@
     <div class="card-header">
         <h3 class="card-title">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1 text-warning"><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.871l-8.106 -13.534a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
-            Santé <span class="badge bg-warning-lt ms-1">{{ health|length }}</span>
+            {{ 'prowlarr.index.health_title'|trans }} <span class="badge bg-warning-lt ms-1">{{ health|length }}</span>
         </h3>
     </div>
     <div class="card-body p-2">
@@ -115,27 +115,27 @@
 <div class="card mb-3">
         <div class="card-header">
             <h3 class="card-title">
-                Indexeurs <span class="badge bg-secondary-lt ms-1">{{ indexers|length }}</span>
+                {{ 'prowlarr.index.indexers_card_title'|trans }} <span class="badge bg-secondary-lt ms-1">{{ indexers|length }}</span>
             </h3>
             <div class="card-options d-flex gap-2 align-items-center">
-                <button class="btn btn-sm btn-ghost-secondary" id="btn-test-all" title="Tester tous les indexeurs">
+                <button class="btn btn-sm btn-ghost-secondary" id="btn-test-all" title="{{ 'prowlarr.index.test_all_title'|trans }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M5 12l5 5l10-10"/></svg>
-                    Tester tout
+                    {{ 'prowlarr.index.test_all_btn'|trans }}
                 </button>
-                <button class="btn btn-sm btn-ghost-secondary" id="btn-sync-indexers" title="Synchroniser avec Radarr/Sonarr">
+                <button class="btn btn-sm btn-ghost-secondary" id="btn-sync-indexers" title="{{ 'prowlarr.index.sync_apps_title'|trans }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M20 11A8.1 8.1 0 004.5 9M4 5v4h4M4 13a8.1 8.1 0 0015.5 2m.5 4v-4h-4"/></svg>
-                    Sync apps
+                    {{ 'prowlarr.index.sync_apps_btn'|trans }}
                 </button>
                 <select class="form-select form-select-sm" id="filter-indexer" style="width:auto;min-width:120px;">
-                    <option value="all">Tous</option>
-                    <option value="enabled">Actifs</option>
-                    <option value="disabled">Désactivés</option>
-                    <option value="torrent">Torrent</option>
-                    <option value="usenet">Usenet</option>
+                    <option value="all">{{ 'prowlarr.index.filter_all'|trans }}</option>
+                    <option value="enabled">{{ 'prowlarr.index.filter_enabled'|trans }}</option>
+                    <option value="disabled">{{ 'prowlarr.index.filter_disabled'|trans }}</option>
+                    <option value="torrent">{{ 'prowlarr.index.filter_torrent'|trans }}</option>
+                    <option value="usenet">{{ 'prowlarr.index.filter_usenet'|trans }}</option>
                 </select>
                 <button class="btn btn-sm btn-primary" id="btn-add-indexer" style="background:#E88D1A;border-color:#E88D1A;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 5v14M5 12h14"/></svg>
-                    Ajouter
+                    {{ 'prowlarr.common.add'|trans }}
                 </button>
             </div>
         </div>
@@ -143,23 +143,23 @@
             <table class="table table-vcenter card-table">
                 <thead>
                     <tr>
-                        <th>Nom</th>
-                        <th>Protocole</th>
-                        <th>Privacy</th>
-                        <th>Priorité</th>
-                        <th>Fonctions</th>
-                        <th>Catégories</th>
-                        <th>Requêtes</th>
-                        <th>Grabs</th>
-                        <th>Échecs</th>
-                        <th>Santé</th>
-                        <th>Ajouté</th>
-                        <th class="text-end">Actions</th>
+                        <th>{{ 'prowlarr.index.col_name'|trans }}</th>
+                        <th>{{ 'prowlarr.index.col_protocol'|trans }}</th>
+                        <th>{{ 'prowlarr.index.col_privacy'|trans }}</th>
+                        <th>{{ 'prowlarr.index.col_priority'|trans }}</th>
+                        <th>{{ 'prowlarr.index.col_functions'|trans }}</th>
+                        <th>{{ 'prowlarr.index.col_categories'|trans }}</th>
+                        <th>{{ 'prowlarr.index.col_queries'|trans }}</th>
+                        <th>{{ 'prowlarr.index.col_grabs'|trans }}</th>
+                        <th>{{ 'prowlarr.index.col_failures'|trans }}</th>
+                        <th>{{ 'prowlarr.index.col_health'|trans }}</th>
+                        <th>{{ 'prowlarr.index.col_added'|trans }}</th>
+                        <th class="text-end">{{ 'prowlarr.index.col_actions'|trans }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% if indexers is empty %}
-                        <tr><td colspan="12" class="text-center text-secondary py-3">Aucun indexeur configuré.</td></tr>
+                        <tr><td colspan="12" class="text-center text-secondary py-3">{{ 'prowlarr.index.empty_indexers'|trans }}</td></tr>
                     {% else %}
                         {% for idx in indexers %}
                         {% set hasError = status[idx.id] is defined %}
@@ -179,11 +179,11 @@
                             </td>
                             <td>
                                 {% if idx.privacy == 'private' %}
-                                    <span class="badge bg-danger-lt" style="font-size:.6rem;">Privé</span>
+                                    <span class="badge bg-danger-lt" style="font-size:.6rem;">{{ 'prowlarr.index.privacy_private'|trans }}</span>
                                 {% elseif idx.privacy == 'semiPrivate' %}
-                                    <span class="badge bg-warning-lt" style="font-size:.6rem;">Semi</span>
+                                    <span class="badge bg-warning-lt" style="font-size:.6rem;">{{ 'prowlarr.index.privacy_semi'|trans }}</span>
                                 {% else %}
-                                    <span class="badge bg-green-lt" style="font-size:.6rem;">Public</span>
+                                    <span class="badge bg-green-lt" style="font-size:.6rem;">{{ 'prowlarr.index.privacy_public'|trans }}</span>
                                 {% endif %}
                             </td>
                             <td class="text-secondary">{{ idx.priority }}</td>
@@ -213,26 +213,26 @@
                             </td>
                             <td>
                                 {% if not idx.enabled %}
-                                    <span class="text-secondary small">Désactivé</span>
+                                    <span class="text-secondary small">{{ 'prowlarr.index.status_disabled'|trans }}</span>
                                 {% elseif hasError %}
-                                    <span class="d-flex align-items-center gap-1 text-danger small"><span class="status-dot bg-danger"></span> Erreur</span>
+                                    <span class="d-flex align-items-center gap-1 text-danger small"><span class="status-dot bg-danger"></span> {{ 'prowlarr.index.status_error'|trans }}</span>
                                 {% else %}
-                                    <span class="d-flex align-items-center gap-1 text-success small"><span class="status-dot status-dot-animated bg-success"></span> OK</span>
+                                    <span class="d-flex align-items-center gap-1 text-success small"><span class="status-dot status-dot-animated bg-success"></span> {{ 'prowlarr.index.status_ok'|trans }}</span>
                                 {% endif %}
                             </td>
                             <td class="text-secondary small text-nowrap">{{ idx.added ? idx.added|date('d/m/Y') : '—' }}</td>
                             <td class="text-end">
                                 <div class="d-flex gap-1 justify-content-end">
-                                    <button class="btn btn-sm btn-ghost-secondary p-1" data-edit-id="{{ idx.id }}" title="Modifier">
+                                    <button class="btn btn-sm btn-ghost-secondary p-1" data-edit-id="{{ idx.id }}" title="{{ 'prowlarr.common.edit'|trans }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4l10.5-10.5a2.828 2.828 0 10-4-4L4 16v4M13.5 6.5l4 4"/></svg>
                                     </button>
-                                    <button class="btn btn-sm btn-ghost-secondary p-1" data-test-id="{{ idx.id }}" title="Tester">
+                                    <button class="btn btn-sm btn-ghost-secondary p-1" data-test-id="{{ idx.id }}" title="{{ 'prowlarr.common.test'|trans }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5l10-10"/></svg>
                                     </button>
-                                    <button class="pw-toggle-btn {{ idx.enabled ? 'is-on' : 'is-off' }}" data-toggle-id="{{ idx.id }}" title="{{ idx.enabled ? 'Désactiver' : 'Activer' }}">
-                                        {{ idx.enabled ? 'ON' : 'OFF' }}
+                                    <button class="pw-toggle-btn {{ idx.enabled ? 'is-on' : 'is-off' }}" data-toggle-id="{{ idx.id }}" title="{{ idx.enabled ? 'prowlarr.index.toggle_disable_title'|trans : 'prowlarr.index.toggle_enable_title'|trans }}">
+                                        {{ idx.enabled ? 'prowlarr.common.on'|trans : 'prowlarr.common.off'|trans }}
                                     </button>
-                                    <button class="btn btn-sm btn-ghost-danger p-1" data-delete-id="{{ idx.id }}" data-delete-name="{{ idx.name }}" title="Supprimer">
+                                    <button class="btn btn-sm btn-ghost-danger p-1" data-delete-id="{{ idx.id }}" data-delete-name="{{ idx.name }}" title="{{ 'prowlarr.common.delete'|trans }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
                                     </button>
                                 </div>
@@ -251,14 +251,14 @@
 <div class="col-lg-8">
     <div class="card mb-3">
         <div class="card-header">
-            <h3 class="card-title">Recherche</h3>
+            <h3 class="card-title">{{ 'prowlarr.index.search_card_title'|trans }}</h3>
         </div>
         <div class="card-body">
             <div class="d-flex gap-2 mb-3">
-                <input type="text" id="pw-search-input" class="form-control" placeholder="Rechercher sur tous les indexeurs…" autocomplete="off">
-                <button id="pw-search-btn" class="btn btn-primary flex-shrink-0">Rechercher</button>
+                <input type="text" id="pw-search-input" class="form-control" placeholder="{{ 'prowlarr.index.search_placeholder'|trans }}" autocomplete="off">
+                <button id="pw-search-btn" class="btn btn-primary flex-shrink-0">{{ 'prowlarr.index.search_btn'|trans }}</button>
             </div>
-            <div id="pw-search-loading" style="display:none;" class="text-center py-2"><div class="spinner-border spinner-border-sm text-secondary"></div> <span class="small text-secondary">Recherche en cours…</span></div>
+            <div id="pw-search-loading" style="display:none;" class="text-center py-2"><div class="spinner-border spinner-border-sm text-secondary"></div> <span class="small text-secondary">{{ 'prowlarr.index.searching'|trans }}</span></div>
             <div id="pw-search-results"></div>
         </div>
     </div>
@@ -270,11 +270,11 @@
     {# Applications connectées #}
     <div class="card mb-3">
         <div class="card-header">
-            <h3 class="card-title">Applications connectées</h3>
+            <h3 class="card-title">{{ 'prowlarr.index.apps_card_title'|trans }}</h3>
         </div>
         <div class="card-body p-2">
             {% if apps is empty %}
-                <div class="text-center text-secondary small py-2">Aucune application</div>
+                <div class="text-center text-secondary small py-2">{{ 'prowlarr.index.apps_empty'|trans }}</div>
             {% else %}
                 {% for app in apps %}
                 <div class="pw-app-card mb-2">
@@ -282,7 +282,7 @@
                         <div class="fw-medium small">{{ app.name ?? '—' }}</div>
                         <div class="text-secondary" style="font-size:.7rem;">{{ app.implementationName ?? '' }}</div>
                     </div>
-                    <span class="badge bg-green-lt" style="font-size:.6rem;">Connecté</span>
+                    <span class="badge bg-green-lt" style="font-size:.6rem;">{{ 'prowlarr.index.apps_connected'|trans }}</span>
                 </div>
                 {% endfor %}
             {% endif %}
@@ -305,31 +305,31 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top:2rem;">
         <div class="modal-content" style="background:var(--tblr-bg-surface);">
             <div class="modal-header">
-                <h4 class="modal-title">Ajouter un indexeur</h4>
+                <h4 class="modal-title">{{ 'prowlarr.index.modal_add_title'|trans }}</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div id="add-idx-filters">
                     <div class="d-flex gap-2 mb-2">
-                        <input type="text" id="add-idx-search" class="form-control" placeholder="Rechercher (ex: YGG, 1337x…)" autocomplete="off">
+                        <input type="text" id="add-idx-search" class="form-control" placeholder="{{ 'prowlarr.index.modal_search_placeholder'|trans }}" autocomplete="off">
                     </div>
                     <div class="d-flex gap-2 mb-3">
                         <select class="form-select form-select-sm" id="add-filter-protocol">
-                            <option value="">Protocole</option>
+                            <option value="">{{ 'prowlarr.index.filter_protocol'|trans }}</option>
                             <option value="torrent">Torrent</option>
                             <option value="usenet">Usenet</option>
                         </select>
                         <select class="form-select form-select-sm" id="add-filter-privacy">
-                            <option value="">Privacy</option>
-                            <option value="public">Public</option>
-                            <option value="semiPrivate">Semi-privé</option>
-                            <option value="private">Privé</option>
+                            <option value="">{{ 'prowlarr.index.filter_privacy'|trans }}</option>
+                            <option value="public">{{ 'prowlarr.index.privacy_public'|trans }}</option>
+                            <option value="semiPrivate">{{ 'prowlarr.index.privacy_semiprivate'|trans }}</option>
+                            <option value="private">{{ 'prowlarr.index.privacy_private'|trans }}</option>
                         </select>
                         <select class="form-select form-select-sm" id="add-filter-lang">
-                            <option value="">Langue</option>
+                            <option value="">{{ 'prowlarr.index.filter_lang'|trans }}</option>
                         </select>
                         <select class="form-select form-select-sm" id="add-filter-cat">
-                            <option value="">Catégorie</option>
+                            <option value="">{{ 'prowlarr.index.filter_category'|trans }}</option>
                         </select>
                     </div>
                 </div>
@@ -337,12 +337,12 @@
                 <div id="add-idx-form" style="display:none;" class="mt-3 p-3 border border-primary rounded">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 id="add-idx-form-title" class="mb-0"></h5>
-                        <button id="add-idx-back" class="btn btn-sm btn-ghost-secondary">Retour</button>
+                        <button id="add-idx-back" class="btn btn-sm btn-ghost-secondary">{{ 'prowlarr.common.back'|trans }}</button>
                     </div>
                     <div id="add-idx-fields"></div>
                     <div class="d-flex gap-2 mt-3">
-                        <button id="add-idx-test" class="btn btn-sm btn-outline-secondary">Tester</button>
-                        <button id="add-idx-save" class="btn btn-sm btn-primary" style="background:#E88D1A;border-color:#E88D1A;">Ajouter</button>
+                        <button id="add-idx-test" class="btn btn-sm btn-outline-secondary">{{ 'prowlarr.common.test'|trans }}</button>
+                        <button id="add-idx-save" class="btn btn-sm btn-primary" style="background:#E88D1A;border-color:#E88D1A;">{{ 'prowlarr.common.add'|trans }}</button>
                     </div>
                     <div id="add-idx-result" class="mt-2 alert d-none" style="font-size:.85rem;"></div>
                 </div>
@@ -356,14 +356,14 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top:2rem;">
         <div class="modal-content" style="background:var(--tblr-bg-surface);">
             <div class="modal-header">
-                <h4 class="modal-title" id="edit-idx-title">Modifier l'indexeur</h4>
+                <h4 class="modal-title" id="edit-idx-title">{{ 'prowlarr.index.modal_edit_title'|trans }}</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div id="edit-idx-fields"></div>
                 <div class="d-flex gap-2 mt-3">
-                    <button id="edit-idx-test" class="btn btn-sm btn-outline-secondary">Tester</button>
-                    <button id="edit-idx-save" class="btn btn-sm btn-primary" style="background:#E88D1A;border-color:#E88D1A;">Sauvegarder</button>
+                    <button id="edit-idx-test" class="btn btn-sm btn-outline-secondary">{{ 'prowlarr.common.test'|trans }}</button>
+                    <button id="edit-idx-save" class="btn btn-sm btn-primary" style="background:#E88D1A;border-color:#E88D1A;">{{ 'prowlarr.common.save'|trans }}</button>
                 </div>
                 <div id="edit-idx-result" class="mt-2 alert d-none" style="font-size:.85rem;"></div>
             </div>
@@ -376,15 +376,15 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top:2rem;">
         <div class="modal-content" style="background:var(--tblr-bg-surface);">
             <div class="modal-header">
-                <h4 class="modal-title" id="info-idx-title">Indexeur</h4>
+                <h4 class="modal-title" id="info-idx-title">{{ 'prowlarr.nav.indexers'|trans }}</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0">
                 {# Onglets #}
                 <div class="d-flex border-bottom" style="background:rgba(255,255,255,.02);">
-                    <button class="btn btn-ghost-secondary rounded-0 flex-fill pw-info-tab active" data-tab="details" style="border-bottom:2px solid #E88D1A;">Détails</button>
-                    <button class="btn btn-ghost-secondary rounded-0 flex-fill pw-info-tab" data-tab="categories">Catégories</button>
-                    <button class="btn btn-ghost-secondary rounded-0 flex-fill pw-info-tab" data-tab="history">Historique</button>
+                    <button class="btn btn-ghost-secondary rounded-0 flex-fill pw-info-tab active" data-tab="details" style="border-bottom:2px solid #E88D1A;">{{ 'prowlarr.index.info_tab_details'|trans }}</button>
+                    <button class="btn btn-ghost-secondary rounded-0 flex-fill pw-info-tab" data-tab="categories">{{ 'prowlarr.index.info_tab_categories'|trans }}</button>
+                    <button class="btn btn-ghost-secondary rounded-0 flex-fill pw-info-tab" data-tab="history">{{ 'prowlarr.index.info_tab_history'|trans }}</button>
                 </div>
                 <div class="p-3">
                     <div id="info-tab-details"></div>
@@ -393,10 +393,10 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-sm btn-ghost-danger" id="info-idx-delete">Supprimer</button>
+                <button class="btn btn-sm btn-ghost-danger" id="info-idx-delete">{{ 'prowlarr.common.delete'|trans }}</button>
                 <div class="ms-auto d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-secondary" id="info-idx-edit">Modifier</button>
-                    <button class="btn btn-sm btn-ghost-secondary" data-bs-dismiss="modal">Fermer</button>
+                    <button class="btn btn-sm btn-outline-secondary" id="info-idx-edit">{{ 'prowlarr.common.edit'|trans }}</button>
+                    <button class="btn btn-sm btn-ghost-secondary" data-bs-dismiss="modal">{{ 'prowlarr.common.close'|trans }}</button>
                 </div>
             </div>
         </div>
@@ -408,6 +408,102 @@
 {% block javascripts %}
 <script>
 (function () {
+    var _I18N = {
+        name: {{ 'prowlarr.common.name'|trans|json_encode|raw }},
+        appProfile: {{ 'prowlarr.index.field_app_profile'|trans|json_encode|raw }},
+        appProfileLoading: {{ 'prowlarr.index.field_app_profile_loading'|trans|json_encode|raw }},
+        priority: {{ 'prowlarr.index.field_priority'|trans|json_encode|raw }},
+        enabled: {{ 'prowlarr.common.enabled'|trans|json_encode|raw }},
+        redirect: {{ 'prowlarr.index.field_redirect'|trans|json_encode|raw }},
+        tagsLabel: {{ 'prowlarr.index.field_tags'|trans|json_encode|raw }},
+        newTag: {{ 'prowlarr.index.field_new_tag'|trans|json_encode|raw }},
+        createTagTitle: {{ 'prowlarr.index.field_create_tag_title'|trans|json_encode|raw }},
+        confirmDeleteIndexerTpl: {{ 'prowlarr.index.confirm_delete_indexer_tpl'|trans|json_encode|raw }},
+        testAllBtn: {{ 'prowlarr.index.test_all_btn'|trans|json_encode|raw }},
+        testAllInProgress: {{ 'prowlarr.index.test_all_in_progress'|trans|json_encode|raw }},
+        testAllOk: {{ 'prowlarr.index.test_all_ok'|trans|json_encode|raw }},
+        testAllErrors: {{ 'prowlarr.index.test_all_errors'|trans|json_encode|raw }},
+        syncApps: {{ 'prowlarr.index.sync_apps_btn'|trans|json_encode|raw }},
+        syncInProgress: {{ 'prowlarr.index.sync_in_progress'|trans|json_encode|raw }},
+        syncDone: {{ 'prowlarr.index.sync_done'|trans|json_encode|raw }},
+        syncFailed: {{ 'prowlarr.index.sync_failed'|trans|json_encode|raw }},
+        searchNoResults: {{ 'prowlarr.index.search_no_results'|trans|json_encode|raw }},
+        searchResultsCountOne: {{ 'prowlarr.index.search_results_count_tpl'|trans({count: 1})|json_encode|raw }},
+        searchResultsCountOther: {{ 'prowlarr.index.search_results_count_tpl'|trans({count: 2})|json_encode|raw }},
+        ageDaysTpl: {{ 'prowlarr.index.age_days_tpl'|trans|json_encode|raw }},
+        searchColTitle: {{ 'prowlarr.index.search_col_title'|trans|json_encode|raw }},
+        searchColIndexer: {{ 'prowlarr.index.search_col_indexer'|trans|json_encode|raw }},
+        searchColSize: {{ 'prowlarr.index.search_col_size'|trans|json_encode|raw }},
+        searchColSeeds: {{ 'prowlarr.index.search_col_seeds'|trans|json_encode|raw }},
+        searchColAge: {{ 'prowlarr.index.search_col_age'|trans|json_encode|raw }},
+        sizeUnits: {{ 'prowlarr.index.error_size_units'|trans|json_encode|raw }},
+        commonError: {{ 'prowlarr.common.error'|trans|json_encode|raw }},
+        editTitleTpl: {{ 'prowlarr.schema_modal.edit_title_tpl'|trans|json_encode|raw }},
+        test: {{ 'prowlarr.common.test'|trans|json_encode|raw }},
+        testing: {{ 'prowlarr.common.testing'|trans|json_encode|raw }},
+        testSuccess: {{ 'prowlarr.common.test_success'|trans|json_encode|raw }},
+        testFailureTpl: {{ 'prowlarr.common.test_failure_tpl'|trans|json_encode|raw }},
+        save: {{ 'prowlarr.common.save'|trans|json_encode|raw }},
+        saving: {{ 'prowlarr.common.saving'|trans|json_encode|raw }},
+        saved: {{ 'prowlarr.common.saved'|trans|json_encode|raw }},
+        add: {{ 'prowlarr.common.add'|trans|json_encode|raw }},
+        adding: {{ 'prowlarr.common.adding'|trans|json_encode|raw }},
+        indexerAdded: {{ 'prowlarr.index.indexer_added'|trans|json_encode|raw }},
+        addFailed: {{ 'prowlarr.index.error_add_failed'|trans|json_encode|raw }},
+        saveFailed: {{ 'prowlarr.index.error_save_failed'|trans|json_encode|raw }},
+        errorTpl: {{ 'prowlarr.common.error_tpl'|trans|json_encode|raw }},
+        noIndexerFound: {{ 'prowlarr.common.no_results'|trans|json_encode|raw }},
+        infoDetailsHeading: {{ 'prowlarr.index.info_details_heading'|trans|json_encode|raw }},
+        infoLabelType: {{ 'prowlarr.index.info_label_type'|trans|json_encode|raw }},
+        infoLabelDescription: {{ 'prowlarr.index.info_label_description'|trans|json_encode|raw }},
+        infoLabelLanguage: {{ 'prowlarr.index.info_label_language'|trans|json_encode|raw }},
+        infoLabelProtocol: {{ 'prowlarr.index.info_label_protocol'|trans|json_encode|raw }},
+        infoLabelPrivacy: {{ 'prowlarr.index.info_label_privacy'|trans|json_encode|raw }},
+        infoLabelUrls: {{ 'prowlarr.index.info_label_urls'|trans|json_encode|raw }},
+        infoSearchCapabilities: {{ 'prowlarr.index.info_search_capabilities'|trans|json_encode|raw }},
+        infoCapRss: {{ 'prowlarr.index.info_cap_rss'|trans|json_encode|raw }},
+        infoCapRawSearch: {{ 'prowlarr.index.info_cap_raw_search'|trans|json_encode|raw }},
+        infoCapSearch: {{ 'prowlarr.index.info_cap_search'|trans|json_encode|raw }},
+        infoCapTvSearch: {{ 'prowlarr.index.info_cap_tv_search'|trans|json_encode|raw }},
+        infoCapMovieSearch: {{ 'prowlarr.index.info_cap_movie_search'|trans|json_encode|raw }},
+        infoCapMusicSearch: {{ 'prowlarr.index.info_cap_music_search'|trans|json_encode|raw }},
+        infoCapBookSearch: {{ 'prowlarr.index.info_cap_book_search'|trans|json_encode|raw }},
+        infoCapSupported: {{ 'prowlarr.index.info_cap_supported'|trans|json_encode|raw }},
+        infoCapUnsupported: {{ 'prowlarr.index.info_cap_unsupported'|trans|json_encode|raw }},
+        infoParam: {
+            q: {{ 'prowlarr.index.info_param_q'|trans|json_encode|raw }},
+            season: {{ 'prowlarr.index.info_param_season'|trans|json_encode|raw }},
+            ep: {{ 'prowlarr.index.info_param_ep'|trans|json_encode|raw }},
+            imdbId: {{ 'prowlarr.index.info_param_imdb'|trans|json_encode|raw }},
+            tmdbId: {{ 'prowlarr.index.info_param_tmdb'|trans|json_encode|raw }},
+            tvdbId: {{ 'prowlarr.index.info_param_tvdb'|trans|json_encode|raw }},
+            tvMazeId: {{ 'prowlarr.index.info_param_tvmaze'|trans|json_encode|raw }},
+            year: {{ 'prowlarr.index.info_param_year'|trans|json_encode|raw }},
+            genre: {{ 'prowlarr.index.info_param_genre'|trans|json_encode|raw }},
+            artist: {{ 'prowlarr.index.info_param_artist'|trans|json_encode|raw }},
+            album: {{ 'prowlarr.index.info_param_album'|trans|json_encode|raw }},
+            label: {{ 'prowlarr.index.info_param_label'|trans|json_encode|raw }},
+            title: {{ 'prowlarr.index.info_param_title'|trans|json_encode|raw }},
+            author: {{ 'prowlarr.index.info_param_author'|trans|json_encode|raw }}
+        },
+        infoNoCategories: {{ 'prowlarr.index.info_no_categories'|trans|json_encode|raw }},
+        infoCategoriesCountOne: {{ 'prowlarr.index.info_categories_count_tpl'|trans({count: 1})|json_encode|raw }},
+        infoCategoriesCountOther: {{ 'prowlarr.index.info_categories_count_tpl'|trans({count: 2})|json_encode|raw }},
+        infoColId: {{ 'prowlarr.index.info_col_id'|trans|json_encode|raw }},
+        infoColName: {{ 'prowlarr.common.name'|trans|json_encode|raw }},
+        infoNoHistory: {{ 'prowlarr.index.info_no_history'|trans|json_encode|raw }},
+        infoColDate: {{ 'prowlarr.index.info_col_date'|trans|json_encode|raw }},
+        infoColType: {{ 'prowlarr.index.info_col_type'|trans|json_encode|raw }},
+        infoColQuery: {{ 'prowlarr.index.info_col_query'|trans|json_encode|raw }},
+        infoColSource: {{ 'prowlarr.index.info_col_source'|trans|json_encode|raw }},
+        infoEventRss: {{ 'prowlarr.index.info_event_rss'|trans|json_encode|raw }},
+        infoEventQuery: {{ 'prowlarr.index.info_event_query'|trans|json_encode|raw }},
+        infoPrivacyPrivate: {{ 'prowlarr.index.privacy_private'|trans|json_encode|raw }},
+        infoPrivacySemi: {{ 'prowlarr.index.privacy_semiprivate'|trans|json_encode|raw }},
+        infoPrivacyPublic: {{ 'prowlarr.index.privacy_public'|trans|json_encode|raw }},
+        listPrivacySemi: {{ 'prowlarr.index.privacy_semi'|trans|json_encode|raw }}
+    };
+
     // ── Helpers ──
     function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
     function showAlert(el, cls, msg) { el.className = 'mt-2 alert ' + cls; el.textContent = msg; el.style.display = ''; }
@@ -433,14 +529,14 @@
         // Champs de niveau indexeur (Name, Enabled, Redirect, App Profile, Priority)
         if (topLevel) {
             h += '<div class="row g-2 mb-3 pb-3" style="border-bottom:1px solid var(--tblr-border-color);">';
-            h += '<div class="col-12 col-sm-6"><label class="form-label small mb-1">Nom</label><input type="text" class="form-control form-control-sm pw-top" data-top="name" value="' + esc(topLevel.name || '') + '"></div>';
-            h += '<div class="col-12 col-sm-6"><label class="form-label small mb-1">Profil d\'application</label><select class="form-select form-select-sm pw-top" data-top="appProfileId" id="pw-app-profile-sel"><option>Chargement…</option></select></div>';
-            h += '<div class="col-6 col-sm-3"><label class="form-label small mb-1">Priorité</label><input type="number" class="form-control form-control-sm pw-top" data-top="priority" value="' + (topLevel.priority ?? 25) + '"></div>';
+            h += '<div class="col-12 col-sm-6"><label class="form-label small mb-1">' + esc(_I18N.name) + '</label><input type="text" class="form-control form-control-sm pw-top" data-top="name" value="' + esc(topLevel.name || '') + '"></div>';
+            h += '<div class="col-12 col-sm-6"><label class="form-label small mb-1">' + esc(_I18N.appProfile) + '</label><select class="form-select form-select-sm pw-top" data-top="appProfileId" id="pw-app-profile-sel"><option>' + esc(_I18N.appProfileLoading) + '</option></select></div>';
+            h += '<div class="col-6 col-sm-3"><label class="form-label small mb-1">' + esc(_I18N.priority) + '</label><input type="number" class="form-control form-control-sm pw-top" data-top="priority" value="' + (topLevel.priority ?? 25) + '"></div>';
             h += '<div class="col-6 col-sm-3 d-flex align-items-end gap-3">';
-            h += '<label class="form-check form-switch mb-1"><input class="form-check-input pw-top" data-top="enable" type="checkbox"' + (topLevel.enable !== false ? ' checked' : '') + '><span class="form-check-label small">Activé</span></label>';
-            h += '<label class="form-check form-switch mb-1"><input class="form-check-input pw-top" data-top="redirect" type="checkbox"' + (topLevel.redirect ? ' checked' : '') + '><span class="form-check-label small">Redirect</span></label>';
+            h += '<label class="form-check form-switch mb-1"><input class="form-check-input pw-top" data-top="enable" type="checkbox"' + (topLevel.enable !== false ? ' checked' : '') + '><span class="form-check-label small">' + esc(_I18N.enabled) + '</span></label>';
+            h += '<label class="form-check form-switch mb-1"><input class="form-check-input pw-top" data-top="redirect" type="checkbox"' + (topLevel.redirect ? ' checked' : '') + '><span class="form-check-label small">' + esc(_I18N.redirect) + '</span></label>';
             h += '</div>';
-            h += '<div class="col-12"><label class="form-label small mb-1">Tags</label><div class="d-flex flex-wrap gap-1 align-items-center p-2" id="pw-tags-wrap" style="background:rgba(255,255,255,.02);border:1px solid var(--tblr-border-color);border-radius:.4rem;min-height:38px;"></div></div>';
+            h += '<div class="col-12"><label class="form-label small mb-1">' + esc(_I18N.tagsLabel) + '</label><div class="d-flex flex-wrap gap-1 align-items-center p-2" id="pw-tags-wrap" style="background:rgba(255,255,255,.02);border:1px solid var(--tblr-border-color);border-radius:.4rem;min-height:38px;"></div></div>';
             h += '</div>';
             // Charger app profiles
             if (!appProfilesCache) {
@@ -527,8 +623,8 @@
         });
         // Input créer nouveau
         h += '<div class="d-flex gap-1 align-items-center ms-1" style="border-left:1px solid rgba(255,255,255,.08);padding-left:.5rem;">'
-           + '<input type="text" class="form-control form-control-sm" id="pw-tag-new" placeholder="Nouveau…" style="width:90px;font-size:.7rem;background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);">'
-           + '<button class="btn btn-sm btn-icon" id="pw-tag-add-btn" style="width:28px;height:28px;background:rgba(var(--tblr-primary-rgb),.15);color:#818cf8;border:none;border-radius:.3rem;" title="Créer un tag">'
+           + '<input type="text" class="form-control form-control-sm" id="pw-tag-new" placeholder="' + esc(_I18N.newTag) + '" style="width:90px;font-size:.7rem;background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);">'
+           + '<button class="btn btn-sm btn-icon" id="pw-tag-add-btn" style="width:28px;height:28px;background:rgba(var(--tblr-primary-rgb),.15);color:#818cf8;border:none;border-radius:.3rem;" title="' + esc(_I18N.createTagTitle) + '">'
            + '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button></div>';
         wrap.innerHTML = h;
 
@@ -619,7 +715,7 @@
     // ── Supprimer ──
     document.querySelectorAll('[data-delete-id]').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            if (!confirm('Supprimer l\'indexeur « ' + btn.dataset.deleteName + ' » ?')) return;
+            if (!confirm(_I18N.confirmDeleteIndexerTpl.replace('__NAME__', btn.dataset.deleteName))) return;
             fetch('/prowlarr/indexer/' + btn.dataset.deleteId + '/delete', { method: 'POST' })
                 .then(function (r) { return r.json(); })
                 .then(function (d) { if (d.ok) { var row = btn.closest('tr'); if (row) row.remove(); } });
@@ -652,18 +748,18 @@
     document.getElementById('btn-test-all').addEventListener('click', function () {
         var btn = this;
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.7rem;height:.7rem;"></span> Test en cours…';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.7rem;height:.7rem;"></span> ' + _I18N.testAllInProgress;
         fetch('/prowlarr/indexer/testall', { method: 'POST' })
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 btn.disabled = false;
                 if (d.ok) {
-                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" class="me-1"><path d="M5 12l5 5l10-10"/></svg> Tous OK';
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" class="me-1"><path d="M5 12l5 5l10-10"/></svg> ' + _I18N.testAllOk;
                 } else {
-                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" class="me-1"><path d="M12 9v4"/><path d="M12 16h.01"/></svg> Erreurs détectées';
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" class="me-1"><path d="M12 9v4"/><path d="M12 16h.01"/></svg> ' + _I18N.testAllErrors;
                 }
                 setTimeout(function () {
-                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M5 12l5 5l10-10"/></svg> Tester tout';
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M5 12l5 5l10-10"/></svg> ' + _I18N.testAllBtn;
                 }, 3000);
             });
     });
@@ -682,16 +778,16 @@
     });
 
     // ── Sync apps avec suivi commande ──
-    var syncOrigHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M20 11A8.1 8.1 0 004.5 9M4 5v4h4M4 13a8.1 8.1 0 0015.5 2m.5 4v-4h-4"/></svg> Sync apps';
+    var syncOrigHtml = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M20 11A8.1 8.1 0 004.5 9M4 5v4h4M4 13a8.1 8.1 0 0015.5 2m.5 4v-4h-4"/></svg> ' + _I18N.syncApps;
     document.getElementById('btn-sync-indexers').addEventListener('click', function () {
         var btn = this; btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.7rem;height:.7rem;"></span> Sync…';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.7rem;height:.7rem;"></span> ' + _I18N.syncInProgress;
         fetch('/prowlarr/command', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'ApplicationIndexerSync' }) })
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (!d.ok) { btn.disabled = false; btn.innerHTML = syncOrigHtml; return; }
                 var cmdId = d.command && d.command.id;
-                if (!cmdId) { btn.disabled = false; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" class="me-1"><path d="M5 12l5 5l10-10"/></svg> Synced!'; setTimeout(function(){btn.innerHTML=syncOrigHtml;},2000); return; }
+                if (!cmdId) { btn.disabled = false; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" class="me-1"><path d="M5 12l5 5l10-10"/></svg> ' + _I18N.syncDone; setTimeout(function(){btn.innerHTML=syncOrigHtml;},2000); return; }
                 // Poll command status
                 var poll = setInterval(function () {
                     fetch('/prowlarr/command/' + cmdId)
@@ -700,15 +796,15 @@
                             if (!s || s.status === 'completed') {
                                 clearInterval(poll);
                                 btn.disabled = false;
-                                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" class="me-1"><path d="M5 12l5 5l10-10"/></svg> Synced!';
+                                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" class="me-1"><path d="M5 12l5 5l10-10"/></svg> ' + _I18N.syncDone;
                                 setTimeout(function(){btn.innerHTML=syncOrigHtml;},2000);
                             } else if (s.status === 'failed') {
                                 clearInterval(poll);
                                 btn.disabled = false;
-                                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" class="me-1"><path d="M18 6L6 18M6 6l12 12"/></svg> Échec';
+                                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" class="me-1"><path d="M18 6L6 18M6 6l12 12"/></svg> ' + _I18N.syncFailed;
                                 setTimeout(function(){btn.innerHTML=syncOrigHtml;},3000);
                             } else {
-                                btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.7rem;height:.7rem;"></span> ' + (s.status || 'sync…');
+                                btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.7rem;height:.7rem;"></span> ' + (s.status || _I18N.syncInProgress);
                             }
                         });
                 }, 2000);
@@ -729,19 +825,22 @@
             .then(function (r) { return r.json(); })
             .then(function (items) {
                 searchLoading.style.display = 'none'; searchBtn.disabled = false;
-                if (!items.length) { searchResults.innerHTML = '<div class="text-center text-secondary small py-2">Aucun résultat</div>'; return; }
-                var h = '<div class="small text-secondary mb-2">' + items.length + ' résultats</div>';
+                if (!items.length) { searchResults.innerHTML = '<div class="text-center text-secondary small py-2">' + esc(_I18N.searchNoResults) + '</div>'; return; }
+                var countLabel = (items.length <= 1 ? _I18N.searchResultsCountOne : _I18N.searchResultsCountOther).replace('1', items.length).replace('2', items.length);
+                // Replace '#' fallback for non-ICU placeholders
+                countLabel = countLabel.replace('#', items.length);
+                var h = '<div class="small text-secondary mb-2">' + esc(countLabel) + '</div>';
                 h += '<div class="table-responsive pw-search-results"><table class="table table-vcenter table-sm">';
-                h += '<thead><tr><th>Titre</th><th>Indexeur</th><th>Taille</th><th>Seeds</th><th>Âge</th></tr></thead><tbody>';
+                h += '<thead><tr><th>' + esc(_I18N.searchColTitle) + '</th><th>' + esc(_I18N.searchColIndexer) + '</th><th>' + esc(_I18N.searchColSize) + '</th><th>' + esc(_I18N.searchColSeeds) + '</th><th>' + esc(_I18N.searchColAge) + '</th></tr></thead><tbody>';
                 items.forEach(function (r) {
-                    var size = r.size > 0 ? (r.size / 1073741824).toFixed(2) + ' Go' : '—';
+                    var size = r.size > 0 ? (r.size / 1073741824).toFixed(2) + ' ' + _I18N.sizeUnits : '—';
                     var seeds = r.seeders !== null ? '<span class="text-success">' + r.seeders + '</span>' : '—';
-                    h += '<tr class="pw-result-row"><td class="text-truncate" style="max-width:300px;" title="' + esc(r.title||'') + '">' + esc(r.title||'—') + '</td><td><span class="badge bg-secondary-lt" style="font-size:.55rem;">' + esc(r.indexer||'—') + '</span></td><td class="text-secondary">' + size + '</td><td>' + seeds + '</td><td class="text-secondary">' + (r.age||0) + 'j</td></tr>';
+                    h += '<tr class="pw-result-row"><td class="text-truncate" style="max-width:300px;" title="' + esc(r.title||'') + '">' + esc(r.title||'—') + '</td><td><span class="badge bg-secondary-lt" style="font-size:.55rem;">' + esc(r.indexer||'—') + '</span></td><td class="text-secondary">' + size + '</td><td>' + seeds + '</td><td class="text-secondary">' + _I18N.ageDaysTpl.replace('__D__', r.age||0) + '</td></tr>';
                 });
                 h += '</tbody></table></div>';
                 searchResults.innerHTML = h;
             })
-            .catch(function () { searchLoading.style.display = 'none'; searchBtn.disabled = false; searchResults.innerHTML = '<div class="text-center text-danger small py-2">Erreur</div>'; });
+            .catch(function () { searchLoading.style.display = 'none'; searchBtn.disabled = false; searchResults.innerHTML = '<div class="text-center text-danger small py-2">' + esc(_I18N.commonError) + '</div>'; });
     }
     searchBtn.addEventListener('click', doSearch);
     searchInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });
@@ -836,12 +935,12 @@
         }
         filtered = filtered.slice(0, 60);
 
-        if (!filtered.length) { container.innerHTML = '<div class="col-12 text-center text-secondary small py-2">Aucun indexeur trouvé</div>'; return; }
+        if (!filtered.length) { container.innerHTML = '<div class="col-12 text-center text-secondary small py-2">' + esc(_I18N.noIndexerFound) + '</div>'; return; }
 
         var h = '';
         filtered.forEach(function (s) {
             var proto = s.protocol === 'torrent' ? '<span class="badge" style="background:rgba(var(--tblr-primary-rgb),.15);color:#818cf8;font-size:.6rem;">Torrent</span>' : '<span class="badge" style="background:rgba(14,165,233,.15);color:#38bdf8;font-size:.6rem;">Usenet</span>';
-            var privacy = s.privacy === 'private' ? '<span class="badge bg-danger-lt" style="font-size:.6rem;">Privé</span>' : (s.privacy === 'semiPrivate' ? '<span class="badge bg-warning-lt" style="font-size:.6rem;">Semi</span>' : '<span class="badge bg-green-lt" style="font-size:.6rem;">Public</span>');
+            var privacy = s.privacy === 'private' ? '<span class="badge bg-danger-lt" style="font-size:.6rem;">' + esc(_I18N.infoPrivacyPrivate) + '</span>' : (s.privacy === 'semiPrivate' ? '<span class="badge bg-warning-lt" style="font-size:.6rem;">' + esc(_I18N.listPrivacySemi) + '</span>' : '<span class="badge bg-green-lt" style="font-size:.6rem;">' + esc(_I18N.infoPrivacyPublic) + '</span>');
             var displayName = esc(s.name || s.definitionName || s.implementationName || '—');
             var lang = s.language ? '<span class="badge bg-secondary-lt" style="font-size:.55rem;">' + esc(s.language) + '</span>' : '';
             h += '<div class="col-12 col-sm-6 col-md-4"><div class="card pw-schema-card" data-schema-idx="' + schemaCache.indexOf(s) + '" style="cursor:pointer;transition:border-color .15s,background .15s;">';
@@ -887,13 +986,13 @@
         var btn = this; var result = document.getElementById('add-idx-result');
         var payload = collectTopLevel(document.getElementById('add-idx-fields'), selectedSchema);
         payload.fields = collectFields(document.getElementById('add-idx-fields'), selectedSchema.fields || []);
-        btn.disabled = true; btn.textContent = 'Test…';
+        btn.disabled = true; btn.textContent = _I18N.testing;
         fetch('/prowlarr/indexer/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cleanPayload(payload)) })
             .then(function (r) { return r.json(); })
             .then(function (d) {
-                btn.disabled = false; btn.textContent = 'Tester';
-                if (d.ok) showAlert(result, 'alert-success', 'Connexion réussie !');
-                else showAlert(result, 'alert-danger', 'Échec : ' + (d.error || '—'));
+                btn.disabled = false; btn.textContent = _I18N.test;
+                if (d.ok) showAlert(result, 'alert-success', _I18N.testSuccess);
+                else showAlert(result, 'alert-danger', _I18N.testFailureTpl.replace('__ERROR__', d.error || '—'));
             });
     });
 
@@ -901,13 +1000,13 @@
         var btn = this; var result = document.getElementById('add-idx-result');
         var payload = collectTopLevel(document.getElementById('add-idx-fields'), selectedSchema);
         payload.fields = collectFields(document.getElementById('add-idx-fields'), selectedSchema.fields || []);
-        btn.disabled = true; btn.textContent = 'Ajout…';
+        btn.disabled = true; btn.textContent = _I18N.adding;
         fetch('/prowlarr/indexer/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cleanPayload(payload)) })
             .then(function (r) { return r.json(); })
             .then(function (d) {
-                btn.disabled = false; btn.textContent = 'Ajouter';
-                if (d.ok) { showAlert(result, 'alert-success', 'Indexeur ajouté !'); setTimeout(function () { window.location.reload(); }, 800); }
-                else showAlert(result, 'alert-danger', 'Erreur : ' + (d.error || 'Ajout impossible'));
+                btn.disabled = false; btn.textContent = _I18N.add;
+                if (d.ok) { showAlert(result, 'alert-success', _I18N.indexerAdded); setTimeout(function () { window.location.reload(); }, 800); }
+                else showAlert(result, 'alert-danger', _I18N.errorTpl.replace('__ERROR__', d.error || _I18N.addFailed));
             });
     });
 
@@ -948,7 +1047,7 @@
                 .then(function (r) { return r.json(); })
                 .then(function (raw) {
                     editRaw = raw;
-                    document.getElementById('edit-idx-title').textContent = 'Modifier — ' + (raw.name || '—');
+                    document.getElementById('edit-idx-title').textContent = _I18N.editTitleTpl.replace('__NAME__', raw.name || '—');
                     // Injecter indexerUrls comme selectOptions pour baseUrl
                     (raw.fields || []).forEach(function(f) {
                         if (f.name === 'baseUrl' && (!f.selectOptions || !f.selectOptions.length) && raw.indexerUrls && raw.indexerUrls.length) {
@@ -965,13 +1064,13 @@
         var btn = this; var result = document.getElementById('edit-idx-result');
         var payload = collectTopLevel(document.getElementById('edit-idx-fields'), editRaw);
         payload.fields = collectFields(document.getElementById('edit-idx-fields'), editRaw.fields || []);
-        btn.disabled = true; btn.textContent = 'Test…';
+        btn.disabled = true; btn.textContent = _I18N.testing;
         fetch('/prowlarr/indexer/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cleanPayload(payload)) })
             .then(function (r) { return r.json(); })
             .then(function (d) {
-                btn.disabled = false; btn.textContent = 'Tester';
-                if (d.ok) showAlert(result, 'alert-success', 'Connexion réussie !');
-                else showAlert(result, 'alert-danger', 'Échec : ' + (d.error || '—'));
+                btn.disabled = false; btn.textContent = _I18N.test;
+                if (d.ok) showAlert(result, 'alert-success', _I18N.testSuccess);
+                else showAlert(result, 'alert-danger', _I18N.testFailureTpl.replace('__ERROR__', d.error || '—'));
             });
     });
 
@@ -979,13 +1078,13 @@
         var btn = this; var result = document.getElementById('edit-idx-result');
         var payload = collectTopLevel(document.getElementById('edit-idx-fields'), editRaw);
         payload.fields = collectFields(document.getElementById('edit-idx-fields'), editRaw.fields || []);
-        btn.disabled = true; btn.textContent = 'Sauvegarde…';
+        btn.disabled = true; btn.textContent = _I18N.saving;
         fetch('/prowlarr/indexer/' + editRaw.id + '/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cleanPayload(payload)) })
             .then(function (r) { return r.json(); })
             .then(function (d) {
-                btn.disabled = false; btn.textContent = 'Sauvegarder';
-                if (d.ok) { showAlert(result, 'alert-success', 'Sauvegardé !'); setTimeout(function () { window.location.reload(); }, 800); }
-                else showAlert(result, 'alert-danger', 'Erreur : ' + (d.error || 'Sauvegarde impossible'));
+                btn.disabled = false; btn.textContent = _I18N.save;
+                if (d.ok) { showAlert(result, 'alert-success', _I18N.saved); setTimeout(function () { window.location.reload(); }, 800); }
+                else showAlert(result, 'alert-danger', _I18N.errorTpl.replace('__ERROR__', d.error || _I18N.saveFailed));
             });
     });
 
@@ -1051,53 +1150,52 @@
         var bookParams = cap.bookSearchParams || [];
 
         var protoBadge = raw.protocol === 'torrent' ? '<span class="badge" style="background:rgba(var(--tblr-primary-rgb),.15);color:#818cf8;">Torrent</span>' : '<span class="badge" style="background:rgba(14,165,233,.15);color:#38bdf8;">Usenet</span>';
-        var privBadge = raw.privacy === 'private' ? '<span class="badge bg-danger-lt">Privé</span>' : (raw.privacy === 'semiPrivate' ? '<span class="badge bg-warning-lt">Semi-privé</span>' : '<span class="badge bg-green-lt">Public</span>');
+        var privBadge = raw.privacy === 'private' ? '<span class="badge bg-danger-lt">' + esc(_I18N.infoPrivacyPrivate) + '</span>' : (raw.privacy === 'semiPrivate' ? '<span class="badge bg-warning-lt">' + esc(_I18N.infoPrivacySemi) + '</span>' : '<span class="badge bg-green-lt">' + esc(_I18N.infoPrivacyPublic) + '</span>');
 
         var torznabUrl = '';
         if (raw.indexerUrls && raw.indexerUrls.length) {
             torznabUrl = window.location.origin + '/prowlarr/indexer/' + raw.id;
         }
 
-        var h = '<h6 class="mb-3" style="color:#E88D1A;">Détails de l\'indexeur</h6>';
+        var h = '<h6 class="mb-3" style="color:#E88D1A;">' + esc(_I18N.infoDetailsHeading) + '</h6>';
         h += '<div class="row g-2 mb-3">';
-        h += '<div class="col-4 col-sm-3 text-secondary small">Type</div><div class="col-8 col-sm-9">' + protoBadge + '</div>';
-        h += '<div class="col-4 col-sm-3 text-secondary small">Description</div><div class="col-8 col-sm-9 small">' + esc(raw.description || '—') + '</div>';
-        h += '<div class="col-4 col-sm-3 text-secondary small">Langue</div><div class="col-8 col-sm-9 small">' + esc(raw.language || '—') + '</div>';
-        h += '<div class="col-4 col-sm-3 text-secondary small">Protocole</div><div class="col-8 col-sm-9 small">' + esc(raw.protocol || '—') + '</div>';
-        h += '<div class="col-4 col-sm-3 text-secondary small">Privacy</div><div class="col-8 col-sm-9">' + privBadge + '</div>';
+        h += '<div class="col-4 col-sm-3 text-secondary small">' + esc(_I18N.infoLabelType) + '</div><div class="col-8 col-sm-9">' + protoBadge + '</div>';
+        h += '<div class="col-4 col-sm-3 text-secondary small">' + esc(_I18N.infoLabelDescription) + '</div><div class="col-8 col-sm-9 small">' + esc(raw.description || '—') + '</div>';
+        h += '<div class="col-4 col-sm-3 text-secondary small">' + esc(_I18N.infoLabelLanguage) + '</div><div class="col-8 col-sm-9 small">' + esc(raw.language || '—') + '</div>';
+        h += '<div class="col-4 col-sm-3 text-secondary small">' + esc(_I18N.infoLabelProtocol) + '</div><div class="col-8 col-sm-9 small">' + esc(raw.protocol || '—') + '</div>';
+        h += '<div class="col-4 col-sm-3 text-secondary small">' + esc(_I18N.infoLabelPrivacy) + '</div><div class="col-8 col-sm-9">' + privBadge + '</div>';
         if (raw.indexerUrls && raw.indexerUrls.length) {
-            h += '<div class="col-4 col-sm-3 text-secondary small">URL(s)</div><div class="col-8 col-sm-9 small" style="word-break:break-all;">' + raw.indexerUrls.map(function(u) { return '<a href="' + esc(u) + '" target="_blank" class="text-secondary">' + esc(u) + '</a>'; }).join('<br>') + '</div>';
+            h += '<div class="col-4 col-sm-3 text-secondary small">' + esc(_I18N.infoLabelUrls) + '</div><div class="col-8 col-sm-9 small" style="word-break:break-all;">' + raw.indexerUrls.map(function(u) { return '<a href="' + esc(u) + '" target="_blank" class="text-secondary">' + esc(u) + '</a>'; }).join('<br>') + '</div>';
         }
         h += '</div>';
 
         // Search Capabilities (comme le natif — label + badges paramètres)
-        h += '<h6 class="mb-2" style="color:#E88D1A;">Capacités de recherche</h6>';
+        h += '<h6 class="mb-2" style="color:#E88D1A;">' + esc(_I18N.infoSearchCapabilities) + '</h6>';
         var capRows = [
-            { label: 'RSS', supported: raw.supportsRss },
-            { label: 'Recherche brute', supported: cap.supportsRawSearch || false },
-            { label: 'Recherche', params: searchParams },
-            { label: 'Recherche TV', params: tvParams },
-            { label: 'Recherche Films', params: movieParams },
-            { label: 'Recherche Musique', params: musicParams },
-            { label: 'Recherche Livres', params: bookParams },
+            { label: _I18N.infoCapRss, supported: raw.supportsRss },
+            { label: _I18N.infoCapRawSearch, supported: cap.supportsRawSearch || false },
+            { label: _I18N.infoCapSearch, params: searchParams },
+            { label: _I18N.infoCapTvSearch, params: tvParams },
+            { label: _I18N.infoCapMovieSearch, params: movieParams },
+            { label: _I18N.infoCapMusicSearch, params: musicParams },
+            { label: _I18N.infoCapBookSearch, params: bookParams },
         ];
         h += '<div class="row g-1">';
         capRows.forEach(function(c) {
             h += '<div class="col-12 d-flex align-items-center gap-2 py-1">';
-            h += '<div class="small" style="width:130px;flex-shrink:0;color:rgba(255,255,255,.6);">' + c.label + '</div>';
+            h += '<div class="small" style="width:130px;flex-shrink:0;color:rgba(255,255,255,.6);">' + esc(c.label) + '</div>';
             if (c.supported !== undefined) {
                 h += c.supported
-                    ? '<span class="badge bg-green-lt" style="font-size:.6rem;">Supporté</span>'
-                    : '<span class="badge bg-secondary-lt" style="font-size:.6rem;">Non supporté</span>';
+                    ? '<span class="badge bg-green-lt" style="font-size:.6rem;">' + esc(_I18N.infoCapSupported) + '</span>'
+                    : '<span class="badge bg-secondary-lt" style="font-size:.6rem;">' + esc(_I18N.infoCapUnsupported) + '</span>';
             } else {
                 var params = c.params || [];
                 if (!params.length) {
-                    h += '<span class="badge bg-secondary-lt" style="font-size:.6rem;">Non supporté</span>';
+                    h += '<span class="badge bg-secondary-lt" style="font-size:.6rem;">' + esc(_I18N.infoCapUnsupported) + '</span>';
                 } else {
-                    var paramLabels = { q: 'Texte', season: 'Saison', ep: 'Épisode', imdbId: 'IMDb', tmdbId: 'TMDb', tvdbId: 'TVDB', tvMazeId: 'TVMaze', year: 'Année', genre: 'Genre', artist: 'Artiste', album: 'Album', label: 'Label', title: 'Titre', author: 'Auteur' };
                     var unique = params.filter(function(p, i) { return params.indexOf(p) === i; });
                     unique.forEach(function(p) {
-                        h += '<span class="badge" style="font-size:.58rem;background:rgba(56,189,248,.15);color:#38bdf8;margin-right:2px;">' + (paramLabels[p] || p) + '</span>';
+                        h += '<span class="badge" style="font-size:.58rem;background:rgba(56,189,248,.15);color:#38bdf8;margin-right:2px;">' + esc(_I18N.infoParam[p] || p) + '</span>';
                     });
                 }
             }
@@ -1110,12 +1208,13 @@
 
     function renderInfoCategories(raw) {
         var cats = (raw.capabilities || {}).categories || [];
-        if (!cats.length) { document.getElementById('info-tab-categories').innerHTML = '<div class="text-center text-secondary small py-3">Aucune catégorie</div>'; return; }
+        if (!cats.length) { document.getElementById('info-tab-categories').innerHTML = '<div class="text-center text-secondary small py-3">' + esc(_I18N.infoNoCategories) + '</div>'; return; }
         var total = 0;
         cats.forEach(function(c) { total++; (c.subCategories || []).forEach(function() { total++; }); });
-        var h = '<div class="small text-secondary mb-2">' + total + ' catégories</div>';
+        var countLabel = (total <= 1 ? _I18N.infoCategoriesCountOne : _I18N.infoCategoriesCountOther).replace('1', total).replace('2', total).replace('#', total);
+        var h = '<div class="small text-secondary mb-2">' + esc(countLabel) + '</div>';
         h += '<div class="table-responsive" style="max-height:350px;overflow-y:auto;"><table class="table table-sm table-vcenter">';
-        h += '<thead><tr><th style="width:80px;">ID</th><th>Nom</th></tr></thead><tbody>';
+        h += '<thead><tr><th style="width:80px;">' + esc(_I18N.infoColId) + '</th><th>' + esc(_I18N.infoColName) + '</th></tr></thead><tbody>';
         cats.forEach(function(c) {
             h += '<tr><td class="text-secondary small fw-medium">' + c.id + '</td><td class="fw-medium small">' + esc(c.name) + '</td></tr>';
             (c.subCategories || []).forEach(function(s) {
@@ -1127,14 +1226,15 @@
     }
 
     function renderInfoHistory(records) {
-        if (!records.length) { document.getElementById('info-tab-history').innerHTML = '<div class="text-center text-secondary small py-3">Aucun historique</div>'; return; }
+        if (!records.length) { document.getElementById('info-tab-history').innerHTML = '<div class="text-center text-secondary small py-3">' + esc(_I18N.infoNoHistory) + '</div>'; return; }
         var h = '<div class="table-responsive"><table class="table table-sm table-vcenter">';
-        h += '<thead><tr><th>Date</th><th>Type</th><th>Requête</th><th>Source</th></tr></thead><tbody>';
+        h += '<thead><tr><th>' + esc(_I18N.infoColDate) + '</th><th>' + esc(_I18N.infoColType) + '</th><th>' + esc(_I18N.infoColQuery) + '</th><th>' + esc(_I18N.infoColSource) + '</th></tr></thead><tbody>';
         records.forEach(function(r) {
-            var typeBadge = r.eventType === 'indexerRss' ? '<span class="badge bg-cyan-lt" style="font-size:.55rem;">RSS</span>'
-                : r.eventType === 'indexerQuery' ? '<span class="badge bg-indigo-lt" style="font-size:.55rem;">Query</span>'
+            var typeBadge = r.eventType === 'indexerRss' ? '<span class="badge bg-cyan-lt" style="font-size:.55rem;">' + esc(_I18N.infoEventRss) + '</span>'
+                : r.eventType === 'indexerQuery' ? '<span class="badge bg-indigo-lt" style="font-size:.55rem;">' + esc(_I18N.infoEventQuery) + '</span>'
                 : '<span class="badge bg-secondary-lt" style="font-size:.55rem;">' + esc(r.eventType || '—') + '</span>';
-            h += '<tr class="small"><td class="text-secondary text-nowrap">' + (r.date ? new Date(r.date).toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—') + '</td>';
+            var locale = (document.documentElement.lang || 'fr-FR');
+            h += '<tr class="small"><td class="text-secondary text-nowrap">' + (r.date ? new Date(r.date).toLocaleString(locale, {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—') + '</td>';
             h += '<td>' + typeBadge + '</td>';
             h += '<td class="text-truncate" style="max-width:200px;">' + esc(r.data && r.data.query ? r.data.query : '—') + '</td>';
             h += '<td class="text-secondary">' + esc(r.data && r.data.source ? r.data.source : '—') + '</td></tr>';
@@ -1153,7 +1253,7 @@
     });
     document.getElementById('info-idx-delete').addEventListener('click', function() {
         if (!infoRaw) return;
-        if (!confirm('Supprimer l\'indexeur « ' + (infoRaw.name || '') + ' » ?')) return;
+        if (!confirm(_I18N.confirmDeleteIndexerTpl.replace('__NAME__', infoRaw.name || ''))) return;
         fetch('/prowlarr/indexer/' + infoRaw.id + '/delete', { method: 'POST' })
             .then(function(r) { return r.json(); })
             .then(function(d) { if (d.ok) { closeModal('modal-info-indexer'); window.location.reload(); } });

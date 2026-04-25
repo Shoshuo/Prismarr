@@ -1,5 +1,5 @@
 {% extends 'base.html.twig' %}
-{% block title %}Tags — Prowlarr{% endblock %}
+{% block title %}{{ 'prowlarr.tags.page_title_full'|trans }}{% endblock %}
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}
 
 {% block body %}
@@ -9,7 +9,7 @@
             <div class="col">
                 <h2 class="page-title d-flex align-items-center gap-2">
                     <svg width="28" height="28" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224 224-100.3 224-224S379.7 32 256 32zm0 400c-97 0-176-79-176-176S159 80 256 80s176 79 176 176-79 176-176 176z" fill="#E88D1A"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136-61-136-136-136zm0 224c-48.6 0-88-39.4-88-88s39.4-88 88-88 88 39.4 88 88-39.4 88-88 88z" fill="#E88D1A"/><circle cx="256" cy="256" r="48" fill="#E88D1A"/></svg>
-                    Tags <span class="badge bg-secondary-lt ms-1">{{ tags|length }}</span>
+                    {{ 'prowlarr.tags.title'|trans }} <span class="badge bg-secondary-lt ms-1">{{ tags|length }}</span>
                 </h2>
             </div>
             <div class="col-auto ms-auto">{% include 'prowlarr/_prowlarr_nav.html.twig' %}</div>
@@ -21,16 +21,16 @@
 <div class="container-xl">
 
 {% if error %}
-    <div class="alert alert-danger">Impossible de contacter Prowlarr.</div>
+    <div class="alert alert-danger">{{ 'prowlarr.common.error_unreachable'|trans }}</div>
 {% endif %}
 
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Tags</h3>
+        <h3 class="card-title">{{ 'prowlarr.tags.card_title'|trans }}</h3>
         <div class="card-options d-flex gap-2 align-items-center">
             <div class="d-flex gap-1 align-items-center">
-                <input type="text" id="new-tag-input" class="form-control form-control-sm" placeholder="Nouveau tag…" style="width:150px;">
-                <button class="btn btn-sm btn-primary" id="btn-add-tag" style="background:#E88D1A;border-color:#E88D1A;">Ajouter</button>
+                <input type="text" id="new-tag-input" class="form-control form-control-sm" placeholder="{{ 'prowlarr.tags.new_placeholder'|trans }}" style="width:150px;">
+                <button class="btn btn-sm btn-primary" id="btn-add-tag" style="background:#E88D1A;border-color:#E88D1A;">{{ 'prowlarr.tags.add_btn'|trans }}</button>
                 <span id="tag-feedback" style="display:none;font-size:.75rem;"></span>
             </div>
         </div>
@@ -39,16 +39,16 @@
         <table class="table table-vcenter card-table table-sm">
             <thead>
                 <tr>
-                    <th>Tag</th>
-                    <th>Indexeurs</th>
-                    <th>Applications</th>
-                    <th>Notifications</th>
-                    <th class="text-end">Actions</th>
+                    <th>{{ 'prowlarr.tags.col_tag'|trans }}</th>
+                    <th>{{ 'prowlarr.tags.col_indexers'|trans }}</th>
+                    <th>{{ 'prowlarr.tags.col_apps'|trans }}</th>
+                    <th>{{ 'prowlarr.tags.col_notifications'|trans }}</th>
+                    <th class="text-end">{{ 'prowlarr.tags.col_actions'|trans }}</th>
                 </tr>
             </thead>
             <tbody id="tags-tbody">
                 {% if tags is empty %}
-                    <tr><td colspan="5" class="text-center text-secondary py-3">Aucun tag.</td></tr>
+                    <tr><td colspan="5" class="text-center text-secondary py-3">{{ 'prowlarr.tags.empty'|trans }}</td></tr>
                 {% else %}
                     {% for tag in tags %}
                     {% set detail = tagsDetail[tag.id] ?? null %}
@@ -79,7 +79,7 @@
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            <button class="btn btn-sm btn-ghost-danger p-1 btn-tag-delete" data-id="{{ tag.id }}" data-label="{{ tag.label }}" title="Supprimer">
+                            <button class="btn btn-sm btn-ghost-danger p-1 btn-tag-delete" data-id="{{ tag.id }}" data-label="{{ tag.label }}" title="{{ 'prowlarr.common.delete'|trans }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
                             </button>
                         </td>
@@ -98,6 +98,13 @@
 {% block javascripts %}
 <script>
 (function () {
+    var _I18N = {
+        created: {{ 'prowlarr.tags.feedback_created'|trans|json_encode|raw }},
+        error: {{ 'prowlarr.tags.feedback_error'|trans|json_encode|raw }},
+        confirmDeleteTpl: {{ 'prowlarr.tags.confirm_delete_tpl'|trans|json_encode|raw }},
+        deleteInUse: {{ 'prowlarr.tags.delete_in_use'|trans|json_encode|raw }}
+    };
+
     var feedback = document.getElementById('tag-feedback');
     var input = document.getElementById('new-tag-input');
 
@@ -117,11 +124,11 @@
             btn.disabled = false;
             if (d.ok) {
                 feedback.style.display = ''; feedback.style.color = '#22c55e';
-                feedback.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5l10-10"/></svg> Créé';
+                feedback.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5l10-10"/></svg> ' + _I18N.created;
                 input.value = '';
                 setTimeout(function () { location.reload(); }, 600);
             } else {
-                feedback.style.display = ''; feedback.style.color = '#ef4444'; feedback.textContent = 'Erreur';
+                feedback.style.display = ''; feedback.style.color = '#ef4444'; feedback.textContent = _I18N.error;
                 setTimeout(function () { feedback.style.display = 'none'; }, 3000);
             }
         });
@@ -133,7 +140,7 @@
 
     document.querySelectorAll('.btn-tag-delete').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            if (!confirm('Supprimer le tag « ' + btn.dataset.label + ' » ?')) return;
+            if (!confirm(_I18N.confirmDeleteTpl.replace('__LABEL__', btn.dataset.label))) return;
             fetch('/prowlarr/tags/' + btn.dataset.id + '/supprimer', { method: 'POST', credentials: 'same-origin' })
                 .then(function (r) { return r.json(); })
                 .then(function (d) {
@@ -141,7 +148,7 @@
                         var row = btn.closest('tr'); if (row) row.remove();
                     } else {
                         feedback.style.display = ''; feedback.style.color = '#ef4444';
-                        feedback.textContent = 'Ce tag est encore utilisé — retirez-le des indexeurs/apps avant de le supprimer';
+                        feedback.textContent = _I18N.deleteInUse;
                         setTimeout(function () { feedback.style.display = 'none'; }, 4000);
                     }
                 });

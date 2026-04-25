@@ -1,5 +1,5 @@
 {% extends 'base.html.twig' %}
-{% block title %}Logs — Prowlarr{% endblock %}
+{% block title %}{{ 'prowlarr.logs.page_title_full'|trans }}{% endblock %}
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}
 
 {% block body %}
@@ -9,7 +9,7 @@
             <div class="col">
                 <h2 class="page-title d-flex align-items-center gap-2">
                     <svg width="28" height="28" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224 224-100.3 224-224S379.7 32 256 32zm0 400c-97 0-176-79-176-176S159 80 256 80s176 79 176 176-79 176-176 176z" fill="#E88D1A"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136-61-136-136-136zm0 224c-48.6 0-88-39.4-88-88s39.4-88 88-88 88 39.4 88 88-39.4 88-88 88z" fill="#E88D1A"/><circle cx="256" cy="256" r="48" fill="#E88D1A"/></svg>
-                    Logs
+                    {{ 'prowlarr.logs.title'|trans }}
                 </h2>
             </div>
             <div class="col-auto ms-auto">{% include 'prowlarr/_prowlarr_nav.html.twig' %}</div>
@@ -21,37 +21,37 @@
 <div class="container-xl">
 
 {% if error %}
-    <div class="alert alert-danger">Impossible de contacter Prowlarr.</div>
+    <div class="alert alert-danger">{{ 'prowlarr.common.error_unreachable'|trans }}</div>
 {% endif %}
 
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Logs récents</h3>
+        <h3 class="card-title">{{ 'prowlarr.logs.card_title'|trans }}</h3>
         <div class="card-options d-flex gap-2 align-items-center">
-            <input type="text" id="log-search" class="form-control form-control-sm" placeholder="Rechercher…" style="width:200px;">
+            <input type="text" id="log-search" class="form-control form-control-sm" placeholder="{{ 'prowlarr.logs.search_placeholder'|trans }}" style="width:200px;">
             <select id="log-level-filter" class="form-select form-select-sm" style="width:120px;">
-                <option value="">Tous</option>
-                <option value="info">Info</option>
-                <option value="debug">Debug</option>
-                <option value="warn">Warn</option>
-                <option value="error">Error</option>
-                <option value="fatal">Fatal</option>
+                <option value="">{{ 'prowlarr.logs.level_all'|trans }}</option>
+                <option value="info">{{ 'prowlarr.logs.level_info'|trans }}</option>
+                <option value="debug">{{ 'prowlarr.logs.level_debug'|trans }}</option>
+                <option value="warn">{{ 'prowlarr.logs.level_warn'|trans }}</option>
+                <option value="error">{{ 'prowlarr.logs.level_error'|trans }}</option>
+                <option value="fatal">{{ 'prowlarr.logs.level_fatal'|trans }}</option>
             </select>
             <span class="badge bg-secondary-lt" id="log-count">{{ records|length }}</span>
         </div>
     </div>
     <div class="card-body p-0">
         {% if records is empty %}
-            <div class="text-muted text-center py-5">Aucun log.</div>
+            <div class="text-muted text-center py-5">{{ 'prowlarr.logs.empty'|trans }}</div>
         {% else %}
         <div class="table-responsive">
             <table class="table table-vcenter table-sm mb-0">
                 <thead>
                     <tr>
-                        <th style="width:140px;">Date</th>
-                        <th style="width:80px;">Niveau</th>
-                        <th>Message</th>
-                        <th>Logger</th>
+                        <th style="width:140px;">{{ 'prowlarr.logs.col_date'|trans }}</th>
+                        <th style="width:80px;">{{ 'prowlarr.logs.col_level'|trans }}</th>
+                        <th>{{ 'prowlarr.logs.col_message'|trans }}</th>
+                        <th>{{ 'prowlarr.logs.col_logger'|trans }}</th>
                     </tr>
                 </thead>
                 <tbody id="log-tbody">
@@ -93,7 +93,7 @@
 <nav class="mt-3">
     <ul class="pagination justify-content-center">
         <li class="page-item {{ page <= 1 ? 'disabled' }}">
-            <a class="page-link" href="{{ path('prowlarr_logs_page', {page: page - 1}) }}">Préc.</a>
+            <a class="page-link" href="{{ path('prowlarr_logs_page', {page: page - 1}) }}">{{ 'prowlarr.logs.page_prev'|trans }}</a>
         </li>
         {% for p in 1..totalPages %}
             {% if p >= page - 3 and p <= page + 3 %}
@@ -103,7 +103,7 @@
             {% endif %}
         {% endfor %}
         <li class="page-item {{ page >= totalPages ? 'disabled' }}">
-            <a class="page-link" href="{{ path('prowlarr_logs_page', {page: page + 1}) }}">Suiv.</a>
+            <a class="page-link" href="{{ path('prowlarr_logs_page', {page: page + 1}) }}">{{ 'prowlarr.logs.page_next'|trans }}</a>
         </li>
     </ul>
 </nav>

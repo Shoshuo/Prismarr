@@ -1,5 +1,5 @@
 {% extends 'base.html.twig' %}
-{% block title %}Sauvegardes — Prowlarr{% endblock %}
+{% block title %}{{ 'prowlarr.backups.page_title_full'|trans }}{% endblock %}
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}
 
 {% block body %}
@@ -9,13 +9,13 @@
             <div class="col">
                 <h2 class="page-title d-flex align-items-center gap-2">
                     <svg width="28" height="28" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224 224-100.3 224-224S379.7 32 256 32zm0 400c-97 0-176-79-176-176S159 80 256 80s176 79 176 176-79 176-176 176z" fill="#E88D1A"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136-61-136-136-136zm0 224c-48.6 0-88-39.4-88-88s39.4-88 88-88 88 39.4 88 88-39.4 88-88 88z" fill="#E88D1A"/><circle cx="256" cy="256" r="48" fill="#E88D1A"/></svg>
-                    Sauvegardes
+                    {{ 'prowlarr.backups.title'|trans }}
                 </h2>
             </div>
             <div class="col-auto ms-auto d-flex gap-2 align-items-center">
                 <button id="btn-create-backup" class="btn btn-primary btn-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 5v14m-7-7l7 7l7-7"/></svg>
-                    Créer une sauvegarde
+                    {{ 'prowlarr.backups.create_btn'|trans }}
                 </button>
                 {% include 'prowlarr/_prowlarr_nav.html.twig' %}
             </div>
@@ -29,40 +29,40 @@
 {% if error %}
     <div class="alert alert-danger d-flex align-items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.871l-8.106 -13.534a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
-        <div><strong>Impossible de contacter Prowlarr</strong></div>
+        <div><strong>{{ 'prowlarr.common.cannot_reach'|trans }}</strong></div>
     </div>
 {% endif %}
 
 <div id="backup-progress" class="alert alert-info d-none mb-3">
     <div class="d-flex align-items-center gap-2">
         <div class="spinner-border spinner-border-sm"></div>
-        <span id="backup-msg">Sauvegarde en cours...</span>
+        <span id="backup-msg">{{ 'prowlarr.backups.create_in_progress'|trans }}</span>
     </div>
 </div>
 
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Sauvegardes disponibles</h3>
+        <h3 class="card-title">{{ 'prowlarr.backups.card_title'|trans }}</h3>
         <div class="card-options">
-            <span class="badge bg-secondary-lt">{{ backups|length }} sauvegarde(s)</span>
+            <span class="badge bg-secondary-lt">{{ 'prowlarr.backups.count_tpl'|trans({count: backups|length}) }}</span>
         </div>
     </div>
     <div class="card-body p-0">
         {% if backups is empty %}
             <div class="text-muted text-center py-5">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2 d-block mx-auto text-secondary"><path d="M12 5v14m-7-7l7 7l7-7"/></svg>
-                Aucune sauvegarde disponible.
+                {{ 'prowlarr.backups.empty'|trans }}
             </div>
         {% else %}
             <div class="table-responsive">
                 <table class="table table-vcenter table-hover table-sm mb-0">
                     <thead>
                         <tr>
-                            <th>Nom</th>
-                            <th>Type</th>
-                            <th>Taille</th>
-                            <th>Date</th>
-                            <th class="text-end">Actions</th>
+                            <th>{{ 'prowlarr.backups.col_name'|trans }}</th>
+                            <th>{{ 'prowlarr.backups.col_type'|trans }}</th>
+                            <th>{{ 'prowlarr.backups.col_size'|trans }}</th>
+                            <th>{{ 'prowlarr.backups.col_date'|trans }}</th>
+                            <th class="text-end">{{ 'prowlarr.backups.col_actions'|trans }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -71,14 +71,14 @@
                             <td class="fw-medium small">{{ backup.name ?? '—' }}</td>
                             <td>
                                 {% if (backup.type ?? '') == 'scheduled' %}
-                                    <span class="badge bg-blue-lt">Planifiée</span>
+                                    <span class="badge bg-blue-lt">{{ 'prowlarr.backups.type_scheduled'|trans }}</span>
                                 {% else %}
-                                    <span class="badge bg-secondary-lt">Manuelle</span>
+                                    <span class="badge bg-secondary-lt">{{ 'prowlarr.backups.type_manual'|trans }}</span>
                                 {% endif %}
                             </td>
                             <td class="text-muted small">
                                 {% if backup.size is defined and backup.size is not null %}
-                                    {{ (backup.size / 1048576)|number_format(1) }} Mo
+                                    {{ 'prowlarr.backups.size_mb_tpl'|trans|replace({'__SIZE__': (backup.size / 1048576)|number_format(1)}) }}
                                 {% else %}
                                     —
                                 {% endif %}
@@ -94,7 +94,7 @@
                                 <button class="btn btn-ghost-danger btn-sm btn-backup-delete"
                                         data-id="{{ backup.id ?? '' }}"
                                         data-name="{{ backup.name ?? '' }}"
-                                        title="Supprimer">
+                                        title="{{ 'prowlarr.common.delete'|trans }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7l16 0"/><path d="M10 11l0 6"/><path d="M14 11l0 6"/><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/></svg>
                                 </button>
                             </td>
@@ -114,6 +114,16 @@
 {% block javascripts %}
 <script>
 (function(){
+var _I18N = {
+    starting: {{ 'prowlarr.backups.create_starting'|trans|json_encode|raw }},
+    done: {{ 'prowlarr.backups.create_done'|trans|json_encode|raw }},
+    error: {{ 'prowlarr.backups.create_error'|trans|json_encode|raw }},
+    networkError: {{ 'prowlarr.backups.network_error'|trans|json_encode|raw }},
+    confirmDeleteTpl: {{ 'prowlarr.backups.confirm_delete_tpl'|trans|json_encode|raw }},
+    fallbackName: {{ 'prowlarr.backups.fallback_name'|trans|json_encode|raw }},
+    deleteError: {{ 'prowlarr.backups.delete_error'|trans|json_encode|raw }}
+};
+
 var btnCreate = document.getElementById('btn-create-backup');
 var progress = document.getElementById('backup-progress');
 var progressMsg = document.getElementById('backup-msg');
@@ -122,7 +132,7 @@ if (btnCreate) {
     btnCreate.addEventListener('click', function() {
         btnCreate.disabled = true;
         progress.classList.remove('d-none');
-        progressMsg.textContent = 'Lancement de la sauvegarde...';
+        progressMsg.textContent = _I18N.starting;
 
         fetch('{{ path('prowlarr_backup_create') }}', {
             method: 'POST',
@@ -132,17 +142,17 @@ if (btnCreate) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.ok) {
-                progressMsg.textContent = 'Sauvegarde créée ! Rechargement...';
+                progressMsg.textContent = _I18N.done;
                 setTimeout(function(){ location.reload(); }, 1500);
             } else {
-                progressMsg.textContent = data.error || 'Erreur lors de la sauvegarde.';
+                progressMsg.textContent = data.error || _I18N.error;
                 progress.classList.remove('alert-info');
                 progress.classList.add('alert-danger');
                 btnCreate.disabled = false;
             }
         })
         .catch(function() {
-            progressMsg.textContent = 'Erreur réseau.';
+            progressMsg.textContent = _I18N.networkError;
             progress.classList.remove('alert-info');
             progress.classList.add('alert-danger');
             btnCreate.disabled = false;
@@ -152,8 +162,8 @@ if (btnCreate) {
 
 document.querySelectorAll('.btn-backup-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
-        var name = btn.dataset.name || 'cette sauvegarde';
-        if (!confirm('Supprimer "' + name + '" ?')) return;
+        var name = btn.dataset.name || _I18N.fallbackName;
+        if (!confirm(_I18N.confirmDeleteTpl.replace('__NAME__', name))) return;
         btn.disabled = true;
 
         fetch('/prowlarr/sauvegardes/' + btn.dataset.id + '/supprimer', {
@@ -164,10 +174,10 @@ document.querySelectorAll('.btn-backup-delete').forEach(function(btn) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.ok) location.reload();
-            else alert('Erreur lors de la suppression.');
+            else alert(_I18N.deleteError);
         })
         .catch(function() {
-            alert('Erreur réseau.');
+            alert(_I18N.networkError);
             btn.disabled = false;
         });
     });

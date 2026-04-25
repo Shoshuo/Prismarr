@@ -3335,6 +3335,447 @@ qbittorrent:
     uptime_minutes_tpl: '__M__ min'
     uptime_seconds_tpl: '__S__s'
 
+prowlarr:
+  nav:
+    indexers: Indexeurs
+    history: Historique
+    settings: Paramètres
+    system: Système
+    integrations: Intégrations
+    apps: Applications
+    download_clients: Clients téléch.
+    notifications: Notifications
+    config: Configuration
+    tags: Tags
+    general: Général
+    ui: Interface (UI)
+    status: Statut
+    tasks: Tâches
+    backups: Sauvegardes
+    updates: Mises à jour
+    logs: Logs
+  common:
+    error_unreachable: Impossible de contacter Prowlarr.
+    cannot_reach: Impossible de contacter Prowlarr
+    name: Nom
+    type: Type
+    status: Statut
+    actions: Actions
+    enabled: Activé
+    disabled: Désactivé
+    active: Actif
+    add: Ajouter
+    edit: Modifier
+    test: Tester
+    delete: Supprimer
+    save: Sauvegarder
+    saved: Sauvegardé !
+    cancel: Annuler
+    back: Retour
+    close: Fermer
+    no_results: Aucun résultat
+    no_items: Aucun élément configuré.
+    search_placeholder: Rechercher…
+    saving: 'Sauvegarde…'
+    adding: 'Ajout…'
+    testing: 'Test…'
+    on: ON
+    off: OFF
+    ok: OK
+    failed: Échec
+    error: Erreur
+    test_success: Connexion réussie !
+    test_failure_tpl: 'Échec : __ERROR__'
+    error_tpl: 'Erreur : __ERROR__'
+    confirm_delete_tpl: 'Supprimer « __NAME__ » ?'
+  schema_modal:
+    add_title_tpl: 'Ajouter — __SECTION__'
+    edit_title: Modifier
+    edit_title_tpl: 'Modifier — __NAME__'
+  index:
+    title: Prowlarr
+    stats_indexers: Indexeurs
+    stats_active: Actifs
+    stats_failing: En erreur
+    stats_torrent: Torrent
+    stats_usenet: Usenet
+    stats_apps: Applications
+    health_title: Santé
+    indexers_card_title: Indexeurs
+    test_all_btn: Tester tout
+    test_all_title: Tester tous les indexeurs
+    test_all_in_progress: 'Test en cours…'
+    test_all_ok: Tous OK
+    test_all_errors: Erreurs détectées
+    sync_apps_btn: Sync apps
+    sync_apps_title: Synchroniser avec Radarr/Sonarr
+    sync_in_progress: 'Sync…'
+    sync_done: Synced!
+    sync_failed: Échec
+    filter_all: Tous
+    filter_enabled: Actifs
+    filter_disabled: Désactivés
+    filter_torrent: Torrent
+    filter_usenet: Usenet
+    col_name: Nom
+    col_protocol: Protocole
+    col_privacy: Privacy
+    col_priority: Priorité
+    col_functions: Fonctions
+    col_categories: Catégories
+    col_queries: Requêtes
+    col_grabs: Grabs
+    col_failures: Échecs
+    col_health: Santé
+    col_added: Ajouté
+    col_actions: Actions
+    empty_indexers: Aucun indexeur configuré.
+    privacy_private: Privé
+    privacy_semi: Semi
+    privacy_semiprivate: Semi-privé
+    privacy_public: Public
+    status_disabled: Désactivé
+    status_error: Erreur
+    status_ok: OK
+    toggle_enable_title: Activer
+    toggle_disable_title: Désactiver
+    search_card_title: Recherche
+    search_placeholder: 'Rechercher sur tous les indexeurs…'
+    search_btn: Rechercher
+    searching: 'Recherche en cours…'
+    search_no_results: Aucun résultat
+    search_results_count_tpl: '{count, plural, one {# résultat} other {# résultats}}'
+    search_col_title: Titre
+    search_col_indexer: Indexeur
+    search_col_size: Taille
+    search_col_seeds: Seeds
+    search_col_age: Âge
+    age_days_tpl: '__D__j'
+    apps_card_title: Applications connectées
+    apps_empty: Aucune application
+    apps_connected: Connecté
+    modal_add_title: Ajouter un indexeur
+    modal_edit_title: Modifier l'indexeur
+    modal_search_placeholder: 'Rechercher (ex: YGG, 1337x…)'
+    filter_protocol: Protocole
+    filter_privacy: Privacy
+    filter_lang: Langue
+    filter_category: Catégorie
+    field_name_label: Nom
+    field_app_profile: Profil d'application
+    field_app_profile_loading: 'Chargement…'
+    field_priority: Priorité
+    field_redirect: Redirect
+    field_tags: Tags
+    field_new_tag: 'Nouveau…'
+    field_create_tag_title: Créer un tag
+    error_size_units: Go
+    info_tab_details: Détails
+    info_tab_categories: Catégories
+    info_tab_history: Historique
+    info_details_heading: Détails de l'indexeur
+    info_label_type: Type
+    info_label_description: Description
+    info_label_language: Langue
+    info_label_protocol: Protocole
+    info_label_privacy: Privacy
+    info_label_urls: URL(s)
+    info_search_capabilities: Capacités de recherche
+    info_cap_rss: RSS
+    info_cap_raw_search: Recherche brute
+    info_cap_search: Recherche
+    info_cap_tv_search: Recherche TV
+    info_cap_movie_search: Recherche Films
+    info_cap_music_search: Recherche Musique
+    info_cap_book_search: Recherche Livres
+    info_cap_supported: Supporté
+    info_cap_unsupported: Non supporté
+    info_param_q: Texte
+    info_param_season: Saison
+    info_param_ep: Épisode
+    info_param_imdb: IMDb
+    info_param_tmdb: TMDb
+    info_param_tvdb: TVDB
+    info_param_tvmaze: TVMaze
+    info_param_year: Année
+    info_param_genre: Genre
+    info_param_artist: Artiste
+    info_param_album: Album
+    info_param_label: Label
+    info_param_title: Titre
+    info_param_author: Auteur
+    info_no_categories: Aucune catégorie
+    info_categories_count_tpl: '{count, plural, one {# catégorie} other {# catégories}}'
+    info_col_id: ID
+    info_no_history: Aucun historique
+    info_col_date: Date
+    info_col_type: Type
+    info_col_query: Requête
+    info_col_source: Source
+    info_event_rss: RSS
+    info_event_query: Query
+    confirm_delete_indexer_tpl: 'Supprimer l''indexeur « __NAME__ » ?'
+    indexer_added: Indexeur ajouté !
+    error_add_failed: Ajout impossible
+    error_save_failed: Sauvegarde impossible
+  apps:
+    title: Applications
+    page_title_full: 'Applications — Prowlarr'
+    info_baseurl: URL de base
+    info_synclevel: Niveau de sync
+    add_btn: Ajouter une application
+    profiles_title: Profils de synchronisation
+    profile_modal_title: Profil de synchronisation
+    profile_new_title: Nouveau profil
+    profile_edit_title_tpl: 'Modifier — __NAME__'
+    profile_name: Nom
+    profile_rss: RSS
+    profile_auto_search: Recherche automatique
+    profile_interactive_search: Recherche interactive
+    profile_min_seeders: Seeders minimum
+    profile_empty: Aucun profil
+    profile_col_rss: RSS
+    profile_col_auto: Auto Search
+    profile_col_interactive: Interactive
+    profile_col_seeders: Seeders min
+    profile_save_error: Erreur
+    confirm_delete_profile: Supprimer ce profil ?
+    sync_disabled: Désactivé
+    sync_add_only: Ajout uniquement
+    sync_full: Sync complète
+    sync_level_label: Sync Level
+    field_name: Nom
+    add_modal_title: Ajouter une application
+    edit_modal_title: Modifier
+  download_clients:
+    title: Clients de téléchargement
+    page_title_full: 'Clients de téléchargement — Prowlarr'
+    add_btn: Ajouter un client
+    add_modal_title: Ajouter un client de téléchargement
+    edit_modal_title: Modifier
+    priority_label_tpl: 'Priorité : __VALUE__'
+    field_name: Nom
+    field_priority: Priorité
+  notifications:
+    title: Notifications
+    page_title_full: 'Notifications — Prowlarr'
+    add_btn: Ajouter une notification
+    add_modal_title: Ajouter une notification
+    edit_modal_title: Modifier
+    search_placeholder: 'Rechercher (Discord, Telegram, Email…)'
+    empty: Aucune notification configurée.
+    triggers_label: Déclencheurs
+    trigger_grab: Grab
+    trigger_health_issue: Problème santé
+    trigger_health_restored: Santé rétablie
+    trigger_app_update: Mise à jour app
+    include_warnings: Inclure warnings
+    badge_health: Santé
+    badge_health_restored: Santé rétablie
+    badge_app_update: Mise à jour
+    badge_warnings: Warnings inclus
+    field_name: Nom
+    test_success: Test réussi !
+  general:
+    title: Général
+    page_title_full: 'Général — Prowlarr'
+    section_host: Host
+    section_security: Sécurité
+    section_proxy: Proxy
+    section_logging: Logging
+    field_port: Port
+    field_url_base: URL Base
+    field_url_base_placeholder: Vide par défaut
+    field_instance_name: Nom de l'instance
+    field_auth_method: Authentification
+    auth_none: Aucune
+    auth_basic: Basic (popup)
+    auth_forms: Formulaire
+    field_auth_required: Authentification requise
+    auth_required_enabled: Activée
+    auth_required_local: Désactivée en local
+    field_username: Nom d'utilisateur
+    field_password: Mot de passe
+    field_password_confirm: Confirmation mot de passe
+    field_cert_validation: Validation certificat
+    cert_enabled: Activée
+    cert_local: Désactivée en local
+    cert_disabled: Désactivée
+    field_api_key: Clé API
+    copy_title: Copier
+    api_key_help: Nécessite un redémarrage pour régénérer
+    restart_required: Nécessite un redémarrage
+    proxy_use: Utiliser un proxy
+    proxy_type: Type
+    proxy_hostname: Hostname
+    proxy_port: Port
+    log_level: Niveau de log
+    log_info: Info
+    log_debug: Debug
+    log_trace: Trace
+    save_btn: Sauvegarder
+    saved: Sauvegardé
+    save_error: Erreur
+  ui:
+    title: Interface (UI)
+    page_title_full: 'Interface (UI) — Prowlarr'
+    section_dates: Dates
+    section_style: Style
+    section_language: Langue
+    short_date: Format date courte
+    long_date: Format date longue
+    time_format: Format heure
+    show_relative: Afficher les dates relatives
+    theme: Thème
+    theme_auto: Auto
+    theme_light: Clair
+    theme_dark: Sombre
+    color_impaired: Mode daltonien
+    ui_language: Langue de l'interface
+    reload_required: Rechargement navigateur nécessaire
+    save_btn: Sauvegarder
+    saved: Sauvegardé
+    save_error: Erreur
+  history:
+    title: Historique
+    page_title_full: 'Historique — Prowlarr'
+    since_label: 'Depuis :'
+    filter_btn: Filtrer
+    empty: Aucun historique.
+    col_date: Date
+    col_type: Type
+    col_source: Source
+    col_query: Requête
+    col_category: Catégorie
+    col_results: Résultats
+    col_time: Temps
+    col_status: Statut
+    event_rss: RSS
+    event_query: Query
+    event_grab: Grab
+    event_auth: Auth
+    status_ok: OK
+    status_failed: Échec
+    elapsed_ms_tpl: '__MS__ms'
+  tags:
+    title: Tags
+    page_title_full: 'Tags — Prowlarr'
+    card_title: Tags
+    new_placeholder: 'Nouveau tag…'
+    add_btn: Ajouter
+    col_tag: Tag
+    col_indexers: Indexeurs
+    col_apps: Applications
+    col_notifications: Notifications
+    col_actions: Actions
+    empty: Aucun tag.
+    feedback_created: Créé
+    feedback_error: Erreur
+    confirm_delete_tpl: 'Supprimer le tag « __LABEL__ » ?'
+    delete_in_use: Ce tag est encore utilisé — retirez-le des indexeurs/apps avant de le supprimer
+  system:
+    title: Statut Système
+    page_title_full: 'Statut Système — Prowlarr'
+    info_card: Informations
+    health_card: Santé
+    health_ok_badge: OK
+    health_ok: Tous les systèmes opérationnels
+    info_version: Version
+    info_branch: Branche
+    info_os: OS
+    info_runtime: Runtime
+    info_started: Démarrage
+    info_appdata: App Data
+    info_migration: Migration
+    info_authentication: Authentification
+    documentation: Documentation
+  tasks:
+    title: Tâches système
+    page_title_full: 'Tâches système — Prowlarr'
+    card_title: Tâches planifiées
+    empty: Aucune tâche.
+    col_name: Nom
+    col_interval: Intervalle
+    col_last: Dernière exécution
+    col_duration: Durée
+    col_next: Prochaine exécution
+    last_never: Jamais
+    run_title: Exécuter maintenant
+    interval_hours_min_tpl: '__H__h __M__min'
+    interval_hours_tpl: '__H__h'
+    interval_minutes_tpl: '__M__ min'
+    feedback_launched_tpl: 'Tâche "__NAME__" lancée.'
+    feedback_run_error: Erreur lors du lancement.
+    feedback_network_error: Erreur réseau.
+  backups:
+    title: Sauvegardes
+    page_title_full: 'Sauvegardes — Prowlarr'
+    create_btn: Créer une sauvegarde
+    create_in_progress: 'Sauvegarde en cours...'
+    create_starting: 'Lancement de la sauvegarde...'
+    create_done: 'Sauvegarde créée ! Rechargement...'
+    create_error: 'Erreur lors de la sauvegarde.'
+    network_error: Erreur réseau.
+    card_title: Sauvegardes disponibles
+    count_tpl: '{count, plural, one {# sauvegarde} other {# sauvegardes}}'
+    empty: Aucune sauvegarde disponible.
+    col_name: Nom
+    col_type: Type
+    col_size: Taille
+    col_date: Date
+    col_actions: Actions
+    type_scheduled: Planifiée
+    type_manual: Manuelle
+    size_mb_tpl: '__SIZE__ Mo'
+    confirm_delete_tpl: 'Supprimer "__NAME__" ?'
+    delete_error: 'Erreur lors de la suppression.'
+    fallback_name: cette sauvegarde
+  logs:
+    title: Logs
+    page_title_full: 'Logs — Prowlarr'
+    card_title: Logs récents
+    search_placeholder: 'Rechercher…'
+    level_all: Tous
+    level_info: Info
+    level_debug: Debug
+    level_warn: Warn
+    level_error: Error
+    level_fatal: Fatal
+    empty: Aucun log.
+    col_date: Date
+    col_level: Niveau
+    col_message: Message
+    col_logger: Logger
+    page_prev: Préc.
+    page_next: Suiv.
+  updates:
+    title: Mises à jour
+    page_title_full: 'Mises à jour — Prowlarr'
+    docker_warning: 'Prowlarr tourne en conteneur Docker. Pour mettre à jour, mettez à jour l''image Docker (ex: <code>docker pull</code> ou via Portainer).'
+    version_installed: Version installée
+    update_available: Mise à jour disponible
+    up_to_date: A jour
+    history_title: Historique des versions
+    empty: Prowlarr est à jour.
+    install_in_progress: 'Installation en cours...'
+    install_starting: 'Lancement de la mise à jour...'
+    install_launched: 'Vérification des mises à jour lancée. Actualisation dans 5 secondes…'
+    install_error: 'Erreur lors du lancement.'
+    network_error_tpl: 'Erreur réseau : __MSG__'
+    network_no_connection: connexion impossible
+    col_version: Version
+    col_release_date: Date de sortie
+    col_branch: Branche
+    col_status: Statut
+    badge_latest: Dernière
+    status_installed: Installée
+    status_available: Disponible
+    status_old: Ancienne
+    install_btn_tpl: 'Installer __VERSION__'
+    install_via_docker: Mettre à jour via Docker
+    changes_new: Nouveautés
+    changes_fixed: Corrections
+
 watchlist_page:
   back_to_discover: Découverte
   count_titles: '{count, plural, one {# titre} other {# titres}}'

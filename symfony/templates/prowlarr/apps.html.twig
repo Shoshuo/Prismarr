@@ -1,5 +1,5 @@
 {% extends 'base.html.twig' %}
-{% block title %}Applications — Prowlarr{% endblock %}
+{% block title %}{{ 'prowlarr.apps.page_title_full'|trans }}{% endblock %}
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}
 
 {% block stylesheets %}
@@ -16,7 +16,7 @@
             <div class="col">
                 <h2 class="page-title d-flex align-items-center gap-2">
                     <svg width="28" height="28" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224 224-100.3 224-224S379.7 32 256 32zm0 400c-97 0-176-79-176-176S159 80 256 80s176 79 176 176-79 176-176 176z" fill="#E88D1A"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136-61-136-136-136zm0 224c-48.6 0-88-39.4-88-88s39.4-88 88-88 88 39.4 88 88-39.4 88-88 88z" fill="#E88D1A"/><circle cx="256" cy="256" r="48" fill="#E88D1A"/></svg>
-                    Applications <span class="badge bg-secondary-lt ms-1">{{ apps|length }}</span>
+                    {{ 'prowlarr.apps.title'|trans }} <span class="badge bg-secondary-lt ms-1">{{ apps|length }}</span>
                 </h2>
             </div>
             <div class="col-auto ms-auto d-flex gap-2 align-items-center">
@@ -30,7 +30,7 @@
 <div class="container-xl">
 
 {% if error %}
-    <div class="alert alert-danger">Impossible de contacter Prowlarr.</div>
+    <div class="alert alert-danger">{{ 'prowlarr.common.error_unreachable'|trans }}</div>
 {% endif %}
 
 {# ── Cards Applications ── #}
@@ -67,13 +67,13 @@
 
                 {# Actions compactes #}
                 <div class="d-flex gap-1 mt-auto pt-2" style="border-top:1px solid rgba(255,255,255,.04);">
-                    <button class="btn btn-sm btn-ghost-secondary p-1 pw-edit-btn" data-id="{{ app.id }}" title="Modifier">
+                    <button class="btn btn-sm btn-ghost-secondary p-1 pw-edit-btn" data-id="{{ app.id }}" title="{{ 'prowlarr.common.edit'|trans }}">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4l10.5-10.5a2.828 2.828 0 10-4-4L4 16v4M13.5 6.5l4 4"/></svg>
                     </button>
-                    <button class="btn btn-sm btn-ghost-secondary p-1 pw-test-btn" data-id="{{ app.id }}" title="Tester">
+                    <button class="btn btn-sm btn-ghost-secondary p-1 pw-test-btn" data-id="{{ app.id }}" title="{{ 'prowlarr.common.test'|trans }}">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5l10-10"/></svg>
                     </button>
-                    <button class="btn btn-sm btn-ghost-danger p-1 ms-auto pw-del-btn" data-id="{{ app.id }}" data-name="{{ app.name ?? '' }}" title="Supprimer">
+                    <button class="btn btn-sm btn-ghost-danger p-1 ms-auto pw-del-btn" data-id="{{ app.id }}" data-name="{{ app.name ?? '' }}" title="{{ 'prowlarr.common.delete'|trans }}">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
                     </button>
                 </div>
@@ -87,18 +87,18 @@
 <div class="mb-3">
     <button class="btn btn-sm btn-outline-secondary pw-add-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E88D1A" stroke-width="2" class="me-1"><path d="M12 5v14M5 12h14"/></svg>
-        Ajouter une application
+        {{ 'prowlarr.apps.add_btn'|trans }}
     </button>
 </div>
 
 {# ── Sync Profiles ── #}
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Profils de synchronisation</h3>
+        <h3 class="card-title">{{ 'prowlarr.apps.profiles_title'|trans }}</h3>
         <div class="card-options">
             <button class="btn btn-sm btn-outline-secondary" id="btn-add-profile">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 5v14M5 12h14"/></svg>
-                Ajouter
+                {{ 'prowlarr.common.add'|trans }}
             </button>
         </div>
     </div>
@@ -112,43 +112,43 @@
     <div class="modal-dialog modal-md" style="margin-top:3rem;">
         <div class="modal-content" style="background:var(--tblr-bg-surface);">
             <div class="modal-header">
-                <h4 class="modal-title" id="profile-modal-title">Profil de synchronisation</h4>
+                <h4 class="modal-title" id="profile-modal-title">{{ 'prowlarr.apps.profile_modal_title'|trans }}</h4>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="row g-3">
                     <div class="col-12">
-                        <label class="form-label small mb-1">Nom</label>
+                        <label class="form-label small mb-1">{{ 'prowlarr.apps.profile_name'|trans }}</label>
                         <input type="text" class="form-control form-control-sm" id="profile-name">
                     </div>
                     <div class="col-6">
                         <label class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="profile-rss" checked>
-                            <span class="form-check-label">RSS</span>
+                            <span class="form-check-label">{{ 'prowlarr.apps.profile_rss'|trans }}</span>
                         </label>
                     </div>
                     <div class="col-6">
                         <label class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="profile-auto" checked>
-                            <span class="form-check-label">Recherche automatique</span>
+                            <span class="form-check-label">{{ 'prowlarr.apps.profile_auto_search'|trans }}</span>
                         </label>
                     </div>
                     <div class="col-6">
                         <label class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="profile-interactive" checked>
-                            <span class="form-check-label">Recherche interactive</span>
+                            <span class="form-check-label">{{ 'prowlarr.apps.profile_interactive_search'|trans }}</span>
                         </label>
                     </div>
                     <div class="col-6">
-                        <label class="form-label small mb-1">Seeders minimum</label>
+                        <label class="form-label small mb-1">{{ 'prowlarr.apps.profile_min_seeders'|trans }}</label>
                         <input type="number" class="form-control form-control-sm" id="profile-seeders" value="1" min="0">
                     </div>
                 </div>
                 <div id="profile-result" class="mt-3 alert d-none" style="font-size:.85rem;"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-sm btn-ghost-danger" id="profile-delete" style="display:none;">Supprimer</button>
-                <button class="btn btn-sm btn-primary ms-auto" id="profile-save" style="background:#E88D1A;border-color:#E88D1A;">Sauvegarder</button>
+                <button class="btn btn-sm btn-ghost-danger" id="profile-delete" style="display:none;">{{ 'prowlarr.common.delete'|trans }}</button>
+                <button class="btn btn-sm btn-primary ms-auto" id="profile-save" style="background:#E88D1A;border-color:#E88D1A;">{{ 'prowlarr.common.save'|trans }}</button>
             </div>
         </div>
     </div>
@@ -158,14 +158,14 @@
 <div class="modal modal-blur fade" id="pw-modal-add" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top:2rem;">
         <div class="modal-content" style="background:var(--tblr-bg-surface);">
-            <div class="modal-header"><h4 class="modal-title">Ajouter une application</h4><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header"><h4 class="modal-title">{{ 'prowlarr.apps.add_modal_title'|trans }}</h4><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
-                <div id="pw-add-filters"><input type="text" id="pw-add-search" class="form-control mb-3" placeholder="Rechercher…" autocomplete="off"></div>
+                <div id="pw-add-filters"><input type="text" id="pw-add-search" class="form-control mb-3" placeholder="{{ 'prowlarr.common.search_placeholder'|trans }}" autocomplete="off"></div>
                 <div id="pw-add-list" class="row g-2" style="max-height:400px;overflow-y:auto;"></div>
                 <div id="pw-add-form" style="display:none;" class="mt-3 p-3 border border-primary rounded">
-                    <div class="d-flex justify-content-between align-items-center mb-3"><h5 id="pw-add-form-title" class="mb-0"></h5><button id="pw-add-back" class="btn btn-sm btn-ghost-secondary">Retour</button></div>
+                    <div class="d-flex justify-content-between align-items-center mb-3"><h5 id="pw-add-form-title" class="mb-0"></h5><button id="pw-add-back" class="btn btn-sm btn-ghost-secondary">{{ 'prowlarr.common.back'|trans }}</button></div>
                     <div id="pw-add-fields"></div>
-                    <div class="d-flex gap-2 mt-3"><button id="pw-add-test" class="btn btn-sm btn-outline-secondary">Tester</button><button id="pw-add-save" class="btn btn-sm btn-primary" style="background:#E88D1A;border-color:#E88D1A;">Ajouter</button></div>
+                    <div class="d-flex gap-2 mt-3"><button id="pw-add-test" class="btn btn-sm btn-outline-secondary">{{ 'prowlarr.common.test'|trans }}</button><button id="pw-add-save" class="btn btn-sm btn-primary" style="background:#E88D1A;border-color:#E88D1A;">{{ 'prowlarr.common.add'|trans }}</button></div>
                     <div id="pw-add-result" class="mt-2 alert d-none" style="font-size:.85rem;"></div>
                 </div>
             </div>
@@ -177,10 +177,10 @@
 <div class="modal modal-blur fade" id="pw-modal-edit" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top:2rem;">
         <div class="modal-content" style="background:var(--tblr-bg-surface);">
-            <div class="modal-header"><h4 class="modal-title" id="pw-edit-title">Modifier</h4><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header"><h4 class="modal-title" id="pw-edit-title">{{ 'prowlarr.apps.edit_modal_title'|trans }}</h4><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
                 <div id="pw-edit-fields"></div>
-                <div class="d-flex gap-2 mt-3"><button id="pw-edit-test" class="btn btn-sm btn-outline-secondary">Tester</button><button id="pw-edit-save" class="btn btn-sm btn-primary" style="background:#E88D1A;border-color:#E88D1A;">Sauvegarder</button></div>
+                <div class="d-flex gap-2 mt-3"><button id="pw-edit-test" class="btn btn-sm btn-outline-secondary">{{ 'prowlarr.common.test'|trans }}</button><button id="pw-edit-save" class="btn btn-sm btn-primary" style="background:#E88D1A;border-color:#E88D1A;">{{ 'prowlarr.common.save'|trans }}</button></div>
                 <div id="pw-edit-result" class="mt-2 alert d-none" style="font-size:.85rem;"></div>
             </div>
         </div>
@@ -201,6 +201,43 @@
     var DELETE_URL = '/prowlarr/application/{id}/delete';
     var TEST_URL = '/prowlarr/application/test';
 
+    var _I18N = {
+        name: {{ 'prowlarr.common.name'|trans|json_encode|raw }},
+        syncLevelLabel: {{ 'prowlarr.apps.sync_level_label'|trans|json_encode|raw }},
+        syncDisabled: {{ 'prowlarr.apps.sync_disabled'|trans|json_encode|raw }},
+        syncAddOnly: {{ 'prowlarr.apps.sync_add_only'|trans|json_encode|raw }},
+        syncFull: {{ 'prowlarr.apps.sync_full'|trans|json_encode|raw }},
+        confirmDeleteTpl: {{ 'prowlarr.common.confirm_delete_tpl'|trans|json_encode|raw }},
+        confirmDeleteProfile: {{ 'prowlarr.apps.confirm_delete_profile'|trans|json_encode|raw }},
+        editTitleTpl: {{ 'prowlarr.schema_modal.edit_title_tpl'|trans|json_encode|raw }},
+        test: {{ 'prowlarr.common.test'|trans|json_encode|raw }},
+        testing: {{ 'prowlarr.common.testing'|trans|json_encode|raw }},
+        testSuccess: {{ 'prowlarr.common.test_success'|trans|json_encode|raw }},
+        testFailureTpl: {{ 'prowlarr.common.test_failure_tpl'|trans|json_encode|raw }},
+        save: {{ 'prowlarr.common.save'|trans|json_encode|raw }},
+        saving: {{ 'prowlarr.common.saving'|trans|json_encode|raw }},
+        saved: {{ 'prowlarr.common.saved'|trans|json_encode|raw }},
+        add: {{ 'prowlarr.common.add'|trans|json_encode|raw }},
+        adding: {{ 'prowlarr.common.adding'|trans|json_encode|raw }},
+        ok: {{ 'prowlarr.common.ok'|trans|json_encode|raw }},
+        failed: {{ 'prowlarr.common.failed'|trans|json_encode|raw }},
+        errorTpl: {{ 'prowlarr.common.error_tpl'|trans|json_encode|raw }},
+        noResults: {{ 'prowlarr.common.no_results'|trans|json_encode|raw }},
+        profileNewTitle: {{ 'prowlarr.apps.profile_new_title'|trans|json_encode|raw }},
+        profileEditTitleTpl: {{ 'prowlarr.apps.profile_edit_title_tpl'|trans|json_encode|raw }},
+        profilesEmpty: {{ 'prowlarr.apps.profile_empty'|trans|json_encode|raw }},
+        profileColRss: {{ 'prowlarr.apps.profile_col_rss'|trans|json_encode|raw }},
+        profileColAuto: {{ 'prowlarr.apps.profile_col_auto'|trans|json_encode|raw }},
+        profileColInteractive: {{ 'prowlarr.apps.profile_col_interactive'|trans|json_encode|raw }},
+        profileColSeeders: {{ 'prowlarr.apps.profile_col_seeders'|trans|json_encode|raw }},
+        profileSaveError: {{ 'prowlarr.apps.profile_save_error'|trans|json_encode|raw }},
+        commonName: {{ 'prowlarr.common.name'|trans|json_encode|raw }},
+        actions: {{ 'prowlarr.common.actions'|trans|json_encode|raw }},
+        edit: {{ 'prowlarr.common.edit'|trans|json_encode|raw }},
+        on: {{ 'prowlarr.common.on'|trans|json_encode|raw }},
+        off: {{ 'prowlarr.common.off'|trans|json_encode|raw }}
+    };
+
     function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
     function showAlert(el, cls, msg) { el.className = 'mt-2 alert ' + cls; el.textContent = msg; }
     function openModal(id) { var m = document.getElementById(id); m.classList.add('show'); m.style.display = 'block'; document.body.classList.add('modal-open'); document.body.style.overflow = 'hidden'; if (!document.querySelector('.modal-backdrop')) { var b = document.createElement('div'); b.className = 'modal-backdrop fade show'; document.body.appendChild(b); } }
@@ -211,8 +248,8 @@
         var h = '';
         if (topLevel) {
             h += '<div class="row g-2 mb-3 pb-3" style="border-bottom:1px solid var(--tblr-border-color);">';
-            h += '<div class="col-12 col-sm-6"><label class="form-label small mb-1">Nom</label><input type="text" class="form-control form-control-sm pw-top" data-top="name" value="' + esc(topLevel.name || '') + '"></div>';
-            h += '<div class="col-12 col-sm-6"><label class="form-label small mb-1">Sync Level</label><select class="form-select form-select-sm pw-top" data-top="syncLevel"><option value="disabled"' + (topLevel.syncLevel === 'disabled' ? ' selected' : '') + '>Désactivé</option><option value="addOnly"' + (topLevel.syncLevel === 'addOnly' ? ' selected' : '') + '>Ajout uniquement</option><option value="fullSync"' + (topLevel.syncLevel === 'fullSync' ? ' selected' : '') + '>Sync complète</option></select></div>';
+            h += '<div class="col-12 col-sm-6"><label class="form-label small mb-1">' + esc(_I18N.name) + '</label><input type="text" class="form-control form-control-sm pw-top" data-top="name" value="' + esc(topLevel.name || '') + '"></div>';
+            h += '<div class="col-12 col-sm-6"><label class="form-label small mb-1">' + esc(_I18N.syncLevelLabel) + '</label><select class="form-select form-select-sm pw-top" data-top="syncLevel"><option value="disabled"' + (topLevel.syncLevel === 'disabled' ? ' selected' : '') + '>' + esc(_I18N.syncDisabled) + '</option><option value="addOnly"' + (topLevel.syncLevel === 'addOnly' ? ' selected' : '') + '>' + esc(_I18N.syncAddOnly) + '</option><option value="fullSync"' + (topLevel.syncLevel === 'fullSync' ? ' selected' : '') + '>' + esc(_I18N.syncFull) + '</option></select></div>';
             h += '</div>';
         }
         h += '<div class="row g-2">';
@@ -245,25 +282,25 @@
     function collectTopLevel(container, base) { var d = JSON.parse(JSON.stringify(base)); container.querySelectorAll('.pw-top').forEach(function(el) { if (el.type === 'checkbox') d[el.dataset.top] = el.checked; else d[el.dataset.top] = el.value; }); return d; }
 
     // Delete
-    document.querySelectorAll('.pw-del-btn').forEach(function(b) { b.addEventListener('click', function() { if (!confirm('Supprimer « ' + b.dataset.name + ' » ?')) return; fetch(DELETE_URL.replace('{id}', b.dataset.id), { method:'POST' }).then(function(r){return r.json();}).then(function(d){ if(d.ok) b.closest('.col-12').remove(); }); }); });
+    document.querySelectorAll('.pw-del-btn').forEach(function(b) { b.addEventListener('click', function() { if (!confirm(_I18N.confirmDeleteTpl.replace('__NAME__', b.dataset.name))) return; fetch(DELETE_URL.replace('{id}', b.dataset.id), { method:'POST' }).then(function(r){return r.json();}).then(function(d){ if(d.ok) b.closest('.col-12').remove(); }); }); });
 
     // Test
-    document.querySelectorAll('.pw-test-btn').forEach(function(b) { b.addEventListener('click', function() { var orig = b.innerHTML; b.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.7rem;height:.7rem;"></span> Test…'; b.disabled = true; fetch(GET_URL.replace('{id}', b.dataset.id)).then(function(r){return r.json();}).then(function(raw){ return fetch(TEST_URL, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cleanPayload(raw))}); }).then(function(r){return r.json();}).then(function(d){ b.disabled=false; b.innerHTML = d.ok ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M5 12l5 5l10-10"/></svg> OK' : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg> Échec'; setTimeout(function(){b.innerHTML=orig;},3000); }); }); });
+    document.querySelectorAll('.pw-test-btn').forEach(function(b) { b.addEventListener('click', function() { var orig = b.innerHTML; b.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.7rem;height:.7rem;"></span> ' + _I18N.testing; b.disabled = true; fetch(GET_URL.replace('{id}', b.dataset.id)).then(function(r){return r.json();}).then(function(raw){ return fetch(TEST_URL, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cleanPayload(raw))}); }).then(function(r){return r.json();}).then(function(d){ b.disabled=false; b.innerHTML = d.ok ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M5 12l5 5l10-10"/></svg> ' + _I18N.ok : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg> ' + _I18N.failed; setTimeout(function(){b.innerHTML=orig;},3000); }); }); });
 
     // Add modal
     var schemaCache = null, selectedSchema = null;
     document.querySelector('.pw-add-btn').addEventListener('click', function() { document.getElementById('pw-add-form').style.display='none'; document.getElementById('pw-add-filters').style.display=''; document.getElementById('pw-add-list').style.display=''; document.getElementById('pw-add-search').value=''; openModal('pw-modal-add'); if(!schemaCache){ document.getElementById('pw-add-list').innerHTML='<div class="col-12 text-center py-3"><div class="spinner-border spinner-border-sm text-secondary"></div></div>'; fetch(SCHEMA_URL).then(function(r){return r.json();}).then(function(d){schemaCache=d;renderList('');}); } else renderList(''); });
     document.getElementById('pw-add-search').addEventListener('input', function(){ if(schemaCache) renderList(this.value.trim().toLowerCase()); });
-    function renderList(q) { var c=document.getElementById('pw-add-list'); var f=schemaCache.filter(function(s){ if(!q)return true; return((s.name||'')+(s.implementationName||'')).toLowerCase().includes(q); }).slice(0,20); if(!f.length){c.innerHTML='<div class="col-12 text-center text-secondary small py-2">Aucun résultat</div>';return;} c.innerHTML=f.map(function(s){return '<div class="col-12 col-sm-6"><div class="card pw-schema-card" data-idx="'+schemaCache.indexOf(s)+'" style="cursor:pointer;"><div class="card-body py-2 px-3"><div class="fw-semibold small">'+esc(s.name||s.implementationName||'—')+'</div></div></div></div>';}).join(''); c.querySelectorAll('.pw-schema-card').forEach(function(card){card.addEventListener('click',function(){selectedSchema=JSON.parse(JSON.stringify(schemaCache[parseInt(card.dataset.idx)]));document.getElementById('pw-add-form-title').textContent=selectedSchema.name||selectedSchema.implementationName||'—';document.getElementById('pw-add-filters').style.display='none';document.getElementById('pw-add-list').style.display='none';document.getElementById('pw-add-form').style.display='';document.getElementById('pw-add-result').className='mt-2 alert d-none';renderFields(selectedSchema.fields||[],document.getElementById('pw-add-fields'),selectedSchema);});}); }
+    function renderList(q) { var c=document.getElementById('pw-add-list'); var f=schemaCache.filter(function(s){ if(!q)return true; return((s.name||'')+(s.implementationName||'')).toLowerCase().includes(q); }).slice(0,20); if(!f.length){c.innerHTML='<div class="col-12 text-center text-secondary small py-2">'+esc(_I18N.noResults)+'</div>';return;} c.innerHTML=f.map(function(s){return '<div class="col-12 col-sm-6"><div class="card pw-schema-card" data-idx="'+schemaCache.indexOf(s)+'" style="cursor:pointer;"><div class="card-body py-2 px-3"><div class="fw-semibold small">'+esc(s.name||s.implementationName||'—')+'</div></div></div></div>';}).join(''); c.querySelectorAll('.pw-schema-card').forEach(function(card){card.addEventListener('click',function(){selectedSchema=JSON.parse(JSON.stringify(schemaCache[parseInt(card.dataset.idx)]));document.getElementById('pw-add-form-title').textContent=selectedSchema.name||selectedSchema.implementationName||'—';document.getElementById('pw-add-filters').style.display='none';document.getElementById('pw-add-list').style.display='none';document.getElementById('pw-add-form').style.display='';document.getElementById('pw-add-result').className='mt-2 alert d-none';renderFields(selectedSchema.fields||[],document.getElementById('pw-add-fields'),selectedSchema);});}); }
     document.getElementById('pw-add-back').addEventListener('click', function(){document.getElementById('pw-add-form').style.display='none';document.getElementById('pw-add-filters').style.display='';document.getElementById('pw-add-list').style.display='';});
-    document.getElementById('pw-add-test').addEventListener('click', function(){var btn=this,r=document.getElementById('pw-add-result');var p=collectTopLevel(document.getElementById('pw-add-fields'),selectedSchema);p.fields=collectFields(document.getElementById('pw-add-fields'),selectedSchema.fields||[]);btn.disabled=true;btn.textContent='Test…';fetch(TEST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cleanPayload(p))}).then(function(res){return res.json();}).then(function(d){btn.disabled=false;btn.textContent='Tester';showAlert(r,d.ok?'alert-success':'alert-danger',d.ok?'Connexion réussie !':'Échec : '+(d.error||'—'));});});
-    document.getElementById('pw-add-save').addEventListener('click', function(){var btn=this,r=document.getElementById('pw-add-result');var p=collectTopLevel(document.getElementById('pw-add-fields'),selectedSchema);p.fields=collectFields(document.getElementById('pw-add-fields'),selectedSchema.fields||[]);btn.disabled=true;btn.textContent='Ajout…';fetch(ADD_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cleanPayload(p))}).then(function(res){return res.json();}).then(function(d){btn.disabled=false;btn.textContent='Ajouter';if(d.ok){showAlert(r,'alert-success','Ajouté !');setTimeout(function(){window.location.reload();},800);}else showAlert(r,'alert-danger','Erreur : '+(d.error||'—'));});});
+    document.getElementById('pw-add-test').addEventListener('click', function(){var btn=this,r=document.getElementById('pw-add-result');var p=collectTopLevel(document.getElementById('pw-add-fields'),selectedSchema);p.fields=collectFields(document.getElementById('pw-add-fields'),selectedSchema.fields||[]);btn.disabled=true;btn.textContent=_I18N.testing;fetch(TEST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cleanPayload(p))}).then(function(res){return res.json();}).then(function(d){btn.disabled=false;btn.textContent=_I18N.test;showAlert(r,d.ok?'alert-success':'alert-danger',d.ok?_I18N.testSuccess:_I18N.testFailureTpl.replace('__ERROR__',d.error||'—'));});});
+    document.getElementById('pw-add-save').addEventListener('click', function(){var btn=this,r=document.getElementById('pw-add-result');var p=collectTopLevel(document.getElementById('pw-add-fields'),selectedSchema);p.fields=collectFields(document.getElementById('pw-add-fields'),selectedSchema.fields||[]);btn.disabled=true;btn.textContent=_I18N.adding;fetch(ADD_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cleanPayload(p))}).then(function(res){return res.json();}).then(function(d){btn.disabled=false;btn.textContent=_I18N.add;if(d.ok){showAlert(r,'alert-success',_I18N.saved);setTimeout(function(){window.location.reload();},800);}else showAlert(r,'alert-danger',_I18N.errorTpl.replace('__ERROR__',d.error||'—'));});});
 
     // Edit modal
     var editRaw = null;
-    document.querySelectorAll('.pw-edit-btn').forEach(function(b){b.addEventListener('click',function(){document.getElementById('pw-edit-fields').innerHTML='<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-secondary"></div></div>';document.getElementById('pw-edit-result').className='mt-2 alert d-none';openModal('pw-modal-edit');fetch(GET_URL.replace('{id}',b.dataset.id)).then(function(r){return r.json();}).then(function(raw){editRaw=raw;document.getElementById('pw-edit-title').textContent='Modifier — '+(raw.name||'—');renderFields(raw.fields||[],document.getElementById('pw-edit-fields'),raw);});});});
-    document.getElementById('pw-edit-test').addEventListener('click', function(){var btn=this,r=document.getElementById('pw-edit-result');var p=collectTopLevel(document.getElementById('pw-edit-fields'),editRaw);p.fields=collectFields(document.getElementById('pw-edit-fields'),editRaw.fields||[]);btn.disabled=true;btn.textContent='Test…';fetch(TEST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cleanPayload(p))}).then(function(res){return res.json();}).then(function(d){btn.disabled=false;btn.textContent='Tester';showAlert(r,d.ok?'alert-success':'alert-danger',d.ok?'Connexion réussie !':'Échec : '+(d.error||'—'));});});
-    document.getElementById('pw-edit-save').addEventListener('click', function(){var btn=this,r=document.getElementById('pw-edit-result');var p=collectTopLevel(document.getElementById('pw-edit-fields'),editRaw);p.fields=collectFields(document.getElementById('pw-edit-fields'),editRaw.fields||[]);btn.disabled=true;btn.textContent='Sauvegarde…';fetch(UPDATE_URL.replace('{id}',editRaw.id),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cleanPayload(p))}).then(function(res){return res.json();}).then(function(d){btn.disabled=false;btn.textContent='Sauvegarder';if(d.ok){showAlert(r,'alert-success','Sauvegardé !');setTimeout(function(){window.location.reload();},800);}else showAlert(r,'alert-danger','Erreur : '+(d.error||'—'));});});
+    document.querySelectorAll('.pw-edit-btn').forEach(function(b){b.addEventListener('click',function(){document.getElementById('pw-edit-fields').innerHTML='<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-secondary"></div></div>';document.getElementById('pw-edit-result').className='mt-2 alert d-none';openModal('pw-modal-edit');fetch(GET_URL.replace('{id}',b.dataset.id)).then(function(r){return r.json();}).then(function(raw){editRaw=raw;document.getElementById('pw-edit-title').textContent=_I18N.editTitleTpl.replace('__NAME__',raw.name||'—');renderFields(raw.fields||[],document.getElementById('pw-edit-fields'),raw);});});});
+    document.getElementById('pw-edit-test').addEventListener('click', function(){var btn=this,r=document.getElementById('pw-edit-result');var p=collectTopLevel(document.getElementById('pw-edit-fields'),editRaw);p.fields=collectFields(document.getElementById('pw-edit-fields'),editRaw.fields||[]);btn.disabled=true;btn.textContent=_I18N.testing;fetch(TEST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cleanPayload(p))}).then(function(res){return res.json();}).then(function(d){btn.disabled=false;btn.textContent=_I18N.test;showAlert(r,d.ok?'alert-success':'alert-danger',d.ok?_I18N.testSuccess:_I18N.testFailureTpl.replace('__ERROR__',d.error||'—'));});});
+    document.getElementById('pw-edit-save').addEventListener('click', function(){var btn=this,r=document.getElementById('pw-edit-result');var p=collectTopLevel(document.getElementById('pw-edit-fields'),editRaw);p.fields=collectFields(document.getElementById('pw-edit-fields'),editRaw.fields||[]);btn.disabled=true;btn.textContent=_I18N.saving;fetch(UPDATE_URL.replace('{id}',editRaw.id),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cleanPayload(p))}).then(function(res){return res.json();}).then(function(d){btn.disabled=false;btn.textContent=_I18N.save;if(d.ok){showAlert(r,'alert-success',_I18N.saved);setTimeout(function(){window.location.reload();},800);}else showAlert(r,'alert-danger',_I18N.errorTpl.replace('__ERROR__',d.error||'—'));});});
 
     // Sync Profiles
     var profilesData = [];
@@ -271,17 +308,17 @@
         fetch('/prowlarr/app-profiles').then(function(r){return r.json();}).then(function(profiles) {
             profilesData = profiles;
             var body = document.getElementById('sync-profiles-body');
-            if (!profiles.length) { body.innerHTML = '<div class="text-center text-secondary small">Aucun profil</div>'; return; }
-            var h = '<div class="table-responsive"><table class="table table-vcenter table-sm card-table"><thead><tr><th>Nom</th><th>RSS</th><th>Auto Search</th><th>Interactive</th><th>Seeders min</th><th class="text-end">Actions</th></tr></thead><tbody>';
+            if (!profiles.length) { body.innerHTML = '<div class="text-center text-secondary small">' + esc(_I18N.profilesEmpty) + '</div>'; return; }
+            var h = '<div class="table-responsive"><table class="table table-vcenter table-sm card-table"><thead><tr><th>' + esc(_I18N.commonName) + '</th><th>' + esc(_I18N.profileColRss) + '</th><th>' + esc(_I18N.profileColAuto) + '</th><th>' + esc(_I18N.profileColInteractive) + '</th><th>' + esc(_I18N.profileColSeeders) + '</th><th class="text-end">' + esc(_I18N.actions) + '</th></tr></thead><tbody>';
             profiles.forEach(function(p) {
-                var onBadge = '<span class="badge bg-green-lt" style="font-size:.55rem;">ON</span>';
-                var offBadge = '<span class="badge bg-secondary-lt" style="font-size:.55rem;">OFF</span>';
+                var onBadge = '<span class="badge bg-green-lt" style="font-size:.55rem;">' + esc(_I18N.on) + '</span>';
+                var offBadge = '<span class="badge bg-secondary-lt" style="font-size:.55rem;">' + esc(_I18N.off) + '</span>';
                 h += '<tr><td class="fw-medium">' + esc(p.name) + '</td>';
                 h += '<td>' + (p.enableRss ? onBadge : offBadge) + '</td>';
                 h += '<td>' + (p.enableAutomaticSearch ? onBadge : offBadge) + '</td>';
                 h += '<td>' + (p.enableInteractiveSearch ? onBadge : offBadge) + '</td>';
                 h += '<td class="text-secondary">' + (p.minimumSeeders ?? 1) + '</td>';
-                h += '<td class="text-end"><button class="btn btn-sm btn-ghost-secondary p-1 profile-edit-btn" data-profile-id="' + p.id + '" title="Modifier"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4l10.5-10.5a2.828 2.828 0 10-4-4L4 16v4M13.5 6.5l4 4"/></svg></button></td>';
+                h += '<td class="text-end"><button class="btn btn-sm btn-ghost-secondary p-1 profile-edit-btn" data-profile-id="' + p.id + '" title="' + esc(_I18N.edit) + '"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h4l10.5-10.5a2.828 2.828 0 10-4-4L4 16v4M13.5 6.5l4 4"/></svg></button></td>';
                 h += '</tr>';
             });
             h += '</tbody></table></div>';
@@ -300,7 +337,7 @@
     var editingProfileId = null;
     function openProfileModal(p) {
         editingProfileId = p ? p.id : null;
-        document.getElementById('profile-modal-title').textContent = p ? 'Modifier — ' + p.name : 'Nouveau profil';
+        document.getElementById('profile-modal-title').textContent = p ? _I18N.profileEditTitleTpl.replace('__NAME__', p.name) : _I18N.profileNewTitle;
         document.getElementById('profile-name').value = p ? p.name : '';
         document.getElementById('profile-rss').checked = p ? !!p.enableRss : true;
         document.getElementById('profile-auto').checked = p ? !!p.enableAutomaticSearch : true;
@@ -324,19 +361,19 @@
         };
         var url = editingProfileId ? '/prowlarr/app-profile/' + editingProfileId + '/update' : '/prowlarr/app-profile/add';
         if (editingProfileId) payload.id = editingProfileId;
-        btn.disabled = true; btn.textContent = 'Sauvegarde…';
+        btn.disabled = true; btn.textContent = _I18N.saving;
         fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
             .then(function(r) { return r.json(); })
             .then(function(d) {
-                btn.disabled = false; btn.textContent = 'Sauvegarder';
+                btn.disabled = false; btn.textContent = _I18N.save;
                 var r = document.getElementById('profile-result');
-                if (d.ok) { showAlert(r, 'alert-success', 'Sauvegardé !'); setTimeout(function() { closeModal('pw-modal-profile'); loadProfiles(); }, 600); }
-                else showAlert(r, 'alert-danger', 'Erreur');
+                if (d.ok) { showAlert(r, 'alert-success', _I18N.saved); setTimeout(function() { closeModal('pw-modal-profile'); loadProfiles(); }, 600); }
+                else showAlert(r, 'alert-danger', _I18N.profileSaveError);
             });
     });
 
     document.getElementById('profile-delete').addEventListener('click', function() {
-        if (!editingProfileId || !confirm('Supprimer ce profil ?')) return;
+        if (!editingProfileId || !confirm(_I18N.confirmDeleteProfile)) return;
         fetch('/prowlarr/app-profile/' + editingProfileId + '/delete', { method: 'POST' })
             .then(function(r) { return r.json(); })
             .then(function(d) { if (d.ok) { closeModal('pw-modal-profile'); loadProfiles(); } });

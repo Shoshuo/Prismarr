@@ -1,5 +1,5 @@
 {% extends 'base.html.twig' %}
-{% block title %}Tâches système — Prowlarr{% endblock %}
+{% block title %}{{ 'prowlarr.tasks.page_title_full'|trans }}{% endblock %}
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}
 
 {% block body %}
@@ -9,7 +9,7 @@
             <div class="col">
                 <h2 class="page-title d-flex align-items-center gap-2">
                     <svg width="28" height="28" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224 224-100.3 224-224S379.7 32 256 32zm0 400c-97 0-176-79-176-176S159 80 256 80s176 79 176 176-79 176-176 176z" fill="#E88D1A"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136-61-136-136-136zm0 224c-48.6 0-88-39.4-88-88s39.4-88 88-88 88 39.4 88 88-39.4 88-88 88z" fill="#E88D1A"/><circle cx="256" cy="256" r="48" fill="#E88D1A"/></svg>
-                    Tâches système
+                    {{ 'prowlarr.tasks.title'|trans }}
                 </h2>
             </div>
             <div class="col-auto ms-auto">{% include 'prowlarr/_prowlarr_nav.html.twig' %}</div>
@@ -23,7 +23,7 @@
 {% if error %}
     <div class="alert alert-danger d-flex align-items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.871l-8.106 -13.534a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
-        <div><strong>Impossible de contacter Prowlarr</strong></div>
+        <div><strong>{{ 'prowlarr.common.cannot_reach'|trans }}</strong></div>
     </div>
 {% endif %}
 
@@ -31,7 +31,7 @@
 
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">Tâches planifiées</h3>
+        <h3 class="card-title">{{ 'prowlarr.tasks.card_title'|trans }}</h3>
         <div class="card-options">
             <span class="badge bg-secondary-lt">{{ tasks|length }}</span>
         </div>
@@ -40,18 +40,18 @@
         {% if tasks is empty %}
             <div class="text-muted text-center py-5">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2 d-block mx-auto text-secondary"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-                Aucune tâche.
+                {{ 'prowlarr.tasks.empty'|trans }}
             </div>
         {% else %}
             <div class="table-responsive">
                 <table class="table table-vcenter table-sm mb-0">
                     <thead>
                         <tr>
-                            <th>Nom</th>
-                            <th>Intervalle</th>
-                            <th>Dernière exécution</th>
-                            <th>Durée</th>
-                            <th>Prochaine exécution</th>
+                            <th>{{ 'prowlarr.tasks.col_name'|trans }}</th>
+                            <th>{{ 'prowlarr.tasks.col_interval'|trans }}</th>
+                            <th>{{ 'prowlarr.tasks.col_last'|trans }}</th>
+                            <th>{{ 'prowlarr.tasks.col_duration'|trans }}</th>
+                            <th>{{ 'prowlarr.tasks.col_next'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>
                     </thead>
@@ -63,9 +63,15 @@
                                 {% if task.interval is defined %}
                                     {% set mins = task.interval %}
                                     {% if mins >= 60 %}
-                                        {{ (mins / 60)|round(0, 'floor') }}h{% if (mins % 60) > 0 %} {{ mins % 60 }}min{% endif %}
+                                        {% set hh = (mins / 60)|round(0, 'floor') %}
+                                        {% set mm = mins % 60 %}
+                                        {% if mm > 0 %}
+                                            {{ 'prowlarr.tasks.interval_hours_min_tpl'|trans|replace({'__H__': hh, '__M__': mm}) }}
+                                        {% else %}
+                                            {{ 'prowlarr.tasks.interval_hours_tpl'|trans|replace({'__H__': hh}) }}
+                                        {% endif %}
                                     {% else %}
-                                        {{ mins }} min
+                                        {{ 'prowlarr.tasks.interval_minutes_tpl'|trans|replace({'__M__': mins}) }}
                                     {% endif %}
                                 {% else %}
                                     —
@@ -75,7 +81,7 @@
                                 {% if task.lastExecution is defined %}
                                     {{ task.lastExecution|date('d/m/Y H:i') }}
                                 {% else %}
-                                    <span class="text-secondary">Jamais</span>
+                                    <span class="text-secondary">{{ 'prowlarr.tasks.last_never'|trans }}</span>
                                 {% endif %}
                             </td>
                             <td class="text-muted small">
@@ -95,7 +101,7 @@
                             <td>
                                 <button class="btn btn-ghost-secondary btn-icon btn-sm btn-task-run"
                                         data-command="{{ task.taskName ?? task.name ?? '' }}"
-                                        title="Exécuter maintenant">
+                                        title="{{ 'prowlarr.tasks.run_title'|trans }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                                 </button>
                             </td>
@@ -115,6 +121,12 @@
 {% block javascripts %}
 <script>
 (function(){
+var _I18N = {
+    launchedTpl: {{ 'prowlarr.tasks.feedback_launched_tpl'|trans|json_encode|raw }},
+    runError: {{ 'prowlarr.tasks.feedback_run_error'|trans|json_encode|raw }},
+    networkError: {{ 'prowlarr.tasks.feedback_network_error'|trans|json_encode|raw }}
+};
+
 var feedback = document.getElementById('tasks-feedback');
 function showFeedback(msg, type) {
     feedback.className = 'alert alert-' + (type || 'success') + ' mb-3';
@@ -141,16 +153,16 @@ document.querySelectorAll('.btn-task-run').forEach(function(btn) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.ok) {
-                showFeedback('Tâche "' + commandName + '" lancée.');
+                showFeedback(_I18N.launchedTpl.replace('__NAME__', commandName));
                 setTimeout(function(){ location.reload(); }, 1500);
             } else {
-                showFeedback(data.error || 'Erreur lors du lancement.', 'danger');
+                showFeedback(data.error || _I18N.runError, 'danger');
                 btn.disabled = false;
                 btn.innerHTML = SVG_PLAY;
             }
         })
         .catch(function() {
-            showFeedback('Erreur réseau.', 'danger');
+            showFeedback(_I18N.networkError, 'danger');
             btn.disabled = false;
             btn.innerHTML = SVG_PLAY;
         });
