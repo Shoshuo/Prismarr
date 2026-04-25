@@ -656,6 +656,16 @@ class AdminSettingsController extends AbstractController
         foreach (self::FIELDS as $group) {
             foreach ($group as $field) {
                 $value = trim((string) $request->request->get($field['key'], ''));
+                // Sensitive fields (api keys, passwords) come back empty when
+                // the browser refuses to keep type="password" pre-filled with
+                // autocomplete="off" (Firefox + recent Chrome). Treat empty
+                // submission as "unchanged" so saving the form from another
+                // section (theme color, sidebar, etc.) does not silently wipe
+                // every credential at once. To clear a key, the user must use
+                // the dedicated reset action — never via an empty input.
+                if (($field['type'] ?? null) === 'password' && $value === '') {
+                    continue;
+                }
                 $payload[$field['key']] = $value !== '' ? $value : null;
             }
         }

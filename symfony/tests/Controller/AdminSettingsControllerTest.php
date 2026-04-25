@@ -93,7 +93,10 @@ class AdminSettingsControllerTest extends TestCase
             ->with($this->callback(function (array $payload) {
                 return $payload['radarr_url']     === 'http://new-radarr:7878'
                     && $payload['radarr_api_key'] === 'new-key'
-                    && $payload['tmdb_api_key']   === null; // empty string → null
+                    // Empty submission of a password/api_key field must be
+                    // skipped entirely (no key in payload) to preserve the
+                    // existing value in DB — see testEmptyPasswordFieldsAreNotWiped.
+                    && !array_key_exists('tmdb_api_key', $payload);
             }));
 
         $config = $this->createMock(ConfigService::class);
@@ -110,6 +113,61 @@ class AdminSettingsControllerTest extends TestCase
                 'radarr_url'     => 'http://new-radarr:7878',
                 'radarr_api_key' => 'new-key',
                 'tmdb_api_key'   => '',
+            ]
+        );
+        $request->setSession(new \Symfony\Component\HttpFoundation\Session\Session(
+            new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage()
+        ));
+
+        $this->controller($settings, $config, $health)->index($request);
+    }
+
+    public function testEmptyPasswordFieldsAreNotWiped(): void
+    {
+        // Regression: a save triggered from an unrelated section (e.g. user
+        // clicks "Save" after changing the theme color) used to wipe every
+        // api_key/password in DB because Firefox/Chrome strip pre-filled
+        // values from type="password" inputs with autocomplete="off". Any
+        // sensitive field arriving empty must be skipped, never persisted
+        // as null.
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->expects($this->once())
+            ->method('setMany')
+            ->with($this->callback(function (array $payload) {
+                // Plain-text URL fields still allowed to be cleared via empty submit.
+                if (!array_key_exists('radarr_url', $payload) || $payload['radarr_url'] !== null) {
+                    return false;
+                }
+                // Every sensitive field must be ABSENT from the payload, not null.
+                $sensitive = [
+                    'tmdb_api_key', 'radarr_api_key', 'sonarr_api_key',
+                    'prowlarr_api_key', 'jellyseerr_api_key',
+                    'qbittorrent_password', 'gluetun_api_key',
+                ];
+                foreach ($sensitive as $k) {
+                    if (array_key_exists($k, $payload)) {
+                        return false;
+                    }
+                }
+                return true;
+            }));
+
+        $config = $this->createMock(ConfigService::class);
+        $health = $this->createMock(HealthService::class);
+
+        $request = Request::create(
+            '/admin/settings',
+            'POST',
+            [
+                '_csrf_token'           => 'valid',
+                'radarr_url'            => '',  // plain text → cleared (null)
+                'tmdb_api_key'          => '',  // sensitive → preserved (skipped)
+                'radarr_api_key'        => '',
+                'sonarr_api_key'        => '',
+                'prowlarr_api_key'      => '',
+                'jellyseerr_api_key'    => '',
+                'qbittorrent_password'  => '',
+                'gluetun_api_key'       => '',
             ]
         );
         $request->setSession(new \Symfony\Component\HttpFoundation\Session\Session(
