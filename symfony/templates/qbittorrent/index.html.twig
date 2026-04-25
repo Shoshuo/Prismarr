@@ -1027,10 +1027,12 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         return s;
     }
 
-    /** Helper plural : choisit la chaîne ICU one/many et substitue # par le compte */
+    /** Helper plural : choisit la chaîne ICU one/many et substitue le sentinel par le compte.
+     *  Les variants _one sont pré-rendus avec count: 1, les _many avec count: 42 (sentinel),
+     *  ICU substitue # → 1 / 42 au render Twig, on remplace 42 par le vrai count côté JS. */
     function plural(n, oneStr, manyStr) {
-        var s = (n === 1 ? oneStr : manyStr);
-        return String(s == null ? n : s).replace(/#/g, n);
+        if (n === 1) return String(oneStr == null ? n : oneStr);
+        return String(manyStr == null ? n : manyStr).replace('42', n);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
