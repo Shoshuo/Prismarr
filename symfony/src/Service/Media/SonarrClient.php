@@ -202,7 +202,7 @@ class SonarrClient implements ResetInterface
         if (isset($data['releaseType'])) $file['releaseType'] = $data['releaseType'];
         if (array_key_exists('indexerFlags', $data)) $file['indexerFlags'] = (int) $data['indexerFlags'];
         $result = $this->request('PUT', "/api/v3/episodefile/{$id}", [], $file);
-        return $result ? ['ok' => true, 'file' => $result] : ['ok' => false, 'error' => 'Échec de la mise à jour'];
+        return $result ? ['ok' => true, 'file' => $result] : ['ok' => false, 'error' => 'Update failed'];
     }
 
     /**
@@ -211,7 +211,7 @@ class SonarrClient implements ResetInterface
     public function bulkUpdateEpisodeFilesEditor(array $payload): array
     {
         $result = $this->request('PUT', '/api/v3/episodefile/editor', [], $payload);
-        return $result !== null ? ['ok' => true] : ['ok' => false, 'error' => 'Échec de la mise à jour'];
+        return $result !== null ? ['ok' => true] : ['ok' => false, 'error' => 'Update failed'];
     }
 
     /**
@@ -221,7 +221,7 @@ class SonarrClient implements ResetInterface
     public function bulkUpdateEpisodeFilesFull(array $files): array
     {
         $result = $this->request('PUT', '/api/v3/episodefile/bulk', [], $files);
-        return $result !== null ? ['ok' => true, 'files' => $result] : ['ok' => false, 'error' => 'Échec de la mise à jour bulk'];
+        return $result !== null ? ['ok' => true, 'files' => $result] : ['ok' => false, 'error' => 'Bulk update failed'];
     }
 
     /**
@@ -1300,7 +1300,7 @@ class SonarrClient implements ResetInterface
         curl_close($ch);
 
         if ($err) {
-            return ['ok' => false, 'error' => "Erreur réseau : {$err}"];
+            return ['ok' => false, 'error' => "Network error: {$err}"];
         }
 
         $data = json_decode($resp ?: '{}', true) ?? [];

@@ -121,7 +121,7 @@ class TorrentResolverServiceTest extends TestCase
         $svc = new TorrentResolverService($radarr, $sonarr);
         $r = $svc->resolve('radarr', 'Dune.2021.1080p');
         $this->assertFalse($r['found']);
-        $this->assertSame('Aucun match dans la bibliothèque', $r['error']);
+        $this->assertSame('No match in library', $r['error']);
     }
 
     public function testResolveReturnsErrorOnUnknownPipeline(): void

@@ -815,7 +815,7 @@ class TmdbController extends AbstractController
         $tmdbId   = (int) ($data['tmdb_id'] ?? 0);
         $type     = ($data['type'] ?? '');
         if (!$tmdbId || !in_array($type, ['movie', 'tv'], true)) {
-            return $this->json(['error' => 'Paramètres invalides'], 400);
+            return $this->json(['error' => $this->translator->trans('decouverte.error.invalid_params')], 400);
         }
 
         $existing = $this->watchlistRepo->findByTmdb($tmdbId, $type);

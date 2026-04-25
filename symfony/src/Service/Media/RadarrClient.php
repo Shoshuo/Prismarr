@@ -1492,7 +1492,7 @@ class RadarrClient implements ResetInterface
         curl_close($ch);
 
         if ($err) {
-            return ['ok' => false, 'error' => "Erreur réseau : {$err}"];
+            return ['ok' => false, 'error' => "Network error: {$err}"];
         }
 
         $data = json_decode($resp ?: '{}', true) ?? [];

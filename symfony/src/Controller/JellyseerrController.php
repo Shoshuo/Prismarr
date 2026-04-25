@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[IsGranted('ROLE_ADMIN')]
 #[Route('/jellyseerr', name: 'jellyseerr_')]
@@ -22,6 +23,7 @@ class JellyseerrController extends AbstractController
         private readonly JellyseerrClient $jellyseerr,
         private readonly ConfigService $config,
         private readonly LoggerInterface $logger,
+        private readonly TranslatorInterface $translator,
     ) {}
 
     // ── Main page — Requests ─────────────────────────────────────────────────
@@ -223,7 +225,7 @@ class JellyseerrController extends AbstractController
         $data = json_decode($request->getContent(), true) ?? [];
         $ids = $data['jellyfinUserIds'] ?? [];
         if (empty($ids)) {
-            return $this->json(['ok' => false, 'error' => 'Aucun utilisateur sélectionné']);
+            return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.no_user_selected')]);
         }
         $result = $this->jellyseerr->importJellyfinUsers($ids);
         return $this->json(['ok' => $result !== null]);
@@ -233,7 +235,7 @@ class JellyseerrController extends AbstractController
     public function deleteUser(int $id): JsonResponse
     {
         if ($id === 1) {
-            return $this->json(['ok' => false, 'error' => 'Le compte propriétaire ne peut pas être supprimé.']);
+            return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.cannot_delete_owner')]);
         }
 
         // Check whether the user exists and has admin/manager rights
@@ -244,12 +246,12 @@ class JellyseerrController extends AbstractController
 
         $perms = $user['permissions'] ?? 0;
         if ($perms & 2 || $perms & 4 || $perms & 8) {
-            return $this->json(['ok' => false, 'error' => 'Les comptes administrateurs ne peuvent pas être supprimés.']);
+            return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.cannot_delete_admin')]);
         }
 
         $ok = $this->jellyseerr->deleteUser($id);
         if (!$ok) {
-            return $this->json(['ok' => false, 'error' => 'Ce compte ne peut pas être supprimé.']);
+            return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.cannot_delete')]);
         }
         return $this->json(['ok' => true]);
     }
@@ -257,11 +259,11 @@ class JellyseerrController extends AbstractController
     #[Route('/utilisateurs/{id}/password', name: 'user_update_password', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function updateUserPassword(int $id, Request $request): JsonResponse
     {
-        if ($id === 1) return $this->json(['ok' => false, 'error' => 'Compte propriétaire protégé.']);
+        if ($id === 1) return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.owner_protected')]);
         $data = json_decode($request->getContent(), true) ?? [];
         $password = $data['password'] ?? '';
         if (strlen($password) < 8) {
-            return $this->json(['ok' => false, 'error' => '8 caractères minimum']);
+            return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.password_too_short')]);
         }
         $ok = $this->jellyseerr->updateUserPassword($id, $password);
         return $this->json(['ok' => $ok]);
@@ -270,7 +272,7 @@ class JellyseerrController extends AbstractController
     #[Route('/utilisateurs/{id}/notifications', name: 'user_update_notifs', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function updateUserNotifications(int $id, Request $request): JsonResponse
     {
-        if ($id === 1) return $this->json(['ok' => false, 'error' => 'Compte propriétaire protégé.']);
+        if ($id === 1) return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.owner_protected')]);
         $data = json_decode($request->getContent(), true) ?? [];
         $result = $this->jellyseerr->updateUserNotifications($id, $data);
         return $this->json(['ok' => $result !== null]);
@@ -279,7 +281,7 @@ class JellyseerrController extends AbstractController
     #[Route('/utilisateurs/{id}/settings', name: 'user_update_settings', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function updateUserMainSettings(int $id, Request $request): JsonResponse
     {
-        if ($id === 1) return $this->json(['ok' => false, 'error' => 'Compte propriétaire protégé.']);
+        if ($id === 1) return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.owner_protected')]);
         $data = json_decode($request->getContent(), true) ?? [];
         $result = $this->jellyseerr->updateUserSettings($id, $data);
         return $this->json(['ok' => $result !== null]);
@@ -288,7 +290,7 @@ class JellyseerrController extends AbstractController
     #[Route('/utilisateurs/{id}/permissions', name: 'user_update_perms', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function updateUserPermissions(int $id, Request $request): JsonResponse
     {
-        if ($id === 1) return $this->json(['ok' => false, 'error' => 'Compte propriétaire protégé.']);
+        if ($id === 1) return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.owner_protected')]);
         $data = json_decode($request->getContent(), true) ?? [];
         $perms = $data['permissions'] ?? null;
         if ($perms === null) {
@@ -301,7 +303,7 @@ class JellyseerrController extends AbstractController
     #[Route('/utilisateurs/{id}/quotas', name: 'user_update_quotas', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function updateUserQuotas(int $id, Request $request): JsonResponse
     {
-        if ($id === 1) return $this->json(['ok' => false, 'error' => 'Compte propriétaire protégé.']);
+        if ($id === 1) return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.owner_protected')]);
         $data = json_decode($request->getContent(), true) ?? [];
         $result = $this->jellyseerr->updateUserSettings($id, $data);
         return $this->json(['ok' => $result !== null]);
@@ -643,7 +645,7 @@ class JellyseerrController extends AbstractController
     {
         $data = json_decode($request->getContent(), true) ?? [];
         if (empty($data)) {
-            return $this->json(['ok' => false, 'error' => 'Données vides']);
+            return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.empty_data')]);
         }
         $result = $this->jellyseerr->updateRequest($id, $data);
         return $this->json(['ok' => $result !== null, 'data' => $result]);
@@ -654,7 +656,7 @@ class JellyseerrController extends AbstractController
     {
         $req = $this->jellyseerr->getRequest($id);
         if (!$req) {
-            return $this->json(['error' => 'Requête introuvable'], 404);
+            return $this->json(['error' => $this->translator->trans('jellyseerr.api.request_not_found')], 404);
         }
 
         $req = $this->enrichRequest($req);

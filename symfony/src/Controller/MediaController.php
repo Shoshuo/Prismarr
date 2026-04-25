@@ -74,7 +74,7 @@ class MediaController extends AbstractController
             // Check for blocked items in the queue
             $blocked = array_filter($queue, fn($q) => ($q['trackedState'] ?? '') === 'importBlocked');
             if (count($blocked) > 0) {
-                $warnings[] = count($blocked) . ' import(s) bloqué(s) — intervention manuelle nécessaire.';
+                $warnings[] = $this->translator->trans('media.import.blocked_warning', ['count' => count($blocked)]);
             }
             } // end if (!$error)
         } catch (\Throwable $e) {
@@ -159,7 +159,7 @@ class MediaController extends AbstractController
             $queue = $this->radarr->getQueue();
             $blocked = count(array_filter($queue, fn($q) => ($q['trackedState'] ?? '') === 'importBlocked'));
             if ($blocked > 0) {
-                $warnings[] = $blocked . ' import(s) bloqué(s) — intervention manuelle nécessaire.';
+                $warnings[] = $this->translator->trans('media.import.blocked_warning', ['count' => $blocked]);
             }
         } catch (\Throwable $e) {
             $this->logger->warning('Media filmWarnings failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
@@ -667,7 +667,7 @@ class MediaController extends AbstractController
             $queue = $this->sonarr->getQueue();
             $blocked = count(array_filter($queue, fn($q) => ($q['trackedState'] ?? '') === 'importBlocked'));
             if ($blocked > 0) {
-                $warnings[] = $blocked . ' import(s) bloqué(s) — intervention manuelle nécessaire.';
+                $warnings[] = $this->translator->trans('media.import.blocked_warning', ['count' => $blocked]);
             }
         } catch (\Throwable $e) {
             $this->logger->warning('Media seriesWarnings failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
@@ -700,7 +700,7 @@ class MediaController extends AbstractController
 
         // Apply options
         $raw['qualityProfileId'] = (int) ($data['qualityProfileId'] ?? $raw['qualityProfileId'] ?? 1);
-        $raw['rootFolderPath'] = $data['rootFolderPath'] ?? '/jellyfin/Séries';
+        $raw['rootFolderPath'] = $data['rootFolderPath'] ?? '/jellyfin/Series';
         $raw['monitored'] = (bool) ($data['monitored'] ?? true);
         $raw['seasonFolder'] = (bool) ($data['seasonFolder'] ?? true);
         $raw['seriesType'] = $data['seriesType'] ?? $raw['seriesType'] ?? 'standard';

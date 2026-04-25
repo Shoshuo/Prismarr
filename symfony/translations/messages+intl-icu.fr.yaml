@@ -874,6 +874,7 @@ decouverte:
     not_found: Introuvable
     not_found_tmdb: Introuvable sur TMDb
     not_found_thetvdb: 'Série introuvable sur TheTVDB (Sonarr exige un tvdbId).'
+    invalid_params: Paramètres invalides
   explorer:
     title: Explorer
     subtitle: 'Filtrer TMDb par genre, année, note, langue, popularité.'
@@ -3157,6 +3158,8 @@ media:
       tooltip_films_count_tpl: '{count, plural, one {# film} other {# films}}'
       gb_suffix: Go
       size_gb_tpl: '{size} Go'
+  import:
+    blocked_warning: '{count, plural, one {# import bloqué — intervention manuelle nécessaire.} other {# imports bloqués — intervention manuelle nécessaire.}}'
 
 qbittorrent:
   page_title: Téléchargements
@@ -3399,6 +3402,11 @@ qbittorrent:
     uptime_hours_tpl: '__H__h __M__m'
     uptime_minutes_tpl: '__M__ min'
     uptime_seconds_tpl: '__S__s'
+  upload:
+    invalid_url: 'Seuls les liens http(s) et magnet: sont acceptés'
+    forbidden_host: 'Cette URL pointe vers un hôte interdit (métadonnées cloud)'
+    no_file: 'Aucun fichier reçu'
+    invalid_format: 'Seuls les fichiers .torrent sont acceptés'
 
 prowlarr:
   nav:
@@ -4492,6 +4500,19 @@ jellyseerr:
       save_changes: Sauvegarder les changements
       saved: Enregistré
       error: Erreur
+  api:
+    no_user_selected: Aucun utilisateur sélectionné
+    cannot_delete_owner: Le compte propriétaire ne peut pas être supprimé.
+    cannot_delete_admin: Les comptes administrateurs ne peuvent pas être supprimés.
+    cannot_delete: Ce compte ne peut pas être supprimé.
+    owner_protected: Compte propriétaire protégé.
+    password_too_short: 8 caractères minimum
+    empty_data: Données vides
+    request_not_found: Requête introuvable
+
+user:
+  email:
+    already_exists: Un compte existe déjà avec cet email.
 
 watchlist_page:
   back_to_discover: Découverte

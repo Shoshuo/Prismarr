@@ -53,7 +53,7 @@ class TorrentResolverService
                 'url'   => '/medias/films?open=' . (int)$best['id'],
             ];
         }
-        return ['found' => false, 'error' => 'Aucun match dans la bibliothèque', 'parsed' => $parsed];
+        return ['found' => false, 'error' => 'No match in library', 'parsed' => $parsed];
     }
 
     private function resolveSeries(string $needle, array $parsed): array
@@ -72,7 +72,7 @@ class TorrentResolverService
                 'url'   => '/medias/series?open=' . (int)$best['id'],
             ];
         }
-        return ['found' => false, 'error' => 'Aucun match dans la bibliothèque', 'parsed' => $parsed];
+        return ['found' => false, 'error' => 'No match in library', 'parsed' => $parsed];
     }
 
     /** Minimum needle length to accept a `contains` match (avoids "It" matching "Split"). */

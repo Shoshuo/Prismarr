@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[IsGranted('ROLE_ADMIN')]
 #[Route('/qbittorrent', name: 'app_qbittorrent_')]
@@ -24,6 +25,7 @@ class QBittorrentController extends AbstractController
         private readonly TorrentResolverService $resolver,
         private readonly ConfigService $config,
         private readonly LoggerInterface $logger,
+        private readonly TranslatorInterface $translator,
     ) {}
 
     /**
@@ -467,7 +469,7 @@ class QBittorrentController extends AbstractController
             $parts = parse_url($url);
             $scheme = strtolower($parts['scheme'] ?? '');
             if (!in_array($scheme, ['http', 'https'], true)) {
-                return 'Seuls les liens http(s) et magnet: sont acceptés';
+                return $this->translator->trans('qbittorrent.upload.invalid_url');
             }
 
             $host = strtolower($parts['host'] ?? '');
@@ -478,7 +480,7 @@ class QBittorrentController extends AbstractController
             $host = trim($host, '[]');
             foreach ($blockedHosts as $blocked) {
                 if ($host === $blocked) {
-                    return 'Cette URL pointe vers un hôte interdit (métadonnées cloud)';
+                    return $this->translator->trans('qbittorrent.upload.forbidden_host');
                 }
             }
         }
@@ -494,7 +496,7 @@ class QBittorrentController extends AbstractController
         if (!is_array($uploaded)) $uploaded = [$uploaded];
         $uploaded = array_filter($uploaded);
 
-        if (empty($uploaded)) return $this->json(['ok' => false, 'error' => 'Aucun fichier reçu'], 400);
+        if (empty($uploaded)) return $this->json(['ok' => false, 'error' => $this->translator->trans('qbittorrent.upload.no_file')], 400);
 
         $files = [];
         foreach ($uploaded as $file) {
@@ -505,7 +507,7 @@ class QBittorrentController extends AbstractController
             }
             $ext = strtolower($file->getClientOriginalExtension());
             if ($ext !== 'torrent') {
-                return $this->json(['ok' => false, 'error' => 'Seuls les fichiers .torrent sont acceptés'], 400);
+                return $this->json(['ok' => false, 'error' => $this->translator->trans('qbittorrent.upload.invalid_format')], 400);
             }
             $content = file_get_contents($file->getPathname());
             if ($content === false || $content === '') {

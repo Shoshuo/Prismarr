@@ -335,7 +335,7 @@ class SetupController extends AbstractController
     private function validateCsrf(Request $request, string $id, array &$errors): void
     {
         if (!$this->isCsrfTokenValid($id, (string) $request->request->get('_csrf_token'))) {
-            $errors[] = 'Jeton CSRF invalide, réessayez.';
+            $errors[] = $this->translator->trans('setup.error.csrf');
         }
     }
 
