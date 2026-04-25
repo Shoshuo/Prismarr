@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel any in-progress run for the same ref when a new push lands.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: make check (lint + Twig + PHPUnit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # docker-compose.yml expects an env file even when it's empty.
+      - name: Create empty env file
+        run: touch symfony/.env.local
+
+      - name: Build and start the Prismarr container
+        run: |
+          docker compose \
+            --env-file symfony/.env.local \
+            -f docker-compose.yml \
+            -f docker-compose.dev.yml \
+            up -d --build
+
+      # The dev compose bind-mounts ./symfony over the image, so the
+      # vendor/ baked into the image is hidden. Re-install dev deps inside
+      # the running container.
+      - name: Install Composer dependencies (with dev)
+        run: docker exec prismarr composer install --no-interaction --prefer-dist
+
+      - name: Install AssetMapper imports
+        run: docker exec prismarr php bin/console importmap:install --no-interaction
+
+      - name: Wait for /api/health
+        run: |
+          for i in $(seq 1 60); do
+            if docker exec prismarr curl -fsS http://localhost:7070/api/health >/dev/null 2>&1; then
+              echo "Container is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Container did not become healthy in time"
+          docker logs prismarr
+          exit 1
+
+      - name: Run make check
+        run: make check
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs prismarr

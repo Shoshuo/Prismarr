@@ -1,0 +1,104 @@
+name: Release
+
+# Triggered by pushing a tag like v1.0.0. Builds a multi-arch image
+# (amd64 + arm64) and pushes it to Docker Hub under prismarr/prismarr.
+#
+# Required repository secrets:
+#   - DOCKERHUB_USERNAME : Docker Hub login
+#   - DOCKERHUB_TOKEN    : Docker Hub access token (Account Settings → Security)
+#
+# Repository variable (optional, defaults to "prismarr/prismarr"):
+#   - DOCKERHUB_IMAGE    : full image name to publish (e.g. "shoshuo/prismarr")
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release:
+    name: Build and push multi-arch image
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    permissions:
+      contents: write  # Needed to attach the GitHub release
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (arm64 emulation)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Resolve image name
+        id: image
+        run: echo "name=${{ vars.DOCKERHUB_IMAGE || 'prismarr/prismarr' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Docker metadata (tags + labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+          labels: |
+            org.opencontainers.image.title=Prismarr
+            org.opencontainers.image.description=Self-hosted media stack dashboard — Radarr, Sonarr, Prowlarr, Jellyseerr, qBittorrent, TMDb in one Symfony UI.
+            org.opencontainers.image.licenses=AGPL-3.0-or-later
+            org.opencontainers.image.source=https://github.com/Shoshuo/Prismarr
+            org.opencontainers.image.url=https://github.com/Shoshuo/Prismarr
+            org.opencontainers.image.documentation=https://github.com/Shoshuo/Prismarr#readme
+            org.opencontainers.image.vendor=Prismarr
+            org.opencontainers.image.version=${{ github.ref_name }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push (linux/amd64 + linux/arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/frankenphp/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Extract release notes from CHANGELOG.md
+        id: notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v ver="$version" '
+            BEGIN { p = 0 }
+            /^## \[/ {
+              if (p) exit
+              if ($0 ~ "\\[" ver "\\]") { p = 1; next }
+            }
+            p { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "Release ${version}" > release-notes.md
+          fi
+          echo "path=release-notes.md" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Prismarr ${{ github.ref_name }}
+          body_path: ${{ steps.notes.outputs.path }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}

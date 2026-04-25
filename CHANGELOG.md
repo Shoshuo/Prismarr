@@ -7,10 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Work toward the first public release of Prismarr. Entries here will be rolled
-into `[1.0.0]` at publication time.
+## [1.0.0] — 2026-04-26
+
+First public release. Prismarr is a single-container, self-hosted dashboard
+that brings qBittorrent, Radarr, Sonarr, Prowlarr, Jellyseerr and TMDb
+together behind one Symfony 8 / FrankenPHP UI. Everything below was built
+between April 18 and April 26, 2026, on top of the IH-Argos fork.
 
 ### Added
+- **Categorised connection test** in `/admin/settings` — the "Test connection"
+  button returns a structured diagnosis (`ok / unconfigured / network /
+  auth / forbidden / not_found / server_error / unknown`) with the HTTP status
+  code included. The result is shown with an i18n message matching the category,
+  so admins know whether the problem is a wrong URL, a bad API key, or a
+  firewall blocking the request.
+- **Live form override for connection test** — the test button sends the
+  current form values (URL, API key / password) as overrides instead of always
+  reading from the database. The admin can type new credentials and test them
+  before saving. A server-side allowlist validates which keys may be overridden
+  per service.
+- **Unified sidebar-visibility section** in `/admin/settings → Display` —
+  service toggles and internal-feature toggles (Calendar, Dashboard) are
+  grouped under a single "Sidebar visibility" sub-section with an auto-fill
+  two-column grid, freeing the service cards to focus solely on connection
+  status.
 - **Profile page** at `/profil` — edit display name and password, upload an
   avatar (JPG / PNG / WebP / GIF, 2 MB max). Avatars live in the
   `var/data/avatars/` volume so they survive container recreations. The
@@ -114,24 +134,6 @@ into `[1.0.0]` at publication time.
 - Doctrine migrations baseline (replaces `doctrine:schema:create`).
 - PHPUnit test suite (~100 tests, services + subscribers + controllers + entities + Twig extensions).
 - `make check` target: PHP lint + Twig lint + full PHPUnit suite.
-
-### Added
-- **Categorised connection test** in `/admin/settings` — the "Test connection"
-  button now returns a structured diagnosis (`ok / unconfigured / network /
-  auth / forbidden / not_found / server_error / unknown`) with the HTTP status
-  code included. The result is shown with an i18n message matching the category,
-  so admins know whether the problem is a wrong URL, a bad API key, or a
-  firewall blocking the request.
-- **Live form override for connection test** — the test button now sends the
-  current form values (URL, API key / password) as overrides instead of always
-  reading from the database. The admin can type new credentials and test them
-  before saving. A server-side allowlist validates which keys may be overridden
-  per service.
-- **Unified sidebar-visibility section** in `/admin/settings → Display` —
-  service toggles and internal-feature toggles (Calendar, Dashboard) are now
-  grouped under a single "Sidebar visibility" sub-section with an auto-fill
-  two-column grid, freeing the service cards to focus solely on connection
-  status.
 
 ### Security
 - **Admin credentials no longer wiped on partial saves** — browsers (Firefox,
@@ -349,5 +351,8 @@ into `[1.0.0]` at publication time.
 ### Security
 ### Contributor
 
-[X.Y.Z]: https://github.com/joshuabv2005/prismarr/compare/vPREV...vX.Y.Z
+[X.Y.Z]: https://github.com/Shoshuo/Prismarr/compare/vPREV...vX.Y.Z
 -->
+
+[Unreleased]: https://github.com/Shoshuo/Prismarr/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Shoshuo/Prismarr/releases/tag/v1.0.0

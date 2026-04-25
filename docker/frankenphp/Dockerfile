@@ -4,9 +4,9 @@ FROM dunglas/frankenphp:1.3.6-php8.4-alpine
 LABEL org.opencontainers.image.title="Prismarr" \
       org.opencontainers.image.description="Self-hosted media stack dashboard — Radarr, Sonarr, Prowlarr, Jellyseerr, qBittorrent, TMDb in one Symfony UI." \
       org.opencontainers.image.licenses="AGPL-3.0-or-later" \
-      org.opencontainers.image.source="https://github.com/joshuabv2005/prismarr" \
-      org.opencontainers.image.url="https://github.com/joshuabv2005/prismarr" \
-      org.opencontainers.image.documentation="https://github.com/joshuabv2005/prismarr#readme" \
+      org.opencontainers.image.source="https://github.com/Shoshuo/Prismarr" \
+      org.opencontainers.image.url="https://github.com/Shoshuo/Prismarr" \
+      org.opencontainers.image.documentation="https://github.com/Shoshuo/Prismarr#readme" \
       org.opencontainers.image.vendor="Prismarr"
 
 # ── s6-overlay (multi-process init system) ──────────────────────────────
