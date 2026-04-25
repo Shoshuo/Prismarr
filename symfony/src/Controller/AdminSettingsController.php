@@ -216,10 +216,15 @@ class AdminSettingsController extends AbstractController
                 'compact'     => 'admin.display.ui_density.options.compact',
             ],
         ],
+        // Langues : conservées dans DISPLAY_OPTIONS pour fournir les defaults
+        // à DisplayPreferencesService et loadDisplayValues, mais marquées
+        // `hidden: true` pour ne pas s'afficher dans la section Display
+        // (l'édition se fait via la section Langues unifiée).
         'display_language' => [
             'label'   => 'admin.display.language.label',
             'type'    => 'select',
-            'default' => 'fr',
+            'default' => 'en',
+            'hidden'  => true,
             'options' => [
                 'fr' => 'admin.display.language.options.fr',
                 'en' => 'admin.display.language.options.en',
@@ -229,7 +234,8 @@ class AdminSettingsController extends AbstractController
         'display_metadata_language' => [
             'label'   => 'admin.display.metadata_language.label',
             'type'    => 'select',
-            'default' => 'fr-FR',
+            'default' => 'en-US',
+            'hidden'  => true,
             'options' => [
                 'fr-FR' => 'admin.display.metadata_language.options.fr_FR',
                 'en-US' => 'admin.display.metadata_language.options.en_US',
@@ -665,8 +671,11 @@ class AdminSettingsController extends AbstractController
 
         // Display preferences — only accept values from the declared allow-list
         // (selects/colors) or '1'/'0' for switches. Anything else is dropped
-        // silently and the default kicks back in on next read.
+        // silently and the default kicks back in on next read. Hidden options
+        // (display_language, display_metadata_language) sont édités par la
+        // section Langues, donc on les ignore ici pour ne pas les écraser.
         foreach (self::DISPLAY_OPTIONS as $key => $spec) {
+            if ($spec['hidden'] ?? false) continue;
             $raw = trim((string) $request->request->get($key, ''));
             $payload[$key] = $this->normalizeDisplayValue($spec, $raw);
         }

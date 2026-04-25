@@ -72,7 +72,7 @@ class LocaleSubscriberTest extends TestCase
 
         $subscriber->onKernelRequest($event);
 
-        $this->assertSame('fr', $request->getLocale());
+        $this->assertSame('en', $request->getLocale());
     }
 
     public function testUnknownLocaleIsRejected(): void
@@ -97,6 +97,6 @@ class LocaleSubscriberTest extends TestCase
 
         $subscriber->onKernelRequest($event);
 
-        $this->assertSame('fr', $request->getLocale());
+        $this->assertSame('en', $request->getLocale());
     }
 }

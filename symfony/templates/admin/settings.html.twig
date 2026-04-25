@@ -441,6 +441,7 @@
 
               <div class="display-grid">
                 {% for key, spec in display_options %}
+                  {% if not (spec.hidden|default(false)) %}
                   <div class="display-row">
                     <label class="display-label" for="{{ key }}">{{ spec.label|trans }}</label>
 
@@ -486,6 +487,7 @@
                       <p class="display-help">{{ spec.help|trans }}</p>
                     {% endif %}
                   </div>
+                  {% endif %}
                 {% endfor %}
               </div>
             </div>

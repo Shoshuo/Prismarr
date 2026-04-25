@@ -1801,6 +1801,8 @@
   var searchAbort = null;
   var searchTimer = null;
 
+  var SEARCH_NO_RESULTS_HTML = '<div class="text-secondary py-4 px-2" style="grid-column: 1 / -1;">' + {{ 'decouverte.search.no_results'|trans|json_encode|raw }} + '</div>';
+
   function runSearch(q) {
     if (searchAbort) { try { searchAbort.abort(); } catch (e) {} }
     if (!q || q.length < 2) {
@@ -1811,10 +1813,15 @@
     fetch('/decouverte/search?q=' + encodeURIComponent(q), { signal: searchAbort.signal, credentials: 'same-origin' })
       .then(function(r) { return r.json(); })
       .then(function(d) {
-        searchGrid.innerHTML = (d.results || []).map(renderCardHTML).join('');
-        searchCount.textContent = '(' + (d.results || []).length + ')';
-        searchBlock.style.display = (d.results || []).length > 0 ? '' : 'none';
-        if (window._prismarrWatchlistSync) window._prismarrWatchlistSync();
+        var results = d.results || [];
+        searchCount.textContent = '(' + results.length + ')';
+        searchBlock.style.display = '';
+        if (results.length === 0) {
+          searchGrid.innerHTML = SEARCH_NO_RESULTS_HTML;
+        } else {
+          searchGrid.innerHTML = results.map(renderCardHTML).join('');
+          if (window._prismarrWatchlistSync) window._prismarrWatchlistSync();
+        }
       })
       .catch(function() {});
   }

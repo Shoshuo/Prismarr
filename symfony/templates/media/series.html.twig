@@ -350,6 +350,7 @@
         <option value="title-desc">{{ 'media.series.filters.sort.title_desc'|trans }}</option>
         <option value="year-desc">{{ 'media.series.filters.sort.year_desc'|trans }}</option>
         <option value="year-asc">{{ 'media.series.filters.sort.year_asc'|trans }}</option>
+        <option value="added-desc">{{ 'media.series.filters.sort.added_desc'|trans }}</option>
         <option value="size-desc">{{ 'media.series.filters.sort.size_desc'|trans }}</option>
         <option value="percent-desc">{{ 'media.series.filters.sort.percent_desc'|trans }}</option>
         <option value="percent-asc">{{ 'media.series.filters.sort.percent_asc'|trans }}</option>
@@ -423,7 +424,7 @@
         </thead>
         <tbody id="series-table-tbody">
           {% for s in series %}
-          <tr class="series-table-row" data-id="{{ s.id }}" data-title="{{ s.title|lower }}" data-status="{{ s.status }}" data-type="{{ s.seriesType }}" data-monitored="{{ s.monitored ? '1' : '0' }}" data-percent="{{ s.percent }}" data-episode-count="{{ s.episodeCount }}" data-genres="{{ s.genres|join(', ') }}" data-network="{{ s.network|default('') }}" data-year="{{ s.year }}" data-size="{{ s.sizeGb }}" style="cursor:pointer;">
+          <tr class="series-table-row" data-id="{{ s.id }}" data-title="{{ s.title|lower }}" data-status="{{ s.status }}" data-type="{{ s.seriesType }}" data-monitored="{{ s.monitored ? '1' : '0' }}" data-percent="{{ s.percent }}" data-episode-count="{{ s.episodeCount }}" data-genres="{{ s.genres|join(', ') }}" data-network="{{ s.network|default('') }}" data-year="{{ s.year }}" data-size="{{ s.sizeGb }}" data-added="{{ s.addedAt ? s.addedAt|date('c') : '' }}" style="cursor:pointer;">
             <td class="table-select-col-s" style="display:none;"><div class="select-cb-table-s" data-id="{{ s.id }}" style="width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></td>
             <td>
               {% if s.poster %}
@@ -487,6 +488,7 @@
        data-episode-count="{{ s.episodeCount }}"
        data-episode-file-count="{{ s.episodeFileCount }}"
        data-percent="{{ s.percent }}"
+       data-added="{{ s.addedAt ? s.addedAt|date('c') : '' }}"
        data-network="{{ s.network|default('')|e('html_attr') }}"
        data-next-airing="{{ s.nextAiring ? s.nextAiring.format('Y-m-d') : '' }}"
        title="{{ s.title }}{% if s.year %} ({{ s.year }}){% endif %} — {{ s.episodeFileCount }}/{{ s.episodeCount }} {{ 'media.series.status.episodes_suffix'|trans }}">
@@ -1225,6 +1227,7 @@
         case 'title-desc': return (b.dataset.title || '').localeCompare(a.dataset.title || '');
         case 'year-desc': return (parseInt(b.dataset.year) || 0) - (parseInt(a.dataset.year) || 0);
         case 'year-asc': return (parseInt(a.dataset.year) || 0) - (parseInt(b.dataset.year) || 0);
+        case 'added-desc': return (b.dataset.added || '').localeCompare(a.dataset.added || '');
         case 'size-desc': return (parseFloat(b.dataset.size) || 0) - (parseFloat(a.dataset.size) || 0);
         case 'percent-desc': return (parseInt(b.dataset.percent) || 0) - (parseInt(a.dataset.percent) || 0);
         case 'percent-asc': return (parseInt(a.dataset.percent) || 0) - (parseInt(b.dataset.percent) || 0);

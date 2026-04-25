@@ -1,8 +1,9 @@
 framework:
-    default_locale: fr
-    enabled_locales: ['fr', 'en']
+    default_locale: en
+    enabled_locales: ['en', 'fr']
     translator:
         default_path: '%kernel.project_dir%/translations'
-        # fr is the source locale; en is the first translation. Other locales
-        # added later should list their fallback here (e.g. ['es', 'fr']).
-        fallbacks: ['fr']
+        # en is the source locale (Prismarr is a public homelab project, EN by default).
+        # fr is the first translation. Other locales added later should list their
+        # fallback here (e.g. ['es', 'en']).
+        fallbacks: ['en']

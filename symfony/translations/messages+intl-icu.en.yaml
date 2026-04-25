@@ -1489,6 +1489,7 @@ media:
         title_desc: Title Z→A
         year_desc: 'Year ↓'
         year_asc: 'Year ↑'
+        added_desc: Recently added
         size_desc: 'Size ↓'
         percent_desc: 'Progress ↓'
         percent_asc: 'Progress ↑'

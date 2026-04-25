@@ -27,8 +27,8 @@ use Symfony\Component\HttpKernel\KernelEvents;
  */
 class LocaleSubscriber implements EventSubscriberInterface
 {
-    public const SUPPORTED = ['fr', 'en'];
-    public const FALLBACK  = 'fr';
+    public const SUPPORTED = ['en', 'fr'];
+    public const FALLBACK  = 'en';
 
     public function __construct(
         private readonly DisplayPreferencesService $prefs,
