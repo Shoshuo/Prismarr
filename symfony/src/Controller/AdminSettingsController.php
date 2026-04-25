@@ -360,15 +360,32 @@ class AdminSettingsController extends AbstractController
     }
 
     #[Route('/test/{service}', name: 'test', methods: ['POST'])]
-    public function test(string $service): JsonResponse
+    public function test(string $service, Request $request): JsonResponse
     {
         if (!isset(self::SERVICE_LABELS[$service])) {
             return new JsonResponse(['ok' => false, 'error' => $this->translator?->trans('admin.test.unknown_service') ?? 'Service inconnu'], 400);
         }
 
+        // Whitelisted overrides — only the fields actually owned by this
+        // service can be passed in. Lets the admin test URL/key changes
+        // before saving, without exposing every config setting to a "test"
+        // call.
+        $allowed = match ($service) {
+            'radarr', 'sonarr', 'prowlarr', 'jellyseerr' => [$service . '_url', $service . '_api_key'],
+            'tmdb'                                       => ['tmdb_api_key'],
+            'qbittorrent'                                => ['qbittorrent_url', 'qbittorrent_user', 'qbittorrent_password'],
+            default                                      => [],
+        };
+        $overrides = [];
+        foreach ($allowed as $key) {
+            if ($request->request->has($key)) {
+                $overrides[$key] = trim((string) $request->request->get($key, ''));
+            }
+        }
+
         try {
             $this->health->invalidate($service);
-            $diag = $this->health->diagnose($service);
+            $diag = $this->health->diagnose($service, $overrides !== [] ? $overrides : null);
         } catch (\Throwable $e) {
             // Never let the actual exception message leak into the JSON —
             // it can carry stack frames, file paths or, worse, the api key

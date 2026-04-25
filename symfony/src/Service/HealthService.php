@@ -73,14 +73,21 @@ class HealthService
      * UI can show. Returns ['ok' => bool, 'category' => string, 'http' => ?int].
      * Categories: ok / unconfigured / network / auth / forbidden / not_found
      * / server_error / unknown.
+     *
+     * $overrides lets the caller test values that aren't yet in DB — typical
+     * use case: the admin types a new URL/key in the form and clicks "Test"
+     * before saving. Empty/missing overrides fall back to ConfigService so
+     * a non-edited password keeps its stored value.
+     *
+     * @param array<string, ?string>|null $overrides
      */
-    public function diagnose(string $service): array
+    public function diagnose(string $service, ?array $overrides = null): array
     {
-        if ($this->config === null) {
+        if ($this->config === null && $overrides === null) {
             return ['ok' => false, 'category' => 'unknown', 'http' => null];
         }
 
-        $probe = $this->probeFor($service);
+        $probe = $this->probeFor($service, $overrides);
         if ($probe === null) {
             return ['ok' => false, 'category' => 'unconfigured', 'http' => null];
         }
@@ -131,22 +138,33 @@ class HealthService
 
     /**
      * Build the probe parameters (URL, headers, method, body) for a given
-     * service from the user's configuration. Returns null when the service
-     * has no URL/credentials configured at all.
+     * service. Reads from $overrides first (form values not yet saved), then
+     * falls back to ConfigService (last saved values). Returns null when the
+     * service has no URL/credentials configured at all.
      *
+     * @param array<string, ?string>|null $overrides
      * @return ?array{url: string, headers?: array<int,string>, method?: string, body?: string}
      */
-    private function probeFor(string $service): ?array
+    private function probeFor(string $service, ?array $overrides = null): ?array
     {
-        $cfg = $this->config;
-        if ($cfg === null) return null;
+        // Pull the value from $overrides if present and non-empty, otherwise
+        // from the saved config. This way the admin can type a new URL/key
+        // and click Test without saving — and an empty override (browser
+        // dropping a password field) gracefully falls back to DB.
+        $get = function (string $key) use ($overrides): string {
+            if (is_array($overrides) && array_key_exists($key, $overrides)) {
+                $v = trim((string) ($overrides[$key] ?? ''));
+                if ($v !== '') return $v;
+            }
+            return (string) ($this->config?->get($key) ?? '');
+        };
 
         switch ($service) {
             case 'radarr':
             case 'sonarr':
             case 'prowlarr': {
-                $url = (string) ($cfg->get($service . '_url') ?? '');
-                $key = (string) ($cfg->get($service . '_api_key') ?? '');
+                $url = $get($service . '_url');
+                $key = $get($service . '_api_key');
                 if ($url === '' || $key === '') return null;
                 $version = $service === 'prowlarr' ? 'v1' : 'v3';
                 return [
@@ -155,8 +173,8 @@ class HealthService
                 ];
             }
             case 'jellyseerr': {
-                $url = (string) ($cfg->get('jellyseerr_url') ?? '');
-                $key = (string) ($cfg->get('jellyseerr_api_key') ?? '');
+                $url = $get('jellyseerr_url');
+                $key = $get('jellyseerr_api_key');
                 if ($url === '' || $key === '') return null;
                 return [
                     'url'     => rtrim($url, '/') . '/api/v1/settings/about',
@@ -164,7 +182,7 @@ class HealthService
                 ];
             }
             case 'tmdb': {
-                $key = (string) ($cfg->get('tmdb_api_key') ?? '');
+                $key = $get('tmdb_api_key');
                 if ($key === '') return null;
                 return [
                     'url'     => 'https://api.themoviedb.org/3/configuration?api_key=' . urlencode($key),
@@ -172,9 +190,9 @@ class HealthService
                 ];
             }
             case 'qbittorrent': {
-                $url  = (string) ($cfg->get('qbittorrent_url') ?? '');
-                $user = (string) ($cfg->get('qbittorrent_user') ?? '');
-                $pass = (string) ($cfg->get('qbittorrent_password') ?? '');
+                $url  = $get('qbittorrent_url');
+                $user = $get('qbittorrent_user');
+                $pass = $get('qbittorrent_password');
                 if ($url === '' || $user === '' || $pass === '') return null;
                 return [
                     'url'     => rtrim($url, '/') . '/api/v2/auth/login',

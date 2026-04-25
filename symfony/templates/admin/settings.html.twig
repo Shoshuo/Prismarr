@@ -878,6 +878,18 @@
       });
 
       // ── Test connection per service ─────────────────────────────────
+      // The button posts the CURRENT form values as an override, so the
+      // admin can verify a new URL/key without saving first. Empty inputs
+      // are not sent — the server falls back to the saved DB value (handy
+      // for password fields the browser may have dropped).
+      var TEST_FIELDS = {
+        radarr:      ['radarr_url', 'radarr_api_key'],
+        sonarr:      ['sonarr_url', 'sonarr_api_key'],
+        prowlarr:    ['prowlarr_url', 'prowlarr_api_key'],
+        jellyseerr:  ['jellyseerr_url', 'jellyseerr_api_key'],
+        tmdb:        ['tmdb_api_key'],
+        qbittorrent: ['qbittorrent_url', 'qbittorrent_user', 'qbittorrent_password'],
+      };
       document.querySelectorAll('.admin-settings-test').forEach(function (btn) {
         btn.onclick = function () {
           var service = btn.dataset.service;
@@ -885,10 +897,19 @@
           pill.textContent = {{ 'admin.services.status.testing'|trans|json_encode|raw }};
           pill.className = 'status-pill testing';
 
+          var formData = new FormData();
+          (TEST_FIELDS[service] || []).forEach(function (key) {
+            var input = document.getElementById(key);
+            if (input && input.value !== '') {
+              formData.append(key, input.value);
+            }
+          });
+
           fetch('{{ path('admin_settings_index') }}/test/' + encodeURIComponent(service), {
             method: 'POST',
             headers: { 'Accept': 'application/json' },
             credentials: 'same-origin',
+            body: formData,
           })
             .then(function (r) { return r.json(); })
             .then(function (data) {

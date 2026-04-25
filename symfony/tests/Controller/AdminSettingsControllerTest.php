@@ -219,7 +219,7 @@ class AdminSettingsControllerTest extends TestCase
             'ok' => true, 'category' => 'ok', 'http' => 200,
         ]);
 
-        $response = $this->controller($settings, $config, $health)->test('radarr');
+        $response = $this->controller($settings, $config, $health)->test('radarr', Request::create('/admin/settings/test/radarr', 'POST'));
 
         $this->assertInstanceOf(JsonResponse::class, $response);
         $this->assertSame(200, $response->getStatusCode());
@@ -238,7 +238,7 @@ class AdminSettingsControllerTest extends TestCase
             'ok' => false, 'category' => 'auth', 'http' => 401,
         ]);
 
-        $response = $this->controller($settings, $config, $health)->test('sonarr');
+        $response = $this->controller($settings, $config, $health)->test('sonarr', Request::create('/admin/settings/test/sonarr', 'POST'));
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertStringContainsString('"ok":false', $response->getContent());
@@ -252,10 +252,40 @@ class AdminSettingsControllerTest extends TestCase
         $config = $this->createMock(ConfigService::class);
         $health = $this->createMock(HealthService::class);
 
-        $response = $this->controller($settings, $config, $health)->test('bogus');
+        $response = $this->controller($settings, $config, $health)->test('bogus', Request::create('/admin/settings/test/bogus', 'POST'));
 
         $this->assertSame(400, $response->getStatusCode());
         $this->assertStringContainsString('inconnu', $response->getContent());
+    }
+
+    public function testTestEndpointForwardsFormOverridesToHealth(): void
+    {
+        // The user can type a new URL/key in the form and click "Test" without
+        // saving — the controller must whitelist the relevant fields and pass
+        // them as overrides to HealthService::diagnose.
+        $settings = $this->createMock(SettingRepository::class);
+        $config   = $this->createMock(ConfigService::class);
+        $health   = $this->createMock(HealthService::class);
+        $health->expects($this->once())
+            ->method('diagnose')
+            ->with('radarr', $this->callback(function (?array $overrides) {
+                return is_array($overrides)
+                    && ($overrides['radarr_url'] ?? null) === 'http://typed-but-not-saved:7878'
+                    && ($overrides['radarr_api_key'] ?? null) === 'typed-key'
+                    // Fields belonging to other services must NOT leak through.
+                    && !array_key_exists('sonarr_url', $overrides)
+                    && !array_key_exists('display_theme_color', $overrides);
+            }))
+            ->willReturn(['ok' => true, 'category' => 'ok', 'http' => 200]);
+
+        $request = Request::create('/admin/settings/test/radarr', 'POST', [
+            'radarr_url'          => 'http://typed-but-not-saved:7878',
+            'radarr_api_key'      => 'typed-key',
+            'sonarr_url'          => 'http://attacker:1234',  // ignored
+            'display_theme_color' => 'orange',                // ignored
+        ]);
+
+        $this->controller($settings, $config, $health)->test('radarr', $request);
     }
 
     public function testTestEndpointSwallowsExceptionsWithoutLeakingDetails(): void
@@ -269,7 +299,7 @@ class AdminSettingsControllerTest extends TestCase
             new \RuntimeException('SQLSTATE[HY000]: /var/www/.../internal/path leak')
         );
 
-        $response = $this->controller($settings, $config, $health)->test('radarr');
+        $response = $this->controller($settings, $config, $health)->test('radarr', Request::create('/admin/settings/test/radarr', 'POST'));
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertStringNotContainsString('SQLSTATE', $response->getContent());
