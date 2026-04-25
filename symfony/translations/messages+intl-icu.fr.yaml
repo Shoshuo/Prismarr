@@ -516,6 +516,9 @@ admin:
     preferences:
       title: Préférences
       subtitle: Comportement par défaut de l'interface
+    sidebar:
+      title: Visibilité de la sidebar
+      description: Choisis quels services et fonctionnalités apparaissent dans la barre latérale gauche.
     switch:
       on: Activées
       off: Désactivées

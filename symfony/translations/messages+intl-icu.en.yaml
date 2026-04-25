@@ -517,6 +517,9 @@ admin:
     preferences:
       title: Preferences
       subtitle: Default UI behaviour
+    sidebar:
+      title: Sidebar visibility
+      description: Pick which services and features show up in the left sidebar.
     switch:
       on: Enabled
       off: Disabled
