@@ -311,6 +311,32 @@ Avant tout commit : `make check` (lint PHP + lint Twig + suite PHPUnit complète
 
 ---
 
+## Construit avec l'aide d'une IA
+
+Prismarr a été développé en collaboration étroite avec [Claude Code](https://claude.com/claude-code) (Anthropic). Pour rester transparent, voici les domaines concrets où l'IA a été activement utile :
+
+**Usages principaux**
+
+- **Traduction i18n et insertion des clés** - l'anglais n'est pas ma langue natale ; Claude a traité l'essentiel des fichiers YAML EN/FR (4 188 clés de chaque côté, parité exacte maintenue) et les appels `trans()` côté PHP et Twig.
+- **Debug des logs et du JavaScript** - triage plus rapide des stack traces, des comportements Turbo/Alpine et des edge cases front que je n'arrivais pas à reproduire en local.
+- **Listage des endpoints d'API** - cartographier les ~600 endpoints Radarr v3, Sonarr v3, Prowlarr v1, Jellyseerr, qBittorrent v2 et TMDb v3 à partir de leurs specs OpenAPI.
+- **Debug des tests unitaires PHPUnit** - transformer des assertions ratées en diffs lisibles.
+- **Design responsive mobile** - rendre Prismarr fluide au téléphone (vues calendrier semaine/jour, repli sidebar, grilles widgets dashboard).
+- **Revue et durcissement sécurité** - second avis sur SSRF, CSP, tokens CSRF, XSS, patterns d'injection SQL/XML, exposition du profiler.
+- **Audit du code** - remonter les traductions manquées, les edge cases oubliés et les bugs dans mon propre code.
+- **Traduction et polish de la documentation** - README, CHANGELOG, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT en anglais et en français.
+- **Messages de commit locaux et fichier privé PROGRESSION.md** - tenir le journal de session lisible. Ce fichier ne vit que sur ma machine et n'est jamais poussé sur GitHub.
+
+**Usages secondaires**
+
+- **Scaffolding de templates Twig** - les ~50 sous-pages admin Radarr/Sonarr (quality, custom formats, indexers, downloads, notifications, metadata, tags, etc.) ont été générées puis revues page par page.
+- **Workflows GitHub Actions** - le pipeline CI et celui de release Docker multi-arch.
+- **Architecture single-container Docker** - le layout FrankenPHP + s6-overlay qui supervise le serveur web et le worker messenger.
+
+Chaque ligne de code a été lue, testée en local, et validée par moi avant merge. `make check` (lint PHP + lint Twig + suite PHPUnit complète) devait être vert. L'IA a accéléré l'implémentation ; j'ai gardé le jugement d'ingénierie et la responsabilité du projet.
+
+---
+
 ## Licence
 
 [AGPL-3.0](LICENSE) - vous pouvez utiliser, modifier et redistribuer Prismarr
