@@ -325,26 +325,26 @@ enough to keep me going. This release is for you.
 
 ---
 
-## Note on AI usage
-
-I'm the sole developer of Prismarr. Every architectural decision, every security trade-off, every UX choice and every "ship it or don't" call was mine. [Claude Code](https://claude.com/claude-code) (Anthropic) was used as a support tool, not as a co-author: it accelerated implementation in specific areas, but the design direction, the engineering judgement and the responsibility for the result are mine alone. The AI never had the final word on anything.
-
-To stay transparent, here are the concrete areas where it was actively helpful:
-
-**Primary uses**
-
-- **i18n translation and key wiring** - English isn't my native language; Claude handled the bulk of the EN/FR YAML files (4 188 keys on each side, kept in exact parity) and the `trans()` call sites in PHP and Twig.
-- **Log and JavaScript debugging** - faster triage of stack traces, Turbo/Alpine quirks, and front-end edge cases I couldn't reproduce locally.
-- **API endpoint cataloguing** - mapping the ~600 endpoints across Radarr v3, Sonarr v3, Prowlarr v1, Jellyseerr, qBittorrent v2 and TMDb v3 from their OpenAPI specs.
-- **Code audits** - flagging missed translations, forgotten edge cases and bugs in my own code.
-
-**Secondary uses**
-
-- **PHPUnit test debugging** - turning failing assertions into readable diffs.
-- **Mobile responsive design** - tightening the calendar week/day views, sidebar collapse and dashboard widget grids on phones.
-- **Security review and hardening** - second-opinion checks on SSRF guards, CSP, CSRF tokens, XSS, SQL/XML injection patterns, profiler exposure.
-- **Documentation translation and polish** - README, CHANGELOG, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT in both English and French.
-- **Local commit messages and the private PROGRESSION.md log** - keeping the per-session journal readable. That file lives only on my machine and is never pushed to GitHub.
-- **Single-container Docker design** - the FrankenPHP + s6-overlay layout that supervises the web server and the messenger worker.
-
+> ## Note on AI usage
+>
+> I'm the sole developer of Prismarr. Every architectural decision, every security trade-off, every UX choice and every "ship it or don't" call was mine. [Claude Code](https://claude.com/claude-code) (Anthropic) was used as a support tool, not as a co-author: it accelerated implementation in specific areas, but the design direction, the engineering judgement and the responsibility for the result are mine alone. The AI never had the final word on anything.
+>
+> To stay transparent, here are the concrete areas where it was actively helpful:
+>
+> **Primary uses**
+>
+> - **i18n translation and key wiring** - English isn't my native language; Claude handled the bulk of the EN/FR YAML files (4 188 keys on each side, kept in exact parity) and the `trans()` call sites in PHP and Twig.
+> - **Log and JavaScript debugging** - faster triage of stack traces, Turbo/Alpine quirks, and front-end edge cases I couldn't reproduce locally.
+> - **API endpoint cataloguing** - mapping the ~600 endpoints across Radarr v3, Sonarr v3, Prowlarr v1, Jellyseerr, qBittorrent v2 and TMDb v3 from their OpenAPI specs.
+> - **Code audits** - flagging missed translations, forgotten edge cases and bugs in my own code.
+>
+> **Secondary uses**
+>
+> - **PHPUnit test debugging** - turning failing assertions into readable diffs.
+> - **Mobile responsive design** - tightening the calendar week/day views, sidebar collapse and dashboard widget grids on phones.
+> - **Security review and hardening** - second-opinion checks on SSRF guards, CSP, CSRF tokens, XSS, SQL/XML injection patterns, profiler exposure.
+> - **Documentation translation and polish** - README, CHANGELOG, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT in both English and French.
+> - **Local commit messages and the private PROGRESSION.md log** - keeping the per-session journal readable. That file lives only on my machine and is never pushed to GitHub.
+> - **Single-container Docker design** - the FrankenPHP + s6-overlay layout that supervises the web server and the messenger worker.
+>
 > Every line of code was read, tested locally, and signed off by me before merging. `make check` (PHP lint + Twig lint + full PHPUnit suite) had to be green. The AI accelerated implementation; I kept the engineering judgement and the ownership of the project.
