@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Import de bibliothèque — Radarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.library_import.title_radarr'|trans }}{% endblock %}
 
 {% block stylesheets %}
 <style>
@@ -26,7 +26,7 @@
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
-      <div class="col"><h2 class="page-title">Import de bibliothèque</h2></div>
+      <div class="col"><h2 class="page-title">{{ 'media.arr_admin.library_import.page_title'|trans }}</h2></div>
       <div class="col-auto ms-auto d-flex gap-2 align-items-center">
         {% include 'media/_radarr_nav.html.twig' %}
       </div>
@@ -38,7 +38,7 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Radarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.library_import.error_unreachable_radarr'|trans }}</div>
 {% endif %}
 
 <div id="import-feedback" class="alert d-none mb-3"></div>
@@ -48,7 +48,7 @@
   <div class="card-body py-2">
     <div class="d-flex gap-2 align-items-end">
       <div>
-        <label class="form-label small mb-1">Dossier à scanner</label>
+        <label class="form-label small mb-1">{{ 'media.arr_admin.library_import.folder_label'|trans }}</label>
         <select id="scan-folder" class="form-select form-select-sm" style="width:300px;">
           {% for rf in rootFolders %}
           <option value="{{ rf.path }}">{{ rf.path }}</option>
@@ -57,7 +57,7 @@
       </div>
       <button class="btn btn-primary btn-sm" id="btn-scan">
         <span class="spinner-border spinner-border-sm d-none me-1" id="scan-spinner"></span>
-        Scanner
+        {{ 'media.arr_admin.library_import.btn_scan'|trans }}
       </button>
     </div>
   </div>
@@ -66,38 +66,38 @@
 {# ── Tableau des dossiers non importés ─────────────────────────────── #}
 <div class="card d-none" id="scan-results-card">
   <div class="card-header">
-    <h3 class="card-title">Dossiers non importés <span class="badge bg-secondary-lt ms-2" id="files-count">0</span></h3>
+    <h3 class="card-title">{{ 'media.arr_admin.library_import.not_imported_title'|trans }} <span class="badge bg-secondary-lt ms-2" id="files-count">0</span></h3>
   </div>
   {# En-tête #}
   <div class="d-flex align-items-center gap-2 px-3 py-2 fw-medium" style="font-size:.78rem;background:var(--tblr-bg-surface-secondary);border-bottom:1px solid var(--tblr-border-color);">
     <div style="width:30px;"><input type="checkbox" class="form-check-input" id="check-all"></div>
-    <div style="flex:2;">Dossier</div>
-    <div style="flex:2;">Film</div>
-    <div style="width:140px;">Surveiller</div>
-    <div style="width:130px;">Disponibilité</div>
-    <div style="width:160px;">Profil qualité</div>
+    <div style="flex:2;">{{ 'media.arr_admin.library_import.col_folder'|trans }}</div>
+    <div style="flex:2;">{{ 'media.arr_admin.library_import.col_movie'|trans }}</div>
+    <div style="width:140px;">{{ 'media.arr_admin.library_import.col_monitor'|trans }}</div>
+    <div style="width:130px;">{{ 'media.arr_admin.library_import.col_availability'|trans }}</div>
+    <div style="width:160px;">{{ 'media.arr_admin.library_import.col_quality_profile'|trans }}</div>
   </div>
   <div id="scan-results"></div>
 
   {# Footer global #}
   <div class="card-footer d-flex gap-3 align-items-center flex-wrap">
     <div>
-      <label class="form-label small mb-1">Surveiller</label>
+      <label class="form-label small mb-1">{{ 'media.arr_admin.library_import.col_monitor'|trans }}</label>
       <select id="global-monitored" class="form-select form-select-sm" style="width:140px;">
-        <option value="movieOnly" selected>Film seulement</option>
-        <option value="none">Non</option>
+        <option value="movieOnly" selected>{{ 'media.arr_admin.library_import.monitor_movie_only'|trans }}</option>
+        <option value="none">{{ 'media.arr_admin.library_import.monitor_none'|trans }}</option>
       </select>
     </div>
     <div>
-      <label class="form-label small mb-1">Disponibilité</label>
+      <label class="form-label small mb-1">{{ 'media.arr_admin.library_import.col_availability'|trans }}</label>
       <select id="global-availability" class="form-select form-select-sm" style="width:130px;">
-        <option value="announced">Annoncé</option>
-        <option value="inCinemas">En salles</option>
-        <option value="released" selected>Sorti</option>
+        <option value="announced">{{ 'media.arr_admin.library_import.availability_announced'|trans }}</option>
+        <option value="inCinemas">{{ 'media.arr_admin.library_import.availability_in_cinemas'|trans }}</option>
+        <option value="released" selected>{{ 'media.arr_admin.library_import.availability_released'|trans }}</option>
       </select>
     </div>
     <div>
-      <label class="form-label small mb-1">Profil qualité</label>
+      <label class="form-label small mb-1">{{ 'media.arr_admin.library_import.col_quality_profile'|trans }}</label>
       <select id="global-quality" class="form-select form-select-sm" style="width:160px;">
         {% for qp in qualityProfiles %}
         <option value="{{ qp.id }}">{{ qp.name }}</option>
@@ -107,7 +107,7 @@
     <div class="ms-auto">
       <button class="btn btn-success btn-sm" id="btn-import-all" disabled>
         <span class="spinner-border spinner-border-sm d-none me-1" id="import-spinner"></span>
-        Importer <span id="import-count">0</span> film(s)
+        <span id="btn-import-label">{{ 'media.arr_admin.library_import.btn_import_movies_tpl'|trans({count: 0}) }}</span>
       </button>
     </div>
   </div>
@@ -120,6 +120,25 @@
 {% block javascripts %}
 <script>
 (function(){
+var _I18N = {
+  searching: {{ 'media.arr_admin.library_import.searching'|trans|json_encode|raw }},
+  no_result_search_manual: {{ 'media.arr_admin.library_import.no_result_search_manual'|trans|json_encode|raw }},
+  err_search_manual: {{ 'media.arr_admin.library_import.err_search_manual'|trans|json_encode|raw }},
+  all_imported: {{ 'media.arr_admin.library_import.all_imported'|trans|json_encode|raw }},
+  network_error: {{ 'media.arr_admin.library_import.network_error'|trans|json_encode|raw }},
+  generic_error: {{ 'media.arr_admin.library_import.generic_error'|trans|json_encode|raw }},
+  import_error: {{ 'media.arr_admin.library_import.import_error'|trans|json_encode|raw }},
+  monitor_movie_only: {{ 'media.arr_admin.library_import.monitor_movie_only'|trans|json_encode|raw }},
+  monitor_none: {{ 'media.arr_admin.library_import.monitor_none'|trans|json_encode|raw }},
+  availability_announced: {{ 'media.arr_admin.library_import.availability_announced'|trans|json_encode|raw }},
+  availability_in_cinemas: {{ 'media.arr_admin.library_import.availability_in_cinemas'|trans|json_encode|raw }},
+  availability_released: {{ 'media.arr_admin.library_import.availability_released'|trans|json_encode|raw }},
+  btn_import_zero: {{ 'media.arr_admin.library_import.btn_import_movies_tpl'|trans({count: 0})|json_encode|raw }},
+  btn_import_one: {{ 'media.arr_admin.library_import.btn_import_movies_tpl'|trans({count: 1})|json_encode|raw }},
+  btn_import_many_tpl: {{ 'media.arr_admin.library_import.btn_import_movies_tpl'|trans({count: '__COUNT__'})|json_encode|raw }},
+  import_success_tpl: {{ 'media.arr_admin.library_import.import_success_tpl'|trans({count: '__COUNT__'})|json_encode|raw }},
+  import_success_with_fail_tpl: {{ 'media.arr_admin.library_import.import_success_with_fail_tpl'|trans({ok: '__OK__', fail: '__FAIL__'})|json_encode|raw }}
+};
 var feedback = document.getElementById('import-feedback');
 var scanFolders = [];
 var rowData = [];
@@ -137,6 +156,12 @@ function showFeedback(msg, type) {
   setTimeout(function(){ feedback.classList.add('d-none'); }, 6000);
 }
 
+function buttonLabelForCount(count) {
+  if (count === 0) return _I18N.btn_import_zero;
+  if (count === 1) return _I18N.btn_import_one;
+  return _I18N.btn_import_many_tpl.replace('__COUNT__', count);
+}
+
 // ── Scan ──────────────────────────────────────────────────────────
 document.getElementById('btn-scan').addEventListener('click', function() {
   var folder = document.getElementById('scan-folder').value;
@@ -151,7 +176,7 @@ document.getElementById('btn-scan').addEventListener('click', function() {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     spinner.classList.add('d-none');
-    if (!data.ok) { showFeedback(data.error || 'Erreur.', 'danger'); return; }
+    if (!data.ok) { showFeedback(data.error || _I18N.generic_error, 'danger'); return; }
     scanFolders = data.folders || [];
     rowData = [];
     document.getElementById('files-count').textContent = scanFolders.length;
@@ -159,7 +184,7 @@ document.getElementById('btn-scan').addEventListener('click', function() {
 
     var container = document.getElementById('scan-results');
     if (!scanFolders.length) {
-      container.innerHTML = '<div class="text-muted text-center py-4">Tous les dossiers sont déjà importés.</div>';
+      container.innerHTML = '<div class="text-muted text-center py-4">' + _I18N.all_imported + '</div>';
       document.getElementById('btn-import-all').disabled = true;
       return;
     }
@@ -175,11 +200,11 @@ document.getElementById('btn-scan').addEventListener('click', function() {
       html += '<div class="text-truncate fw-medium" title="' + f.name.replace(/"/g,'&quot;') + '">' + f.name + '</div>';
       html += '</div>';
       html += '<div style="flex:2;position:relative;">';
-      html += '<input type="text" class="form-control form-control-sm film-search" data-idx="' + i + '" value="" placeholder="Recherche en cours...">';
+      html += '<input type="text" class="form-control form-control-sm film-search" data-idx="' + i + '" value="" placeholder="' + _I18N.searching + '">';
       html += '<div class="search-results" id="sr-' + i + '"></div>';
       html += '</div>';
-      html += '<div style="width:140px;"><select class="form-select form-select-sm row-monitored"><option value="movieOnly" selected>Film seulement</option><option value="none">Non</option></select></div>';
-      html += '<div style="width:130px;"><select class="form-select form-select-sm row-availability"><option value="announced">Annoncé</option><option value="inCinemas">En salles</option><option value="released" selected>Sorti</option></select></div>';
+      html += '<div style="width:140px;"><select class="form-select form-select-sm row-monitored"><option value="movieOnly" selected>' + _I18N.monitor_movie_only + '</option><option value="none">' + _I18N.monitor_none + '</option></select></div>';
+      html += '<div style="width:130px;"><select class="form-select form-select-sm row-availability"><option value="announced">' + _I18N.availability_announced + '</option><option value="inCinemas">' + _I18N.availability_in_cinemas + '</option><option value="released" selected>' + _I18N.availability_released + '</option></select></div>';
       html += '<div style="width:160px;"><select class="form-select form-select-sm row-quality">' + qualityOpts + '</select></div>';
       html += '</div>';
     });
@@ -202,26 +227,26 @@ document.getElementById('btn-scan').addEventListener('click', function() {
             if (cb) { cb.checked = true; updateCount(); }
           } else {
             input.value = '';
-            input.placeholder = 'Aucun résultat — chercher manuellement';
+            input.placeholder = _I18N.no_result_search_manual;
             rowData[i] = { tmdbId: 0, title: '', year: 0 };
           }
         })
         .catch(function() {
           var input = document.querySelector('.film-search[data-idx="' + i + '"]');
           input.value = '';
-          input.placeholder = 'Erreur — chercher manuellement';
+          input.placeholder = _I18N.err_search_manual;
         });
     });
   })
   .catch(function() {
     spinner.classList.add('d-none');
-    showFeedback('Erreur réseau.', 'danger');
+    showFeedback(_I18N.network_error, 'danger');
   });
 });
 
 function updateCount() {
   var count = document.querySelectorAll('.import-check:checked').length;
-  document.getElementById('import-count').textContent = count;
+  document.getElementById('btn-import-label').textContent = buttonLabelForCount(count);
   document.getElementById('btn-import-all').disabled = count === 0;
 }
 
@@ -333,15 +358,18 @@ document.getElementById('btn-import-all').addEventListener('click', function() {
     var ok = results.filter(function(r) { return r.ok; }).length;
     var fail = results.length - ok;
     if (ok > 0) {
-      showFeedback(ok + ' film(s) importé(s)' + (fail > 0 ? ', ' + fail + ' erreur(s)' : ''));
+      var msg = fail > 0
+        ? _I18N.import_success_with_fail_tpl.replace('__OK__', ok).replace('__FAIL__', fail)
+        : _I18N.import_success_tpl.replace('__COUNT__', ok);
+      showFeedback(msg);
       setTimeout(function() { location.reload(); }, 1500);
     } else {
-      showFeedback('Erreur lors de l\'import.', 'danger');
+      showFeedback(_I18N.import_error, 'danger');
       btn.disabled = false;
     }
   }).catch(function() {
     spinner.classList.add('d-none');
-    showFeedback('Erreur réseau.', 'danger');
+    showFeedback(_I18N.network_error, 'danger');
     btn.disabled = false;
   });
 });

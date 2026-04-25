@@ -1,10 +1,10 @@
 {% extends 'base.html.twig' %}
-{% block title %}Parser un titre — Sonarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.parse.title_sonarr'|trans }}{% endblock %}
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
-      <div class="col"><h2 class="page-title">Parser un titre</h2></div>
+      <div class="col"><h2 class="page-title">{{ 'media.arr_admin.parse.page_title'|trans }}</h2></div>
       <div class="col-auto ms-auto">{% include 'media/_sonarr_nav.html.twig' %}</div>
     </div>
   </div>
@@ -14,35 +14,35 @@
 <div class="card mb-4">
   <div class="card-body">
     <form method="GET" action="{{ path('sonarr_parse') }}" class="d-flex gap-2">
-      <input type="text" name="title" class="form-control" placeholder="Ex: The.Dark.Knight.2008.1080p.BluRay.x264" value="{{ title }}">
-      <button type="submit" class="btn btn-primary">Parser</button>
+      <input type="text" name="title" class="form-control" placeholder="{{ 'media.arr_admin.parse.example_placeholder'|trans }}" value="{{ title }}">
+      <button type="submit" class="btn btn-primary">{{ 'media.arr_admin.parse.button_parse'|trans }}</button>
     </form>
   </div>
 </div>
 
 {% if error %}
-  <div class="alert alert-danger">Erreur lors du parsing.</div>
+  <div class="alert alert-danger">{{ 'media.arr_admin.parse.error'|trans }}</div>
 {% elseif result %}
   <div class="card">
-    <div class="card-header"><h3 class="card-title">Résultat du parsing</h3></div>
+    <div class="card-header"><h3 class="card-title">{{ 'media.arr_admin.parse.result_title'|trans }}</h3></div>
     <div class="card-body">
       <dl class="row">
-        <dt class="col-sm-3">Titre parsé</dt>
+        <dt class="col-sm-3">{{ 'media.arr_admin.parse.parsed_title'|trans }}</dt>
         <dd class="col-sm-9">{{ result.title ?? result.parsedMovieInfo.movieTitle ?? '—' }}</dd>
-        <dt class="col-sm-3">Année</dt>
+        <dt class="col-sm-3">{{ 'media.arr_admin.parse.year'|trans }}</dt>
         <dd class="col-sm-9">{{ result.parsedMovieInfo.year ?? '—' }}</dd>
-        <dt class="col-sm-3">Qualité</dt>
+        <dt class="col-sm-3">{{ 'media.arr_admin.parse.quality'|trans }}</dt>
         <dd class="col-sm-9">{{ result.parsedMovieInfo.quality.quality.name ?? '—' }}</dd>
-        <dt class="col-sm-3">Edition</dt>
+        <dt class="col-sm-3">{{ 'media.arr_admin.parse.edition'|trans }}</dt>
         <dd class="col-sm-9">{{ result.parsedMovieInfo.edition ?? '—' }}</dd>
-        <dt class="col-sm-3">Langues</dt>
+        <dt class="col-sm-3">{{ 'media.arr_admin.parse.languages'|trans }}</dt>
         <dd class="col-sm-9">
           {% for lang in (result.parsedMovieInfo.languages ?? []) %}
             <span class="badge bg-blue-lt">{{ lang.name ?? lang }}</span>
           {% else %}—{% endfor %}
         </dd>
         {% if result.movie is defined and result.movie %}
-        <dt class="col-sm-3">Film correspondant</dt>
+        <dt class="col-sm-3">{{ 'media.arr_admin.parse.matched_series'|trans }}</dt>
         <dd class="col-sm-9">
           <a href="{{ path('app_media_films') }}" class="fw-medium">{{ result.movie.title ?? '—' }}</a>
           ({{ result.movie.year ?? '' }})
@@ -52,7 +52,7 @@
     </div>
   </div>
 {% elseif title %}
-  <div class="alert alert-warning">Aucun résultat pour ce titre.</div>
+  <div class="alert alert-warning">{{ 'media.arr_admin.parse.no_result'|trans }}</div>
 {% endif %}
 
 </div></div>

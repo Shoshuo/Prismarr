@@ -1,13 +1,13 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Renommer — Radarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.rename.title_radarr'|trans }}{% endblock %}
 
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Renommer des fichiers</h2>
+        <h2 class="page-title">{{ 'media.arr_admin.rename.page_title'|trans }}</h2>
       </div>
       <div class="col-auto ms-auto">
         {% include 'media/_radarr_nav.html.twig' %}
@@ -20,25 +20,25 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Radarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.rename.error_unreachable_radarr'|trans }}</div>
 {% endif %}
 
 <div class="row g-3">
   <div class="col-12 col-md-4">
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">Choisir un film</h3>
+        <h3 class="card-title">{{ 'media.arr_admin.rename.choose_movie_card_title'|trans }}</h3>
       </div>
       <div class="card-body">
         <select class="form-select" id="movie-select">
-          <option value="">— Sélectionner un film —</option>
+          <option value="">{{ 'media.arr_admin.rename.select_placeholder'|trans }}</option>
           {% for movie in movies %}
           <option value="{{ movie.id }}">{{ movie.title }}{% if movie.year %} ({{ movie.year }}){% endif %}</option>
           {% endfor %}
         </select>
         <div id="proposals-loading" class="text-center mt-3 d-none">
           <div class="spinner-border spinner-border-sm"></div>
-          <span class="ms-2 text-muted small">Chargement...</span>
+          <span class="ms-2 text-muted small">{{ 'media.arr_admin.rename.loading'|trans }}</span>
         </div>
       </div>
     </div>
@@ -47,15 +47,15 @@
   <div class="col-12 col-md-8">
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">Propositions de renommage</h3>
+        <h3 class="card-title">{{ 'media.arr_admin.rename.proposals_card_title'|trans }}</h3>
         <div class="card-options">
           <button id="btn-rename-all" class="btn btn-warning btn-sm d-none">
-            Renommer tout
+            {{ 'media.arr_admin.rename.btn_rename_all'|trans }}
           </button>
         </div>
       </div>
       <div class="card-body" id="proposals-container">
-        <div class="text-muted text-center py-5">Sélectionnez un film pour voir les propositions.</div>
+        <div class="text-muted text-center py-5">{{ 'media.arr_admin.rename.select_movie_hint'|trans }}</div>
       </div>
     </div>
   </div>
@@ -64,7 +64,7 @@
 <div id="rename-progress" class="alert alert-info d-none mt-3">
   <div class="d-flex align-items-center gap-2">
     <div class="spinner-border spinner-border-sm"></div>
-    <span id="rename-msg">Renommage en cours...</span>
+    <span id="rename-msg">{{ 'media.arr_admin.rename.progress_starting'|trans }}</span>
   </div>
 </div>
 
@@ -75,6 +75,18 @@
 {% block javascripts %}
 <script>
 (function(){
+var _I18N = {
+  select_movie_hint: {{ 'media.arr_admin.rename.select_movie_hint'|trans|json_encode|raw }},
+  no_rename_needed: {{ 'media.arr_admin.rename.no_rename_needed'|trans|json_encode|raw }},
+  col_current_path: {{ 'media.arr_admin.rename.col_current_path'|trans|json_encode|raw }},
+  col_new_path: {{ 'media.arr_admin.rename.col_new_path'|trans|json_encode|raw }},
+  load_error: {{ 'media.arr_admin.rename.load_error'|trans|json_encode|raw }},
+  progress_starting: {{ 'media.arr_admin.rename.progress_starting'|trans|json_encode|raw }},
+  progress_status_tpl: {{ 'media.arr_admin.rename.progress_status_tpl'|trans({status: '__STATUS__'})|json_encode|raw }},
+  progress_done: {{ 'media.arr_admin.rename.progress_done'|trans|json_encode|raw }},
+  generic_error: {{ 'media.arr_admin.rename.generic_error'|trans|json_encode|raw }},
+  network_error: {{ 'media.arr_admin.rename.network_error'|trans|json_encode|raw }}
+};
 var currentMovieId = null;
 
 function escapeHtml(str) {
@@ -88,7 +100,7 @@ if (movieSelect) {
   movieSelect.onchange = function(e) {
     var id = e.target.value;
     if (!id) {
-      document.getElementById('proposals-container').innerHTML = '<div class="text-muted text-center py-5">Sélectionnez un film pour voir les propositions.</div>';
+      document.getElementById('proposals-container').innerHTML = '<div class="text-muted text-center py-5">' + _I18N.select_movie_hint + '</div>';
       document.getElementById('btn-rename-all').classList.add('d-none');
       currentMovieId = null;
       return;
@@ -103,12 +115,12 @@ if (movieSelect) {
       document.getElementById('proposals-loading').classList.add('d-none');
 
       if (!proposals || proposals.length === 0) {
-        document.getElementById('proposals-container').innerHTML = '<div class="text-muted text-center py-5">Aucun renommage nécessaire.</div>';
+        document.getElementById('proposals-container').innerHTML = '<div class="text-muted text-center py-5">' + _I18N.no_rename_needed + '</div>';
         return;
       }
 
       document.getElementById('btn-rename-all').classList.remove('d-none');
-      var html = '<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Chemin actuel</th><th>Nouveau chemin</th></tr></thead><tbody>';
+      var html = '<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>' + _I18N.col_current_path + '</th><th>' + _I18N.col_new_path + '</th></tr></thead><tbody>';
       proposals.forEach(function(p) {
         var current = p.existingPath != null ? p.existingPath : '—';
         var newPath = p.newPath != null ? p.newPath : '—';
@@ -122,7 +134,7 @@ if (movieSelect) {
       document.getElementById('proposals-container').innerHTML = html;
     }).catch(function(){
       document.getElementById('proposals-loading').classList.add('d-none');
-      document.getElementById('proposals-container').innerHTML = '<div class="alert alert-danger">Erreur lors du chargement.</div>';
+      document.getElementById('proposals-container').innerHTML = '<div class="alert alert-danger">' + _I18N.load_error + '</div>';
     });
   };
 }
@@ -135,29 +147,29 @@ if (btnRenameAll) {
     var progress = document.getElementById('rename-progress');
     var msg = document.getElementById('rename-msg');
     progress.classList.remove('d-none');
-    msg.textContent = 'Lancement du renommage...';
+    msg.textContent = _I18N.progress_starting;
 
     fetch('/radarr/renommer/' + currentMovieId + '/executer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}'
     }).then(function(r){ return r.json(); }).then(function(data){
-      if (!data.ok || !data.cmdId) { msg.textContent = 'Erreur.'; return; }
+      if (!data.ok || !data.cmdId) { msg.textContent = _I18N.generic_error; return; }
 
       var poll = setInterval(function() {
         fetch('{{ path('radarr_command_status', {cmdId: '__ID__'}) }}'.replace('__ID__', data.cmdId)).then(function(sr){ return sr.json(); }).then(function(s){
-          msg.textContent = 'Renommage : ' + (s.status != null ? s.status : '?');
+          msg.textContent = _I18N.progress_status_tpl.replace('__STATUS__', (s.status != null ? s.status : '?'));
           if (s.status === 'completed' || s.status === 'failed') {
             clearInterval(poll);
             if (window._prismarrRadarrRenameTimer === poll) window._prismarrRadarrRenameTimer = null;
             btnRenameAll.disabled = false;
-            if (s.status === 'completed') msg.textContent = 'Renommage terminé.';
+            if (s.status === 'completed') msg.textContent = _I18N.progress_done;
           }
         }).catch(function(){ /* silencieux */ });
       }, 3000);
       window._prismarrRadarrRenameTimer = poll;
     }).catch(function(){
-      msg.textContent = 'Erreur réseau.';
+      msg.textContent = _I18N.network_error;
     });
   };
 }

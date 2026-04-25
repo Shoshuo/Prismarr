@@ -2758,6 +2758,342 @@ media:
       page_prev: Prev.
       page_next: Next
 
+    parse:
+      title_radarr: Parse a title — Radarr
+      title_sonarr: Parse a title — Sonarr
+      page_title: Parse a title
+      example_placeholder: "Ex: The.Dark.Knight.2008.1080p.BluRay.x264"
+      button_parse: Parse
+      error: Error during parsing.
+      result_title: Parse result
+      parsed_title: Parsed title
+      year: Year
+      quality: Quality
+      edition: Edition
+      languages: Languages
+      matched_movie: Matching movie
+      matched_series: Matching series
+      no_result: No result for this title.
+
+    tags:
+      title_radarr: Tags — Radarr
+      title_sonarr: Tags — Sonarr
+      page_title: Tags
+      error_unreachable_radarr: Unable to reach Radarr.
+      error_unreachable_sonarr: Unable to reach Sonarr.
+      add_card_title: Add a tag
+      add_placeholder: Tag name
+      add_button: Add
+      existing_card_title: Existing tags
+      empty: No tag.
+      btn_rename: Rename
+      btn_delete: Delete
+      created_tpl: 'Tag "{label}" created.'
+      created_error: Error during creation.
+      rename_prompt: 'New tag name:'
+      renamed_tpl: 'Tag renamed to "{label}".'
+      rename_error: Error during renaming.
+      delete_confirm_tpl: 'Delete the tag "{label}"?'
+      delete_error: Error during deletion.
+
+    custom_filters:
+      title_radarr: Custom filters — Radarr
+      title_sonarr: Custom filters — Sonarr
+      page_title: Custom filters
+      error_unreachable_radarr: Unable to reach Radarr.
+      error_unreachable_sonarr: Unable to reach Sonarr.
+      btn_add: Add
+      card_title: Filters
+      empty: No custom filter.
+      col_name: Name
+      col_type: Type
+      col_filters: Filters
+      col_actions: Actions
+      modal_title_add: Add a filter
+      modal_title_edit: Edit filter
+      label: Name
+      label_placeholder: My filter
+      type: Type
+      conditions_label: Conditions (JSON)
+      conditions_help: JSON array of filter conditions.
+      cancel: Cancel
+      save: Save
+      btn_edit_title: Edit
+      btn_delete_title: Delete
+      err_name_required: Name is required.
+      err_invalid_json: Invalid JSON for conditions.
+      err_save: 'Error during save.'
+      delete_confirm_tpl: 'Delete the filter "{label}"?'
+      delete_error: Error during deletion.
+
+    metadata:
+      title_radarr: Metadata — Radarr
+      title_sonarr: Metadata — Sonarr
+      page_title: Metadata
+      error_unreachable_radarr: Unable to reach Radarr.
+      error_unreachable_sonarr: Unable to reach Sonarr.
+      consumers_title: Metadata consumers
+      empty: No metadata consumer.
+      col_name: Name
+      col_type: Type
+      col_status: Status
+      col_actions: Actions
+      enabled: Active
+      disabled: Inactive
+      btn_enable: Enable
+      btn_disable: Disable
+      btn_edit_title: Edit
+      btn_delete_title: Delete
+      footer_help_radarr: Metadata consumers write .nfo files and images alongside movie files.
+      footer_help_sonarr: Metadata consumers write .nfo files and images alongside episode files.
+      modal_title_default: Edit consumer
+      modal_title_edit_tpl: 'Edit: {name}'
+      label_name: Name
+      label_active: Active
+      fields_title: Fields
+      cancel: Cancel
+      save: Save
+      err_generic: Error.
+      err_save: Error during save.
+      delete_confirm_tpl: 'Delete "{name}"?'
+      delete_error: Error during deletion.
+
+    auto_tags:
+      title_radarr: Auto-Tags — Radarr
+      title_sonarr: Auto-Tags — Sonarr
+      page_title: Auto-Tags
+      error_unreachable_radarr: Unable to reach Radarr.
+      error_unreachable_sonarr: Unable to reach Sonarr.
+      btn_add: Add
+      btn_tags: Tags
+      rules_card_title: 'Auto-tagging rules'
+      empty: 'No auto-tagging rule.'
+      col_name: Name
+      col_conditions: Conditions
+      col_tags_applied: Applied tags
+      col_remove_unmatched: Remove if not matching
+      col_actions: Actions
+      conditions_count_tpl: '{count, plural, one {# condition} other {# conditions}}'
+      yes: Yes
+      no: No
+      btn_edit_title: Edit
+      btn_delete_title: Delete
+      modal_title_new: 'New auto-tagging rule'
+      modal_title_edit_tpl: 'Edit: {name}'
+      label_name: Name
+      label_name_placeholder: 'Rule name'
+      label_tags: 'Tags (IDs, comma-separated)'
+      label_tags_placeholder: 'Ex: 1,3,5'
+      label_tags_help: 'IDs of tags to apply.'
+      label_remove_unmatched: 'Remove tags if not matching'
+      specifications_title: 'Specifications (conditions)'
+      btn_add_spec: Add
+      no_specs: 'No condition. Click "Add" to start.'
+      cancel: Cancel
+      btn_create: Create
+      btn_save: Save
+      spec_root_folder: Root folder
+      spec_quality_profile: Quality profile
+      spec_genre: Genre
+      spec_year: Year
+      spec_original_language: Original language
+      spec_movie_status: Movie status
+      spec_series_type: Series type
+      condition_n_tpl: 'Condition #{n}'
+      type_label: Type
+      type_placeholder: '-- Condition type --'
+      name_label: Name
+      name_placeholder: 'Name...'
+      negate_label: Negate
+      required_label: Required
+      fields_label: 'Fields (JSON)'
+      fields_help: 'Format: JSON array of condition fields.'
+      err_name_required: Name is required.
+      err_save: 'Error during save.'
+      err_network_tpl: 'Network error: {error}'
+      delete_confirm_tpl: 'Delete the rule "{name}"?'
+      delete_error: Error during deletion.
+
+    exclusions:
+      title_radarr: Radarr import exclusions
+      title_sonarr: Import exclusions — Sonarr
+      page_title: Import exclusions
+      error_unreachable_radarr: Unable to reach Radarr.
+      error_unreachable_sonarr: Unable to reach Sonarr.
+      add_card_title: Add an exclusion
+      tmdb_id: TMDB ID
+      tmdb_id_placeholder: '12345'
+      movie_title: Movie title
+      movie_title_placeholder: Original title
+      year: Year
+      add_button: Add
+      list_card_title: Exclusions
+      bulk_delete: Delete selection
+      total_suffix: total
+      empty: No exclusion.
+      col_title: Title
+      col_year: Year
+      col_tmdb: TMDB ID
+      col_tvdb: TVDB ID
+      col_actions: Actions
+      btn_delete: Delete
+      btn_delete_title: Delete
+      page_label_tpl: 'Page {page} / {total}'
+      page_simple_tpl: 'Page {page}'
+      bulk_confirm_tpl: 'Delete {count} exclusion(s)?'
+      delete_confirm: Delete this exclusion?
+      delete_error: Deletion error.
+      generic_error: Error.
+      added_ok: Exclusion added.
+      add_error: 'Error during addition.'
+      page_prev: ← Previous
+      page_next: Next →
+
+    library_import:
+      title_radarr: Library import — Radarr
+      title_sonarr: Library import — Sonarr
+      page_title: Library import
+      error_unreachable_radarr: Unable to reach Radarr.
+      error_unreachable_sonarr: Unable to reach Sonarr.
+      folder_label: Folder to scan
+      folder_card_title_sonarr: Folder to scan
+      btn_scan: Scan
+      btn_scanning: Scanning...
+      not_imported_title: Folders not imported
+      col_folder: Folder
+      col_movie: Movie
+      col_serie: Series
+      col_monitor: Monitor
+      col_availability: Availability
+      col_quality_profile: Quality profile
+      col_series_type: Series type
+      col_season_folder_short: Season
+      col_check_all_title: Select all
+      monitor_movie_only: Movie only
+      monitor_none: No
+      monitor_all_episodes: All episodes
+      monitor_future: Future only
+      monitor_future_short: Future
+      monitor_missing: Missing
+      monitor_first_season: First season
+      monitor_last_season: Last season
+      monitor_last_season_short: Last
+      monitor_none_episodes: None
+      availability_announced: Announced
+      availability_in_cinemas: In cinemas
+      availability_released: Released
+      type_standard: Standard
+      type_daily: Daily
+      type_anime: Anime
+      season_folders: Season folders
+      btn_import_movies_tpl: 'Import {count} movie(s)'
+      btn_import_series_tpl: 'Import {count} series'
+      btn_import_series_default: Import series
+      show_existing: Show existing
+      all_imported: All folders are already imported.
+      no_result_search_manual: No result — search manually
+      err_search_manual: Error — search manually
+      searching: Searching...
+      not_found: Not found
+      lookup_error: Error
+      status_existing: Existing
+      status_to_import: To import
+      status_imported: ✓ Imported
+      status_error: ✗ Error
+      generic_error: Error.
+      network_error: Network error.
+      import_error: 'Error during import.'
+      import_success_tpl: '{count} movie(s) imported'
+      import_success_with_fail_tpl: '{ok} movie(s) imported, {fail} error(s)'
+      import_done: Import done
+      import_in_progress: Importing...
+      import_processed_tpl: '{count} series processed.'
+
+    rename:
+      title_radarr: Rename — Radarr
+      page_title: Rename files
+      error_unreachable_radarr: Unable to reach Radarr.
+      choose_movie_card_title: Choose a movie
+      select_placeholder: '— Select a movie —'
+      loading: Loading...
+      proposals_card_title: Rename proposals
+      btn_rename_all: Rename all
+      select_movie_hint: Select a movie to view proposals.
+      no_rename_needed: No rename needed.
+      col_current_path: Current path
+      col_new_path: New path
+      load_error: Error during loading.
+      progress_starting: Starting rename...
+      progress_status_tpl: 'Rename: {status}'
+      progress_done: Rename completed.
+      generic_error: Error.
+      network_error: Network error.
+
+    suggestions:
+      title_radarr: Radarr import suggestions
+      title_sonarr: Suggestions — Sonarr
+      page_title_radarr: Import suggestions
+      page_title_sonarr: Series suggestions
+      error_unreachable_radarr: Unable to reach Radarr.
+      error_unreachable_sonarr: Unable to reach Sonarr.
+      empty_radarr: No suggestion available.
+      empty_sonarr_title: No suggestion available.
+      empty_sonarr_help: 'Sonarr does not provide recommendations through import lists like Radarr. Use the "Add" button on the Series page to search manually.'
+      count_movies_tpl: '{count, plural, one {# suggested movie} other {# suggested movies}}'
+      count_series_tpl: '{count, plural, one {# suggested series} other {# suggested series}}'
+      already_added: Already added
+      modal_title: Add a movie
+      already_in_lib: This movie is already in your library.
+      no_overview: No synopsis available.
+      label_quality_profile: Quality profile
+      label_root_folder: Root folder
+      label_search_auto: Auto search
+      cancel: Cancel
+      btn_add: Add
+      badge_recommended: Recommended
+      badge_trending: Trending
+      badge_popular: Popular
+      added_success_tpl: '"{title}" added successfully.'
+      add_error: 'Error during addition.'
+      network_error: Network error.
+
+    stats:
+      title_radarr: Statistics — Radarr
+      title_sonarr: Statistics — Sonarr
+      page_title_radarr: Statistics
+      page_title_sonarr: Series statistics
+      error_unreachable_radarr: Unable to reach Radarr.
+      error_unreachable_sonarr: Unable to reach Sonarr.
+      none_available: No statistics available.
+      card_movies: Movies
+      card_downloaded: Downloaded
+      card_monitored: Monitored
+      card_missing: Missing
+      card_series: Series
+      card_continuing: Continuing
+      card_ended: Ended
+      card_monitored_series: Monitored
+      total_size: Total movies size
+      free_space_tpl: '{value} GB free'
+      total_space_tpl: '{value} GB total'
+      used_pct_tpl: '{pct}% used'
+      storage_disk_card_title: Disk storage
+      free_total_tpl: '{free} GB free / {total} GB'
+      by_quality_card_title: By quality
+      by_genre_card_title: By genre
+      by_decade_card_title: By decade
+      genres_card_title: Genres
+      networks_card_title: Networks
+      col_quality: Quality
+      col_films: Movies
+      col_size: Size
+      col_genre: Genre
+      no_data: No data.
+      chart_films_label: Movies
+      tooltip_films_count_tpl: '{count, plural, one {# movie} other {# movies}}'
+      gb_suffix: GB
+      size_gb_tpl: '{size} GB'
+
 watchlist_page:
   back_to_discover: Discover
   count_titles: '{count, plural, one {# title} other {# titles}}'

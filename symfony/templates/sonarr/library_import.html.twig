@@ -1,12 +1,12 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Import bibliothèque — Sonarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.library_import.title_sonarr'|trans }}{% endblock %}
 
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
-      <div class="col"><h2 class="page-title">Import de bibliothèque</h2></div>
+      <div class="col"><h2 class="page-title">{{ 'media.arr_admin.library_import.page_title'|trans }}</h2></div>
       <div class="col-auto ms-auto">{% include 'media/_sonarr_nav.html.twig' %}</div>
     </div>
   </div>
@@ -16,11 +16,11 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Sonarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.library_import.error_unreachable_sonarr'|trans }}</div>
 {% endif %}
 
 <div class="card mb-3">
-  <div class="card-header"><h3 class="card-title">Dossier à scanner</h3></div>
+  <div class="card-header"><h3 class="card-title">{{ 'media.arr_admin.library_import.folder_card_title_sonarr'|trans }}</h3></div>
   <div class="card-body">
     <div class="d-flex gap-2 align-items-end">
       <div class="flex-grow-1">
@@ -32,7 +32,7 @@
       </div>
       <button id="btn-scan" class="btn btn-primary btn-sm">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        Scanner
+        {{ 'media.arr_admin.library_import.btn_scan'|trans }}
       </button>
     </div>
   </div>
@@ -43,11 +43,11 @@
 <div id="scan-results" style="display:none;">
   <div class="card mb-3">
     <div class="card-header">
-      <h3 class="card-title">Dossiers non importés <span class="badge bg-warning-lt ms-1" id="scan-count"></span></h3>
+      <h3 class="card-title">{{ 'media.arr_admin.library_import.not_imported_title'|trans }} <span class="badge bg-warning-lt ms-1" id="scan-count"></span></h3>
       <div class="card-actions">
         <label class="form-check form-switch mb-0">
           <input type="checkbox" class="form-check-input" id="show-existing">
-          <span class="form-check-label small">Afficher les existantes</span>
+          <span class="form-check-label small">{{ 'media.arr_admin.library_import.show_existing'|trans }}</span>
         </label>
       </div>
     </div>
@@ -55,13 +55,13 @@
       <table class="table table-vcenter table-hover card-table mb-0" style="font-size:.82rem;">
         <thead>
           <tr>
-            <th style="width:30px"><input type="checkbox" class="form-check-input" id="import-check-all" title="Tout sélectionner"></th>
-            <th>Dossier</th>
-            <th>Surveiller</th>
-            <th>Profil qualité</th>
-            <th>Type de série</th>
-            <th style="width:30px">Saison</th>
-            <th>Série</th>
+            <th style="width:30px"><input type="checkbox" class="form-check-input" id="import-check-all" title="{{ 'media.arr_admin.library_import.col_check_all_title'|trans }}"></th>
+            <th>{{ 'media.arr_admin.library_import.col_folder'|trans }}</th>
+            <th>{{ 'media.arr_admin.library_import.col_monitor'|trans }}</th>
+            <th>{{ 'media.arr_admin.library_import.col_quality_profile'|trans }}</th>
+            <th>{{ 'media.arr_admin.library_import.col_series_type'|trans }}</th>
+            <th style="width:30px">{{ 'media.arr_admin.library_import.col_season_folder_short'|trans }}</th>
+            <th>{{ 'media.arr_admin.library_import.col_serie'|trans }}</th>
             <th style="width:80px"></th>
           </tr>
         </thead>
@@ -73,18 +73,18 @@
   <div class="card">
     <div class="card-body d-flex align-items-center gap-3">
       <div class="d-flex gap-2 align-items-center">
-        <label class="small text-muted text-nowrap">Surveiller :</label>
+        <label class="small text-muted text-nowrap">{{ 'media.arr_admin.library_import.col_monitor'|trans }} :</label>
         <select id="global-monitor" class="form-select form-select-sm" style="width:auto;">
-          <option value="all">Tous les épisodes</option>
-          <option value="future">Futurs uniquement</option>
-          <option value="missing">Manquants</option>
-          <option value="firstSeason">1ère saison</option>
-          <option value="lastSeason">Dernière saison</option>
-          <option value="none">Aucun</option>
+          <option value="all">{{ 'media.arr_admin.library_import.monitor_all_episodes'|trans }}</option>
+          <option value="future">{{ 'media.arr_admin.library_import.monitor_future'|trans }}</option>
+          <option value="missing">{{ 'media.arr_admin.library_import.monitor_missing'|trans }}</option>
+          <option value="firstSeason">{{ 'media.arr_admin.library_import.monitor_first_season'|trans }}</option>
+          <option value="lastSeason">{{ 'media.arr_admin.library_import.monitor_last_season'|trans }}</option>
+          <option value="none">{{ 'media.arr_admin.library_import.monitor_none_episodes'|trans }}</option>
         </select>
       </div>
       <div class="d-flex gap-2 align-items-center">
-        <label class="small text-muted text-nowrap">Profil qualité :</label>
+        <label class="small text-muted text-nowrap">{{ 'media.arr_admin.library_import.col_quality_profile'|trans }} :</label>
         <select id="global-quality" class="form-select form-select-sm" style="width:auto;">
           {% for p in qualityProfiles %}
           <option value="{{ p.id }}">{{ p.name }}</option>
@@ -92,21 +92,21 @@
         </select>
       </div>
       <div class="d-flex gap-2 align-items-center">
-        <label class="small text-muted text-nowrap">Type :</label>
+        <label class="small text-muted text-nowrap">{{ 'media.arr_admin.library_import.col_series_type'|trans }} :</label>
         <select id="global-type" class="form-select form-select-sm" style="width:auto;">
-          <option value="standard">Standard</option>
-          <option value="daily">Quotidienne</option>
-          <option value="anime">Anime</option>
+          <option value="standard">{{ 'media.arr_admin.library_import.type_standard'|trans }}</option>
+          <option value="daily">{{ 'media.arr_admin.library_import.type_daily'|trans }}</option>
+          <option value="anime">{{ 'media.arr_admin.library_import.type_anime'|trans }}</option>
         </select>
       </div>
       <div class="d-flex gap-2 align-items-center">
         <label class="form-check mb-0">
           <input type="checkbox" class="form-check-input" id="global-season-folder" checked>
-          <span class="form-check-label small">Dossiers saison</span>
+          <span class="form-check-label small">{{ 'media.arr_admin.library_import.season_folders'|trans }}</span>
         </label>
       </div>
       <button id="btn-import-all" class="btn btn-success btn-sm ms-auto" disabled>
-        Importer les séries
+        {{ 'media.arr_admin.library_import.btn_import_series_default'|trans }}
       </button>
     </div>
   </div>
@@ -119,6 +119,33 @@
 {% block javascripts %}
 <script>
 (function() {
+  var _I18N = {
+    btn_scan: {{ 'media.arr_admin.library_import.btn_scan'|trans|json_encode|raw }},
+    btn_scanning: {{ 'media.arr_admin.library_import.btn_scanning'|trans|json_encode|raw }},
+    all_imported: {{ 'media.arr_admin.library_import.all_imported'|trans|json_encode|raw }},
+    network_error: {{ 'media.arr_admin.library_import.network_error'|trans|json_encode|raw }},
+    not_found: {{ 'media.arr_admin.library_import.not_found'|trans|json_encode|raw }},
+    lookup_error: {{ 'media.arr_admin.library_import.lookup_error'|trans|json_encode|raw }},
+    status_existing: {{ 'media.arr_admin.library_import.status_existing'|trans|json_encode|raw }},
+    status_to_import: {{ 'media.arr_admin.library_import.status_to_import'|trans|json_encode|raw }},
+    status_imported: {{ 'media.arr_admin.library_import.status_imported'|trans|json_encode|raw }},
+    status_error: {{ 'media.arr_admin.library_import.status_error'|trans|json_encode|raw }},
+    btn_import_default: {{ 'media.arr_admin.library_import.btn_import_series_default'|trans|json_encode|raw }},
+    btn_import_one: {{ 'media.arr_admin.library_import.btn_import_series_tpl'|trans({count: 1})|json_encode|raw }},
+    btn_import_many_tpl: {{ 'media.arr_admin.library_import.btn_import_series_tpl'|trans({count: '__COUNT__'})|json_encode|raw }},
+    monitor_all_episodes: {{ 'media.arr_admin.library_import.monitor_all_episodes'|trans|json_encode|raw }},
+    monitor_future_short: {{ 'media.arr_admin.library_import.monitor_future_short'|trans|json_encode|raw }},
+    monitor_missing: {{ 'media.arr_admin.library_import.monitor_missing'|trans|json_encode|raw }},
+    monitor_first_season: {{ 'media.arr_admin.library_import.monitor_first_season'|trans|json_encode|raw }},
+    monitor_last_season_short: {{ 'media.arr_admin.library_import.monitor_last_season_short'|trans|json_encode|raw }},
+    monitor_none_episodes: {{ 'media.arr_admin.library_import.monitor_none_episodes'|trans|json_encode|raw }},
+    type_standard: {{ 'media.arr_admin.library_import.type_standard'|trans|json_encode|raw }},
+    type_daily: {{ 'media.arr_admin.library_import.type_daily'|trans|json_encode|raw }},
+    type_anime: {{ 'media.arr_admin.library_import.type_anime'|trans|json_encode|raw }},
+    import_in_progress: {{ 'media.arr_admin.library_import.import_in_progress'|trans|json_encode|raw }},
+    import_done: {{ 'media.arr_admin.library_import.import_done'|trans|json_encode|raw }},
+    import_processed_tpl: {{ 'media.arr_admin.library_import.import_processed_tpl'|trans({count: '__COUNT__'})|json_encode|raw }}
+  };
   var scanBtn = document.getElementById('btn-scan');
   var tbody = document.getElementById('scan-tbody');
   var results = document.getElementById('scan-results');
@@ -136,6 +163,12 @@
     if (type === 'success') setTimeout(function() { feedback.classList.add('d-none'); }, 5000);
   }
 
+  function buttonLabelForCount(count) {
+    if (count === 0) return _I18N.btn_import_default;
+    if (count === 1) return _I18N.btn_import_one;
+    return _I18N.btn_import_many_tpl.replace('__COUNT__', count);
+  }
+
   var qualityOptions = '';
   {% for p in qualityProfiles %}
   qualityOptions += '<option value="{{ p.id }}">{{ p.name }}</option>';
@@ -145,7 +178,7 @@
     var folder = document.getElementById('scan-folder').value;
     if (!folder) return;
     scanBtn.disabled = true;
-    scanBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Scan...';
+    scanBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + _I18N.btn_scanning;
     tbody.innerHTML = '';
     results.style.display = 'none';
     importableSeries = [];
@@ -157,11 +190,11 @@
       body: JSON.stringify({folder: folder})
     }).then(function(r) { return r.json(); }).then(function(data) {
       scanBtn.disabled = false;
-      scanBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Scanner';
+      scanBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> ' + _I18N.btn_scan;
 
-      if (!data.ok) { showFeedback('❌ ' + (data.error || 'Erreur'), 'danger'); return; }
+      if (!data.ok) { showFeedback(esc(data.error || _I18N.lookup_error), 'danger'); return; }
       var folders = data.folders || [];
-      if (!folders.length) { showFeedback('✅ Tous les dossiers sont déjà importés.', 'success'); return; }
+      if (!folders.length) { showFeedback(esc(_I18N.all_imported), 'success'); return; }
 
       scanCount.textContent = folders.length;
       results.style.display = '';
@@ -174,9 +207,9 @@
         tr.innerHTML =
           '<td><input type="checkbox" class="form-check-input import-row-cb" checked></td>' +
           '<td class="font-monospace small">' + esc(f.name) + '</td>' +
-          '<td><select class="form-select form-select-sm row-monitor"><option value="all">Tous les épisodes</option><option value="future">Futurs</option><option value="missing">Manquants</option><option value="firstSeason">1ère saison</option><option value="lastSeason">Dernière</option><option value="none">Aucun</option></select></td>' +
+          '<td><select class="form-select form-select-sm row-monitor"><option value="all">' + _I18N.monitor_all_episodes + '</option><option value="future">' + _I18N.monitor_future_short + '</option><option value="missing">' + _I18N.monitor_missing + '</option><option value="firstSeason">' + _I18N.monitor_first_season + '</option><option value="lastSeason">' + _I18N.monitor_last_season_short + '</option><option value="none">' + _I18N.monitor_none_episodes + '</option></select></td>' +
           '<td><select class="form-select form-select-sm row-quality">' + qualityOptions + '</select></td>' +
-          '<td><select class="form-select form-select-sm row-type"><option value="standard">Standard</option><option value="daily">Quotidienne</option><option value="anime">Anime</option></select></td>' +
+          '<td><select class="form-select form-select-sm row-type"><option value="standard">' + _I18N.type_standard + '</option><option value="daily">' + _I18N.type_daily + '</option><option value="anime">' + _I18N.type_anime + '</option></select></td>' +
           '<td class="text-center"><input type="checkbox" class="form-check-input row-season-folder" checked></td>' +
           '<td class="serie-cell"><span class="spinner-border spinner-border-sm"></span></td>' +
           '<td class="status-cell"></td>';
@@ -189,7 +222,7 @@
           var serieCell = tr.querySelector('.serie-cell');
           var statusCell = tr.querySelector('.status-cell');
           if (!series || !series.length) {
-            serieCell.innerHTML = '<span class="text-danger small">Introuvable</span>';
+            serieCell.innerHTML = '<span class="text-danger small">' + _I18N.not_found + '</span>';
             statusCell.innerHTML = '<span class="badge bg-danger-lt">✗</span>';
             return;
           }
@@ -202,7 +235,7 @@
             '<div class="text-muted" style="font-size:.65rem;">' + (s.network || '') + '</div></div></div>';
 
           if (existing) {
-            statusCell.innerHTML = '<span class="badge bg-success-lt">Existante</span>';
+            statusCell.innerHTML = '<span class="badge bg-success-lt">' + _I18N.status_existing + '</span>';
             tr.style.opacity = '.5';
             tr.classList.add('existing-row');
             tr.style.display = 'none';
@@ -210,7 +243,7 @@
             cb.checked = false;
             cb.style.display = 'none';
           } else {
-            statusCell.innerHTML = '<span class="badge bg-warning-lt">À importer</span>';
+            statusCell.innerHTML = '<span class="badge bg-warning-lt">' + _I18N.status_to_import + '</span>';
             tr.dataset.tvdbId = s.tvdbId || '';
             tr.dataset.seriesType = s.seriesType || 'standard';
             // Pre-select type based on lookup
@@ -220,13 +253,13 @@
             updateImportCount();
           }
         }).catch(function() {
-          tr.querySelector('.serie-cell').innerHTML = '<span class="text-danger small">Erreur</span>';
+          tr.querySelector('.serie-cell').innerHTML = '<span class="text-danger small">' + _I18N.lookup_error + '</span>';
         });
       });
     }).catch(function() {
       scanBtn.disabled = false;
-      scanBtn.innerHTML = 'Scanner';
-      showFeedback('❌ Erreur réseau.', 'danger');
+      scanBtn.innerHTML = _I18N.btn_scan;
+      showFeedback(esc(_I18N.network_error), 'danger');
     });
   });
 
@@ -246,7 +279,7 @@
       if (cb && cb.checked) count++;
     });
     importAllBtn.disabled = count === 0;
-    importAllBtn.textContent = count > 0 ? 'Importer ' + count + ' série(s)' : 'Importer les séries';
+    importAllBtn.textContent = buttonLabelForCount(count);
   }
 
   // Apply global options to checked rows
@@ -283,7 +316,7 @@
     });
     if (!checkedRows.length) return;
     importAllBtn.disabled = true;
-    importAllBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Import...';
+    importAllBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + _I18N.import_in_progress;
     var globalMonitor = document.getElementById('global-monitor').value;
     var globalQuality = parseInt(document.getElementById('global-quality').value);
     var folder = document.getElementById('scan-folder').value;
@@ -314,19 +347,19 @@
       }).then(function(r) { return r.json(); }).then(function(d) {
         done++;
         if (d.ok) {
-          statusCell.innerHTML = '<span class="badge bg-success">✓ Importée</span>';
+          statusCell.innerHTML = '<span class="badge bg-success">' + _I18N.status_imported + '</span>';
           tr.style.opacity = '.5';
           setTimeout(function() { tr.remove(); }, 1500);
         } else {
-          statusCell.innerHTML = '<span class="badge bg-danger-lt">✗ Erreur</span>';
+          statusCell.innerHTML = '<span class="badge bg-danger-lt">' + _I18N.status_error + '</span>';
         }
         if (done >= total) {
-          importAllBtn.innerHTML = 'Import terminé';
-          showFeedback('✅ ' + total + ' série(s) traitée(s).', 'success');
+          importAllBtn.innerHTML = _I18N.import_done;
+          showFeedback(esc(_I18N.import_processed_tpl.replace('__COUNT__', total)), 'success');
         }
       }).catch(function() {
         done++;
-        statusCell.innerHTML = '<span class="badge bg-danger-lt">✗ Erreur</span>';
+        statusCell.innerHTML = '<span class="badge bg-danger-lt">' + _I18N.status_error + '</span>';
       });
     });
   });

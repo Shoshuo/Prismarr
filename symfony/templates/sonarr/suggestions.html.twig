@@ -1,12 +1,12 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Suggestions — Sonarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.suggestions.title_sonarr'|trans }}{% endblock %}
 
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
-      <div class="col"><h2 class="page-title">Suggestions de séries</h2></div>
+      <div class="col"><h2 class="page-title">{{ 'media.arr_admin.suggestions.page_title_sonarr'|trans }}</h2></div>
       <div class="col-auto ms-auto d-flex gap-2 align-items-center">
         {% include 'media/_sonarr_nav.html.twig' %}
       </div>
@@ -18,19 +18,19 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Sonarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.suggestions.error_unreachable_sonarr'|trans }}</div>
 {% endif %}
 
 {% if series is empty %}
   <div class="card">
     <div class="card-body text-center text-muted py-5">
       <div style="font-size:2.5rem;">📺</div>
-      <div class="mt-2">Aucune suggestion disponible.</div>
-      <div class="small mt-1">Sonarr ne propose pas de recommandations via les listes d'import comme Radarr. Utilisez le bouton "Ajouter" sur la page Séries pour rechercher manuellement.</div>
+      <div class="mt-2">{{ 'media.arr_admin.suggestions.empty_sonarr_title'|trans }}</div>
+      <div class="small mt-1">{{ 'media.arr_admin.suggestions.empty_sonarr_help'|trans }}</div>
     </div>
   </div>
 {% else %}
-  <div class="text-muted small mb-3">{{ series|length }} série(s) suggérée(s)</div>
+  <div class="text-muted small mb-3">{{ 'media.arr_admin.suggestions.count_series_tpl'|trans({count: series|length}) }}</div>
   <div class="row g-3">
     {% for s in series %}
     <div class="col-6 col-sm-4 col-md-3 col-lg-2">

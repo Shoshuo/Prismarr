@@ -1,13 +1,13 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Exclusions d'import Radarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.exclusions.title_radarr'|trans }}{% endblock %}
 
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Exclusions d'import</h2>
+        <h2 class="page-title">{{ 'media.arr_admin.exclusions.page_title'|trans }}</h2>
       </div>
       <div class="col-auto ms-auto">
         {% include 'media/_radarr_nav.html.twig' %}
@@ -20,7 +20,7 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Radarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.exclusions.error_unreachable_radarr'|trans }}</div>
 {% endif %}
 
 <div id="excl-feedback" class="alert d-none mb-3"></div>
@@ -28,24 +28,24 @@
 {# Form ajout #}
 <div class="card mb-3">
   <div class="card-header">
-    <h3 class="card-title">Ajouter une exclusion</h3>
+    <h3 class="card-title">{{ 'media.arr_admin.exclusions.add_card_title'|trans }}</h3>
   </div>
   <div class="card-body">
     <form id="form-add-exclusion" class="row g-2 align-items-end">
       <div class="col-sm-3">
-        <label class="form-label">TMDB ID</label>
-        <input type="number" name="tmdbId" class="form-control" placeholder="12345" required>
+        <label class="form-label">{{ 'media.arr_admin.exclusions.tmdb_id'|trans }}</label>
+        <input type="number" name="tmdbId" class="form-control" placeholder="{{ 'media.arr_admin.exclusions.tmdb_id_placeholder'|trans }}" required>
       </div>
       <div class="col-sm-5">
-        <label class="form-label">Titre du film</label>
-        <input type="text" name="movieTitle" class="form-control" placeholder="Titre original" required>
+        <label class="form-label">{{ 'media.arr_admin.exclusions.movie_title'|trans }}</label>
+        <input type="text" name="movieTitle" class="form-control" placeholder="{{ 'media.arr_admin.exclusions.movie_title_placeholder'|trans }}" required>
       </div>
       <div class="col-sm-2">
-        <label class="form-label">Année</label>
+        <label class="form-label">{{ 'media.arr_admin.exclusions.year'|trans }}</label>
         <input type="number" name="year" class="form-control" placeholder="{{ "now"|date('Y') }}" min="1900" max="2099">
       </div>
       <div class="col-sm-2">
-        <button type="submit" class="btn btn-success w-100">Ajouter</button>
+        <button type="submit" class="btn btn-success w-100">{{ 'media.arr_admin.exclusions.add_button'|trans }}</button>
       </div>
     </form>
   </div>
@@ -54,28 +54,28 @@
 {# Table #}
 <div class="card">
   <div class="card-header">
-    <h3 class="card-title">Exclusions</h3>
+    <h3 class="card-title">{{ 'media.arr_admin.exclusions.list_card_title'|trans }}</h3>
     <div class="card-options gap-2">
       <button id="btn-bulk-delete" class="btn btn-ghost-danger btn-sm d-none">
-        Supprimer la sélection
+        {{ 'media.arr_admin.exclusions.bulk_delete'|trans }}
       </button>
-      <span class="badge bg-secondary-lt">{{ (exclusions.totalRecords ?? exclusions|length) }} au total</span>
+      <span class="badge bg-secondary-lt">{{ (exclusions.totalRecords ?? exclusions|length) }} {{ 'media.arr_admin.exclusions.total_suffix'|trans }}</span>
     </div>
   </div>
   <div class="card-body p-0">
     {% set records = exclusions.records ?? exclusions %}
     {% if records is empty %}
-      <div class="text-muted text-center py-5">Aucune exclusion.</div>
+      <div class="text-muted text-center py-5">{{ 'media.arr_admin.exclusions.empty'|trans }}</div>
     {% else %}
       <div class="table-responsive">
         <table class="table table-vcenter table-hover mb-0">
           <thead>
             <tr>
               <th><input type="checkbox" id="check-all" class="form-check-input"></th>
-              <th>Titre</th>
-              <th>Année</th>
-              <th>TMDB ID</th>
-              <th class="text-end">Actions</th>
+              <th>{{ 'media.arr_admin.exclusions.col_title'|trans }}</th>
+              <th>{{ 'media.arr_admin.exclusions.col_year'|trans }}</th>
+              <th>{{ 'media.arr_admin.exclusions.col_tmdb'|trans }}</th>
+              <th class="text-end">{{ 'media.arr_admin.exclusions.col_actions'|trans }}</th>
             </tr>
           </thead>
           <tbody>
@@ -87,7 +87,7 @@
               <td class="text-muted small">{{ ex.tmdbId ?? '—' }}</td>
               <td class="text-end">
                 <button class="btn btn-ghost-danger btn-sm btn-excl-delete" data-id="{{ ex.id }}">
-                  Supprimer
+                  {{ 'media.arr_admin.exclusions.btn_delete'|trans }}
                 </button>
               </td>
             </tr>
@@ -99,7 +99,7 @@
   </div>
   {% if exclusions.totalPages is defined and exclusions.totalPages > 1 %}
   <div class="card-footer d-flex align-items-center">
-    <p class="m-0 text-muted">Page {{ page }} / {{ exclusions.totalPages }}</p>
+    <p class="m-0 text-muted">{{ 'media.arr_admin.exclusions.page_label_tpl'|trans({page: page, total: exclusions.totalPages}) }}</p>
     <ul class="pagination m-0 ms-auto">
       {% if page > 1 %}
       <li class="page-item"><a class="page-link" href="?page={{ page - 1 }}">«</a></li>
@@ -119,6 +119,14 @@
 {% block javascripts %}
 <script>
 (function(){
+const _I18N = {
+  bulk_confirm_tpl: {{ 'media.arr_admin.exclusions.bulk_confirm_tpl'|trans({count: '__COUNT__'})|json_encode|raw }},
+  delete_confirm: {{ 'media.arr_admin.exclusions.delete_confirm'|trans|json_encode|raw }},
+  delete_error: {{ 'media.arr_admin.exclusions.delete_error'|trans|json_encode|raw }},
+  generic_error: {{ 'media.arr_admin.exclusions.generic_error'|trans|json_encode|raw }},
+  added_ok: {{ 'media.arr_admin.exclusions.added_ok'|trans|json_encode|raw }},
+  add_error: {{ 'media.arr_admin.exclusions.add_error'|trans|json_encode|raw }}
+};
 const feedback = document.getElementById('excl-feedback');
 function showFeedback(msg, type = 'success') {
   feedback.className = `alert alert-${type} mb-3`;
@@ -148,7 +156,7 @@ const bulkBtn = document.getElementById('btn-bulk-delete');
 if (bulkBtn) {
   bulkBtn.addEventListener('click', async () => {
     const ids = [...document.querySelectorAll('.check-row:checked')].map(c => parseInt(c.value));
-    if (!confirm(`Supprimer ${ids.length} exclusion(s) ?`)) return;
+    if (!confirm(_I18N.bulk_confirm_tpl.replace('__COUNT__', ids.length))) return;
     const r = await fetch('{{ path('radarr_exclusion_bulk_delete') }}', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
@@ -156,14 +164,14 @@ if (bulkBtn) {
     });
     const data = await r.json();
     if (data.ok) location.reload();
-    else showFeedback('Erreur suppression.', 'danger');
+    else showFeedback(_I18N.delete_error, 'danger');
   });
 }
 
 // Supprimer ligne
 document.querySelectorAll('.btn-excl-delete').forEach(btn => {
   btn.addEventListener('click', async () => {
-    if (!confirm('Supprimer cette exclusion ?')) return;
+    if (!confirm(_I18N.delete_confirm)) return;
     const r = await fetch(`/radarr/exclusions/${btn.dataset.id}/supprimer`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
@@ -171,7 +179,7 @@ document.querySelectorAll('.btn-excl-delete').forEach(btn => {
     });
     const data = await r.json();
     if (data.ok) location.reload();
-    else showFeedback('Erreur.', 'danger');
+    else showFeedback(_I18N.generic_error, 'danger');
   });
 });
 
@@ -191,11 +199,11 @@ document.getElementById('form-add-exclusion').addEventListener('submit', async (
   });
   const data = await r.json();
   if (data.ok) {
-    showFeedback('Exclusion ajoutée.');
+    showFeedback(_I18N.added_ok);
     e.target.reset();
     setTimeout(() => location.reload(), 1000);
   } else {
-    showFeedback('Erreur lors de l\'ajout.', 'danger');
+    showFeedback(_I18N.add_error, 'danger');
   }
 });
 })();

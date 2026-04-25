@@ -1,14 +1,14 @@
 {% extends 'base.html.twig' %}
-{% block title %}Filtres personnalises — Sonarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.custom_filters.title_sonarr'|trans }}{% endblock %}
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
-      <div class="col"><h2 class="page-title">Filtres personnalises</h2></div>
+      <div class="col"><h2 class="page-title">{{ 'media.arr_admin.custom_filters.page_title'|trans }}</h2></div>
       <div class="col-auto ms-auto d-flex gap-2 align-items-center">
         <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modal-cf" id="btn-cf-add">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
-          Ajouter
+          {{ 'media.arr_admin.custom_filters.btn_add'|trans }}
         </button>
         {% include 'media/_sonarr_nav.html.twig' %}
       </div>
@@ -16,18 +16,18 @@
   </div>
 </div>
 <div class="page-body"><div class="container-xl">
-{% if error %}<div class="alert alert-danger">Impossible de joindre Sonarr.</div>{% endif %}
+{% if error %}<div class="alert alert-danger">{{ 'media.arr_admin.custom_filters.error_unreachable_sonarr'|trans }}</div>{% endif %}
 <div id="cf-feedback" class="alert d-none mb-3"></div>
 
 <div class="card">
-  <div class="card-header"><h3 class="card-title">Filtres</h3><div class="card-options"><span class="badge bg-secondary-lt">{{ filters|length }}</span></div></div>
+  <div class="card-header"><h3 class="card-title">{{ 'media.arr_admin.custom_filters.card_title'|trans }}</h3><div class="card-options"><span class="badge bg-secondary-lt">{{ filters|length }}</span></div></div>
   <div class="card-body p-0">
     {% if filters is empty %}
-      <div class="text-muted text-center py-5">Aucun filtre personnalise.</div>
+      <div class="text-muted text-center py-5">{{ 'media.arr_admin.custom_filters.empty'|trans }}</div>
     {% else %}
       <div class="table-responsive">
         <table class="table table-vcenter table-sm mb-0">
-          <thead><tr><th>Nom</th><th>Type</th><th>Filtres</th><th class="text-end">Actions</th></tr></thead>
+          <thead><tr><th>{{ 'media.arr_admin.custom_filters.col_name'|trans }}</th><th>{{ 'media.arr_admin.custom_filters.col_type'|trans }}</th><th>{{ 'media.arr_admin.custom_filters.col_filters'|trans }}</th><th class="text-end">{{ 'media.arr_admin.custom_filters.col_actions'|trans }}</th></tr></thead>
           <tbody>
             {% for f in filters %}
             <tr>
@@ -48,13 +48,13 @@
                         data-bs-target="#modal-cf"
                         data-id="{{ f.id }}"
                         data-payload='{{ f|json_encode }}'
-                        title="Modifier">
+                        title="{{ 'media.arr_admin.custom_filters.btn_edit_title'|trans }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                 </button>
                 <button class="btn btn-ghost-danger btn-sm btn-cf-delete"
                         data-id="{{ f.id }}"
                         data-label="{{ f.label ?? f.name ?? '' }}"
-                        title="Supprimer">
+                        title="{{ 'media.arr_admin.custom_filters.btn_delete_title'|trans }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                 </button>
               </td>
@@ -74,32 +74,32 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="cf-modal-title">Ajouter un filtre</h5>
+        <h5 class="modal-title" id="cf-modal-title">{{ 'media.arr_admin.custom_filters.modal_title_add'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="cf-edit-id" value="">
         <div class="mb-3">
-          <label class="form-label fw-medium">Nom <span class="text-danger">*</span></label>
-          <input type="text" id="cf-label" class="form-control form-control-sm" placeholder="Mon filtre">
+          <label class="form-label fw-medium">{{ 'media.arr_admin.custom_filters.label'|trans }} <span class="text-danger">*</span></label>
+          <input type="text" id="cf-label" class="form-control form-control-sm" placeholder="{{ 'media.arr_admin.custom_filters.label_placeholder'|trans }}">
         </div>
         <div class="mb-3">
-          <label class="form-label fw-medium">Type <span class="text-danger">*</span></label>
+          <label class="form-label fw-medium">{{ 'media.arr_admin.custom_filters.type'|trans }} <span class="text-danger">*</span></label>
           <select id="cf-type" class="form-select form-select-sm">
             <option value="movie">movie</option>
             <option value="customFilter">customFilter</option>
           </select>
         </div>
         <div class="mb-3">
-          <label class="form-label fw-medium">Conditions (JSON)</label>
+          <label class="form-label fw-medium">{{ 'media.arr_admin.custom_filters.conditions_label'|trans }}</label>
           <textarea id="cf-filters" class="form-control form-control-sm font-monospace" rows="6" placeholder='[{"key":"monitored","value":["true"],"type":"equal"}]'></textarea>
-          <small class="text-muted">Tableau JSON des conditions du filtre.</small>
+          <small class="text-muted">{{ 'media.arr_admin.custom_filters.conditions_help'|trans }}</small>
         </div>
         <div id="cf-modal-feedback" class="alert d-none mt-3"></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-success" id="btn-cf-save">Enregistrer</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'media.arr_admin.custom_filters.cancel'|trans }}</button>
+        <button type="button" class="btn btn-success" id="btn-cf-save">{{ 'media.arr_admin.custom_filters.save'|trans }}</button>
       </div>
     </div>
   </div>
@@ -109,6 +109,15 @@
 {% block javascripts %}
 <script>
 (function(){
+  var CF_I18N = {
+    title_add: {{ 'media.arr_admin.custom_filters.modal_title_add'|trans|json_encode|raw }},
+    title_edit: {{ 'media.arr_admin.custom_filters.modal_title_edit'|trans|json_encode|raw }},
+    err_name_required: {{ 'media.arr_admin.custom_filters.err_name_required'|trans|json_encode|raw }},
+    err_invalid_json: {{ 'media.arr_admin.custom_filters.err_invalid_json'|trans|json_encode|raw }},
+    err_save: {{ 'media.arr_admin.custom_filters.err_save'|trans|json_encode|raw }},
+    delete_confirm_tpl: {{ 'media.arr_admin.custom_filters.delete_confirm_tpl'|trans({label: '__LABEL__'})|json_encode|raw }},
+    delete_error: {{ 'media.arr_admin.custom_filters.delete_error'|trans|json_encode|raw }}
+  };
   var feedback = document.getElementById('cf-feedback');
   var mfb = document.getElementById('cf-modal-feedback');
   var modalEl = document.getElementById('modal-cf');
@@ -126,15 +135,12 @@
     mfb.classList.remove('d-none');
   }
 
-  // Turbo-safe: Bootstrap opens the modal declaratively via data-bs-toggle
-  // on each trigger button. show.bs.modal populates the form based on the
-  // relatedTarget (add vs edit), avoiding programmatic modal.show() calls.
   modalEl.onshow = null;
   modalEl.addEventListener('show.bs.modal', function(e) {
     var btn = e.relatedTarget;
     mfb.classList.add('d-none');
     if (!btn || btn.id === 'btn-cf-add') {
-      document.getElementById('cf-modal-title').textContent = 'Ajouter un filtre';
+      document.getElementById('cf-modal-title').textContent = CF_I18N.title_add;
       document.getElementById('cf-edit-id').value = '';
       document.getElementById('cf-label').value = '';
       document.getElementById('cf-type').value = 'movie';
@@ -142,7 +148,7 @@
     } else {
       var data = {};
       try { data = JSON.parse(btn.dataset.payload || '{}'); } catch (err) {}
-      document.getElementById('cf-modal-title').textContent = 'Modifier le filtre';
+      document.getElementById('cf-modal-title').textContent = CF_I18N.title_edit;
       document.getElementById('cf-edit-id').value = data.id || '';
       document.getElementById('cf-label').value = data.label || data.name || '';
       document.getElementById('cf-type').value = data.type || 'movie';
@@ -155,9 +161,9 @@
     var label = document.getElementById('cf-label').value.trim();
     var type = document.getElementById('cf-type').value;
     var filtersRaw = document.getElementById('cf-filters').value.trim();
-    if (!label) { showModalFeedback('Le nom est obligatoire.', 'warning'); return; }
+    if (!label) { showModalFeedback(CF_I18N.err_name_required, 'warning'); return; }
     var filters;
-    try { filters = JSON.parse(filtersRaw || '[]'); } catch(e) { showModalFeedback('JSON invalide pour les conditions.', 'danger'); return; }
+    try { filters = JSON.parse(filtersRaw || '[]'); } catch(e) { showModalFeedback(CF_I18N.err_invalid_json, 'danger'); return; }
     var payload = {label: label, type: type, filters: filters};
     var url = id ? '/sonarr/filtres-personnalises/' + id + '/modifier' : '{{ path("sonarr_custom_filter_add") }}';
     if (id) payload.id = parseInt(id, 10);
@@ -167,20 +173,20 @@
       body: JSON.stringify(payload),
     }).then(function(r){ return r.json(); }).then(function(data){
       if (data.ok !== false) { location.reload(); }
-      else { showModalFeedback(data.error || 'Erreur lors de l\'enregistrement.', 'danger'); }
+      else { showModalFeedback(data.error || CF_I18N.err_save, 'danger'); }
     });
   };
 
   document.querySelectorAll('.btn-cf-delete').forEach(function(btn) {
     btn.onclick = function() {
-      if (!confirm('Supprimer le filtre "' + btn.dataset.label + '" ?')) return;
+      if (!confirm(CF_I18N.delete_confirm_tpl.replace('__LABEL__', btn.dataset.label))) return;
       fetch('/sonarr/filtres-personnalises/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}',
       }).then(function(r){ return r.json(); }).then(function(data){
         if (data.ok) location.reload();
-        else showFeedback('Erreur lors de la suppression.', 'danger');
+        else showFeedback(CF_I18N.delete_error, 'danger');
       });
     };
   });

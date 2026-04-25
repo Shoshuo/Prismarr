@@ -1,13 +1,13 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Tags — Sonarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.tags.title_sonarr'|trans }}{% endblock %}
 
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Tags</h2>
+        <h2 class="page-title">{{ 'media.arr_admin.tags.page_title'|trans }}</h2>
       </div>
       <div class="col-auto ms-auto">
         {% include 'media/_sonarr_nav.html.twig' %}
@@ -20,7 +20,7 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Sonarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.tags.error_unreachable_sonarr'|trans }}</div>
 {% endif %}
 
 <div id="tags-feedback" class="alert d-none mb-3"></div>
@@ -29,12 +29,12 @@
   <div class="col-12 col-md-4">
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">Ajouter un tag</h3>
+        <h3 class="card-title">{{ 'media.arr_admin.tags.add_card_title'|trans }}</h3>
       </div>
       <div class="card-body">
         <form id="form-add-tag" class="d-flex gap-2">
-          <input type="text" name="label" class="form-control" placeholder="Nom du tag" required>
-          <button type="submit" class="btn btn-success">Ajouter</button>
+          <input type="text" name="label" class="form-control" placeholder="{{ 'media.arr_admin.tags.add_placeholder'|trans }}" required>
+          <button type="submit" class="btn btn-success">{{ 'media.arr_admin.tags.add_button'|trans }}</button>
         </form>
       </div>
     </div>
@@ -43,14 +43,14 @@
   <div class="col-12 col-md-8">
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">Tags existants</h3>
+        <h3 class="card-title">{{ 'media.arr_admin.tags.existing_card_title'|trans }}</h3>
         <div class="card-options">
           <span class="badge bg-secondary-lt">{{ tags|length }}</span>
         </div>
       </div>
       <div class="card-body">
         {% if tags is empty %}
-          <div class="text-muted text-center py-4">Aucun tag.</div>
+          <div class="text-muted text-center py-4">{{ 'media.arr_admin.tags.empty'|trans }}</div>
         {% else %}
           <div class="d-flex flex-wrap gap-2" id="tags-list">
             {% for tag in tags %}
@@ -61,14 +61,14 @@
                       data-id="{{ tag.id }}"
                       data-label="{{ tag.label ?? '' }}"
                       style="background:none;border:none;color:inherit;cursor:pointer;line-height:1"
-                      title="Renommer">
+                      title="{{ 'media.arr_admin.tags.btn_rename'|trans }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
               </button>
               <button class="btn btn-sm p-0 ms-1 btn-tag-delete"
                       data-id="{{ tag.id }}"
                       data-label="{{ tag.label ?? '' }}"
                       style="background:none;border:none;color:inherit;cursor:pointer;line-height:1"
-                      title="Supprimer">
+                      title="{{ 'media.arr_admin.tags.btn_delete'|trans }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6l-12 12m0 -12l12 12"/></svg>
               </button>
               {% endif %}
@@ -88,6 +88,15 @@
 {% block javascripts %}
 <script>
 (function(){
+var TAGS_I18N = {
+  created_tpl: {{ 'media.arr_admin.tags.created_tpl'|trans({label: '__LABEL__'})|json_encode|raw }},
+  created_error: {{ 'media.arr_admin.tags.created_error'|trans|json_encode|raw }},
+  rename_prompt: {{ 'media.arr_admin.tags.rename_prompt'|trans|json_encode|raw }},
+  renamed_tpl: {{ 'media.arr_admin.tags.renamed_tpl'|trans({label: '__LABEL__'})|json_encode|raw }},
+  rename_error: {{ 'media.arr_admin.tags.rename_error'|trans|json_encode|raw }},
+  delete_confirm_tpl: {{ 'media.arr_admin.tags.delete_confirm_tpl'|trans({label: '__LABEL__'})|json_encode|raw }},
+  delete_error: {{ 'media.arr_admin.tags.delete_error'|trans|json_encode|raw }}
+};
 var feedback = document.getElementById('tags-feedback');
 function showFeedback(msg, type) {
   feedback.className = 'alert alert-' + (type || 'success') + ' mb-3';
@@ -106,18 +115,18 @@ document.getElementById('form-add-tag').addEventListener('submit', async functio
   });
   var data = await r.json();
   if (data.ok) {
-    showFeedback('Tag "' + label + '" créé.');
+    showFeedback(TAGS_I18N.created_tpl.replace('__LABEL__', label));
     e.target.reset();
     setTimeout(function(){ location.reload(); }, 800);
   } else {
-    showFeedback('Erreur lors de la création.', 'danger');
+    showFeedback(TAGS_I18N.created_error, 'danger');
   }
 });
 
 document.querySelectorAll('.btn-tag-rename').forEach(function(btn) {
   btn.addEventListener('click', async function() {
     var currentLabel = btn.dataset.label;
-    var newLabel = prompt('Nouveau nom du tag :', currentLabel);
+    var newLabel = prompt(TAGS_I18N.rename_prompt, currentLabel);
     if (!newLabel || newLabel.trim() === '' || newLabel === currentLabel) return;
     var r = await fetch('/sonarr/tags/' + btn.dataset.id + '/renommer', {
       method: 'POST',
@@ -126,17 +135,17 @@ document.querySelectorAll('.btn-tag-rename').forEach(function(btn) {
     });
     var data = await r.json();
     if (data.ok) {
-      showFeedback('Tag renommé en "' + newLabel.trim() + '".');
+      showFeedback(TAGS_I18N.renamed_tpl.replace('__LABEL__', newLabel.trim()));
       setTimeout(function(){ location.reload(); }, 800);
     } else {
-      showFeedback('Erreur lors du renommage.', 'danger');
+      showFeedback(TAGS_I18N.rename_error, 'danger');
     }
   });
 });
 
 document.querySelectorAll('.btn-tag-delete').forEach(function(btn) {
   btn.addEventListener('click', async function() {
-    if (!confirm('Supprimer le tag "' + btn.dataset.label + '" ?')) return;
+    if (!confirm(TAGS_I18N.delete_confirm_tpl.replace('__LABEL__', btn.dataset.label))) return;
     var r = await fetch('/sonarr/tags/' + btn.dataset.id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
@@ -144,7 +153,7 @@ document.querySelectorAll('.btn-tag-delete').forEach(function(btn) {
     });
     var data = await r.json();
     if (data.ok) location.reload();
-    else showFeedback('Erreur lors de la suppression.', 'danger');
+    else showFeedback(TAGS_I18N.delete_error, 'danger');
   });
 });
 })();

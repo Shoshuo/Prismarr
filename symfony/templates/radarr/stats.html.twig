@@ -1,11 +1,11 @@
 {% extends 'base.html.twig' %}
-{% block title %}Statistiques — Radarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.stats.title_radarr'|trans }}{% endblock %}
 
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
-      <div class="col"><h2 class="page-title">Statistiques</h2></div>
+      <div class="col"><h2 class="page-title">{{ 'media.arr_admin.stats.page_title_radarr'|trans }}</h2></div>
       <div class="col-auto ms-auto d-flex gap-2 align-items-center">
         {% include 'media/_radarr_nav.html.twig' %}
       </div>
@@ -17,7 +17,7 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Radarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.stats.error_unreachable_radarr'|trans }}</div>
 {% endif %}
 
 {% if stats %}
@@ -25,10 +25,10 @@
 {# ── Cards résumé ──────────────────────────────────────────────────── #}
 <div class="row g-3 mb-4">
   {% set cards = [
-    {label: 'Films',        value: stats.total,    icon: 'movie',   color: 'primary'},
-    {label: 'Téléchargés',  value: stats.hasFile,  icon: 'check',   color: 'success'},
-    {label: 'Suivis',       value: stats.monitored,icon: 'eye',     color: 'blue'},
-    {label: 'Manquants',    value: stats.missing,  icon: 'alert',   color: 'danger'},
+    {label: 'media.arr_admin.stats.card_movies'|trans,     value: stats.total,    color: 'primary'},
+    {label: 'media.arr_admin.stats.card_downloaded'|trans, value: stats.hasFile,  color: 'success'},
+    {label: 'media.arr_admin.stats.card_monitored'|trans,  value: stats.monitored,color: 'blue'},
+    {label: 'media.arr_admin.stats.card_missing'|trans,    value: stats.missing,  color: 'danger'},
   ] %}
   {% for card in cards %}
   <div class="col-6 col-lg-3">
@@ -49,8 +49,8 @@
   <div class="col-12 col-lg-4">
     <div class="card card-sm">
       <div class="card-body text-center">
-        <div class="h2 mb-0 text-orange">{{ (stats.sizeOnDisk / 1073741824)|round(1) }} Go</div>
-        <div class="text-muted small">Taille totale des films</div>
+        <div class="h2 mb-0 text-orange">{{ 'media.arr_admin.stats.size_gb_tpl'|trans({size: (stats.sizeOnDisk / 1073741824)|round(1)}) }}</div>
+        <div class="text-muted small">{{ 'media.arr_admin.stats.total_size'|trans }}</div>
       </div>
     </div>
   </div>
@@ -60,15 +60,15 @@
       <div class="card-body">
         <div class="d-flex justify-content-between mb-1">
           <span class="small fw-medium">{{ d.path }}</span>
-          <span class="small text-muted">{{ ((d.freeSpace ?? 0) / 1073741824)|round(1) }} Go libres</span>
+          <span class="small text-muted">{{ 'media.arr_admin.stats.free_space_tpl'|trans({value: ((d.freeSpace ?? 0) / 1073741824)|round(1)}) }}</span>
         </div>
         {% set pct = ((1 - (d.freeSpace ?? 0) / (d.totalSpace ?? 1)) * 100)|round(0) %}
         <div class="progress progress-sm">
           <div class="progress-bar bg-{{ pct > 90 ? 'danger' : (pct > 75 ? 'warning' : 'primary') }}" style="width:{{ pct }}%"></div>
         </div>
         <div class="d-flex justify-content-between mt-1">
-          <span class="small text-muted">{{ ((d.totalSpace ?? 0) / 1073741824)|round(1) }} Go total</span>
-          <span class="small text-muted">{{ pct }}% utilisé</span>
+          <span class="small text-muted">{{ 'media.arr_admin.stats.total_space_tpl'|trans({value: ((d.totalSpace ?? 0) / 1073741824)|round(1)}) }}</span>
+          <span class="small text-muted">{{ 'media.arr_admin.stats.used_pct_tpl'|trans({pct: pct}) }}</span>
         </div>
       </div>
     </div>
@@ -81,19 +81,19 @@
 {# ── Répartition par qualité ───────────────────────────────────────── #}
 <div class="col-12 col-lg-6">
   <div class="card">
-    <div class="card-header"><h3 class="card-title">Par qualité</h3></div>
+    <div class="card-header"><h3 class="card-title">{{ 'media.arr_admin.stats.by_quality_card_title'|trans }}</h3></div>
     <div class="card-body p-0">
       {% if stats.qualities %}
       <div class="table-responsive">
         <table class="table table-vcenter mb-0">
-          <thead><tr><th>Qualité</th><th class="text-end">Films</th><th class="text-end">Taille</th><th style="width:30%"></th></tr></thead>
+          <thead><tr><th>{{ 'media.arr_admin.stats.col_quality'|trans }}</th><th class="text-end">{{ 'media.arr_admin.stats.col_films'|trans }}</th><th class="text-end">{{ 'media.arr_admin.stats.col_size'|trans }}</th><th style="width:30%"></th></tr></thead>
           <tbody>
             {% for name, q in stats.qualities %}
             {% set pct = (q.count / stats.hasFile * 100)|round(0) %}
             <tr>
               <td class="fw-medium">{{ name }}</td>
               <td class="text-end">{{ q.count }}</td>
-              <td class="text-end text-muted">{{ (q.size / 1073741824)|round(1) }} Go</td>
+              <td class="text-end text-muted">{{ 'media.arr_admin.stats.size_gb_tpl'|trans({size: (q.size / 1073741824)|round(1)}) }}</td>
               <td>
                 <div class="progress progress-sm">
                   <div class="progress-bar bg-primary" style="width:{{ pct }}%"></div>
@@ -105,7 +105,7 @@
         </table>
       </div>
       {% else %}
-      <div class="text-muted text-center py-4">Aucune donnée.</div>
+      <div class="text-muted text-center py-4">{{ 'media.arr_admin.stats.no_data'|trans }}</div>
       {% endif %}
     </div>
   </div>
@@ -114,12 +114,12 @@
 {# ── Répartition par genre ─────────────────────────────────────────── #}
 <div class="col-12 col-lg-6">
   <div class="card">
-    <div class="card-header"><h3 class="card-title">Par genre</h3></div>
+    <div class="card-header"><h3 class="card-title">{{ 'media.arr_admin.stats.by_genre_card_title'|trans }}</h3></div>
     <div class="card-body p-0">
       {% if stats.genres %}
       <div class="table-responsive" style="max-height:400px;overflow-y:auto;">
         <table class="table table-vcenter mb-0">
-          <thead><tr><th>Genre</th><th class="text-end">Films</th><th style="width:40%"></th></tr></thead>
+          <thead><tr><th>{{ 'media.arr_admin.stats.col_genre'|trans }}</th><th class="text-end">{{ 'media.arr_admin.stats.col_films'|trans }}</th><th style="width:40%"></th></tr></thead>
           <tbody>
             {% set maxGenre = stats.genres|first %}
             {% for name, count in stats.genres %}
@@ -137,7 +137,7 @@
         </table>
       </div>
       {% else %}
-      <div class="text-muted text-center py-4">Aucune donnée.</div>
+      <div class="text-muted text-center py-4">{{ 'media.arr_admin.stats.no_data'|trans }}</div>
       {% endif %}
     </div>
   </div>
@@ -146,12 +146,12 @@
 {# ── Répartition par décennie ──────────────────────────────────────── #}
 <div class="col-12">
   <div class="card">
-    <div class="card-header"><h3 class="card-title">Par décennie</h3></div>
+    <div class="card-header"><h3 class="card-title">{{ 'media.arr_admin.stats.by_decade_card_title'|trans }}</h3></div>
     <div class="card-body">
       {% if stats.years %}
       <canvas id="chart-decades" height="180"></canvas>
       {% else %}
-      <div class="text-muted text-center">Aucune donnée.</div>
+      <div class="text-muted text-center">{{ 'media.arr_admin.stats.no_data'|trans }}</div>
       {% endif %}
     </div>
   </div>
@@ -160,7 +160,7 @@
 </div>
 
 {% else %}
-<div class="alert alert-info">Aucune statistique disponible.</div>
+<div class="alert alert-info">{{ 'media.arr_admin.stats.none_available'|trans }}</div>
 {% endif %}
 
 </div>
@@ -172,6 +172,11 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script>
 (function(){
+  var _I18N = {
+    chart_films_label: {{ 'media.arr_admin.stats.chart_films_label'|trans|json_encode|raw }},
+    tooltip_one: {{ 'media.arr_admin.stats.tooltip_films_count_tpl'|trans({count: 1})|json_encode|raw }},
+    tooltip_many_tpl: {{ 'media.arr_admin.stats.tooltip_films_count_tpl'|trans({count: '__COUNT__'})|json_encode|raw }}
+  };
   var ctx = document.getElementById('chart-decades');
   if (!ctx) return;
   var labels = {{ stats.years|keys|json_encode|raw }};
@@ -183,7 +188,7 @@
     data: {
       labels: labels,
       datasets: [{
-        label: 'Films',
+        label: _I18N.chart_films_label,
         data: data,
         backgroundColor: '#6366f1',
         borderRadius: 4,
@@ -197,7 +202,10 @@
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: function(ctx) { return ctx.parsed.y + ' film(s)'; }
+            label: function(ctx) {
+              var n = ctx.parsed.y;
+              return n === 1 ? _I18N.tooltip_one : _I18N.tooltip_many_tpl.replace('__COUNT__', n);
+            }
           }
         }
       },

@@ -2757,6 +2757,342 @@ media:
       page_prev: Prec.
       page_next: Suiv.
 
+    parse:
+      title_radarr: Parser un titre — Radarr
+      title_sonarr: Parser un titre — Sonarr
+      page_title: Parser un titre
+      example_placeholder: "Ex: The.Dark.Knight.2008.1080p.BluRay.x264"
+      button_parse: Parser
+      error: Erreur lors du parsing.
+      result_title: Résultat du parsing
+      parsed_title: Titre parsé
+      year: Année
+      quality: Qualité
+      edition: Edition
+      languages: Langues
+      matched_movie: Film correspondant
+      matched_series: Série correspondante
+      no_result: Aucun résultat pour ce titre.
+
+    tags:
+      title_radarr: Tags — Radarr
+      title_sonarr: Tags — Sonarr
+      page_title: Tags
+      error_unreachable_radarr: Impossible de joindre Radarr.
+      error_unreachable_sonarr: Impossible de joindre Sonarr.
+      add_card_title: Ajouter un tag
+      add_placeholder: Nom du tag
+      add_button: Ajouter
+      existing_card_title: Tags existants
+      empty: Aucun tag.
+      btn_rename: Renommer
+      btn_delete: Supprimer
+      created_tpl: 'Tag "{label}" créé.'
+      created_error: Erreur lors de la création.
+      rename_prompt: 'Nouveau nom du tag :'
+      renamed_tpl: 'Tag renommé en "{label}".'
+      rename_error: Erreur lors du renommage.
+      delete_confirm_tpl: 'Supprimer le tag "{label}" ?'
+      delete_error: Erreur lors de la suppression.
+
+    custom_filters:
+      title_radarr: Filtres personnalisés — Radarr
+      title_sonarr: Filtres personnalisés — Sonarr
+      page_title: Filtres personnalisés
+      error_unreachable_radarr: Impossible de joindre Radarr.
+      error_unreachable_sonarr: Impossible de joindre Sonarr.
+      btn_add: Ajouter
+      card_title: Filtres
+      empty: Aucun filtre personnalisé.
+      col_name: Nom
+      col_type: Type
+      col_filters: Filtres
+      col_actions: Actions
+      modal_title_add: Ajouter un filtre
+      modal_title_edit: Modifier le filtre
+      label: Nom
+      label_placeholder: Mon filtre
+      type: Type
+      conditions_label: Conditions (JSON)
+      conditions_help: Tableau JSON des conditions du filtre.
+      cancel: Annuler
+      save: Enregistrer
+      btn_edit_title: Modifier
+      btn_delete_title: Supprimer
+      err_name_required: Le nom est obligatoire.
+      err_invalid_json: JSON invalide pour les conditions.
+      err_save: 'Erreur lors de l''enregistrement.'
+      delete_confirm_tpl: 'Supprimer le filtre "{label}" ?'
+      delete_error: Erreur lors de la suppression.
+
+    metadata:
+      title_radarr: Metadata — Radarr
+      title_sonarr: Metadata — Sonarr
+      page_title: Metadata
+      error_unreachable_radarr: Impossible de joindre Radarr.
+      error_unreachable_sonarr: Impossible de joindre Sonarr.
+      consumers_title: Consommateurs de metadata
+      empty: Aucun consommateur de metadata.
+      col_name: Nom
+      col_type: Type
+      col_status: Statut
+      col_actions: Actions
+      enabled: Actif
+      disabled: Inactif
+      btn_enable: Activer
+      btn_disable: Désactiver
+      btn_edit_title: Modifier
+      btn_delete_title: Supprimer
+      footer_help_radarr: Les consommateurs de metadata écrivent des fichiers .nfo et des images aux côtés des fichiers de films.
+      footer_help_sonarr: Les consommateurs de metadata écrivent des fichiers .nfo et des images aux côtés des fichiers d'épisodes.
+      modal_title_default: Modifier le consommateur
+      modal_title_edit_tpl: 'Modifier : {name}'
+      label_name: Nom
+      label_active: Actif
+      fields_title: Champs
+      cancel: Annuler
+      save: Enregistrer
+      err_generic: Erreur.
+      err_save: Erreur lors de la sauvegarde.
+      delete_confirm_tpl: 'Supprimer "{name}" ?'
+      delete_error: Erreur lors de la suppression.
+
+    auto_tags:
+      title_radarr: Auto-Tags — Radarr
+      title_sonarr: Auto-Tags — Sonarr
+      page_title: Auto-Tags
+      error_unreachable_radarr: Impossible de joindre Radarr.
+      error_unreachable_sonarr: Impossible de joindre Sonarr.
+      btn_add: Ajouter
+      btn_tags: Tags
+      rules_card_title: 'Règles d''auto-tagging'
+      empty: 'Aucune règle d''auto-tagging.'
+      col_name: Nom
+      col_conditions: Conditions
+      col_tags_applied: Tags appliqués
+      col_remove_unmatched: Supprimer si non correspondant
+      col_actions: Actions
+      conditions_count_tpl: '{count, plural, one {# condition} other {# conditions}}'
+      yes: Oui
+      no: Non
+      btn_edit_title: Modifier
+      btn_delete_title: Supprimer
+      modal_title_new: 'Nouvelle règle d''auto-tagging'
+      modal_title_edit_tpl: 'Modifier : {name}'
+      label_name: Nom
+      label_name_placeholder: 'Nom de la règle'
+      label_tags: 'Tags (IDs, virgules)'
+      label_tags_placeholder: 'Ex: 1,3,5'
+      label_tags_help: 'Identifiants des tags à appliquer.'
+      label_remove_unmatched: 'Retirer les tags si non correspondant'
+      specifications_title: 'Spécifications (conditions)'
+      btn_add_spec: Ajouter
+      no_specs: 'Aucune condition. Cliquez sur "Ajouter" pour commencer.'
+      cancel: Annuler
+      btn_create: Créer
+      btn_save: Enregistrer
+      spec_root_folder: Dossier racine
+      spec_quality_profile: Profil de qualité
+      spec_genre: Genre
+      spec_year: Année
+      spec_original_language: Langue originale
+      spec_movie_status: Statut du film
+      spec_series_type: Type de série
+      condition_n_tpl: 'Condition #{n}'
+      type_label: Type
+      type_placeholder: '-- Type de condition --'
+      name_label: Nom
+      name_placeholder: 'Nom...'
+      negate_label: Inverser
+      required_label: Requis
+      fields_label: 'Champs (JSON)'
+      fields_help: 'Format : tableau JSON des champs de la condition.'
+      err_name_required: Le nom est obligatoire.
+      err_save: 'Erreur lors de l''enregistrement.'
+      err_network_tpl: 'Erreur réseau : {error}'
+      delete_confirm_tpl: 'Supprimer la règle "{name}" ?'
+      delete_error: Erreur lors de la suppression.
+
+    exclusions:
+      title_radarr: Exclusions d'import Radarr
+      title_sonarr: Exclusions d'import — Sonarr
+      page_title: Exclusions d'import
+      error_unreachable_radarr: Impossible de joindre Radarr.
+      error_unreachable_sonarr: Impossible de joindre Sonarr.
+      add_card_title: Ajouter une exclusion
+      tmdb_id: TMDB ID
+      tmdb_id_placeholder: '12345'
+      movie_title: Titre du film
+      movie_title_placeholder: Titre original
+      year: Année
+      add_button: Ajouter
+      list_card_title: Exclusions
+      bulk_delete: Supprimer la sélection
+      total_suffix: au total
+      empty: Aucune exclusion.
+      col_title: Titre
+      col_year: Année
+      col_tmdb: TMDB ID
+      col_tvdb: TVDB ID
+      col_actions: Actions
+      btn_delete: Supprimer
+      btn_delete_title: Supprimer
+      page_label_tpl: 'Page {page} / {total}'
+      page_simple_tpl: 'Page {page}'
+      bulk_confirm_tpl: 'Supprimer {count} exclusion(s) ?'
+      delete_confirm: Supprimer cette exclusion ?
+      delete_error: Erreur suppression.
+      generic_error: Erreur.
+      added_ok: Exclusion ajoutée.
+      add_error: 'Erreur lors de l''ajout.'
+      page_prev: ← Précédent
+      page_next: Suivant →
+
+    library_import:
+      title_radarr: Import de bibliothèque — Radarr
+      title_sonarr: Import bibliothèque — Sonarr
+      page_title: Import de bibliothèque
+      error_unreachable_radarr: Impossible de joindre Radarr.
+      error_unreachable_sonarr: Impossible de joindre Sonarr.
+      folder_label: Dossier à scanner
+      folder_card_title_sonarr: Dossier à scanner
+      btn_scan: Scanner
+      btn_scanning: Scan...
+      not_imported_title: Dossiers non importés
+      col_folder: Dossier
+      col_movie: Film
+      col_serie: Série
+      col_monitor: Surveiller
+      col_availability: Disponibilité
+      col_quality_profile: Profil qualité
+      col_series_type: Type de série
+      col_season_folder_short: Saison
+      col_check_all_title: Tout sélectionner
+      monitor_movie_only: Film seulement
+      monitor_none: Non
+      monitor_all_episodes: Tous les épisodes
+      monitor_future: Futurs uniquement
+      monitor_future_short: Futurs
+      monitor_missing: Manquants
+      monitor_first_season: 1ère saison
+      monitor_last_season: Dernière saison
+      monitor_last_season_short: Dernière
+      monitor_none_episodes: Aucun
+      availability_announced: Annoncé
+      availability_in_cinemas: En salles
+      availability_released: Sorti
+      type_standard: Standard
+      type_daily: Quotidienne
+      type_anime: Anime
+      season_folders: Dossiers saison
+      btn_import_movies_tpl: 'Importer {count} film(s)'
+      btn_import_series_tpl: 'Importer {count} série(s)'
+      btn_import_series_default: Importer les séries
+      show_existing: Afficher les existantes
+      all_imported: Tous les dossiers sont déjà importés.
+      no_result_search_manual: Aucun résultat — chercher manuellement
+      err_search_manual: Erreur — chercher manuellement
+      searching: Recherche en cours...
+      not_found: Introuvable
+      lookup_error: Erreur
+      status_existing: Existante
+      status_to_import: À importer
+      status_imported: ✓ Importée
+      status_error: ✗ Erreur
+      generic_error: Erreur.
+      network_error: Erreur réseau.
+      import_error: 'Erreur lors de l''import.'
+      import_success_tpl: '{count} film(s) importé(s)'
+      import_success_with_fail_tpl: '{ok} film(s) importé(s), {fail} erreur(s)'
+      import_done: Import terminé
+      import_in_progress: Import...
+      import_processed_tpl: '{count} série(s) traitée(s).'
+
+    rename:
+      title_radarr: Renommer — Radarr
+      page_title: Renommer des fichiers
+      error_unreachable_radarr: Impossible de joindre Radarr.
+      choose_movie_card_title: Choisir un film
+      select_placeholder: '— Sélectionner un film —'
+      loading: Chargement...
+      proposals_card_title: Propositions de renommage
+      btn_rename_all: Renommer tout
+      select_movie_hint: Sélectionnez un film pour voir les propositions.
+      no_rename_needed: Aucun renommage nécessaire.
+      col_current_path: Chemin actuel
+      col_new_path: Nouveau chemin
+      load_error: Erreur lors du chargement.
+      progress_starting: Lancement du renommage...
+      progress_status_tpl: 'Renommage : {status}'
+      progress_done: Renommage terminé.
+      generic_error: Erreur.
+      network_error: Erreur réseau.
+
+    suggestions:
+      title_radarr: Suggestions d'import Radarr
+      title_sonarr: Suggestions — Sonarr
+      page_title_radarr: Suggestions d'import
+      page_title_sonarr: Suggestions de séries
+      error_unreachable_radarr: Impossible de joindre Radarr.
+      error_unreachable_sonarr: Impossible de joindre Sonarr.
+      empty_radarr: Aucune suggestion disponible.
+      empty_sonarr_title: Aucune suggestion disponible.
+      empty_sonarr_help: 'Sonarr ne propose pas de recommandations via les listes d''import comme Radarr. Utilisez le bouton "Ajouter" sur la page Séries pour rechercher manuellement.'
+      count_movies_tpl: '{count, plural, one {# film suggéré} other {# films suggérés}}'
+      count_series_tpl: '{count, plural, one {# série suggérée} other {# séries suggérées}}'
+      already_added: Déjà ajouté
+      modal_title: Ajouter un film
+      already_in_lib: Ce film est déjà dans votre bibliothèque.
+      no_overview: Aucun synopsis disponible.
+      label_quality_profile: Profil de qualité
+      label_root_folder: Dossier racine
+      label_search_auto: Rechercher auto
+      cancel: Annuler
+      btn_add: Ajouter
+      badge_recommended: Recommandé
+      badge_trending: Tendance
+      badge_popular: Populaire
+      added_success_tpl: '"{title}" ajouté avec succès.'
+      add_error: 'Erreur lors de l''ajout.'
+      network_error: Erreur réseau.
+
+    stats:
+      title_radarr: Statistiques — Radarr
+      title_sonarr: Statistiques — Sonarr
+      page_title_radarr: Statistiques
+      page_title_sonarr: Statistiques séries
+      error_unreachable_radarr: Impossible de joindre Radarr.
+      error_unreachable_sonarr: Impossible de joindre Sonarr.
+      none_available: Aucune statistique disponible.
+      card_movies: Films
+      card_downloaded: Téléchargés
+      card_monitored: Suivis
+      card_missing: Manquants
+      card_series: Séries
+      card_continuing: En cours
+      card_ended: Terminées
+      card_monitored_series: Suivies
+      total_size: Taille totale des films
+      free_space_tpl: '{value} Go libres'
+      total_space_tpl: '{value} Go total'
+      used_pct_tpl: '{pct}% utilisé'
+      storage_disk_card_title: Stockage disque
+      free_total_tpl: '{free} Go libres / {total} Go'
+      by_quality_card_title: Par qualité
+      by_genre_card_title: Par genre
+      by_decade_card_title: Par décennie
+      genres_card_title: Genres
+      networks_card_title: Réseaux
+      col_quality: Qualité
+      col_films: Films
+      col_size: Taille
+      col_genre: Genre
+      no_data: Aucune donnée.
+      chart_films_label: Films
+      tooltip_films_count_tpl: '{count, plural, one {# film} other {# films}}'
+      gb_suffix: Go
+      size_gb_tpl: '{size} Go'
+
 watchlist_page:
   back_to_discover: Découverte
   count_titles: '{count, plural, one {# titre} other {# titres}}'

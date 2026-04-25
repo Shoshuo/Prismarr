@@ -1,20 +1,20 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Auto-Tags — Sonarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.auto_tags.title_sonarr'|trans }}{% endblock %}
 
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Auto-Tags</h2>
+        <h2 class="page-title">{{ 'media.arr_admin.auto_tags.page_title'|trans }}</h2>
       </div>
       <div class="col-auto ms-auto d-flex gap-2 align-items-center">
         <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modal-at">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
-          Ajouter
+          {{ 'media.arr_admin.auto_tags.btn_add'|trans }}
         </button>
-        <a href="{{ path('sonarr_tags') }}" class="btn btn-ghost-secondary btn-sm">Tags</a>
+        <a href="{{ path('sonarr_tags') }}" class="btn btn-ghost-secondary btn-sm">{{ 'media.arr_admin.auto_tags.btn_tags'|trans }}</a>
         {% include 'media/_sonarr_nav.html.twig' %}
       </div>
     </div>
@@ -25,38 +25,38 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Sonarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.auto_tags.error_unreachable_sonarr'|trans }}</div>
 {% endif %}
 
 <div id="at-feedback" class="alert d-none mb-3"></div>
 
 <div class="card">
   <div class="card-header">
-    <h3 class="card-title">Regles d'auto-tagging</h3>
+    <h3 class="card-title">{{ 'media.arr_admin.auto_tags.rules_card_title'|trans }}</h3>
     <div class="card-options">
       <span class="badge bg-secondary-lt">{{ tags|length }}</span>
     </div>
   </div>
   <div class="card-body p-0">
     {% if tags is empty %}
-      <div class="text-muted text-center py-5">Aucune regle d'auto-tagging.</div>
+      <div class="text-muted text-center py-5">{{ 'media.arr_admin.auto_tags.empty'|trans }}</div>
     {% else %}
       <div class="table-responsive">
         <table class="table table-vcenter mb-0">
           <thead>
             <tr>
-              <th>Nom</th>
-              <th>Conditions</th>
-              <th>Tags appliques</th>
-              <th>Supprimer si non correspondant</th>
-              <th class="text-end">Actions</th>
+              <th>{{ 'media.arr_admin.auto_tags.col_name'|trans }}</th>
+              <th>{{ 'media.arr_admin.auto_tags.col_conditions'|trans }}</th>
+              <th>{{ 'media.arr_admin.auto_tags.col_tags_applied'|trans }}</th>
+              <th>{{ 'media.arr_admin.auto_tags.col_remove_unmatched'|trans }}</th>
+              <th class="text-end">{{ 'media.arr_admin.auto_tags.col_actions'|trans }}</th>
             </tr>
           </thead>
           <tbody>
             {% for tag in tags %}
             <tr>
               <td class="fw-medium">{{ tag.name ?? '—' }}</td>
-              <td class="text-muted small">{{ tag.specifications is defined ? tag.specifications|length : 0 }} condition(s)</td>
+              <td class="text-muted small">{{ 'media.arr_admin.auto_tags.conditions_count_tpl'|trans({count: tag.specifications is defined ? tag.specifications|length : 0}) }}</td>
               <td>
                 <div class="d-flex flex-wrap gap-1">
                   {% if tag.tags is defined %}
@@ -68,20 +68,20 @@
               </td>
               <td>
                 {% if tag.removeTagsAutomatically ?? false %}
-                  <span class="badge bg-warning-lt text-warning">Oui</span>
+                  <span class="badge bg-warning-lt text-warning">{{ 'media.arr_admin.auto_tags.yes'|trans }}</span>
                 {% else %}
-                  <span class="badge bg-secondary-lt">Non</span>
+                  <span class="badge bg-secondary-lt">{{ 'media.arr_admin.auto_tags.no'|trans }}</span>
                 {% endif %}
               </td>
               <td class="text-end d-flex gap-2 justify-content-end">
                 <button class="btn btn-ghost-secondary btn-icon"
                         data-bs-toggle="modal" data-bs-target="#modal-at"
-                        data-edit-item="{{ tag|json_encode|e('html_attr') }}" title="Modifier">
+                        data-edit-item="{{ tag|json_encode|e('html_attr') }}" title="{{ 'media.arr_admin.auto_tags.btn_edit_title'|trans }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                 </button>
                 <button class="btn btn-ghost-danger btn-icon btn-at-delete"
                         data-id="{{ tag.id }}"
-                        data-name="{{ tag.name ?? '' }}" title="Supprimer">
+                        data-name="{{ tag.name ?? '' }}" title="{{ 'media.arr_admin.auto_tags.btn_delete_title'|trans }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                 </button>
               </td>
@@ -102,44 +102,44 @@
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modal-at-title">Nouvelle regle d'auto-tagging</h5>
+        <h5 class="modal-title" id="modal-at-title">{{ 'media.arr_admin.auto_tags.modal_title_new'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div class="row g-3">
           <div class="col-12">
-            <label class="form-label fw-medium">Nom <span class="text-danger">*</span></label>
-            <input type="text" class="form-control form-control-sm" id="at-name" placeholder="Nom de la regle">
+            <label class="form-label fw-medium">{{ 'media.arr_admin.auto_tags.label_name'|trans }} <span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" id="at-name" placeholder="{{ 'media.arr_admin.auto_tags.label_name_placeholder'|trans }}">
           </div>
           <div class="col-6">
-            <label class="form-label fw-medium">Tags (IDs, virgules)</label>
-            <input type="text" class="form-control form-control-sm" id="at-tags" placeholder="Ex: 1,3,5">
-            <small class="text-muted">Identifiants des tags a appliquer.</small>
+            <label class="form-label fw-medium">{{ 'media.arr_admin.auto_tags.label_tags'|trans }}</label>
+            <input type="text" class="form-control form-control-sm" id="at-tags" placeholder="{{ 'media.arr_admin.auto_tags.label_tags_placeholder'|trans }}">
+            <small class="text-muted">{{ 'media.arr_admin.auto_tags.label_tags_help'|trans }}</small>
           </div>
           <div class="col-6 d-flex align-items-end">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="at-remove-auto">
-              <label class="form-check-label" for="at-remove-auto">Retirer les tags si non correspondant</label>
+              <label class="form-check-label" for="at-remove-auto">{{ 'media.arr_admin.auto_tags.label_remove_unmatched'|trans }}</label>
             </div>
           </div>
           <div class="col-12">
             <hr>
             <div class="d-flex align-items-center justify-content-between mb-2">
-              <label class="form-label fw-medium mb-0">Specifications (conditions)</label>
+              <label class="form-label fw-medium mb-0">{{ 'media.arr_admin.auto_tags.specifications_title'|trans }}</label>
               <button type="button" class="btn btn-outline-primary btn-sm" id="btn-at-add-spec">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
-                Ajouter
+                {{ 'media.arr_admin.auto_tags.btn_add_spec'|trans }}
               </button>
             </div>
             <div id="at-specs-container"></div>
-            <div id="at-no-specs" class="text-muted small text-center py-3">Aucune condition. Cliquez sur "Ajouter" pour commencer.</div>
+            <div id="at-no-specs" class="text-muted small text-center py-3">{{ 'media.arr_admin.auto_tags.no_specs'|trans }}</div>
           </div>
         </div>
         <div id="at-modal-feedback" class="alert d-none mt-3"></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-primary" id="btn-at-save">Creer</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'media.arr_admin.auto_tags.cancel'|trans }}</button>
+        <button type="button" class="btn btn-primary" id="btn-at-save">{{ 'media.arr_admin.auto_tags.btn_create'|trans }}</button>
       </div>
     </div>
   </div>
@@ -171,6 +171,33 @@
 {% block javascripts %}
 <script>
 (function(){
+  var _I18N = {
+    modal_title_new: {{ 'media.arr_admin.auto_tags.modal_title_new'|trans|json_encode|raw }},
+    modal_title_edit: {{ 'media.arr_admin.auto_tags.modal_title_edit_tpl'|trans({name: '__NAME__'})|json_encode|raw }},
+    btn_create: {{ 'media.arr_admin.auto_tags.btn_create'|trans|json_encode|raw }},
+    btn_save: {{ 'media.arr_admin.auto_tags.btn_save'|trans|json_encode|raw }},
+    type_placeholder: {{ 'media.arr_admin.auto_tags.type_placeholder'|trans|json_encode|raw }},
+    name_placeholder: {{ 'media.arr_admin.auto_tags.name_placeholder'|trans|json_encode|raw }},
+    type_label: {{ 'media.arr_admin.auto_tags.type_label'|trans|json_encode|raw }},
+    name_label: {{ 'media.arr_admin.auto_tags.name_label'|trans|json_encode|raw }},
+    negate_label: {{ 'media.arr_admin.auto_tags.negate_label'|trans|json_encode|raw }},
+    required_label: {{ 'media.arr_admin.auto_tags.required_label'|trans|json_encode|raw }},
+    fields_label: {{ 'media.arr_admin.auto_tags.fields_label'|trans|json_encode|raw }},
+    fields_help: {{ 'media.arr_admin.auto_tags.fields_help'|trans|json_encode|raw }},
+    err_name_required: {{ 'media.arr_admin.auto_tags.err_name_required'|trans|json_encode|raw }},
+    err_save: {{ 'media.arr_admin.auto_tags.err_save'|trans|json_encode|raw }},
+    err_network_tpl: {{ 'media.arr_admin.auto_tags.err_network_tpl'|trans({error: '__ERR__'})|json_encode|raw }},
+    delete_confirm_tpl: {{ 'media.arr_admin.auto_tags.delete_confirm_tpl'|trans({name: '__NAME__'})|json_encode|raw }},
+    delete_error: {{ 'media.arr_admin.auto_tags.delete_error'|trans|json_encode|raw }},
+    condition_n_tpl: {{ 'media.arr_admin.auto_tags.condition_n_tpl'|trans({n: '__N__'})|json_encode|raw }},
+    spec_root_folder: {{ 'media.arr_admin.auto_tags.spec_root_folder'|trans|json_encode|raw }},
+    spec_quality_profile: {{ 'media.arr_admin.auto_tags.spec_quality_profile'|trans|json_encode|raw }},
+    spec_genre: {{ 'media.arr_admin.auto_tags.spec_genre'|trans|json_encode|raw }},
+    spec_year: {{ 'media.arr_admin.auto_tags.spec_year'|trans|json_encode|raw }},
+    spec_original_language: {{ 'media.arr_admin.auto_tags.spec_original_language'|trans|json_encode|raw }},
+    spec_series_type: {{ 'media.arr_admin.auto_tags.spec_series_type'|trans|json_encode|raw }}
+  };
+
   var feedback = document.getElementById('at-feedback');
   var editingItem = null;
   var specIndex = 0;
@@ -200,12 +227,12 @@
   }
 
   var SPEC_TYPES = [
-    {value: 'RootFolderSpecification', label: 'Dossier racine'},
-    {value: 'QualityProfileSpecification', label: 'Profil de qualite'},
-    {value: 'GenreSpecification', label: 'Genre'},
-    {value: 'YearSpecification', label: 'Annee'},
-    {value: 'OriginalLanguageSpecification', label: 'Langue originale'},
-    {value: 'MovieStatusSpecification', label: 'Statut du film'}
+    {value: 'RootFolderSpecification', label: _I18N.spec_root_folder},
+    {value: 'QualityProfileSpecification', label: _I18N.spec_quality_profile},
+    {value: 'GenreSpecification', label: _I18N.spec_genre},
+    {value: 'YearSpecification', label: _I18N.spec_year},
+    {value: 'OriginalLanguageSpecification', label: _I18N.spec_original_language},
+    {value: 'SeriesTypeSpecification', label: _I18N.spec_series_type}
   ];
 
   function createSpecCard(existingSpec) {
@@ -219,7 +246,7 @@
     var negateChecked = (existingSpec && existingSpec.negate) ? ' checked' : '';
     var requiredChecked = (existingSpec && existingSpec.required) ? ' checked' : '';
 
-    var implOptions = '<option value="">-- Type de condition --</option>';
+    var implOptions = '<option value="">' + _I18N.type_placeholder + '</option>';
     SPEC_TYPES.forEach(function(t) {
       var selected = (t.value === implVal) ? ' selected' : '';
       implOptions += '<option value="' + t.value + '"' + selected + '>' + t.label + '</option>';
@@ -234,35 +261,35 @@
     }
 
     card.innerHTML = '<div class="at-spec-header">'
-      + '<span class="at-spec-title">Condition #' + (idx + 1) + '</span>'
+      + '<span class="at-spec-title">' + _I18N.condition_n_tpl.replace('__N__', (idx + 1)) + '</span>'
       + '<button type="button" class="btn btn-ghost-danger btn-sm btn-remove-spec">'
       + '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>'
       + '</button>'
       + '</div>'
       + '<div class="row g-2 mb-2">'
       + '<div class="col-md-5">'
-      + '<label class="form-label small">Type</label>'
+      + '<label class="form-label small">' + _I18N.type_label + '</label>'
       + '<select class="form-select form-select-sm spec-impl-select">' + implOptions + '</select>'
       + '</div>'
       + '<div class="col-md-4">'
-      + '<label class="form-label small">Nom</label>'
-      + '<input type="text" class="form-control form-control-sm spec-name-input" value="' + nameVal.replace(/"/g, '&quot;') + '" placeholder="Nom...">'
+      + '<label class="form-label small">' + _I18N.name_label + '</label>'
+      + '<input type="text" class="form-control form-control-sm spec-name-input" value="' + nameVal.replace(/"/g, '&quot;') + '" placeholder="' + _I18N.name_placeholder + '">'
       + '</div>'
       + '<div class="col-md-3 d-flex align-items-end gap-2">'
       + '<div class="form-check">'
       + '<input class="form-check-input spec-negate-check" type="checkbox"' + negateChecked + '>'
-      + '<label class="form-check-label small">Inverser</label>'
+      + '<label class="form-check-label small">' + _I18N.negate_label + '</label>'
       + '</div>'
       + '<div class="form-check">'
       + '<input class="form-check-input spec-required-check" type="checkbox"' + requiredChecked + '>'
-      + '<label class="form-check-label small">Requis</label>'
+      + '<label class="form-check-label small">' + _I18N.required_label + '</label>'
       + '</div>'
       + '</div>'
       + '</div>'
       + '<div class="mb-1">'
-      + '<label class="form-label small">Champs (JSON)</label>'
+      + '<label class="form-label small">' + _I18N.fields_label + '</label>'
       + '<textarea class="form-control form-control-sm font-monospace spec-fields-json" rows="3" placeholder=\'[{"name":"value","value":"..."}]\'>' + fieldsJson.replace(/</g, '&lt;') + '</textarea>'
-      + '<small class="text-muted">Format : tableau JSON des champs de la condition.</small>'
+      + '<small class="text-muted">' + _I18N.fields_help + '</small>'
       + '</div>';
 
     card.querySelector('.btn-remove-spec').addEventListener('click', function() {
@@ -311,11 +338,11 @@
     editingItem = raw ? JSON.parse(raw) : null;
 
     if (editingItem) {
-      document.getElementById('modal-at-title').textContent = 'Modifier : ' + (editingItem.name || 'Regle');
+      document.getElementById('modal-at-title').textContent = _I18N.modal_title_edit.replace('__NAME__', editingItem.name || '');
       document.getElementById('at-name').value = editingItem.name || '';
       document.getElementById('at-tags').value = (editingItem.tags || []).join(',');
       document.getElementById('at-remove-auto').checked = editingItem.removeTagsAutomatically || false;
-      document.getElementById('btn-at-save').textContent = 'Enregistrer';
+      document.getElementById('btn-at-save').textContent = _I18N.btn_save;
 
       if (editingItem.specifications && editingItem.specifications.length > 0) {
         editingItem.specifications.forEach(function(spec) {
@@ -323,11 +350,11 @@
         });
       }
     } else {
-      document.getElementById('modal-at-title').textContent = 'Nouvelle regle d\'auto-tagging';
+      document.getElementById('modal-at-title').textContent = _I18N.modal_title_new;
       document.getElementById('at-name').value = '';
       document.getElementById('at-tags').value = '';
       document.getElementById('at-remove-auto').checked = false;
-      document.getElementById('btn-at-save').textContent = 'Creer';
+      document.getElementById('btn-at-save').textContent = _I18N.btn_create;
     }
     updateNoSpecsMsg();
   });
@@ -340,7 +367,7 @@
     hideModalFeedback();
     var name = document.getElementById('at-name').value.trim();
     if (!name) {
-      showModalFeedback('Le nom est obligatoire.', 'warning');
+      showModalFeedback(_I18N.err_name_required, 'warning');
       return;
     }
 
@@ -375,17 +402,17 @@
       if (data.ok) {
         location.reload();
       } else {
-        showModalFeedback(data.error || 'Erreur lors de l\'enregistrement.', 'danger');
+        showModalFeedback(data.error || _I18N.err_save, 'danger');
       }
     })
     .catch(function(err){
-      showModalFeedback('Erreur reseau : ' + (err.message || err), 'danger');
+      showModalFeedback(_I18N.err_network_tpl.replace('__ERR__', (err.message || err)), 'danger');
     });
   });
 
   document.querySelectorAll('.btn-at-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      if (!confirm('Supprimer la regle "' + btn.dataset.name + '" ?')) return;
+      if (!confirm(_I18N.delete_confirm_tpl.replace('__NAME__', btn.dataset.name))) return;
       fetch('/sonarr/auto-tags/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
@@ -394,7 +421,7 @@
       .then(function(r){ return r.json(); })
       .then(function(data){
         if (data.ok) location.reload();
-        else showFeedback('Erreur lors de la suppression.', 'danger');
+        else showFeedback(_I18N.delete_error, 'danger');
       });
     });
   });

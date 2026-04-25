@@ -1,11 +1,11 @@
 {% extends 'base.html.twig' %}
-{% block title %}Statistiques — Sonarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.stats.title_sonarr'|trans }}{% endblock %}
 
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
-      <div class="col"><h2 class="page-title">Statistiques séries</h2></div>
+      <div class="col"><h2 class="page-title">{{ 'media.arr_admin.stats.page_title_sonarr'|trans }}</h2></div>
       <div class="col-auto ms-auto d-flex gap-2 align-items-center">
         {% include 'media/_sonarr_nav.html.twig' %}
       </div>
@@ -17,7 +17,7 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Sonarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.stats.error_unreachable_sonarr'|trans }}</div>
 {% endif %}
 
 {% if stats %}
@@ -25,10 +25,10 @@
 {# ── Cards résumé ── #}
 <div class="row g-3 mb-4">
   {% set cards = [
-    {label: 'Séries',       value: stats.total,      color: 'primary'},
-    {label: 'En cours',     value: stats.continuing,  color: 'success'},
-    {label: 'Terminées',    value: stats.ended,       color: 'secondary'},
-    {label: 'Suivies',      value: stats.monitored,   color: 'blue'},
+    {label: 'media.arr_admin.stats.card_series'|trans,            value: stats.total,      color: 'primary'},
+    {label: 'media.arr_admin.stats.card_continuing'|trans,        value: stats.continuing,  color: 'success'},
+    {label: 'media.arr_admin.stats.card_ended'|trans,             value: stats.ended,       color: 'secondary'},
+    {label: 'media.arr_admin.stats.card_monitored_series'|trans,  value: stats.monitored,   color: 'blue'},
   ] %}
   {% for c in cards %}
   <div class="col-6 col-sm-3">
@@ -44,14 +44,14 @@
 
 {# ── Stockage ── #}
 <div class="card mb-4">
-  <div class="card-header"><h3 class="card-title">Stockage disque</h3></div>
+  <div class="card-header"><h3 class="card-title">{{ 'media.arr_admin.stats.storage_disk_card_title'|trans }}</h3></div>
   <div class="card-body">
-    <div class="h2 mb-3">{{ stats.sizeOnDisk|round(1) }} Go</div>
+    <div class="h2 mb-3">{{ 'media.arr_admin.stats.size_gb_tpl'|trans({size: stats.sizeOnDisk|round(1)}) }}</div>
     {% for d in stats.disk %}
     <div class="mb-2">
       <div class="d-flex justify-content-between small mb-1">
         <span>{{ d.path }}</span>
-        <span class="text-muted">{{ (d.freeSpace / 1073741824)|round(1) }} Go libres / {{ (d.totalSpace / 1073741824)|round(1) }} Go</span>
+        <span class="text-muted">{{ 'media.arr_admin.stats.free_total_tpl'|trans({free: (d.freeSpace / 1073741824)|round(1), total: (d.totalSpace / 1073741824)|round(1)}) }}</span>
       </div>
       {% set pct = ((d.totalSpace - d.freeSpace) / d.totalSpace * 100)|round(0) %}
       <div class="progress progress-sm">
@@ -66,7 +66,7 @@
   {# ── Genres ── #}
   <div class="col-lg-6">
     <div class="card h-100">
-      <div class="card-header"><h3 class="card-title">Genres</h3></div>
+      <div class="card-header"><h3 class="card-title">{{ 'media.arr_admin.stats.genres_card_title'|trans }}</h3></div>
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-sm table-vcenter card-table mb-0">
@@ -92,7 +92,7 @@
   {# ── Réseaux ── #}
   <div class="col-lg-6">
     <div class="card h-100">
-      <div class="card-header"><h3 class="card-title">Réseaux</h3></div>
+      <div class="card-header"><h3 class="card-title">{{ 'media.arr_admin.stats.networks_card_title'|trans }}</h3></div>
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-sm table-vcenter card-table mb-0">

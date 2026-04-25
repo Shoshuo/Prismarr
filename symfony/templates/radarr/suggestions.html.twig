@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Suggestions d'import Radarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.suggestions.title_radarr'|trans }}{% endblock %}
 
 {% block stylesheets %}
 <style>
@@ -49,7 +49,7 @@
   <div class="container-xl">
     <div class="row g-2 align-items-center">
       <div class="col">
-        <h2 class="page-title">Suggestions d'import</h2>
+        <h2 class="page-title">{{ 'media.arr_admin.suggestions.page_title_radarr'|trans }}</h2>
       </div>
       <div class="col-auto ms-auto d-flex gap-2 align-items-center">
         {% include 'media/_radarr_nav.html.twig' %}
@@ -62,18 +62,18 @@
 <div class="container-xl">
 
 {% if error %}
-<div class="alert alert-danger">Impossible de joindre Radarr.</div>
+<div class="alert alert-danger">{{ 'media.arr_admin.suggestions.error_unreachable_radarr'|trans }}</div>
 {% endif %}
 
 <div id="suggest-feedback" class="alert d-none mb-3"></div>
 
 {% if movies is empty %}
   <div class="card">
-    <div class="card-body text-center text-muted py-5">Aucune suggestion disponible.</div>
+    <div class="card-body text-center text-muted py-5">{{ 'media.arr_admin.suggestions.empty_radarr'|trans }}</div>
   </div>
 {% else %}
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <span class="text-muted small">{{ movies|length }} film(s) suggéré(s)</span>
+  <span class="text-muted small">{{ 'media.arr_admin.suggestions.count_movies_tpl'|trans({count: movies|length}) }}</span>
 </div>
 <div class="media-grid">
   {% for movie in movies %}
@@ -89,7 +89,7 @@
       <div class="no-poster">{{ movie.title ?? '—' }}</div>
     {% endif %}
     {% if isInLib %}
-      <span class="already-badge">Deja ajouté</span>
+      <span class="already-badge">{{ 'media.arr_admin.suggestions.already_added'|trans }}</span>
     {% endif %}
     <div class="card-overlay">
       <div class="card-title-text">{{ movie.title ?? '—' }}</div>
@@ -105,12 +105,12 @@
   <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered" style="max-width:800px;">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="modal-add-title">Ajouter un film</h5>
+        <h5 class="modal-title" id="modal-add-title">{{ 'media.arr_admin.suggestions.modal_title'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div id="modal-already-in-lib" class="alert alert-info d-none">
-          Ce film est déjà dans votre bibliothèque.
+          {{ 'media.arr_admin.suggestions.already_in_lib'|trans }}
         </div>
 
         {# Détail film #}
@@ -126,7 +126,7 @@
         <div class="p-2 rounded mb-2" style="background:var(--tblr-bg-surface-secondary);">
           <div class="row g-2 align-items-end">
             <div class="col-sm-4">
-              <label class="form-label small mb-1">Profil de qualité</label>
+              <label class="form-label small mb-1">{{ 'media.arr_admin.suggestions.label_quality_profile'|trans }}</label>
               <select class="form-select form-select-sm" id="add-quality">
                 {% for qp in qualityProfiles %}
                 <option value="{{ qp.id }}">{{ qp.name }}</option>
@@ -134,7 +134,7 @@
               </select>
             </div>
             <div class="col-sm-4">
-              <label class="form-label small mb-1">Dossier racine</label>
+              <label class="form-label small mb-1">{{ 'media.arr_admin.suggestions.label_root_folder'|trans }}</label>
               <select class="form-select form-select-sm" id="add-folder">
                 {% for rf in rootFolders %}
                 <option value="{{ rf.path }}">{{ rf.path }}</option>
@@ -144,17 +144,17 @@
             <div class="col-sm-4 d-flex align-items-center gap-3">
               <label class="form-check form-switch mb-0">
                 <input class="form-check-input" type="checkbox" id="add-monitored" checked>
-                <span class="form-check-label small">Rechercher auto</span>
+                <span class="form-check-label small">{{ 'media.arr_admin.suggestions.label_search_auto'|trans }}</span>
               </label>
             </div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-ghost-secondary" data-bs-dismiss="modal">{{ 'media.arr_admin.suggestions.cancel'|trans }}</button>
         <button type="button" class="btn btn-success" id="btn-confirm-add">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
-          Ajouter
+          {{ 'media.arr_admin.suggestions.btn_add'|trans }}
         </button>
       </div>
     </div>
@@ -168,6 +168,15 @@
 {% block javascripts %}
 <script>
 (function(){
+var _I18N = {
+  no_overview: {{ 'media.arr_admin.suggestions.no_overview'|trans|json_encode|raw }},
+  badge_recommended: {{ 'media.arr_admin.suggestions.badge_recommended'|trans|json_encode|raw }},
+  badge_trending: {{ 'media.arr_admin.suggestions.badge_trending'|trans|json_encode|raw }},
+  badge_popular: {{ 'media.arr_admin.suggestions.badge_popular'|trans|json_encode|raw }},
+  added_success_tpl: {{ 'media.arr_admin.suggestions.added_success_tpl'|trans({title: '__TITLE__'})|json_encode|raw }},
+  add_error: {{ 'media.arr_admin.suggestions.add_error'|trans|json_encode|raw }},
+  network_error: {{ 'media.arr_admin.suggestions.network_error'|trans|json_encode|raw }}
+};
 var allMovies = {{ movies|json_encode|raw }};
 var currentMovie = null;
 var modalEl = document.getElementById('modal-add');
@@ -208,7 +217,7 @@ modalEl.addEventListener('show.bs.modal', function(e) {
   else { posterEl.classList.add('d-none'); }
 
   // Overview
-  document.getElementById('modal-overview').textContent = m.overview || 'Aucun synopsis disponible.';
+  document.getElementById('modal-overview').textContent = m.overview || _I18N.no_overview;
 
   // Meta badges
   var meta = '';
@@ -220,9 +229,9 @@ modalEl.addEventListener('show.bs.modal', function(e) {
   if (imdb) meta += '<span class="badge bg-warning-lt">IMDb ' + imdb + '</span>';
   if (tmdb) meta += '<span class="badge bg-green-lt">TMDB ' + tmdb + '</span>';
   (m.genres || []).forEach(function(g) { meta += '<span class="badge bg-purple-lt">' + g + '</span>'; });
-  if (m.isRecommendation) meta += '<span class="badge bg-cyan-lt">Recommandé</span>';
-  if (m.isTrending) meta += '<span class="badge bg-orange-lt">Tendance</span>';
-  if (m.isPopular) meta += '<span class="badge bg-red-lt">Populaire</span>';
+  if (m.isRecommendation) meta += '<span class="badge bg-cyan-lt">' + _I18N.badge_recommended + '</span>';
+  if (m.isTrending) meta += '<span class="badge bg-orange-lt">' + _I18N.badge_trending + '</span>';
+  if (m.isPopular) meta += '<span class="badge bg-red-lt">' + _I18N.badge_popular + '</span>';
   document.getElementById('modal-meta').innerHTML = meta;
 });
 
@@ -247,15 +256,15 @@ document.getElementById('btn-confirm-add').addEventListener('click', function() 
   .then(function(r) { return r.json(); })
   .then(function(data) {
     if (data.ok) {
-      showFeedback('"' + currentMovie.title + '" ajouté avec succès.');
+      showFeedback(_I18N.added_success_tpl.replace('__TITLE__', currentMovie.title));
       location.reload();
     } else {
-      showFeedback('Erreur lors de l\'ajout.', 'danger');
+      showFeedback(_I18N.add_error, 'danger');
       btn.disabled = false;
     }
   })
   .catch(function() {
-    showFeedback('Erreur réseau.', 'danger');
+    showFeedback(_I18N.network_error, 'danger');
     btn.disabled = false;
   });
 });

@@ -1,27 +1,27 @@
 {% extends 'base.html.twig' %}
-{% block title %}Metadata — Radarr{% endblock %}
+{% block title %}{{ 'media.arr_admin.metadata.title_radarr'|trans }}{% endblock %}
 {% block body %}
 <div class="page-header d-print-none">
   <div class="container-xl">
     <div class="row g-2 align-items-center">
-      <div class="col"><h2 class="page-title">Metadata</h2></div>
+      <div class="col"><h2 class="page-title">{{ 'media.arr_admin.metadata.page_title'|trans }}</h2></div>
       <div class="col-auto ms-auto">{% include 'media/_radarr_nav.html.twig' %}</div>
     </div>
   </div>
 </div>
 <div class="page-body"><div class="container-xl">
-{% if error %}<div class="alert alert-danger">Impossible de joindre Radarr.</div>{% endif %}
+{% if error %}<div class="alert alert-danger">{{ 'media.arr_admin.metadata.error_unreachable_radarr'|trans }}</div>{% endif %}
 <div id="meta-feedback" class="alert d-none mb-3"></div>
 
 <div class="card">
-  <div class="card-header"><h3 class="card-title">Consommateurs de metadata</h3><div class="card-options"><span class="badge bg-secondary-lt">{{ metadata|length }}</span></div></div>
+  <div class="card-header"><h3 class="card-title">{{ 'media.arr_admin.metadata.consumers_title'|trans }}</h3><div class="card-options"><span class="badge bg-secondary-lt">{{ metadata|length }}</span></div></div>
   <div class="card-body p-0">
     {% if metadata is empty %}
-      <div class="text-muted text-center py-5">Aucun consommateur de metadata.</div>
+      <div class="text-muted text-center py-5">{{ 'media.arr_admin.metadata.empty'|trans }}</div>
     {% else %}
       <div class="table-responsive">
         <table class="table table-vcenter table-sm mb-0">
-          <thead><tr><th>Nom</th><th>Type</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
+          <thead><tr><th>{{ 'media.arr_admin.metadata.col_name'|trans }}</th><th>{{ 'media.arr_admin.metadata.col_type'|trans }}</th><th>{{ 'media.arr_admin.metadata.col_status'|trans }}</th><th class="text-end">{{ 'media.arr_admin.metadata.col_actions'|trans }}</th></tr></thead>
           <tbody>
             {% for m in metadata %}
             <tr>
@@ -29,16 +29,16 @@
               <td class="text-muted small">{{ m.implementationName ?? m.implementation ?? '—' }}</td>
               <td>
                 {% if m.enable ?? false %}
-                  <span class="badge bg-success-lt text-success">Actif</span>
+                  <span class="badge bg-success-lt text-success">{{ 'media.arr_admin.metadata.enabled'|trans }}</span>
                 {% else %}
-                  <span class="badge bg-secondary-lt">Inactif</span>
+                  <span class="badge bg-secondary-lt">{{ 'media.arr_admin.metadata.disabled'|trans }}</span>
                 {% endif %}
               </td>
               <td class="text-end">
                 <button class="btn btn-ghost-primary btn-sm btn-meta-toggle"
                         data-id="{{ m.id }}"
                         data-enabled="{{ (m.enable ?? false) ? '1' : '0' }}"
-                        title="{{ (m.enable ?? false) ? 'Desactiver' : 'Activer' }}">
+                        title="{{ (m.enable ?? false) ? ('media.arr_admin.metadata.btn_disable'|trans) : ('media.arr_admin.metadata.btn_enable'|trans) }}">
                   {% if m.enable ?? false %}
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/><path d="m2 2 20 20"/><path d="M12 2v4"/></svg>
                   {% else %}
@@ -48,13 +48,13 @@
                 <button class="btn btn-ghost-primary btn-sm"
                         data-bs-toggle="modal" data-bs-target="#modal-meta"
                         data-edit-item="{{ m|json_encode|e('html_attr') }}"
-                        title="Modifier">
+                        title="{{ 'media.arr_admin.metadata.btn_edit_title'|trans }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                 </button>
                 <button class="btn btn-ghost-danger btn-sm btn-meta-delete"
                         data-id="{{ m.id }}"
                         data-name="{{ m.name ?? '' }}"
-                        title="Supprimer">
+                        title="{{ 'media.arr_admin.metadata.btn_delete_title'|trans }}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                 </button>
               </td>
@@ -70,7 +70,7 @@
 {% if metadata is not empty %}
 <div class="text-muted small mt-2">
   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-  Les consommateurs de metadata ecrivent des fichiers .nfo et des images aux cotes des fichiers de films.
+  {{ 'media.arr_admin.metadata.footer_help_radarr'|trans }}
 </div>
 {% endif %}
 
@@ -81,26 +81,26 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="meta-modal-title">Modifier le consommateur</h5>
+        <h5 class="modal-title" id="meta-modal-title">{{ 'media.arr_admin.metadata.modal_title_default'|trans }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body" id="meta-modal-body">
         <div class="mb-3">
-          <label class="form-label fw-medium">Nom</label>
+          <label class="form-label fw-medium">{{ 'media.arr_admin.metadata.label_name'|trans }}</label>
           <input type="text" id="meta-name" class="form-control form-control-sm">
         </div>
         <div class="mb-3">
           <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" id="meta-enable">
-            <label class="form-check-label" for="meta-enable">Actif</label>
+            <label class="form-check-label" for="meta-enable">{{ 'media.arr_admin.metadata.label_active'|trans }}</label>
           </div>
         </div>
         <div id="meta-fields-container"></div>
         <div id="meta-modal-feedback" class="alert d-none mt-3"></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-success" id="btn-meta-save">Enregistrer</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'media.arr_admin.metadata.cancel'|trans }}</button>
+        <button type="button" class="btn btn-success" id="btn-meta-save">{{ 'media.arr_admin.metadata.save'|trans }}</button>
       </div>
     </div>
   </div>
@@ -110,6 +110,14 @@
 {% block javascripts %}
 <script>
 (function(){
+  var META_I18N = {
+    title_edit_tpl: {{ 'media.arr_admin.metadata.modal_title_edit_tpl'|trans({name: '__NAME__'})|json_encode|raw }},
+    fields_title: {{ 'media.arr_admin.metadata.fields_title'|trans|json_encode|raw }},
+    err_generic: {{ 'media.arr_admin.metadata.err_generic'|trans|json_encode|raw }},
+    err_save: {{ 'media.arr_admin.metadata.err_save'|trans|json_encode|raw }},
+    delete_confirm_tpl: {{ 'media.arr_admin.metadata.delete_confirm_tpl'|trans({name: '__NAME__'})|json_encode|raw }},
+    delete_error: {{ 'media.arr_admin.metadata.delete_error'|trans|json_encode|raw }}
+  };
   var feedback = document.getElementById('meta-feedback');
   var mfb = document.getElementById('meta-modal-feedback');
   var currentPayload = null;
@@ -127,7 +135,7 @@
     if (!fields || !fields.length) return;
     var heading = document.createElement('h4');
     heading.className = 'mb-3';
-    heading.textContent = 'Champs';
+    heading.textContent = META_I18N.fields_title;
     container.appendChild(heading);
     fields.forEach(function(field, idx) {
       var div = document.createElement('div');
@@ -180,7 +188,7 @@
     var trigger = e.relatedTarget;
     if (!trigger || !trigger.dataset.editItem) return;
     currentPayload = JSON.parse(trigger.dataset.editItem);
-    document.getElementById('meta-modal-title').textContent = 'Modifier : ' + (currentPayload.name || '');
+    document.getElementById('meta-modal-title').textContent = META_I18N.title_edit_tpl.replace('__NAME__', currentPayload.name || '');
     document.getElementById('meta-name').value = currentPayload.name || '';
     document.getElementById('meta-enable').checked = !!currentPayload.enable;
     buildFieldsUI(currentPayload.fields || []);
@@ -199,7 +207,7 @@
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.ok !== false) location.reload();
-        else showFeedback(data.error || 'Erreur.', 'danger');
+        else showFeedback(data.error || META_I18N.err_generic, 'danger');
       });
     });
   });
@@ -220,7 +228,7 @@
       if (data.ok !== false) location.reload();
       else {
         mfb.className = 'alert alert-danger mt-3';
-        mfb.textContent = data.error || 'Erreur lors de la sauvegarde.';
+        mfb.textContent = data.error || META_I18N.err_save;
         mfb.classList.remove('d-none');
       }
     });
@@ -228,7 +236,7 @@
 
   document.querySelectorAll('.btn-meta-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      if (!confirm('Supprimer "' + btn.dataset.name + '" ?')) return;
+      if (!confirm(META_I18N.delete_confirm_tpl.replace('__NAME__', btn.dataset.name))) return;
       fetch('/radarr/metadata/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
@@ -237,7 +245,7 @@
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.ok) location.reload();
-        else showFeedback('Erreur lors de la suppression.', 'danger');
+        else showFeedback(META_I18N.delete_error, 'danger');
       });
     });
   });
