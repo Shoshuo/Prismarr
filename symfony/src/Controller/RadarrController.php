@@ -332,7 +332,7 @@ class RadarrController extends AbstractController
         }
     }
 
-    // ── Renommage ─────────────────────────────────────────────────────────────
+    // ── Renaming ─────────────────────────────────────────────────────────────
 
     #[Route('/renommer', name: 'rename')]
     public function rename(): Response
@@ -770,7 +770,7 @@ class RadarrController extends AbstractController
         }
     }
 
-    // ── Indexeurs (Radarr natifs) ─────────────────────────────────────────────
+    // ── Indexers (Radarr native) ─────────────────────────────────────────────
 
     #[Route('/indexeurs', name: 'indexers')]
     public function indexers(): Response
@@ -918,7 +918,7 @@ class RadarrController extends AbstractController
         }
     }
 
-    // ── Listes d'import ───────────────────────────────────────────────────────
+    // ── Import lists ───────────────────────────────────────────────────────
 
     #[Route('/listes-import', name: 'import_lists')]
     public function importLists(): Response
@@ -980,7 +980,7 @@ class RadarrController extends AbstractController
         }
     }
 
-    // ── Commandes (monitoring global) ─────────────────────────────────────────
+    // ── Commands (global monitoring) ─────────────────────────────────────────
 
     #[Route('/commandes', name: 'commands')]
     public function commands(): Response
@@ -1080,7 +1080,7 @@ class RadarrController extends AbstractController
         ]);
     }
 
-    // ── Stats films ───────────────────────────────────────────────────────────
+    // ── Movie stats ───────────────────────────────────────────────────────────
 
     #[Route('/stats', name: 'stats')]
     public function stats(): Response
@@ -1150,7 +1150,7 @@ class RadarrController extends AbstractController
         return $this->render('radarr/stats.html.twig', ['stats' => $stats, 'error' => $error]);
     }
 
-    // ── Parser titre ──────────────────────────────────────────────────────────
+    // ── Title parser ──────────────────────────────────────────────────────────
 
     #[Route('/parser', name: 'parse')]
     public function parse(Request $request): Response

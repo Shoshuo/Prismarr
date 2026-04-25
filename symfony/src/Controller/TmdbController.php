@@ -710,7 +710,7 @@ class TmdbController extends AbstractController
     {
         $data = $this->tmdb->getCollection($id);
         if (!$data || empty($data['parts'])) {
-            return $this->json(['error' => 'Collection introuvable'], 404);
+            return $this->json(['error' => $this->translator->trans('decouverte.error.collection_not_found')], 404);
         }
 
         $library = $this->buildLibraryIndex();
@@ -746,7 +746,7 @@ class TmdbController extends AbstractController
         $person  = $this->tmdb->getPerson($id);
         $credits = $this->tmdb->getPersonCombinedCredits($id);
         if (!$person || !$credits) {
-            return $this->json(['error' => 'Personne introuvable'], 404);
+            return $this->json(['error' => $this->translator->trans('decouverte.error.person_not_found')], 404);
         }
 
         $library = $this->buildLibraryIndex();

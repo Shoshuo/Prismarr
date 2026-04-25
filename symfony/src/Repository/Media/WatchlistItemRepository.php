@@ -27,7 +27,7 @@ class WatchlistItemRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /** Retourne les tmdbIds en watchlist sous forme de set : ['movie_123' => true, 'tv_456' => true] */
+    /** Returns the watchlist tmdbIds as a set: ['movie_123' => true, 'tv_456' => true] */
     public function getWatchlistIndex(): array
     {
         $items = $this->createQueryBuilder('w')

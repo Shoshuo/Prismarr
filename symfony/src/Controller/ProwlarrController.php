@@ -24,7 +24,7 @@ class ProwlarrController extends AbstractController
         private readonly TranslatorInterface $translator,
     ) {}
 
-    // ── Page principale — Indexeurs ───────────────────────────────────────────
+    // ── Main page — Indexers ───────────────────────────────────────────
 
     #[Route('', name: 'index')]
     public function index(): Response
@@ -69,7 +69,7 @@ class ProwlarrController extends AbstractController
         ]);
     }
 
-    // ── CRUD Indexeurs ────────────────────────────────────────────────────────
+    // ── CRUD Indexers ────────────────────────────────────────────────────────
 
     #[Route('/indexer/schema', name: 'indexer_schema', methods: ['GET'])]
     public function indexerSchema(): JsonResponse
@@ -136,7 +136,7 @@ class ProwlarrController extends AbstractController
         return $this->json($results);
     }
 
-    // ── Historique ────────────────────────────────────────────────────────────
+    // ── History ────────────────────────────────────────────────────────────
 
     #[Route('/history', name: 'history', methods: ['GET'])]
     public function history(Request $request): JsonResponse
@@ -293,7 +293,7 @@ class ProwlarrController extends AbstractController
         return $this->json($this->prowlarr->testNotification($request->toArray()));
     }
 
-    // ── Historique (page) ────────────────────────────────────────────────────
+    // ── History (page) ────────────────────────────────────────────────────
 
     #[Route('/historique', name: 'history_page')]
     public function historyPage(Request $request): Response
@@ -690,7 +690,7 @@ class ProwlarrController extends AbstractController
         return $this->json(['ok' => $this->prowlarr->deleteAppProfile($id)]);
     }
 
-    // ── Commandes ────────────────────────────────────────────────────────────
+    // ── Commands ────────────────────────────────────────────────────────────
 
     #[Route('/command', name: 'command', methods: ['POST'])]
     public function command(Request $request): JsonResponse

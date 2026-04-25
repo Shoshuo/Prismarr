@@ -52,7 +52,7 @@ class SonarrController extends AbstractController
         }
     }
 
-    // ── Sauvegardes ───────────────────────────────────────────────────────────
+    // ── Backups ───────────────────────────────────────────────────────────
 
     #[Route('/sauvegardes', name: 'backups')]
     public function backups(): Response
@@ -688,7 +688,7 @@ class SonarrController extends AbstractController
         }
     }
 
-    // ── Indexeurs ─────────────────────────────────────────────────────────────
+    // ── Indexers ─────────────────────────────────────────────────────────────
 
     #[Route('/indexeurs', name: 'indexers')]
     public function indexers(): Response
@@ -836,7 +836,7 @@ class SonarrController extends AbstractController
         }
     }
 
-    // ── Listes d'import ───────────────────────────────────────────────────────
+    // ── Import lists ───────────────────────────────────────────────────────
 
     #[Route('/listes-import', name: 'import_lists')]
     public function importLists(): Response
@@ -898,7 +898,7 @@ class SonarrController extends AbstractController
         }
     }
 
-    // ── Commandes ─────────────────────────────────────────────────────────────
+    // ── Commands ─────────────────────────────────────────────────────────────
 
     #[Route('/commandes', name: 'commands')]
     public function commands(): Response
@@ -1050,7 +1050,7 @@ class SonarrController extends AbstractController
         return $this->render('sonarr/stats.html.twig', ['stats' => $stats, 'error' => $error]);
     }
 
-    // ── Parser titre ──────────────────────────────────────────────────────────
+    // ── Title parser ──────────────────────────────────────────────────────────
 
     #[Route('/parser', name: 'parse')]
     public function parse(Request $request): Response

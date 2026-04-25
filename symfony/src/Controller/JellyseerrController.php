@@ -155,7 +155,7 @@ class JellyseerrController extends AbstractController
 
         $user = $this->jellyseerr->getUser($id);
         if (!$user) {
-            throw $this->createNotFoundException('Utilisateur introuvable');
+            throw $this->createNotFoundException($this->translator->trans('jellyseerr.api.user_not_found'));
         }
 
         $user['_role'] = $this->decodeRole($user['permissions'] ?? 0);
@@ -213,7 +213,7 @@ class JellyseerrController extends AbstractController
         $email = $data['email'] ?? '';
         $password = $data['password'] ?? '';
         if (!$email || !$password) {
-            return $this->json(['ok' => false, 'error' => 'Email et mot de passe requis']);
+            return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.email_password_required')]);
         }
         $result = $this->jellyseerr->createLocalUser($email, $password);
         return $this->json(['ok' => $result !== null, 'data' => $result]);
@@ -241,7 +241,7 @@ class JellyseerrController extends AbstractController
         // Check whether the user exists and has admin/manager rights
         $user = $this->jellyseerr->getUser($id);
         if (!$user) {
-            return $this->json(['ok' => false, 'error' => 'Utilisateur introuvable.']);
+            return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.user_not_found')]);
         }
 
         $perms = $user['permissions'] ?? 0;
@@ -825,22 +825,22 @@ class JellyseerrController extends AbstractController
 
         // Priority: request status first, then media status for availability
         if ($requestStatus === 3) {
-            $req['_statusLabel'] = 'Refusée';
+            $req['_statusLabel'] = $this->translator->trans('jellyseerr.status.request.declined');
             $req['_statusColor'] = 'danger';
         } elseif ($mediaStatus === 5) {
-            $req['_statusLabel'] = 'Disponible';
+            $req['_statusLabel'] = $this->translator->trans('jellyseerr.status.media.available');
             $req['_statusColor'] = 'success';
         } elseif ($mediaStatus === 4) {
-            $req['_statusLabel'] = 'Partiellement disponible';
+            $req['_statusLabel'] = $this->translator->trans('jellyseerr.status.media.partially_available');
             $req['_statusColor'] = 'cyan';
         } elseif ($requestStatus === 2) {
-            $req['_statusLabel'] = 'En cours';
+            $req['_statusLabel'] = $this->translator->trans('jellyseerr.status.request.processing');
             $req['_statusColor'] = 'purple';
         } elseif ($mediaStatus === 3) {
-            $req['_statusLabel'] = 'Approuvée';
+            $req['_statusLabel'] = $this->translator->trans('jellyseerr.status.request.approved');
             $req['_statusColor'] = 'info';
         } elseif ($requestStatus === 1) {
-            $req['_statusLabel'] = 'En attente';
+            $req['_statusLabel'] = $this->translator->trans('jellyseerr.status.request.pending');
             $req['_statusColor'] = 'warning';
         } else {
             $req['_statusLabel'] = 'Inconnu';

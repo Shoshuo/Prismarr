@@ -236,7 +236,7 @@ class QBittorrentController extends AbstractController
             foreach ($this->qbt->getTorrents() as $t) {
                 if (($t['hash'] ?? '') === $hash) { $torrent = $t; break; }
             }
-            if (!$torrent) return $this->json(['found' => false, 'error' => 'Torrent introuvable'], 404);
+            if (!$torrent) return $this->json(['found' => false, 'error' => $this->translator->trans('qbittorrent.api.torrent_not_found')], 404);
 
             return $this->json($this->resolver->resolve($pipeline, $torrent['name'] ?? ''));
         } catch (\Throwable $e) {
@@ -340,7 +340,7 @@ class QBittorrentController extends AbstractController
     public function rename(Request $request, string $hash): JsonResponse
     {
         $name = $request->toArray()['name'] ?? '';
-        if (!$name) return $this->json(['ok' => false, 'error' => 'Nom vide'], 400);
+        if (!$name) return $this->json(['ok' => false, 'error' => $this->translator->trans('qbittorrent.api.empty_name')], 400);
         return $this->json(['ok' => $this->qbt->renameTorrent($hash, $name)]);
     }
 
@@ -371,7 +371,7 @@ class QBittorrentController extends AbstractController
     public function bulkPause(Request $request): JsonResponse
     {
         $hashes = self::sanitizeHashes($request->toArray()['hashes'] ?? []);
-        if (empty($hashes)) return $this->json(['ok' => false, 'error' => 'Aucun hash valide'], 400);
+        if (empty($hashes)) return $this->json(['ok' => false, 'error' => $this->translator->trans('qbittorrent.api.no_valid_hash')], 400);
         return $this->json(['ok' => $this->qbt->pauseTorrents($hashes)]);
     }
 
@@ -379,7 +379,7 @@ class QBittorrentController extends AbstractController
     public function bulkResume(Request $request): JsonResponse
     {
         $hashes = self::sanitizeHashes($request->toArray()['hashes'] ?? []);
-        if (empty($hashes)) return $this->json(['ok' => false, 'error' => 'Aucun hash valide'], 400);
+        if (empty($hashes)) return $this->json(['ok' => false, 'error' => $this->translator->trans('qbittorrent.api.no_valid_hash')], 400);
         return $this->json(['ok' => $this->qbt->resumeTorrents($hashes)]);
     }
 
@@ -389,7 +389,7 @@ class QBittorrentController extends AbstractController
         $data        = $request->toArray();
         $hashes      = self::sanitizeHashes($data['hashes'] ?? []);
         $deleteFiles = (bool)($data['deleteFiles'] ?? false);
-        if (empty($hashes)) return $this->json(['ok' => false, 'error' => 'Aucun hash valide'], 400);
+        if (empty($hashes)) return $this->json(['ok' => false, 'error' => $this->translator->trans('qbittorrent.api.no_valid_hash')], 400);
         return $this->json(['ok' => $this->qbt->deleteTorrents($hashes, $deleteFiles)]);
     }
 
@@ -397,7 +397,7 @@ class QBittorrentController extends AbstractController
     public function bulkRecheck(Request $request): JsonResponse
     {
         $hashes = self::sanitizeHashes($request->toArray()['hashes'] ?? []);
-        if (empty($hashes)) return $this->json(['ok' => false, 'error' => 'Aucun hash valide'], 400);
+        if (empty($hashes)) return $this->json(['ok' => false, 'error' => $this->translator->trans('qbittorrent.api.no_valid_hash')], 400);
         return $this->json(['ok' => $this->qbt->recheckTorrents($hashes)]);
     }
 
@@ -407,7 +407,7 @@ class QBittorrentController extends AbstractController
         $data     = $request->toArray();
         $hashes   = self::sanitizeHashes($data['hashes'] ?? []);
         $category = is_string($data['category'] ?? null) ? $data['category'] : '';
-        if (empty($hashes)) return $this->json(['ok' => false, 'error' => 'Aucun hash valide'], 400);
+        if (empty($hashes)) return $this->json(['ok' => false, 'error' => $this->translator->trans('qbittorrent.api.no_valid_hash')], 400);
         return $this->json(['ok' => $this->qbt->setTorrentCategory($hashes, $category)]);
     }
 
@@ -527,7 +527,7 @@ class QBittorrentController extends AbstractController
             ];
         }
 
-        if (empty($files)) return $this->json(['ok' => false, 'error' => 'Aucun fichier valide'], 400);
+        if (empty($files)) return $this->json(['ok' => false, 'error' => $this->translator->trans('qbittorrent.api.no_valid_file')], 400);
 
         $category = $request->request->get('category') ?: null;
         $savepath = $request->request->get('savepath') ?: null;

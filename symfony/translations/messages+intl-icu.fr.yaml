@@ -875,6 +875,8 @@ decouverte:
     not_found_tmdb: Introuvable sur TMDb
     not_found_thetvdb: 'Série introuvable sur TheTVDB (Sonarr exige un tvdbId).'
     invalid_params: Paramètres invalides
+    collection_not_found: Collection introuvable
+    person_not_found: Personne introuvable
   explorer:
     title: Explorer
     subtitle: 'Filtrer TMDb par genre, année, note, langue, popularité.'
@@ -3407,6 +3409,11 @@ qbittorrent:
     forbidden_host: 'Cette URL pointe vers un hôte interdit (métadonnées cloud)'
     no_file: 'Aucun fichier reçu'
     invalid_format: 'Seuls les fichiers .torrent sont acceptés'
+  api:
+    empty_name: Nom vide
+    no_valid_hash: Aucun hash valide
+    no_valid_file: Aucun fichier valide
+    torrent_not_found: Torrent introuvable
 
 prowlarr:
   nav:
@@ -4509,6 +4516,17 @@ jellyseerr:
     password_too_short: 8 caractères minimum
     empty_data: Données vides
     request_not_found: Requête introuvable
+    user_not_found: Utilisateur introuvable
+    email_password_required: Email et mot de passe requis
+  status:
+    request:
+      pending: En attente
+      approved: Approuvée
+      declined: Refusée
+      processing: En cours
+    media:
+      available: Disponible
+      partially_available: Partiellement disponible
 
 user:
   email:

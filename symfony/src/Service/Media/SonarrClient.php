@@ -195,7 +195,7 @@ class SonarrClient implements ResetInterface
     public function updateEpisodeFile(int $id, array $data): array
     {
         $file = $this->getEpisodeFile($id);
-        if (!$file) return ['ok' => false, 'error' => 'Fichier introuvable'];
+        if (!$file) return ['ok' => false, 'error' => 'File not found'];
         if (isset($data['quality'])) $file['quality'] = $data['quality'];
         if (isset($data['languages'])) $file['languages'] = $data['languages'];
         if (isset($data['releaseGroup'])) $file['releaseGroup'] = $data['releaseGroup'];
@@ -441,7 +441,7 @@ class SonarrClient implements ResetInterface
             'files'      => $files,
         ]);
         if ($cmdData === null) {
-            return ['ok' => false, 'error' => 'Impossible de lancer l\'import manuel'];
+            return ['ok' => false, 'error' => 'Cannot start manual import'];
         }
         return ['ok' => true, 'cmdId' => $cmdData['id'] ?? null];
     }
@@ -1311,7 +1311,7 @@ class SonarrClient implements ResetInterface
                 $messages = array_map(fn($e) => ($e['propertyName'] ?? '') . ' : ' . ($e['errorMessage'] ?? '?'), $data);
                 $msg = implode(' | ', $messages);
             } else {
-                $msg = $data['message'] ?? "Erreur Sonarr (HTTP {$code})";
+                $msg = $data['message'] ?? "Sonarr error (HTTP {$code})";
             }
             return ['ok' => false, 'error' => $msg, 'details' => $data];
         }

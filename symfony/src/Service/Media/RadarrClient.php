@@ -208,7 +208,7 @@ class RadarrClient implements ResetInterface
             'files' => $files,
         ]);
         if ($cmdData === null) {
-            return ['ok' => false, 'error' => 'Impossible de lancer l\'import manuel'];
+            return ['ok' => false, 'error' => 'Cannot start manual import'];
         }
         return ['ok' => true, 'cmdId' => $cmdData['id'] ?? null];
     }
@@ -343,7 +343,7 @@ class RadarrClient implements ResetInterface
         if ($code < 200 || $code >= 300) {
             $this->logger->warning("RadarrClient POST /api/v3/release → HTTP {$code} {$err} — body: " . ($resp ?: '(empty)'));
             $data = json_decode($resp ?: '{}', true) ?? [];
-            $msg = $data['message'] ?? $err ?: "Erreur HTTP {$code}";
+            $msg = $data['message'] ?? $err ?: "HTTP error {$code}";
             return ['ok' => false, 'error' => $msg];
         }
 
@@ -1504,7 +1504,7 @@ class RadarrClient implements ResetInterface
                 $messages = array_map(fn($e) => ($e['propertyName'] ?? '') . ' : ' . ($e['errorMessage'] ?? '?'), $data);
                 $msg = implode(' | ', $messages);
             } else {
-                $msg = $data['message'] ?? "Erreur Radarr (HTTP {$code})";
+                $msg = $data['message'] ?? "Radarr error (HTTP {$code})";
             }
             return ['ok' => false, 'error' => $msg, 'details' => $data];
         }

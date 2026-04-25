@@ -132,7 +132,7 @@ class TorrentResolverServiceTest extends TestCase
         $svc = new TorrentResolverService($radarr, $sonarr);
         $r = $svc->resolve('unknown', 'Whatever.2020.1080p');
         $this->assertFalse($r['found']);
-        $this->assertSame('Pipeline inconnu', $r['error']);
+        $this->assertSame('Unknown pipeline', $r['error']);
     }
 
     public function testResolveSeriesPipelineUsesSonarr(): void

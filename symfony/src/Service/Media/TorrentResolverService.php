@@ -25,7 +25,7 @@ class TorrentResolverService
         $parsed = self::parseReleaseName($torrentName);
         $needle = self::normalizeTitle($parsed['title']);
         if ($needle === '') {
-            return ['found' => false, 'error' => 'Titre non parsable', 'parsed' => $parsed];
+            return ['found' => false, 'error' => 'Title cannot be parsed', 'parsed' => $parsed];
         }
 
         if ($pipeline === 'radarr') {
@@ -34,7 +34,7 @@ class TorrentResolverService
         if ($pipeline === 'sonarr') {
             return $this->resolveSeries($needle, $parsed);
         }
-        return ['found' => false, 'error' => 'Pipeline inconnu'];
+        return ['found' => false, 'error' => 'Unknown pipeline'];
     }
 
     private function resolveMovie(string $needle, array $parsed): array
