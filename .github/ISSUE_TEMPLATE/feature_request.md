@@ -10,7 +10,7 @@ assignees: ''
 Before opening, please:
   1. Check the README and the existing issues for something similar.
   2. Consider whether the feature fits Prismarr's scope. Prismarr is a
-     minimalist self-hosted media dashboard — we deliberately don't want to
+     minimalist self-hosted media dashboard - we deliberately don't want to
      reimplement every feature of Radarr/Sonarr/Jellyseerr.
 -->
 

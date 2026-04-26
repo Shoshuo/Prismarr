@@ -16,7 +16,7 @@ Fixes # <!-- issue number, or delete if none -->
 
 - [ ] Bug fix (non-breaking)
 - [ ] New feature (non-breaking)
-- [ ] Breaking change (requires a migration plan — see CONTRIBUTING.md golden rule #3)
+- [ ] Breaking change (requires a migration plan - see CONTRIBUTING.md golden rule #3)
 - [ ] Documentation only
 
 ## Definition of Done checklist

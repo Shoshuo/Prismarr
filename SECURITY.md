@@ -27,7 +27,7 @@ Instead, email **shoshuo3@gmail.com** with:
 ## What to expect
 
 - **Acknowledgement within 72 hours** of your report being received.
-- **Initial assessment within 7 days** — we'll confirm whether it's a valid
+- **Initial assessment within 7 days** - we'll confirm whether it's a valid
   issue and share our triage.
 - **Fix target**: within 14 days for critical issues, 30 days for medium.
 - **Coordinated disclosure**: we'll work with you on a disclosure date once
@@ -47,7 +47,7 @@ In scope:
 Out of scope:
 
 - Third-party services Prismarr connects to (Radarr, Sonarr, qBittorrent, etc.)
-  — report those upstream
+  - report those upstream
 - Misconfigurations by the user (e.g. exposing Prismarr to the public
   internet without a reverse-proxy + TLS)
 - `APP_ENV=dev` accidentally left on in production (the built-in
@@ -64,5 +64,5 @@ If you expose Prismarr directly to the public internet, please:
 
 - Put it behind TLS (Traefik, nginx, Caddy, Cloudflare Tunnel)
 - Configure `TRUSTED_PROXIES` in `.env.local`
-- Keep `APP_ENV=prod` — never `dev`
+- Keep `APP_ENV=prod` - never `dev`
 - Monitor the access logs

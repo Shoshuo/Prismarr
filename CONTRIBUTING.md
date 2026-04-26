@@ -1,11 +1,11 @@
 # Contributing to Prismarr
 
-> Definition of Done — every feature, fix or refactor must pass this checklist
+> Definition of Done - every feature, fix or refactor must pass this checklist
 > before being considered complete and pushed to `main`.
 
 Prismarr is a self-hosted app published publicly on Docker Hub. Quality and
 security directly affect real users who run this on their homelab. Respect
-the process — "we'll fix it later" becomes a user-reported bug in v1.x.
+the process - "we'll fix it later" becomes a user-reported bug in v1.x.
 
 ---
 
@@ -13,7 +13,7 @@ the process — "we'll fix it later" becomes a user-reported bug in v1.x.
 
 - [ ] The feature works end-to-end, tested manually in a running container.
 - [ ] No leftover `console.log`, `dd()`, `var_dump`, `dump()`, `TODO`, `FIXME`.
-- [ ] Comments are written in **English** (UI strings stay in French until i18n).
+- [ ] Comments are written in **English**. User-visible strings go through the i18n layer (`messages+intl-icu.{en,fr}.yaml`), with English as the source of truth.
 - [ ] **Zero credentials** in code, commits, logs, docs (sacred rule).
 - [ ] No unused `use` / imports.
 
@@ -22,14 +22,14 @@ the process — "we'll fix it later" becomes a user-reported bug in v1.x.
 - [ ] At least **one unit test** for any new business logic.
 - [ ] For a bug fix: **a regression test that first reproduces the bug**, then
       the fix turns it green.
-- [ ] `make test` passes at 100% — no `markTestSkipped()` or `markTestIncomplete()`.
+- [ ] `make test` passes at 100% - no `markTestSkipped()` or `markTestIncomplete()`.
 - [ ] Edge cases covered: `null`, empty strings, unicode, boundaries.
 
 ## 💾 3. Schema / Migrations
 
 - [ ] If you touched an Entity: ran `make migrations-diff` and committed the
       generated file.
-- [ ] Reviewed the SQL in `migrations/Version*.php` — especially `DROP` and
+- [ ] Reviewed the SQL in `migrations/Version*.php` - especially `DROP` and
       `RENAME` operations (they lose data).
 - [ ] Tested with a clean DB: `docker compose down -v && make restart`.
 - [ ] **Never modify a migration once pushed to `main`.** If a released
@@ -39,10 +39,10 @@ the process — "we'll fix it later" becomes a user-reported bug in v1.x.
 
 - [ ] `#[IsGranted('ROLE_ADMIN')]` on any destructive action (delete, reset,
       bulk operations, config changes).
-- [ ] `$e->getMessage()` is never leaked in a JSON response — log it internally
+- [ ] `$e->getMessage()` is never leaked in a JSON response - log it internally
       and return a generic message.
 - [ ] All user input is validated (email format, URL scheme, length, type).
-- [ ] No concatenated SQL — use Doctrine parameter binding.
+- [ ] No concatenated SQL - use Doctrine parameter binding.
 - [ ] CSRF token on every sensitive form.
 - [ ] If you fetch a user-supplied URL: SSRF guard (protocol whitelist +
       `CURLOPT_REDIR_PROTOCOLS`).
@@ -57,7 +57,7 @@ the process — "we'll fix it later" becomes a user-reported bug in v1.x.
   - Declarative `data-bs-toggle` for modals (never `new bootstrap.Modal()`)
   - Helpers `bindDoc(event, key, handler)` for global listeners
   - `window._prismarr*Timer` + `turbo:before-render` cleanup for polling
-- [ ] User-facing error messages in French, no technical jargon.
+- [ ] User-facing error messages go through the translator (`trans()`), in plain language, no technical jargon.
 - [ ] Dark **and** light theme both checked.
 - [ ] Responsive verified on at least one mobile viewport.
 
@@ -98,8 +98,8 @@ make check
 Runs PHP lint + Twig lint + full PHPUnit suite in ~2 seconds. If it fails,
 do not commit. Fix first.
 
-Starting in v1.1, a GitHub Actions CI workflow will run `make check` on every
-PR and block merging if it fails — the same contract, enforced.
+A GitHub Actions CI workflow runs `make check` on every PR and blocks merging
+if it fails (`.github/workflows/ci.yml`) - the same contract, enforced.
 
 ---
 
@@ -112,7 +112,7 @@ of tests, new security concerns), amend it:
 2. Update `CONTRIBUTING.md` + `Makefile` + `.github/workflows/ci.yml` together.
 3. Announce the change in `CHANGELOG.md` under a `### Contributor`
    heading so existing contributors notice it.
-4. Do not quietly lower the bar — always raise it. If a check becomes
+4. Do not quietly lower the bar - always raise it. If a check becomes
    redundant, replace it with something stronger, not nothing.
 
 ---
@@ -140,14 +140,14 @@ them, reject it and propose an alternative.
    needs a documented migration plan or must be rethought.**
 
 4. **`make check` must be green before every commit.** Runs lint + full
-   PHPUnit suite. Completes the Definition of Done checklist above — no
+   PHPUnit suite. Completes the Definition of Done checklist above - no
    test for new logic = no commit. No regression test for a bug fix = no
    commit.
 
 5. **No silent weakening of existing security checks.** CSP, CSRF,
    rate-limiter login, SSRF guard, ProfilerGuard, CURLOPT_REDIR_PROTOCOLS,
-   `ROLE_ADMIN` attributes — each one has a documented reason (see commit
+   `ROLE_ADMIN` attributes - each one has a documented reason (see commit
    history for Sessions 7a–7d + 8a). If a check blocks a legitimate feature,
-   refine it (e.g. extend the CSP with justification) — do not disable it.
+   refine it (e.g. extend the CSP with justification) - do not disable it.
 
 Violating any of these, even if `make check` passes, makes the commit invalid.

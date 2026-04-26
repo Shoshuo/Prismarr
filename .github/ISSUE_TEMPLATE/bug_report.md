@@ -9,12 +9,12 @@ assignees: ''
 <!--
 ⚠️  Before opening a bug, please:
   1. Check the existing issues for a duplicate.
-  2. Confirm you are running the latest `:latest` tag — a fix might already
+  2. Confirm you are running the latest `:latest` tag - a fix might already
      be published.
   3. Reproduce with `APP_ENV=prod`. A bug specific to `APP_ENV=dev` is
      likely user misconfiguration.
 
-⚠️  SECURITY ISSUES — do NOT report here. Email shoshuo3@gmail.com.
+⚠️  SECURITY ISSUES - do NOT report here. Email shoshuo3@gmail.com.
      See SECURITY.md for the full policy.
 -->
 
