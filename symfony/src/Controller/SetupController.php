@@ -143,6 +143,9 @@ class SetupController extends AbstractController
     #[Route('/tmdb', name: 'app_setup_tmdb', methods: ['GET', 'POST'])]
     public function tmdb(Request $request): Response
     {
+        if ($redirect = $this->guardSetupNotCompleted()) {
+            return $redirect;
+        }
         if ($redirect = $this->guardAdminExists()) {
             return $redirect;
         }
@@ -175,6 +178,9 @@ class SetupController extends AbstractController
     #[Route('/managers', name: 'app_setup_managers', methods: ['GET', 'POST'])]
     public function managers(Request $request): Response
     {
+        if ($redirect = $this->guardSetupNotCompleted()) {
+            return $redirect;
+        }
         if ($redirect = $this->guardAdminExists()) {
             return $redirect;
         }
@@ -214,6 +220,9 @@ class SetupController extends AbstractController
     #[Route('/indexers', name: 'app_setup_indexers', methods: ['GET', 'POST'])]
     public function indexers(Request $request): Response
     {
+        if ($redirect = $this->guardSetupNotCompleted()) {
+            return $redirect;
+        }
         if ($redirect = $this->guardAdminExists()) {
             return $redirect;
         }
@@ -253,6 +262,9 @@ class SetupController extends AbstractController
     #[Route('/downloads', name: 'app_setup_downloads', methods: ['GET', 'POST'])]
     public function downloads(Request $request): Response
     {
+        if ($redirect = $this->guardSetupNotCompleted()) {
+            return $redirect;
+        }
         if ($redirect = $this->guardAdminExists()) {
             return $redirect;
         }
@@ -294,6 +306,9 @@ class SetupController extends AbstractController
     #[Route('/finish', name: 'app_setup_finish', methods: ['GET', 'POST'])]
     public function finish(Request $request): Response
     {
+        if ($redirect = $this->guardSetupNotCompleted()) {
+            return $redirect;
+        }
         if ($redirect = $this->guardAdminExists()) {
             return $redirect;
         }
@@ -341,16 +356,55 @@ class SetupController extends AbstractController
     }
 
     /**
+     * Once setup_completed=1, the wizard pages must NOT be reachable anymore:
+     * they pre-render API keys / passwords in <input value="..."> for the
+     * "Back" button UX, so leaving them publicly accessible after the install
+     * leaks credentials. Anyone who legitimately needs to re-configure goes
+     * through /admin/settings (auth-protected by ROLE_ADMIN).
+     */
+    private function guardSetupNotCompleted(): ?RedirectResponse
+    {
+        if ($this->settings->get(self::SETUP_DONE_KEY) === '1') {
+            return $this->redirectToRoute('app_home');
+        }
+
+        return null;
+    }
+
+    /**
+     * Field name suffixes that must NEVER be pre-rendered into a wizard
+     * <input value="...">. Defense-in-depth on top of guardSetupNotCompleted():
+     * even if the redirect ever gets bypassed, the HTML emitted by the wizard
+     * never contains the actual secret. The user has to re-paste them when
+     * navigating back through the wizard, which is acceptable on a one-time
+     * install flow.
+     */
+    private const SENSITIVE_KEY_SUFFIXES = ['_api_key', '_password', '_secret', '_token'];
+
+    /**
      * @param array<string, string> $fields Reference: populated from DB if the key exists.
      */
     private function prefill(array &$fields): void
     {
         foreach ($fields as $key => $default) {
+            if ($this->isSensitiveKey($key)) {
+                continue;
+            }
             $stored = $this->config->get($key);
             if ($stored !== null) {
                 $fields[$key] = $stored;
             }
         }
+    }
+
+    private function isSensitiveKey(string $key): bool
+    {
+        foreach (self::SENSITIVE_KEY_SUFFIXES as $suffix) {
+            if (str_ends_with($key, $suffix)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -34,11 +34,13 @@ class SetupControllerTest extends TestCase
     private function newController(
         UserRepository $users,
         EntityManagerInterface $em,
+        ?SettingRepository $settings = null,
+        ?ConfigService $config = null,
     ): SetupController {
         $controller = new SetupController(
             $users,
-            $this->createMock(SettingRepository::class),
-            $this->createMock(ConfigService::class),
+            $settings ?? $this->createMock(SettingRepository::class),
+            $config ?? $this->createMock(ConfigService::class),
             $em,
             $this->createMock(\Symfony\Contracts\Translation\TranslatorInterface::class),
         );
@@ -132,6 +134,125 @@ class SetupControllerTest extends TestCase
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertStringContainsString('app_login', $response->getTargetUrl());
+    }
+
+    public function testTmdbRedirectsToHomeWhenSetupCompleted(): void
+    {
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->method('get')->willReturnCallback(
+            fn(string $k) => $k === SetupController::SETUP_DONE_KEY ? '1' : null
+        );
+
+        $config = $this->createMock(ConfigService::class);
+        // If guardSetupNotCompleted() does its job, prefill() must NEVER run,
+        // i.e. ConfigService::get() must not be called for sensitive keys.
+        $config->expects($this->never())->method('get');
+
+        $users = $this->createMock(UserRepository::class);
+        $em = $this->createMock(EntityManagerInterface::class);
+
+        $controller = $this->newController($users, $em, $settings, $config);
+
+        $response = $controller->tmdb(new Request());
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertStringContainsString('app_home', $response->getTargetUrl());
+    }
+
+    public function testManagersRedirectsToHomeWhenSetupCompleted(): void
+    {
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->method('get')->willReturnCallback(
+            fn(string $k) => $k === SetupController::SETUP_DONE_KEY ? '1' : null
+        );
+
+        $users = $this->createMock(UserRepository::class);
+        $em = $this->createMock(EntityManagerInterface::class);
+
+        $controller = $this->newController($users, $em, $settings);
+        $response = $controller->managers(new Request());
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertStringContainsString('app_home', $response->getTargetUrl());
+    }
+
+    public function testIndexersRedirectsToHomeWhenSetupCompleted(): void
+    {
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->method('get')->willReturnCallback(
+            fn(string $k) => $k === SetupController::SETUP_DONE_KEY ? '1' : null
+        );
+
+        $users = $this->createMock(UserRepository::class);
+        $em = $this->createMock(EntityManagerInterface::class);
+
+        $controller = $this->newController($users, $em, $settings);
+        $response = $controller->indexers(new Request());
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertStringContainsString('app_home', $response->getTargetUrl());
+    }
+
+    public function testDownloadsRedirectsToHomeWhenSetupCompleted(): void
+    {
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->method('get')->willReturnCallback(
+            fn(string $k) => $k === SetupController::SETUP_DONE_KEY ? '1' : null
+        );
+
+        $users = $this->createMock(UserRepository::class);
+        $em = $this->createMock(EntityManagerInterface::class);
+
+        $controller = $this->newController($users, $em, $settings);
+        $response = $controller->downloads(new Request());
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertStringContainsString('app_home', $response->getTargetUrl());
+    }
+
+    public function testFinishRedirectsToHomeWhenSetupCompleted(): void
+    {
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->method('get')->willReturnCallback(
+            fn(string $k) => $k === SetupController::SETUP_DONE_KEY ? '1' : null
+        );
+
+        $users = $this->createMock(UserRepository::class);
+        $em = $this->createMock(EntityManagerInterface::class);
+
+        $controller = $this->newController($users, $em, $settings);
+        $response = $controller->finish(new Request());
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertStringContainsString('app_home', $response->getTargetUrl());
+    }
+
+    public function testTmdbDoesNotPrefillSensitiveKeysDuringSetup(): void
+    {
+        // Setup NOT completed — so the guard lets us through.
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->method('get')->willReturn(null); // no setup_completed flag
+
+        // The DB has a stored tmdb_api_key value, but prefill() must SKIP it
+        // because the key ends in "_api_key" (defense-in-depth: even if the
+        // page renders, the secret is never injected into the HTML <input>).
+        $config = $this->createMock(ConfigService::class);
+        $config->expects($this->never())->method('get')->with('tmdb_api_key');
+
+        $users = $this->createMock(UserRepository::class);
+        $users->method('count')->willReturn(1); // admin exists, no guardAdminExists redirect
+
+        $em = $this->createMock(EntityManagerInterface::class);
+
+        $controller = $this->newController($users, $em, $settings, $config);
+
+        $request = new Request();
+        $request->setSession(new Session(new MockArraySessionStorage()));
+        $response = $controller->tmdb($request);
+
+        // Page rendered (Twig mock returns HTML) — important: ConfigService::get()
+        // was never called for the sensitive key.
+        $this->assertInstanceOf(Response::class, $response);
     }
 
     public function testAdminSuccessRedirectsToNextStep(): void

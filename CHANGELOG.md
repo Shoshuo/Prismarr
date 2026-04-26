@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-04-26
+
+### Security
+
+- **CRITICAL — credential leak via /setup/* after the wizard is completed.** The setup wizard pages (`/setup/tmdb`, `/setup/managers`, `/setup/indexers`, `/setup/downloads`) were marked `PUBLIC_ACCESS` to allow first-time install without login, and stayed reachable even after `setup_completed=1`. They pre-rendered the values of every saved API key / password in plain `<input type="text" value="...">` for the "Back" button UX, so any unauthenticated client able to reach the Prismarr port could `curl /setup/tmdb` and harvest the stored TMDb / Radarr / Sonarr / Prowlarr / Jellyseerr / Gluetun API keys plus the qBittorrent password. Fixed with two layers of defense:
+  1. `SetupController::guardSetupNotCompleted()` — every wizard step (`tmdb` / `managers` / `indexers` / `downloads` / `finish`) now redirects to the home page when `setup_completed=1`. Re-configuration is only available via the auth-protected `/admin/settings` (ROLE_ADMIN).
+  2. `SetupController::prefill()` — values whose key ends with `_api_key`, `_password`, `_secret` or `_token` are NEVER copied from the DB into the wizard render. Even if the redirect ever gets bypassed, the HTML emitted by the wizard cannot contain the secret. Trade-off: navigating "Back" through the wizard during the initial install no longer pre-fills these fields, the user has to re-paste them. This is acceptable on a one-time install flow.
+- 6 new PHPUnit tests covering both layers (216 tests / 448 assertions total).
+- **Action required for users running v1.0.0 - v1.0.4:** rotate every API key configured in Prismarr (TMDb, Radarr, Sonarr, Prowlarr, Jellyseerr, Gluetun) and the qBittorrent password, then upgrade to 1.0.5 immediately. Even if your Prismarr instance is on a private LAN, anyone with network access (housemates, guests, smart-home devices, exposed reverse proxy) could have read these values.
+
 ## [1.0.4] - 2026-04-26
 
 ### Added

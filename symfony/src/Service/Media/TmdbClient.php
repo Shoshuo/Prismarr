@@ -293,6 +293,10 @@ class TmdbClient implements ResetInterface
             CURLOPT_TIMEOUT        => 15,
             CURLOPT_CONNECTTIMEOUT => 8,
             CURLOPT_NOSIGNAL       => 1,
+            // SSRF guard: block file://, gopher://, dict:// and other non-http(s)
+            // schemes both on the initial request and on redirects.
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
             CURLOPT_HTTPHEADER     => ['Accept: application/json'],
         ]);
 

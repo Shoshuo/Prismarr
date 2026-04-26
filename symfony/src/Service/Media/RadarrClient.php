@@ -385,6 +385,8 @@ class RadarrClient implements ResetInterface
         curl_setopt_array($ch, [
             CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 60,
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Accept: application/json'],
         ]);
@@ -410,6 +412,8 @@ class RadarrClient implements ResetInterface
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 30,
             CURLOPT_CUSTOMREQUEST  => 'POST',
             CURLOPT_POSTFIELDS     => json_encode(['guid' => $guid, 'indexerId' => $indexerId]),
@@ -645,6 +649,8 @@ class RadarrClient implements ResetInterface
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 30,
             CURLOPT_CUSTOMREQUEST  => 'POST',
             CURLOPT_POSTFIELDS     => json_encode(['id' => $id]),
@@ -863,6 +869,8 @@ class RadarrClient implements ResetInterface
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 30,
             CURLOPT_CUSTOMREQUEST  => 'POST',
             CURLOPT_POSTFIELDS     => '{}',
@@ -1472,6 +1480,8 @@ class RadarrClient implements ResetInterface
         curl_setopt_array($ch, [
             CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 8,
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_NOSIGNAL       => 1,
@@ -1519,6 +1529,8 @@ class RadarrClient implements ResetInterface
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 8,
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_NOSIGNAL       => 1,
@@ -1557,6 +1569,8 @@ class RadarrClient implements ResetInterface
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 8,
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_NOSIGNAL       => 1,
@@ -1598,6 +1612,8 @@ class RadarrClient implements ResetInterface
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 8,
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_NOSIGNAL       => 1,
@@ -1644,6 +1660,8 @@ class RadarrClient implements ResetInterface
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 15,
             CURLOPT_CUSTOMREQUEST  => $method,
             CURLOPT_POSTFIELDS     => json_encode($body),

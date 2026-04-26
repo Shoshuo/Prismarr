@@ -552,12 +552,13 @@ class JellyseerrClient implements ResetInterface
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            // SSRF guard: block file://, gopher://, dict:// and other non-http(s)
+            // schemes both on the initial request and on redirects.
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
             CURLOPT_TIMEOUT        => 10,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS      => 3,
-            // Only follow redirects within http(s) — blocks file:// / gopher:// / dict:// SSRF.
-            CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
-            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
             CURLOPT_HTTPHEADER     => ['Accept: application/vnd.github+json', 'User-Agent: IH-ARGOS'],
         ]);
         $body = curl_exec($ch);
@@ -595,6 +596,8 @@ class JellyseerrClient implements ResetInterface
         curl_setopt_array($ch, [
             CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 8,
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_NOSIGNAL       => 1,
@@ -637,6 +640,8 @@ class JellyseerrClient implements ResetInterface
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 8,
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_NOSIGNAL       => 1,
@@ -678,6 +683,8 @@ class JellyseerrClient implements ResetInterface
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 8,
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_NOSIGNAL       => 1,
