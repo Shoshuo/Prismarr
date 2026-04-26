@@ -196,25 +196,51 @@ a request UI (Jellyseerr).
 
 ### Install
 
-```bash
-# 1. Download the user-facing compose template
-wget -O docker-compose.yml https://raw.githubusercontent.com/Shoshuo/Prismarr/main/docker-compose.example.yml
+**Step 1.** Get a `docker-compose.yml` file. Pick one of the two options below.
 
-# 2. Start the container
-docker compose up -d
+#### Option A — Copy-paste
 
-# 3. Open http://localhost:7070
-#    The setup wizard guides you through:
-#      - admin account creation
-#      - TMDb API key
-#      - Radarr / Sonarr / Prowlarr / Jellyseerr URLs and keys
-#      - qBittorrent + Gluetun (optional)
+Create a file named `docker-compose.yml` with the following content:
+
+```yaml
+services:
+  prismarr:
+    image: shoshuo/prismarr:latest
+    container_name: prismarr
+    restart: unless-stopped
+    stop_grace_period: 30s
+    ports:
+      - "7070:7070"
+    volumes:
+      - prismarr_data:/var/www/html/var/data
+
+volumes:
+  prismarr_data:
 ```
 
-> The file is named `docker-compose.example.yml` in the repo so that
-> contributors who clone the source don't accidentally start the
-> production image instead of the dev build. Renaming it locally is
-> just an ergonomics choice.
+#### Option B — Download
+
+```bash
+wget -O docker-compose.yml https://raw.githubusercontent.com/Shoshuo/Prismarr/main/docker-compose.example.yml
+```
+
+(or `curl -O https://raw.githubusercontent.com/Shoshuo/Prismarr/main/docker-compose.example.yml && mv docker-compose.example.yml docker-compose.yml`)
+
+---
+
+**Step 2.** Start the container:
+
+```bash
+docker compose up -d
+```
+
+**Step 3.** Open `http://localhost:7070` in your browser. The setup wizard
+will guide you through:
+
+- admin account creation
+- TMDb API key (optional)
+- Radarr / Sonarr / Prowlarr / Jellyseerr URLs and keys
+- qBittorrent + Gluetun (optional)
 
 `APP_SECRET` and `MERCURE_JWT_SECRET` are auto-generated on first boot and
 persisted in the `prismarr_data` volume. No `.env` editing required.
