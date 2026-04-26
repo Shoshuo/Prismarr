@@ -80,7 +80,7 @@
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <span class="avatar avatar-sm"
-                                  style="width:36px;height:36px;{% if user.avatar is defined and user.avatar %}background-image:url('http://192.168.10.220:5055{{ user.avatar }}'){% endif %}">
+                                  style="width:36px;height:36px;{% if user.avatar is defined and user.avatar %}background-image:url('{{ service_url }}{{ user.avatar }}'){% endif %}">
                                 {% if not user.avatar is defined or not user.avatar %}
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
                                 {% endif %}
@@ -491,7 +491,7 @@
                 html += '<div class="text-secondary small mb-2">' + _I18N.selectUsersToImport + '</div>';
                 users.forEach(function(u){
                     var uName = u.username || u.email || u.id;
-                    var uThumb = u.thumb ? 'http://192.168.10.220:5055' + u.thumb : '';
+                    var uThumb = u.thumb ? '{{ service_url }}' + u.thumb : '';
                     html += '<label class="form-check mb-2 d-flex align-items-center gap-2">';
                     html += '<input type="checkbox" class="form-check-input js-jf-user-cb" value="' + u.id + '" style="flex-shrink:0;">';
                     if (uThumb) {
@@ -549,7 +549,7 @@
             .then(function(r){ return r.json(); })
             .then(function(u){
                 var name = u.displayName || u.jellyfinUsername || u.email || '?';
-                var avatar = u.avatar ? 'http://192.168.10.220:5055' + u.avatar : '';
+                var avatar = u.avatar ? '{{ service_url }}' + u.avatar : '';
                 var role = u._role || '?';
                 var roleColor = (role === 'Admin' || role === {{ 'jellyseerr.user_detail.role_admin'|trans|json_encode|raw }}) ? 'danger' : ((role === 'Gestionnaire' || role === {{ 'jellyseerr.user_detail.role_manager'|trans|json_encode|raw }}) ? 'purple' : 'info');
                 var requests = u._recentRequests || [];

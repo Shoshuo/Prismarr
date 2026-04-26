@@ -140,9 +140,10 @@ class JellyseerrController extends AbstractController
         }
 
         return $this->render('jellyseerr/users.html.twig', [
-            'users'  => $users,
-            'counts' => $counts,
-            'error'  => $error,
+            'users'       => $users,
+            'counts'      => $counts,
+            'error'       => $error,
+            'service_url' => $this->config->get('jellyseerr_url'),
         ]);
     }
 
@@ -194,15 +195,16 @@ class JellyseerrController extends AbstractController
 
 
         return $this->render('jellyseerr/user_detail.html.twig', [
-            'user'     => $user,
-            'quota'    => $quota,
-            'settings' => $settings,
-            'notifs'   => $notifSettings,
-            'requests' => $userRequests,
+            'user'        => $user,
+            'quota'       => $quota,
+            'settings'    => $settings,
+            'notifs'      => $notifSettings,
+            'requests'    => $userRequests,
             'defaultPerms' => $mainSettings['defaultPermissions'] ?? 0,
-            'has4k'    => $has4k,
-            'languages' => $languages,
-            'regions'  => $regions,
+            'has4k'       => $has4k,
+            'languages'   => $languages,
+            'regions'     => $regions,
+            'service_url' => $this->config->get('jellyseerr_url'),
         ]);
     }
 
@@ -343,7 +345,10 @@ class JellyseerrController extends AbstractController
     public function settingsJellyfin(): Response
     {
         $jellyfin = $this->jellyseerr->getJellyfinSettings() ?? [];
-        return $this->render('jellyseerr/settings/jellyfin.html.twig', ['jellyfin' => $jellyfin]);
+        return $this->render('jellyseerr/settings/jellyfin.html.twig', [
+            'jellyfin'    => $jellyfin,
+            'service_url' => $this->config->get('jellyseerr_url'),
+        ]);
     }
 
     #[Route('/parametres/services/rules', name: 'settings_rules_list', methods: ['GET'])]
@@ -407,6 +412,7 @@ class JellyseerrController extends AbstractController
             'radarrProfiles' => $radarrProfiles,
             'sonarrProfiles' => $sonarrProfiles,
             'rules' => $rules,
+            'service_url' => $this->config->get('jellyseerr_url'),
         ]);
     }
 
@@ -483,6 +489,7 @@ class JellyseerrController extends AbstractController
             'requestCounts' => $requestCounts,
             'totalUsers'    => $users['pageInfo']['results'] ?? 0,
             'issueCounts'   => $issueCounts,
+            'service_url'   => $this->config->get('jellyseerr_url'),
         ]);
     }
 

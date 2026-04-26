@@ -4,7 +4,7 @@
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}
 
 {% set userName = user.displayName ?? user.jellyfinUsername ?? user.email ?? '?' %}
-{% set userAvatar = user.avatar is defined and user.avatar ? 'http://192.168.10.220:5055' ~ user.avatar : null %}
+{% set userAvatar = user.avatar is defined and user.avatar ? service_url ~ user.avatar : null %}
 {% set role = user._role ?? ('jellyseerr.user_detail.role_user'|trans) %}
 {% set roleAdmin = 'jellyseerr.user_detail.role_admin'|trans %}
 {% set roleManager = 'jellyseerr.user_detail.role_manager'|trans %}

@@ -47,7 +47,7 @@ class ProfilerGuardSubscriberTest extends TestCase
 
     public function testPrivateLanIpCanAccessProfiler(): void
     {
-        $event = $this->event('/_profiler/abc', '192.168.10.5');
+        $event = $this->event('/_profiler/abc', '192.168.1.5');
         ($this->subscriber('dev'))->onKernelRequest($event);
         $this->assertFalse($event->hasResponse());
     }

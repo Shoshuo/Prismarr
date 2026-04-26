@@ -51,13 +51,13 @@ class CspHeaderSubscriberTest extends TestCase
     public function testConfiguredRadarrUrlIsAddedToImgSrc(): void
     {
         $sub = new CspHeaderSubscriber($this->configWithUrls([
-            'radarr_url' => 'http://192.168.10.220:7878',
+            'radarr_url' => 'http://192.0.2.10:7878',
         ]));
         $response = new Response();
         $sub->onResponse($this->event($response));
 
         $csp = $response->headers->get('Content-Security-Policy');
-        $this->assertStringContainsString('http://192.168.10.220:7878', $csp);
+        $this->assertStringContainsString('http://192.0.2.10:7878', $csp);
     }
 
     public function testUrlWithPathIsReducedToOrigin(): void

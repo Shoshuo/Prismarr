@@ -28,7 +28,7 @@
             <svg width="22" height="22" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 48C141.1 48 48 141.1 48 256s93.1 208 208 208 208-93.1 208-208S370.9 48 256 48zm0 368c-88.4 0-160-71.6-160-160S167.6 96 256 96s160 71.6 160 160-71.6 160-160 160z" fill="#a259ff"/><circle cx="256" cy="256" r="80" fill="#a259ff"/></svg>
             {{ 'jellyseerr.settings.about.app_title'|trans }}
         </h3>
-        <a href="http://192.168.10.220:5055" target="_blank" class="btn btn-sm btn-outline-purple" style="border-color:#a259ff;color:#a259ff;">
+        <a href="{{ service_url }}" target="_blank" class="btn btn-sm btn-outline-purple" style="border-color:#a259ff;color:#a259ff;">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></svg>
             {{ 'jellyseerr.common.open_in_jellyseerr'|trans }}
         </a>

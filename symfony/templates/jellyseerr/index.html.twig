@@ -278,7 +278,7 @@
                 <div class="d-flex align-items-center justify-content-between mt-2 pt-2" style="border-top:1px solid var(--tblr-border-color-translucent);">
                     <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size:.82rem;">
                         {% if user %}
-                            <span class="avatar avatar-xs" style="width:26px;height:26px;{% if user.avatar is defined and user.avatar %}background-image:url('http://192.168.10.220:5055{{ user.avatar }}'){% endif %}"></span>
+                            <span class="avatar avatar-xs" style="width:26px;height:26px;{% if user.avatar is defined and user.avatar %}background-image:url('{{ service_url }}{{ user.avatar }}'){% endif %}"></span>
                             <span style="font-weight:500;">{{ user.displayName ?? user.jellyfinUsername ?? user.email ?? '?' }}</span>
                             <span class="text-muted">·</span>
                         {% endif %}
@@ -597,7 +597,7 @@
                 html += '<div style="padding:.65rem .85rem;background:var(--tblr-bg-surface-secondary);border-radius:.5rem;margin-bottom:1rem;">';
                 html += '<div class="d-flex align-items-center gap-3">';
                 if (user.avatar) {
-                    html += '<span class="avatar avatar-sm" style="width:32px;height:32px;background-image:url(\'http://192.168.10.220:5055' + user.avatar + '\');flex-shrink:0;"></span>';
+                    html += '<span class="avatar avatar-sm" style="width:32px;height:32px;background-image:url(\'{{ service_url }}' + user.avatar + '\');flex-shrink:0;"></span>';
                 } else {
                     html += '<span class="avatar avatar-sm" style="width:32px;height:32px;flex-shrink:0;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg></span>';
                 }
@@ -611,7 +611,7 @@
                 var modifier = req.modifiedBy || null;
                 if (req.status !== 1 && modifier) {
                     var modName = modifier.displayName || modifier.jellyfinUsername || modifier.email || '?';
-                    var modAvatar = modifier.avatar ? 'http://192.168.10.220:5055' + modifier.avatar : '';
+                    var modAvatar = modifier.avatar ? '{{ service_url }}' + modifier.avatar : '';
                     html += '<div class="d-flex align-items-center gap-2 mt-2 pt-2" style="border-top:1px solid var(--tblr-border-color-translucent);font-size:.78rem;">';
                     if (modAvatar) {
                         html += '<span class="avatar avatar-xs" style="width:22px;height:22px;background-image:url(\'' + modAvatar + '\');flex-shrink:0;"></span>';
@@ -767,7 +767,7 @@
                 // Demandeur (custom dropdown avec avatars)
                 var currentUser = users.find(function(u){ return u.id === currentUserId; }) || {};
                 var currentUserName = currentUser.displayName || currentUser.jellyfinUsername || currentUser.email || '?';
-                var currentUserAvatar = currentUser.avatar ? 'http://192.168.10.220:5055' + currentUser.avatar : '';
+                var currentUserAvatar = currentUser.avatar ? '{{ service_url }}' + currentUser.avatar : '';
 
                 html += '<div class="mb-3">';
                 html += '<label class="form-label">' + _I18N.requestedByLabel + '</label>';
@@ -783,7 +783,7 @@
                 html += '<div id="js-user-list" style="display:none;position:absolute;z-index:100;top:100%;left:0;right:0;max-height:200px;overflow-y:auto;background:var(--tblr-card-bg);border:1px solid var(--tblr-border-color);border-radius:.4rem;margin-top:2px;box-shadow:0 4px 12px rgba(0,0,0,.2);">';
                 users.forEach(function(u){
                     var name = u.displayName || u.jellyfinUsername || u.email || ('User #' + u.id);
-                    var avatar = u.avatar ? 'http://192.168.10.220:5055' + u.avatar : '';
+                    var avatar = u.avatar ? '{{ service_url }}' + u.avatar : '';
                     html += '<div class="js-user-option d-flex align-items-center gap-2" data-id="' + u.id + '" data-name="' + name + '" data-avatar="' + avatar + '" style="cursor:pointer;padding:.4rem .75rem;transition:background .1s;' + (u.id === currentUserId ? 'background:rgba(162,89,255,.1);' : '') + '" onmouseover="this.style.background=\'rgba(162,89,255,.1)\'" onmouseout="this.style.background=\'' + (u.id === currentUserId ? 'rgba(162,89,255,.1)' : 'transparent') + '\'">';
                     if (avatar) {
                         html += '<span class="avatar avatar-xs" style="width:22px;height:22px;background-image:url(\'' + avatar + '\');flex-shrink:0;"></span>';
