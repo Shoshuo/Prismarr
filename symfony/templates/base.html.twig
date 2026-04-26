@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
-  <title>{% block title %}Prismarr{% endblock %} — Prismarr</title>
+  <title>{% block title %}Prismarr{% endblock %} - Prismarr</title>
 
   <link rel="icon" type="image/x-icon" href="{{ asset('img/prismarr/favicon.ico') }}"/>
   <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('img/prismarr/favicon-192.png') }}"/>
@@ -647,7 +647,7 @@
           </div>
         </div>
 
-        {# Main menu — Prismarr #}
+        {# Main menu - Prismarr #}
         <div class="collapse navbar-collapse" id="sidebar-menu">
           <ul class="navbar-nav pt-lg-3">
 
@@ -669,7 +669,7 @@
               </a>
             </li>
 
-            {# Discover TMDb — Prismarr home page #}
+            {# Discover TMDb - Prismarr home page #}
             {% if service_visible_in_sidebar('tmdb') %}
             <li class="nav-item">
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'tmdb_' ? 'active' }}"

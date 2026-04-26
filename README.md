@@ -21,30 +21,35 @@
   <a href="#upgrade">Upgrade</a> ·
   <a href="#troubleshooting">Troubleshooting</a> ·
   <a href="#roadmap">Roadmap</a> ·
-  <a href="#license">License</a>
+  <a href="#license">License</a> ·
+  <a href="#note-on-ai-usage">AI</a>
 </p>
 
 ---
 
 <p align="center">
-  <img src="docs/screenshots/dashboard.png" alt="Prismarr Dashboard" width="100%">
+  <img src="docs/screenshots/showcase.gif" alt="Prismarr showcase" width="100%">
 </p>
 
 <details>
-<summary><strong>More screenshots</strong> (click to expand)</summary>
+<summary><strong>Static screenshots</strong> (click to expand)</summary>
 <br>
 
-| Discover | Calendar |
-|---|---|
-| ![Discover](docs/screenshots/discover.png) | ![Calendar](docs/screenshots/calendar.png) |
-
-| Movies (Radarr) | Series detail (Sonarr) |
-|---|---|
-| ![Movies](docs/screenshots/radarr.png) | ![Series detail](docs/screenshots/series-detail.png) |
-
-| Downloads (qBittorrent) | Settings (custom theme) |
-|---|---|
-| ![Downloads](docs/screenshots/downloads.png) | ![Settings](docs/screenshots/settings.png) |
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" width="49%" alt="Dashboard">
+  <img src="docs/screenshots/discover.png" width="49%" alt="Discover">
+</p>
+<p align="center">
+  <img src="docs/screenshots/calendar.png" width="49%" alt="Calendar">
+  <img src="docs/screenshots/radarr.png" width="49%" alt="Movies (Radarr)">
+</p>
+<p align="center">
+  <img src="docs/screenshots/series-detail.png" width="49%" alt="Series detail (Sonarr)">
+  <img src="docs/screenshots/downloads.png" width="49%" alt="Downloads (qBittorrent)">
+</p>
+<p align="center">
+  <img src="docs/screenshots/settings.png" width="49%" alt="Settings (custom theme)">
+</p>
 
 </details>
 

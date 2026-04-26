@@ -21,30 +21,35 @@
   <a href="#mise-à-jour">Mise à jour</a> ·
   <a href="#dépannage">Dépannage</a> ·
   <a href="#roadmap">Roadmap</a> ·
-  <a href="#licence">Licence</a>
+  <a href="#licence">Licence</a> ·
+  <a href="#mention-sur-lutilisation-de-lia">IA</a>
 </p>
 
 ---
 
 <p align="center">
-  <img src="docs/screenshots/dashboard.png" alt="Dashboard Prismarr" width="100%">
+  <img src="docs/screenshots/showcase.gif" alt="Prismarr - aperçu animé" width="100%">
 </p>
 
 <details>
-<summary><strong>Plus de captures d'écran</strong> (cliquer pour déplier)</summary>
+<summary><strong>Captures statiques</strong> (cliquer pour déplier)</summary>
 <br>
 
-| Découverte | Calendrier |
-|---|---|
-| ![Découverte](docs/screenshots/discover.png) | ![Calendrier](docs/screenshots/calendar.png) |
-
-| Films (Radarr) | Détail série (Sonarr) |
-|---|---|
-| ![Films](docs/screenshots/radarr.png) | ![Détail série](docs/screenshots/series-detail.png) |
-
-| Téléchargements (qBittorrent) | Paramètres (thème personnalisé) |
-|---|---|
-| ![Téléchargements](docs/screenshots/downloads.png) | ![Paramètres](docs/screenshots/settings.png) |
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" width="49%" alt="Dashboard">
+  <img src="docs/screenshots/discover.png" width="49%" alt="Découverte">
+</p>
+<p align="center">
+  <img src="docs/screenshots/calendar.png" width="49%" alt="Calendrier">
+  <img src="docs/screenshots/radarr.png" width="49%" alt="Films (Radarr)">
+</p>
+<p align="center">
+  <img src="docs/screenshots/series-detail.png" width="49%" alt="Détail série (Sonarr)">
+  <img src="docs/screenshots/downloads.png" width="49%" alt="Téléchargements (qBittorrent)">
+</p>
+<p align="center">
+  <img src="docs/screenshots/settings.png" width="49%" alt="Paramètres (thème personnalisé)">
+</p>
 
 </details>
 
