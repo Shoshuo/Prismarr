@@ -73,19 +73,30 @@ class DashboardController extends AbstractController
         // hydration to bring the initial paint back under 1s.
         set_time_limit(60);
 
-        $recommendations = $this->recommendations();
-        $upcoming        = $this->upcomingReleases();
+        // Issue #9 — skip widgets bound to services the user never enabled,
+        // so the dashboard isn't littered with empty cards (and Radarr/Sonarr
+        // calls aren't fired at all if neither library is configured).
+        $configured = [
+            'radarr'     => $this->health->isConfigured('radarr'),
+            'sonarr'     => $this->health->isConfigured('sonarr'),
+            'jellyseerr' => $this->health->isConfigured('jellyseerr'),
+            'tmdb'       => $this->health->isConfigured('tmdb'),
+        ];
+
+        $recommendations = $configured['tmdb'] ? $this->recommendations() : [];
+        $upcoming        = ($configured['radarr'] || $configured['sonarr']) ? $this->upcomingReleases() : [];
 
         return $this->render('dashboard/index.html.twig', [
             'stats'               => $this->stats(),
             'upcoming'            => $upcoming,
             'upcoming_days'       => $this->upcomingByDay($upcoming),
-            'jellyseerr_requests' => $this->pendingRequests(),
+            'jellyseerr_requests' => $configured['jellyseerr'] ? $this->pendingRequests() : [],
             'services_health'     => $this->servicesHealth(),
             'recommendations'     => $recommendations,
-            'recent_additions'    => $this->recentAdditions(),
+            'recent_additions'    => ($configured['radarr'] || $configured['sonarr']) ? $this->recentAdditions() : [],
             'watchlist'           => $this->watchlist(),
             'hero_spotlight'      => $this->pickHeroSpotlight($recommendations),
+            'services_configured' => $configured,
         ]);
     }
 
@@ -488,11 +499,17 @@ class DashboardController extends AbstractController
      * Execute a fetch that may hit a remote service and return `null` on any
      * failure (with a warning logged). Keeps the dashboard resilient: a dead
      * Radarr doesn't mean a blank page, just an empty widget.
+     *
+     * "Service not configured" is a deliberate user state (issue #9 — they
+     * never enabled Jellyseerr / VPN / etc.), so we skip it silently rather
+     * than spamming a warning every dashboard render.
      */
     private function safeFetch(string $label, callable $fn): mixed
     {
         try {
             return $fn();
+        } catch (\App\Exception\ServiceNotConfiguredException) {
+            return null;
         } catch (\Throwable $e) {
             $this->logger->warning('Dashboard widget failed [{label}]: {message}', [
                 'label'     => $label,

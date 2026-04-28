@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route('/setup')]
@@ -314,13 +315,17 @@ class SetupController extends AbstractController
      * URL probed, or the API key submitted.
      *
      * Defense-in-depth:
-     *  - guardSetupNotCompleted(): 403 once setup is finished, so an attacker
-     *    can't hit this endpoint to scan the LAN post-install
+     *  - IsGranted ROLE_USER: closes the small window between image start and
+     *    `setup_completed=1` where /setup/* is otherwise PUBLIC_ACCESS. The
+     *    test buttons only appear from step 3 onward (after the admin is
+     *    created at step 2 + auto-logged-in via $security->login), so this
+     *    never blocks a legitimate user.
+     *  - guardSetupNotCompleted(): 403 once setup is finished, so a logged-in
+     *    user can't keep scanning the LAN through this endpoint after install
      *  - CSRF token bound to the service name: prevents cross-origin form posts
      *  - service whitelist via Symfony route requirements
      *  - field whitelist per service inside collectTestFields()
      *  - rate limiter (30/min per IP): neuters scripted port-scan attempts
-     *    during the brief window where the wizard is publicly reachable
      *  - HealthService::httpProbe() applies CURLOPT_PROTOCOLS + link-local
      *    blocklist so the actual cURL can't reach file:// / cloud-metadata
      *
@@ -334,6 +339,7 @@ class SetupController extends AbstractController
         requirements: ['service' => 'tmdb|radarr|sonarr|prowlarr|jellyseerr|qbittorrent'],
         methods: ['POST'],
     )]
+    #[IsGranted('ROLE_USER')]
     public function testService(
         string $service,
         Request $request,

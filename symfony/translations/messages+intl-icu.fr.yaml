@@ -384,6 +384,7 @@ dashboard:
     status_ok: Opérationnel
     status_ko: Injoignable
     status_unk: Non configuré
+    none_configured: 'Aucun service configuré pour l''instant — choisissez ceux que vous utilisez dans Paramètres.'
   watchlist:
     title: Ma liste à voir
     view_all: 'Tout voir →'
@@ -4607,6 +4608,16 @@ calendar:
     month: Aucune sortie prévue ce mois-ci.
     week: Aucune sortie prévue cette semaine.
     day: Aucune sortie prévue ce jour-là.
+  error:
+    radarr_unreachable_title: 'Radarr est actuellement injoignable'
+    radarr_unreachable_body: 'Il manque peut-être des films à venir. Vérifiez l''URL et la clé API Radarr dans <a href="/admin/settings">/admin/settings</a> ou que le service est bien démarré.'
+    sonarr_unreachable_title: 'Sonarr est actuellement injoignable'
+    sonarr_unreachable_body: 'Il manque peut-être des épisodes à venir. Vérifiez l''URL et la clé API Sonarr dans <a href="/admin/settings">/admin/settings</a> ou que le service est bien démarré.'
+    both_unreachable_title: 'Radarr et Sonarr sont actuellement injoignables'
+    both_unreachable_body: 'Le calendrier ne peut afficher aucune sortie à venir. Vérifiez les URL et clés API de vos services dans <a href="/admin/settings">/admin/settings</a>.'
+  info:
+    none_configured_title: 'Aucun service média configuré'
+    none_configured_body: 'Le calendrier a besoin de Radarr (films) ou Sonarr (épisodes) pour afficher les sorties à venir. Configurez au moins un service dans <a href="/admin/settings">/admin/settings</a>.'
   months:
     full:
       - Janvier

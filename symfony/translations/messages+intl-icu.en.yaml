@@ -385,6 +385,7 @@ dashboard:
     status_ok: Up
     status_ko: Unreachable
     status_unk: Not configured
+    none_configured: No service configured yet — pick the ones you use in Settings.
   watchlist:
     title: My watchlist
     view_all: 'View all →'
@@ -4608,6 +4609,16 @@ calendar:
     month: No releases scheduled this month.
     week: No releases scheduled this week.
     day: No releases scheduled this day.
+  error:
+    radarr_unreachable_title: 'Radarr is currently unreachable'
+    radarr_unreachable_body: 'The calendar may be missing upcoming movies. Check your Radarr URL and API key in <a href="/admin/settings">/admin/settings</a> or verify the service is running.'
+    sonarr_unreachable_title: 'Sonarr is currently unreachable'
+    sonarr_unreachable_body: 'The calendar may be missing upcoming episodes. Check your Sonarr URL and API key in <a href="/admin/settings">/admin/settings</a> or verify the service is running.'
+    both_unreachable_title: 'Radarr and Sonarr are currently unreachable'
+    both_unreachable_body: 'The calendar cannot show upcoming releases. Check your service URLs and API keys in <a href="/admin/settings">/admin/settings</a>.'
+  info:
+    none_configured_title: 'No media services configured'
+    none_configured_body: 'The calendar needs Radarr (movies) or Sonarr (episodes) to show upcoming releases. Configure at least one in <a href="/admin/settings">/admin/settings</a>.'
   months:
     full:
       - January

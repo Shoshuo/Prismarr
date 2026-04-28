@@ -254,6 +254,49 @@
 {% block body %}
 <div class="container-xl">
 
+    {# ── Service-unreachable banner (warning) ──────────────────────────
+       Shown only when the upstream fetch failed (exception or silent
+       getLastError()) AND the service is configured. An empty calendar
+       on a healthy service stays banner-free (legitimate "nothing
+       upcoming"). A service deliberately left unconfigured uses the
+       softer info banner below instead of this warning. #}
+    {% if radarrFailed or sonarrFailed %}
+        <div class="alert alert-warning d-flex align-items-start gap-2 mb-3" role="alert">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0 mt-1">
+                <path d="M12 9v4"/><path d="M12 17h.01"/><path d="M3.5 21h17a1.7 1.7 0 0 0 1.5-2.5L13.5 4a1.7 1.7 0 0 0 -3 0L2 18.5a1.7 1.7 0 0 0 1.5 2.5"/>
+            </svg>
+            <div>
+                {% if radarrFailed and sonarrFailed %}
+                    <strong>{{ 'calendar.error.both_unreachable_title'|trans }}</strong>
+                    <div class="small">{{ 'calendar.error.both_unreachable_body'|trans|raw }}</div>
+                {% elseif radarrFailed %}
+                    <strong>{{ 'calendar.error.radarr_unreachable_title'|trans }}</strong>
+                    <div class="small">{{ 'calendar.error.radarr_unreachable_body'|trans|raw }}</div>
+                {% else %}
+                    <strong>{{ 'calendar.error.sonarr_unreachable_title'|trans }}</strong>
+                    <div class="small">{{ 'calendar.error.sonarr_unreachable_body'|trans|raw }}</div>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    {# ── Service-not-configured banner (info) ──────────────────────────
+       Softer message for users who skipped a service in the wizard. We
+       only show it when BOTH services are unconfigured (otherwise we'd
+       hassle every Radarr-only / Sonarr-only user with a redundant
+       reminder every time they open the calendar). #}
+    {% if not radarrConfigured and not sonarrConfigured %}
+        <div class="alert alert-info d-flex align-items-start gap-2 mb-3" role="status">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0 mt-1">
+                <circle cx="12" cy="12" r="9"/><path d="M12 8v.01"/><path d="M11 12h1v4h1"/>
+            </svg>
+            <div>
+                <strong>{{ 'calendar.info.none_configured_title'|trans }}</strong>
+                <div class="small">{{ 'calendar.info.none_configured_body'|trans|raw }}</div>
+            </div>
+        </div>
+    {% endif %}
+
     {# ── Filters — cards split by category ── #}
     <div class="d-flex gap-3 mb-3 flex-wrap">
 

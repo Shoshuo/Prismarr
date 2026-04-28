@@ -85,8 +85,11 @@ class ControllersSmokeTest extends AbstractWebTestCase
 
         $this->assertSame(200, $this->client->getResponse()->getStatusCode());
         $body = (string) $this->client->getResponse()->getContent();
-        // "Pending requests" (EN) must be present, not "Requêtes en attente" (FR).
-        $this->assertStringContainsString('Pending requests', $body);
-        $this->assertStringNotContainsString('Requêtes en attente', $body);
+        // Issue #9 — the Jellyseerr "Pending requests" card now hides when
+        // the service isn't configured (which it isn't in tests), so the
+        // assertion swapped to the always-present "Services health" card
+        // which keeps the locale-switch coverage intact.
+        $this->assertStringContainsString('Services health', $body);
+        $this->assertStringNotContainsString('Santé des services', $body);
     }
 }

@@ -82,7 +82,10 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
 
         // 2. Service configured but unreachable → redirect to section index
         //    (skip if we ARE already on the index, which has its own banner).
-        if ($route !== $rule['index'] && !$this->health->isHealthy($rule['service_id'])) {
+        //    Strict comparison: isHealthy() now also returns null for
+        //    unconfigured services, but step 1 above already redirects those
+        //    to the wizard, so only "true down" should trigger this redirect.
+        if ($route !== $rule['index'] && $this->health->isHealthy($rule['service_id']) === false) {
             $event->setResponse(new RedirectResponse($this->urls->generate($rule['index'])));
         }
     }

@@ -14,8 +14,9 @@ use App\Service\Media\TmdbClient;
  * Tests third-party service availability.
  *
  * Two flavors:
- *  - isHealthy() returns a cached bool — used by topbar/dashboard widgets
- *    that poll often.
+ *  - isHealthy() returns a cached ?bool — used by topbar/dashboard widgets
+ *    that poll often. Null means "not configured" (no URL/key in DB), so
+ *    the UI can render a neutral state instead of a fake "down" badge.
  *  - diagnose() probes the URL directly to categorize WHY the service is
  *    down (network / auth / forbidden / not_found / server_error / ...) so
  *    the admin "Test connection" button can return an actionable hint
@@ -25,7 +26,7 @@ class HealthService
 {
     private const CACHE_TTL = 10;
 
-    /** @var array<string, array{ok: bool, at: int}> */
+    /** @var array<string, array{ok: ?bool, at: int}> */
     private array $cache = [];
 
     public function __construct(
@@ -39,11 +40,25 @@ class HealthService
         private readonly ?ServiceHealthCache $serviceHealthCache = null,
     ) {}
 
-    public function isHealthy(string $service): bool
+    /**
+     * Returns true (up), false (down), or null (not configured — no URL/key
+     * in DB). Cached for CACHE_TTL seconds so the topbar can poll every few
+     * seconds without hammering upstreams. Unconfigured services are NOT
+     * pinged at all — that avoids 4 s timeouts and warning-log spam every
+     * poll for users who only enabled a subset of the stack.
+     */
+    public function isHealthy(string $service): ?bool
     {
         $now = time();
         if (isset($this->cache[$service]) && ($now - $this->cache[$service]['at']) < self::CACHE_TTL) {
             return $this->cache[$service]['ok'];
+        }
+
+        // Short-circuit on unconfigured services: don't ping, don't log.
+        // Skipped when no ConfigService is wired (legacy test paths).
+        if ($this->config !== null && !$this->isConfigured($service)) {
+            $this->cache[$service] = ['ok' => null, 'at' => $now];
+            return null;
         }
 
         $ok = match ($service) {
@@ -58,6 +73,33 @@ class HealthService
 
         $this->cache[$service] = ['ok' => $ok, 'at' => $now];
         return $ok;
+    }
+
+    /**
+     * True if the given service has all the credentials it needs to be
+     * pinged. Used by isHealthy() to skip uncconfigured services and by the
+     * topbar / dashboard to render a "not configured" state. Returns true
+     * when no ConfigService is wired, so the legacy test setup keeps
+     * working without each test having to provide a fake config.
+     */
+    public function isConfigured(string $service): bool
+    {
+        if ($this->config === null) {
+            return true;
+        }
+        return match ($service) {
+            'radarr', 'sonarr', 'prowlarr' =>
+                $this->config->has($service . '_url') && $this->config->has($service . '_api_key'),
+            'jellyseerr' =>
+                $this->config->has('jellyseerr_url') && $this->config->has('jellyseerr_api_key'),
+            'tmdb' =>
+                $this->config->has('tmdb_api_key'),
+            'qbittorrent' =>
+                $this->config->has('qbittorrent_url')
+                && $this->config->has('qbittorrent_user')
+                && $this->config->has('qbittorrent_password'),
+            default => true,
+        };
     }
 
     /**

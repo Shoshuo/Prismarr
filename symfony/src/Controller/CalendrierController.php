@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\ConfigService;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use Psr\Log\LoggerInterface;
@@ -23,13 +24,32 @@ class CalendrierController extends AbstractController
         private readonly SonarrClient $sonarr,
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
+        private readonly ConfigService $config,
     ) {}
+
+    /**
+     * "Configured" = the wizard saved at least a URL AND an API key for the
+     * service. Skipped or never-set keys leave both empty in the DB. We use
+     * this to tell apart "service down" (warning banner) from "service
+     * deliberately not used" (silent — no banner).
+     */
+    private function isConfigured(string $service): bool
+    {
+        $url = trim((string) ($this->config->get($service . '_url') ?? ''));
+        $key = trim((string) ($this->config->get($service . '_api_key') ?? ''));
+        return $url !== '' && $key !== '';
+    }
 
     #[Route('/calendrier', name: 'app_calendrier')]
     public function index(): Response
     {
         $radarrCal = [];
         $sonarrCal = [];
+        // Track whether each fetch crashed (vs. simply returned no events) so
+        // the template can show a "service unreachable" banner. Without this,
+        // a Radarr outage and an empty library look identical to the user.
+        $radarrFailed = false;
+        $sonarrFailed = false;
 
         try {
             $radarrMovies = $this->radarr->getCalendar(90, 90);
@@ -64,7 +84,16 @@ class CalendrierController extends AbstractController
                 }
             }
         } catch (\Throwable $e) {
+            $radarrFailed = true;
             $this->logger->warning('Radarr calendar failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
+        // Silent failure path: getCalendar() returns [] both when Radarr has
+        // genuinely nothing scheduled AND when the HTTP request bailed out
+        // (timeout, 401, network error). The latter sets a non-null
+        // getLastError(), so we use that to tell "service down" apart from
+        // "library quiet" without having to throw inside the client.
+        if ($radarrCal === [] && $this->radarr->getLastError() !== null) {
+            $radarrFailed = true;
         }
 
         try {
@@ -90,7 +119,12 @@ class CalendrierController extends AbstractController
                 ];
             }
         } catch (\Throwable $e) {
+            $sonarrFailed = true;
             $this->logger->warning('Sonarr calendar failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
+        // Same silent-failure detection as Radarr above.
+        if ($sonarrCal === [] && $this->sonarr->getLastError() !== null) {
+            $sonarrFailed = true;
         }
 
         // Merge and sort by date
@@ -116,10 +150,22 @@ class CalendrierController extends AbstractController
             return $ev;
         }, $events);
 
+        // Suppress the "unreachable" banner when the service simply isn't
+        // configured. Otherwise users who legitimately run only Radarr (no
+        // Sonarr) would get a warning every time they open the calendar.
+        $radarrConfigured = $this->isConfigured('radarr');
+        $sonarrConfigured = $this->isConfigured('sonarr');
+        if (!$radarrConfigured) { $radarrFailed = false; }
+        if (!$sonarrConfigured) { $sonarrFailed = false; }
+
         return $this->render('calendrier/index.html.twig', [
-            'eventsJson'     => $eventsJson,
-            'totalFilms'     => count($radarrCal),
-            'totalEpisodes'  => count($sonarrCal),
+            'eventsJson'        => $eventsJson,
+            'totalFilms'        => count($radarrCal),
+            'totalEpisodes'     => count($sonarrCal),
+            'radarrFailed'      => $radarrFailed,
+            'sonarrFailed'      => $sonarrFailed,
+            'radarrConfigured'  => $radarrConfigured,
+            'sonarrConfigured'  => $sonarrConfigured,
         ]);
     }
 

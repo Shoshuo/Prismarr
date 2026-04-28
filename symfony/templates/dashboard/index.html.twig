@@ -527,6 +527,8 @@
     </div>
 
     {# ── Prochaines sorties (mini-calendrier 7 jours) ──────────────── #}
+    {# Issue #9 — masqué quand ni Radarr ni Sonarr ne sont configurés. #}
+    {% if services_configured.radarr or services_configured.sonarr %}
     <div class="row row-cards mb-3">
       <div class="col-12">
         <div class="card">
@@ -596,9 +598,13 @@
         </div>
       </div>
     </div>
+    {% endif %}
 
     {# ── Requests + Services health ─────────────────────────────────── #}
+    {# Jellyseerr requests masqué quand le service n'est pas configuré.
+       La grid se réduit alors à la seule carte "Services health". #}
     <div class="row row-cards mb-3">
+      {% if services_configured.jellyseerr %}
       <div class="col-12 col-lg-6">
         <div class="card h-100">
           <div class="card-header">
@@ -642,8 +648,11 @@
           </div>
         </div>
       </div>
+      {% endif %}
 
-      <div class="col-12 col-lg-6">
+      {# Services health card spans the full width when the requests card is
+         hidden (no Jellyseerr), otherwise sits next to it on the right. #}
+      <div class="col-12 {% if services_configured.jellyseerr %}col-lg-6{% endif %}">
         <div class="card h-100">
           <div class="card-header">
             <h3 class="card-title">
@@ -657,8 +666,18 @@
             </div>
           </div>
           <div class="card-body">
+            {# Only render chips for services the user has configured —
+               unconfigured ones come back as `null` from HealthService and
+               would otherwise clutter the grid with "—" rows that never
+               turn green (issue #9). #}
+            {% set configured_health = services_health|filter(ok => ok is not null) %}
+            {% if configured_health is empty %}
+              <div class="text-center text-secondary py-3">
+                {{ 'dashboard.health.none_configured'|trans }}
+              </div>
+            {% else %}
             <div class="service-grid">
-              {% for id, ok in services_health %}
+              {% for id, ok in configured_health %}
                 {% set meta = {
                   radarr:      {name:'Radarr',      color:'#FFC230'},
                   sonarr:      {name:'Sonarr',      color:'#00CCFF'},
@@ -668,16 +687,17 @@
                   tmdb:        {name:'TMDb',        color:'#01B4E4'},
                 }[id] %}
                 <div class="service-chip">
-                  <span class="service-chip-dot {{ ok is null ? 'is-unk' : (ok ? 'is-ok' : 'is-ko') }}"></span>
+                  <span class="service-chip-dot {{ ok ? 'is-ok' : 'is-ko' }}"></span>
                   <div class="flex-fill">
                     <div class="service-chip-name" style="color: {{ meta.color }};">{{ meta.name }}</div>
                     <div class="service-chip-state">
-                      {{ ok is null ? 'dashboard.health.status_unk'|trans : (ok ? 'dashboard.health.status_ok'|trans : 'dashboard.health.status_ko'|trans) }}
+                      {{ ok ? 'dashboard.health.status_ok'|trans : 'dashboard.health.status_ko'|trans }}
                     </div>
                   </div>
                 </div>
               {% endfor %}
             </div>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -722,7 +742,10 @@
     {% endif %}
 
     {# ── TMDb trending (links to Discover modal) ─────────────── #}
-    {% if recommendations is not empty %}
+    {# Issue #9 — also hide the row when TMDb isn't configured at all
+       (otherwise `recommendations` is always [] and the section never shows,
+       but this guard makes the intent explicit). #}
+    {% if services_configured.tmdb and recommendations is not empty %}
     <div class="row-section">
       <div class="row-section-head">
         <h2 class="row-section-title">
@@ -763,7 +786,8 @@
     {% endif %}
 
     {# ── Recent library additions ──────────────────────────────── #}
-    {% if recent_additions is not empty %}
+    {# Issue #9 — masqué quand ni Radarr ni Sonarr ne sont configurés. #}
+    {% if (services_configured.radarr or services_configured.sonarr) and recent_additions is not empty %}
     <div class="row-section">
       <div class="row-section-head">
         <h2 class="row-section-title">

@@ -108,6 +108,76 @@ class HealthServiceTest extends TestCase
     }
 
     /**
+     * Issue #9 — when a service has no URL/key in DB, isHealthy() must
+     * return null (not false) AND must NOT call ping(). Otherwise every
+     * topbar poll spams a "Jellyseerr ping failed" warning to the logs
+     * for users who only enabled a subset of the stack.
+     */
+    public function testUnconfiguredServiceReturnsNullWithoutPinging(): void
+    {
+        $jellyseerr = $this->createMock(JellyseerrClient::class);
+        $jellyseerr->expects($this->never())->method('ping');
+
+        $config = $this->createMock(ConfigService::class);
+        $config->method('has')->willReturn(false);
+
+        $svc = $this->makeService(jellyseerr: $jellyseerr, config: $config);
+        $this->assertNull($svc->isHealthy('jellyseerr'));
+    }
+
+    public function testConfiguredServiceStillPingsWhenConfigPresent(): void
+    {
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->expects($this->once())->method('ping')->willReturn(true);
+
+        $config = $this->createMock(ConfigService::class);
+        // Both radarr_url and radarr_api_key present.
+        $config->method('has')->willReturn(true);
+
+        $svc = $this->makeService(radarr: $radarr, config: $config);
+        $this->assertTrue($svc->isHealthy('radarr'));
+    }
+
+    public function testIsConfiguredChecksRequiredKeysPerService(): void
+    {
+        $config = $this->createMock(ConfigService::class);
+        // tmdb only needs the api key; radarr needs url + key.
+        $config->method('has')->willReturnCallback(fn (string $k) => match ($k) {
+            'tmdb_api_key'    => true,
+            'radarr_url'      => true,
+            'radarr_api_key'  => false,
+            default           => false,
+        });
+
+        $svc = $this->makeService(config: $config);
+        $this->assertTrue($svc->isConfigured('tmdb'));
+        $this->assertFalse($svc->isConfigured('radarr'));
+        $this->assertFalse($svc->isConfigured('jellyseerr'));
+    }
+
+    public function testIsConfiguredAlwaysTrueWhenNoConfigService(): void
+    {
+        // Legacy code path: no ConfigService injected → don't break the
+        // existing test suite that pre-dates the unconfigured-skip feature.
+        $svc = $this->makeService();
+        $this->assertTrue($svc->isConfigured('radarr'));
+        $this->assertTrue($svc->isConfigured('jellyseerr'));
+    }
+
+    public function testUnconfiguredResultIsCachedSoSecondCallStillSkipsPing(): void
+    {
+        $jellyseerr = $this->createMock(JellyseerrClient::class);
+        $jellyseerr->expects($this->never())->method('ping');
+
+        $config = $this->createMock(ConfigService::class);
+        $config->method('has')->willReturn(false);
+
+        $svc = $this->makeService(jellyseerr: $jellyseerr, config: $config);
+        $this->assertNull($svc->isHealthy('jellyseerr'));
+        $this->assertNull($svc->isHealthy('jellyseerr'));
+    }
+
+    /**
      * @return array<string, array{0: array{http: ?int, body: ?string, err: string}, 1: string, 2: string, 3: bool}>
      */
     public static function diagnoseCases(): array
