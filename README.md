@@ -99,8 +99,10 @@ carefully and reply. Open an issue, drop a PR, or just tell me what's
 missing or what could be better. Outside contributors are exactly how a
 solo project becomes a real one, and I'd love that to happen.
 
-The [CHANGELOG](CHANGELOG.md) is kept up to date and the roadmap is open
-to discussion.
+The [CHANGELOG](CHANGELOG.md) is kept up to date, and the roadmap lives
+on the [public GitHub project](https://github.com/users/Shoshuo/projects/3)
+where you can see what's in progress, what's planned for the next release
+and what's queued for later.
 
 ---
 
@@ -281,6 +283,9 @@ rotate or back them up manually.
 | `APP_ENV` | `prod` | Switch to `dev` for local development only |
 | `PRISMARR_PORT` | `7070` | Internal listening port |
 | `TRUSTED_PROXIES` | `127.0.0.1,REMOTE_ADDR` | Adjust if running behind Traefik / nginx / Caddy / Cloudflare Tunnel |
+| `TZ` | `UTC` | Container time zone (e.g. `Europe/Paris`, `Pacific/Honolulu`). Drives both the OS clock and the PHP date helpers — see issue [#12](https://github.com/Shoshuo/Prismarr/issues/12) |
+| `PHP_MEMORY_LIMIT` | `1024M` | PHP memory ceiling per request. Bump (e.g. `2048M`, `-1` for unlimited) if you have a very large Radarr / Sonarr library — see issue [#13](https://github.com/Shoshuo/Prismarr/issues/13) |
+| `PHP_MAX_EXECUTION_TIME` | `120` | PHP wall-time ceiling per request, in seconds. Bump alongside `PHP_MEMORY_LIMIT` if the films / series page times out |
 
 ### Persistent data
 

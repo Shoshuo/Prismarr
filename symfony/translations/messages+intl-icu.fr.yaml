@@ -664,6 +664,9 @@ admin:
       php: PHP
       database: Base de données
       server_time: Heure serveur
+      memory_limit: 'Limite mémoire PHP'
+      max_execution_time: 'Temps d''exécution max PHP'
+      unlimited: 'Illimité (-1)'
     content:
       title: Contenu
       users: '{count, plural, one {# utilisateur} other {# utilisateurs}}'
@@ -674,6 +677,7 @@ admin:
       source: 'Code source ↗'
       bug: 'Signaler un bug ↗'
       docs: 'Documentation ↗'
+      roadmap: 'Roadmap ↗'
   save: Enregistrer les modifications
   flash:
     saved: Modifications enregistrées.
@@ -712,6 +716,7 @@ admin:
     no_remote_info: 'Pas d''info distante (GitHub injoignable)'
     view_on_github: Releases GitHub
     docker_hub: Docker Hub
+    roadmap: 'Roadmap (projet GitHub)'
     upgrade_hint_html: 'Pour mettre à jour : <code>docker compose pull &amp;&amp; docker compose up -d</code>. Lisez les notes ci-dessous pour repérer une éventuelle rupture.'
     release_notes: Notes de version
     no_releases: 'Aucune information de release disponible pour le moment (API GitHub injoignable).'

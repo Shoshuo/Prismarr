@@ -365,6 +365,13 @@ class AdminSettingsController extends AbstractController
             'series_count'     => $series,
             'server_time'      => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
             'timezone'         => date_default_timezone_get(),
+            // Surface the runtime PHP limits so users with large libraries
+            // (issue #13) can confirm their compose override took effect.
+            // ini_get returns the literal string written to php.ini, so
+            // "1024M" stays "1024M" and "-1" stays "-1" (which the template
+            // renders as "Unlimited").
+            'memory_limit'         => (string) ini_get('memory_limit'),
+            'max_execution_time'   => (string) ini_get('max_execution_time'),
         ];
     }
 

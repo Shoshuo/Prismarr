@@ -665,6 +665,9 @@ admin:
       php: PHP
       database: Database
       server_time: Server time
+      memory_limit: 'PHP memory limit'
+      max_execution_time: 'PHP max execution time'
+      unlimited: 'Unlimited (-1)'
     content:
       title: Content
       users: '{count, plural, one {# user} other {# users}}'
@@ -675,6 +678,7 @@ admin:
       source: 'Source code ↗'
       bug: 'Report a bug ↗'
       docs: 'Documentation ↗'
+      roadmap: 'Roadmap ↗'
   save: Save changes
   flash:
     saved: Changes saved.
@@ -713,6 +717,7 @@ admin:
     no_remote_info: 'No remote info (GitHub unreachable)'
     view_on_github: GitHub releases
     docker_hub: Docker Hub
+    roadmap: 'Roadmap (GitHub project)'
     upgrade_hint_html: 'To upgrade: <code>docker compose pull &amp;&amp; docker compose up -d</code>. Read the release notes below for any breaking change.'
     release_notes: Release notes
     no_releases: 'No release information available right now (GitHub API unreachable).'

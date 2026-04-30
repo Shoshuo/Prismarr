@@ -43,6 +43,24 @@ elif [ -n "$TZ" ]; then
   tz_action="invalid \$TZ='$TZ' — falling back to UTC"
 fi
 
+# ── 0b. PHP runtime overrides ──────────────────────────────────────────────
+# Issue #13 — let homelabs with very large libraries bump memory and time
+# limits via docker-compose env vars instead of mounting a custom ini. Both
+# default to whatever php.ini ships (currently 1024M / 120s); set them only
+# if the user opted in. The "zz-" prefix loads after prismarr.ini so the
+# values override the baked-in defaults.
+runtime_action="defaults (1024M / 120s)"
+runtime_ini="/usr/local/etc/php/conf.d/zz-runtime.ini"
+: > "$runtime_ini"  # truncate any previous boot's content
+if [ -n "$PHP_MEMORY_LIMIT" ]; then
+  echo "memory_limit = $PHP_MEMORY_LIMIT" >> "$runtime_ini"
+  runtime_action="memory_limit=$PHP_MEMORY_LIMIT"
+fi
+if [ -n "$PHP_MAX_EXECUTION_TIME" ]; then
+  echo "max_execution_time = $PHP_MAX_EXECUTION_TIME" >> "$runtime_ini"
+  runtime_action="${runtime_action} max_execution_time=${PHP_MAX_EXECUTION_TIME}s"
+fi
+
 # ── 1. Writable volume ──────────────────────────────────────────────────────
 # var/caddy = HOME of the FrankenPHP process (XDG data store, autosave files).
 mkdir -p "$DATA_DIR" "$DATA_DIR/sessions" "$APP_DIR/var/cache" "$APP_DIR/var/log" "$APP_DIR/var/caddy"
@@ -124,6 +142,7 @@ cat <<BANNER
   [ok] Secrets                $secrets_action
   [ok] Database schema        $schema_action
   [ok] Time zone              $tz_action
+  [ok] PHP limits             $runtime_action
 
   Ready — open http://localhost:$PRISMARR_PORT to access the UI.
   If this is a first install, you will be redirected to the

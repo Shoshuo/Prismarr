@@ -39,6 +39,11 @@ class MediaController extends AbstractController
     #[Route('/films', name: 'films')]
     public function films(): Response
     {
+        // Issue #13 — large libraries (5k+ items) make the parse + Twig
+        // render flirt with the default 60s ceiling. Bumped to give big
+        // homelabs headroom until server-side pagination ships in 1.1.0.
+        set_time_limit(120);
+
         $movies = [];
         $queue  = [];
         $error  = false;
@@ -106,6 +111,9 @@ class MediaController extends AbstractController
     #[Route('/series', name: 'series')]
     public function series(): Response
     {
+        // Same rationale as films() — see issue #13.
+        set_time_limit(120);
+
         $series   = [];
         $queue    = [];
         $calendar = [];

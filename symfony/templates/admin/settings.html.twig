@@ -832,6 +832,9 @@
                   <a href="https://hub.docker.com/r/shoshuo/prismarr/tags" target="_blank" rel="noopener" class="btn btn-sm btn-ghost-primary">
                     {{ 'admin.updates.docker_hub'|trans }}
                   </a>
+                  <a href="https://github.com/users/Shoshuo/projects/3" target="_blank" rel="noopener" class="btn btn-sm btn-ghost-primary">
+                    {{ 'admin.updates.roadmap'|trans }}
+                  </a>
                 </div>
               </div>
               {% if app_update_available %}
@@ -910,6 +913,22 @@
                   <span class="text-secondary small">{{ 'admin.about.field.server_time'|trans }}</span>
                   <span class="small fw-medium">{{ system_info.server_time|prismarr_datetime }} · {{ system_info.timezone }}</span>
                 </div>
+                <div class="d-flex justify-content-between border-bottom pb-2">
+                  <span class="text-secondary small">{{ 'admin.about.field.memory_limit'|trans }}</span>
+                  <span class="small fw-medium">
+                    {{ system_info.memory_limit == '-1' ? 'admin.about.field.unlimited'|trans : system_info.memory_limit }}
+                  </span>
+                </div>
+                <div class="d-flex justify-content-between border-bottom pb-2">
+                  <span class="text-secondary small">{{ 'admin.about.field.max_execution_time'|trans }}</span>
+                  <span class="small fw-medium">
+                    {% if system_info.max_execution_time == '0' or system_info.max_execution_time == '-1' %}
+                      {{ 'admin.about.field.unlimited'|trans }}
+                    {% else %}
+                      {{ system_info.max_execution_time }}s
+                    {% endif %}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -942,6 +961,9 @@
                 </a>
                 <a href="https://github.com/Shoshuo/Prismarr#readme" target="_blank" rel="noopener" class="btn btn-sm btn-ghost-primary">
                   {{ 'admin.about.links.docs'|trans }}
+                </a>
+                <a href="https://github.com/users/Shoshuo/projects/3" target="_blank" rel="noopener" class="btn btn-sm btn-ghost-primary">
+                  {{ 'admin.about.links.roadmap'|trans }}
                 </a>
               </div>
             </div>

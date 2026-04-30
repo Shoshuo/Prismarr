@@ -8,5 +8,7 @@ services:
       - APP_ENV=dev
       - APP_DEBUG=1
       - TZ=Europe/Paris
+      - PHP_MEMORY_LIMIT=2048M
+      - PHP_MAX_EXECUTION_TIME=240
     volumes:
       - ./symfony:/var/www/html
