@@ -17,7 +17,7 @@ use Symfony\Contracts\Service\ResetInterface;
 class AppVersion implements ResetInterface
 {
     /** Bumped on every release. Source of truth for the running build. */
-    public const VERSION = '1.0.5';
+    public const VERSION = '1.0.6';
 
     private const GITHUB_API_URL = 'https://api.github.com/repos/Shoshuo/Prismarr/releases?per_page=15';
     // v2: schema bump (added `body_html` rendered from Markdown). Old v1 cache

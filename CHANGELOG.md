@@ -5,7 +5,7 @@ All notable changes to Prismarr are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.6] - 2026-05-03
 
 ### Added
 - **"Test connection" buttons in the setup wizard.** Each service step (TMDb, Radarr, Sonarr, Prowlarr, Jellyseerr, qBittorrent) now has an inline `Test connection` button next to its inputs. Result is shown as a small status badge (green "Connected", red category like "Wrong API key" / "Cannot reach service" / "Endpoint not found"). Non-blocking — users can still continue without testing. Categories are surfaced from `HealthService::diagnose()` so the same labels appear in `/admin/settings`.
