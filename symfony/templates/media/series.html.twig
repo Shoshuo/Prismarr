@@ -1,7 +1,10 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Sonarr{% endblock %}
-{% block page_title %}<svg width="24" height="24" viewBox="0 0 216.7 216.9" xmlns="http://www.w3.org/2000/svg"><path d="M194.65 42.5l-22.4 22.4C159.15 78 158 89.4 158 109.5c0 17.93 2.85 34.35 16.2 47.7l19 18.95c-2.5 3.07-5.2 6.07-8.1 9-.7.83-1.48 1.6-2.35 2.3-2.53 2.5-5.17 4.82-7.9 6.95l-17.55-17.55c-15.6-15.6-28-17.1-48.6-17.1-19.77 0-33.22 1.82-47.7 16.3l-18.55 18.6c-3.77-2.87-7.33-6.03-10.7-9.5-2.8-2.8-5.42-5.67-7.85-8.6l19.15-19.2c13.85-13.85 16.1-29.92 16.1-47.85 0-17.5-2.87-33.82-15.6-46.55L22.45 43.85c2.83-3.6 5.92-7.07 9.25-10.4 2.93-2.87 5.93-5.55 9-8.05L61.1 43.85C74.1 56.85 90.77 60.2 108.7 60.2c18.47 0 35.08-3.58 48.6-17.1l19.3-19.25c2.9 2.37 5.73 4.93 8.5 7.7 3.47 3.53 6.65 7.18 9.55 10.95z" fill="#0CF"/><circle cx="108.35" cy="108.45" r="29.5" fill="#0CF" opacity=".8"/></svg> Sonarr{% endblock %}
+{# v1.1.0 — show the current instance name in the title when more than
+   one Sonarr instance exists. Single-instance keeps the plain "Sonarr". #}
+{% set _sonarr_label = (instance_count|default(1) > 1 and current_instance) ? current_instance.name : 'Sonarr' %}
+{% block title %}{{ _sonarr_label }}{% endblock %}
+{% block page_title %}<svg width="24" height="24" viewBox="0 0 216.7 216.9" xmlns="http://www.w3.org/2000/svg"><path d="M194.65 42.5l-22.4 22.4C159.15 78 158 89.4 158 109.5c0 17.93 2.85 34.35 16.2 47.7l19 18.95c-2.5 3.07-5.2 6.07-8.1 9-.7.83-1.48 1.6-2.35 2.3-2.53 2.5-5.17 4.82-7.9 6.95l-17.55-17.55c-15.6-15.6-28-17.1-48.6-17.1-19.77 0-33.22 1.82-47.7 16.3l-18.55 18.6c-3.77-2.87-7.33-6.03-10.7-9.5-2.8-2.8-5.42-5.67-7.85-8.6l19.15-19.2c13.85-13.85 16.1-29.92 16.1-47.85 0-17.5-2.87-33.82-15.6-46.55L22.45 43.85c2.83-3.6 5.92-7.07 9.25-10.4 2.93-2.87 5.93-5.55 9-8.05L61.1 43.85C74.1 56.85 90.77 60.2 108.7 60.2c18.47 0 35.08-3.58 48.6-17.1l19.3-19.25c2.9 2.37 5.73 4.93 8.5 7.7 3.47 3.53 6.65 7.18 9.55 10.95z" fill="#0CF"/><circle cx="108.35" cy="108.45" r="29.5" fill="#0CF" opacity=".8"/></svg> {{ _sonarr_label }}{% endblock %}
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}
 
 {% block stylesheets %}

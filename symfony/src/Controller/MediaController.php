@@ -134,6 +134,7 @@ class MediaController extends AbstractController
             'error'  => $error,
             'service_url' => $resolved?->getUrl(),
             'current_instance' => $resolved,
+            'instance_count'   => $this->instances->count(ServiceInstance::TYPE_RADARR),
             'warnings' => $warnings,
             'stats'  => compact('total', 'downloaded', 'monitored', 'totalGb'),
             'indexerCount' => $indexerCount,
@@ -192,6 +193,7 @@ class MediaController extends AbstractController
             'error'    => $error,
             'service_url' => $resolved?->getUrl(),
             'current_instance' => $resolved,
+            'instance_count'   => $this->instances->count(ServiceInstance::TYPE_SONARR),
             'stats'    => compact('total', 'continuing', 'ended', 'totalGb'),
         ]);
     }

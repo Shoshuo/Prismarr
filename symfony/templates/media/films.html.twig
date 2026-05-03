@@ -1,8 +1,11 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Radarr{% endblock %}
-{# i18n: this page (Films) is a Radarr-powered library view. The page title "Radarr" is the brand, intentionally untranslated. #}
-{% block page_title %}<svg width="24" height="24" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><g transform="translate(70 21)"><path d="M105.3 154.9L112.8 869.5C52.7 877 7.5 846.9 7.5 786.8L0 192.6C0 4.5 173-40.6 278.3 34.6L812.3 343C887.5 395.6 902.6 493.4 865 561.1C857.5 508.5 834.9 478.4 789.8 448.3L188 109.8C142.9 79.7 105.3 87.2 105.3 154.9Z" fill="#FFC230"/><path d="M0 376.1C45.1 391.1 90.3 383.6 127.9 361L744.6 0C782.2 52.7 774.7 105.3 729.6 135.4L210.6 436.3C135.4 473.9 37.6 436.3 0 376.1Z" transform="translate(60.2 531)" fill="#FFC230"/><path d="M0 413.7L368.6 203.1L7.5 0L0 413.7Z" transform="translate(240.7 282.8)" fill="#FFC230"/></g></svg> Radarr{% endblock %}
+{# v1.1.0 — show the current instance name in the title when more than
+   one Radarr instance exists (so the user knows which Radarr they're
+   reading). Single-instance installs keep the plain "Radarr" brand. #}
+{% set _radarr_label = (instance_count|default(1) > 1 and current_instance) ? current_instance.name : 'Radarr' %}
+{% block title %}{{ _radarr_label }}{% endblock %}
+{% block page_title %}<svg width="24" height="24" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><g transform="translate(70 21)"><path d="M105.3 154.9L112.8 869.5C52.7 877 7.5 846.9 7.5 786.8L0 192.6C0 4.5 173-40.6 278.3 34.6L812.3 343C887.5 395.6 902.6 493.4 865 561.1C857.5 508.5 834.9 478.4 789.8 448.3L188 109.8C142.9 79.7 105.3 87.2 105.3 154.9Z" fill="#FFC230"/><path d="M0 376.1C45.1 391.1 90.3 383.6 127.9 361L744.6 0C782.2 52.7 774.7 105.3 729.6 135.4L210.6 436.3C135.4 473.9 37.6 436.3 0 376.1Z" transform="translate(60.2 531)" fill="#FFC230"/><path d="M0 413.7L368.6 203.1L7.5 0L0 413.7Z" transform="translate(240.7 282.8)" fill="#FFC230"/></g></svg> {{ _radarr_label }}{% endblock %}
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}
 
 {% block stylesheets %}
