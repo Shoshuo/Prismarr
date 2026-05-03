@@ -42,7 +42,21 @@ class ConfigExtension extends AbstractExtension
             new TwigFunction('service_configured', [$this, 'isServiceConfigured']),
             new TwigFunction('service_visible_in_sidebar', [$this, 'isServiceVisibleInSidebar']),
             new TwigFunction('feature_visible_in_sidebar', [$this, 'isFeatureVisibleInSidebar']),
+            new TwigFunction('service_instances', [$this, 'getServiceInstances']),
         ];
+    }
+
+    /**
+     * Enabled instances for radarr/sonarr (other services return []).
+     * Used by the sidebar to render one entry per instance when the user
+     * configured several (Phase B2).
+     *
+     * @return list<\App\Entity\ServiceInstance>
+     */
+    public function getServiceInstances(string $service): array
+    {
+        $type = self::INSTANCE_TYPES[$service] ?? null;
+        return $type !== null ? $this->instances->getEnabled($type) : [];
     }
 
     public function isServiceConfigured(string $service): bool

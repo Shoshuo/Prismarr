@@ -700,28 +700,107 @@
             </li>
             {% endif %}
 
+            {# v1.1.0 — Radarr: dynamic sidebar based on configured instances.
+                - 0 enabled        → service_visible_in_sidebar() = false, hidden
+                - 1 enabled        → single legacy entry "Radarr" → /medias/films
+                - 2 or 3 enabled   → flat entries with each instance.name
+                - 4+ enabled       → collapsible group "Radarr ▾" #}
             {% if service_visible_in_sidebar('radarr') %}
-            <li class="nav-item">
-              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_media_films' or app.request.attributes.get('_route') starts with 'radarr_' ? 'active' }}"
-                 href="{{ path('app_media_films') }}">
+              {% set _radarr_instances = service_instances('radarr') %}
+              {% set _radarr_count = _radarr_instances|length %}
+              {% set _radarr_route = app.request.attributes.get('_route') %}
+              {% set _radarr_active = _radarr_route starts with 'app_media_films' or _radarr_route starts with 'radarr_' %}
+              {% set _radarr_slug = app.request.attributes.get('slug') %}
+              {% set _radarr_icon %}
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
                   <svg width="24" height="24" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" class="icon"><g transform="translate(70 21)"><path d="M105.3 154.9L112.8 869.5C52.7 877 7.5 846.9 7.5 786.8L0 192.6C0 4.5 173-40.6 278.3 34.6L812.3 343C887.5 395.6 902.6 493.4 865 561.1C857.5 508.5 834.9 478.4 789.8 448.3L188 109.8C142.9 79.7 105.3 87.2 105.3 154.9Z" fill="#FFC230"/><path d="M0 376.1C45.1 391.1 90.3 383.6 127.9 361L744.6 0C782.2 52.7 774.7 105.3 729.6 135.4L210.6 436.3C135.4 473.9 37.6 436.3 0 376.1Z" transform="translate(60.2 531)" fill="#FFC230"/><path d="M0 413.7L368.6 203.1L7.5 0L0 413.7Z" transform="translate(240.7 282.8)" fill="#FFC230"/></g></svg>
                 </span>
-                <span class="nav-link-title">Radarr</span>
-              </a>
-            </li>
+              {% endset %}
+
+              {% if _radarr_count <= 1 %}
+                {# Single instance — keep the legacy URL so existing bookmarks survive. #}
+                <li class="nav-item">
+                  <a class="nav-link {{ _radarr_active ? 'active' }}" href="{{ path('app_media_films') }}">
+                    {{ _radarr_icon|raw }}
+                    <span class="nav-link-title">Radarr</span>
+                  </a>
+                </li>
+              {% elseif _radarr_count <= 3 %}
+                {% for _inst in _radarr_instances %}
+                  <li class="nav-item">
+                    <a class="nav-link {{ _radarr_route == 'app_media_films_for_instance' and _radarr_slug == _inst.slug ? 'active' }}"
+                       href="{{ path('app_media_films_for_instance', { slug: _inst.slug }) }}">
+                      {{ _radarr_icon|raw }}
+                      <span class="nav-link-title">{{ _inst.name }}</span>
+                    </a>
+                  </li>
+                {% endfor %}
+              {% else %}
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle {{ _radarr_active ? 'active' }}"
+                     href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                    {{ _radarr_icon|raw }}
+                    <span class="nav-link-title">Radarr</span>
+                  </a>
+                  <div class="dropdown-menu">
+                    {% for _inst in _radarr_instances %}
+                      <a class="dropdown-item {{ _radarr_route == 'app_media_films_for_instance' and _radarr_slug == _inst.slug ? 'active' }}"
+                         href="{{ path('app_media_films_for_instance', { slug: _inst.slug }) }}">
+                        {{ _inst.name }}
+                      </a>
+                    {% endfor %}
+                  </div>
+                </li>
+              {% endif %}
             {% endif %}
 
+            {# v1.1.0 — Sonarr: same dynamic logic as Radarr above. #}
             {% if service_visible_in_sidebar('sonarr') %}
-            <li class="nav-item">
-              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_media_series' or app.request.attributes.get('_route') starts with 'sonarr_' ? 'active' }}"
-                 href="{{ path('app_media_series') }}">
+              {% set _sonarr_instances = service_instances('sonarr') %}
+              {% set _sonarr_count = _sonarr_instances|length %}
+              {% set _sonarr_route = app.request.attributes.get('_route') %}
+              {% set _sonarr_active = _sonarr_route starts with 'app_media_series' or _sonarr_route starts with 'sonarr_' %}
+              {% set _sonarr_slug = app.request.attributes.get('slug') %}
+              {% set _sonarr_icon %}
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
                   <svg width="24" height="24" viewBox="0 0 216.7 216.9" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M194.65 42.5l-22.4 22.4C159.15 78 158 89.4 158 109.5c0 17.93 2.85 34.35 16.2 47.7l19 18.95c-2.5 3.07-5.2 6.07-8.1 9-.7.83-1.48 1.6-2.35 2.3-2.53 2.5-5.17 4.82-7.9 6.95l-17.55-17.55c-15.6-15.6-28-17.1-48.6-17.1-19.77 0-33.22 1.82-47.7 16.3l-18.55 18.6c-3.77-2.87-7.33-6.03-10.7-9.5-2.8-2.8-5.42-5.67-7.85-8.6l19.15-19.2c13.85-13.85 16.1-29.92 16.1-47.85 0-17.5-2.87-33.82-15.6-46.55L22.45 43.85c2.83-3.6 5.92-7.07 9.25-10.4 2.93-2.87 5.93-5.55 9-8.05L61.1 43.85C74.1 56.85 90.77 60.2 108.7 60.2c18.47 0 35.08-3.58 48.6-17.1l19.3-19.25c2.9 2.37 5.73 4.93 8.5 7.7 3.47 3.53 6.65 7.18 9.55 10.95z" fill="#0CF"/><circle cx="108.35" cy="108.45" r="29.5" fill="#0CF" opacity=".8"/></svg>
                 </span>
-                <span class="nav-link-title">Sonarr</span>
-              </a>
-            </li>
+              {% endset %}
+
+              {% if _sonarr_count <= 1 %}
+                <li class="nav-item">
+                  <a class="nav-link {{ _sonarr_active ? 'active' }}" href="{{ path('app_media_series') }}">
+                    {{ _sonarr_icon|raw }}
+                    <span class="nav-link-title">Sonarr</span>
+                  </a>
+                </li>
+              {% elseif _sonarr_count <= 3 %}
+                {% for _inst in _sonarr_instances %}
+                  <li class="nav-item">
+                    <a class="nav-link {{ _sonarr_route == 'app_media_series_for_instance' and _sonarr_slug == _inst.slug ? 'active' }}"
+                       href="{{ path('app_media_series_for_instance', { slug: _inst.slug }) }}">
+                      {{ _sonarr_icon|raw }}
+                      <span class="nav-link-title">{{ _inst.name }}</span>
+                    </a>
+                  </li>
+                {% endfor %}
+              {% else %}
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle {{ _sonarr_active ? 'active' }}"
+                     href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                    {{ _sonarr_icon|raw }}
+                    <span class="nav-link-title">Sonarr</span>
+                  </a>
+                  <div class="dropdown-menu">
+                    {% for _inst in _sonarr_instances %}
+                      <a class="dropdown-item {{ _sonarr_route == 'app_media_series_for_instance' and _sonarr_slug == _inst.slug ? 'active' }}"
+                         href="{{ path('app_media_series_for_instance', { slug: _inst.slug }) }}">
+                        {{ _inst.name }}
+                      </a>
+                    {% endfor %}
+                  </div>
+                </li>
+              {% endif %}
             {% endif %}
 
             {% if service_visible_in_sidebar('prowlarr') %}

@@ -29,7 +29,7 @@
   <a href="#configuration">Configuration</a> ·
   <a href="#upgrade">Upgrade</a> ·
   <a href="#troubleshooting">Troubleshooting</a> ·
-  <a href="#roadmap">Roadmap</a> ·
+  <a href="#whats-next">What's next</a> ·
   <a href="#license">License</a> ·
   <a href="#note-on-ai-usage">AI</a>
 </p>
@@ -99,10 +99,9 @@ carefully and reply. Open an issue, drop a PR, or just tell me what's
 missing or what could be better. Outside contributors are exactly how a
 solo project becomes a real one, and I'd love that to happen.
 
-The [CHANGELOG](CHANGELOG.md) is kept up to date, and the roadmap lives
-on the [public GitHub project](https://github.com/users/Shoshuo/projects/3)
-where you can see what's in progress, what's planned for the next release
-and what's queued for later.
+The [CHANGELOG](CHANGELOG.md) is kept up to date, and the [public Kanban](https://github.com/users/Shoshuo/projects/3)
+shows what's in progress, what's planned for the next release and what's
+queued for later.
 
 ---
 
@@ -372,30 +371,9 @@ and not a bind mount onto a directory owned by root.
 
 ---
 
-## Roadmap
+## What's next
 
-### v1.0 - Public release
-- [x] 7-step setup wizard
-- [x] Authentication with login rate-limiter
-- [x] Doctrine migrations (clean upgrades)
-- [x] PHPUnit suite (179 tests / 376 assertions)
-- [x] Multi-architecture Docker image (amd64 + arm64)
-- [x] English / French UI (EN source of truth)
-- [x] Admin settings page (services, display, languages, backup)
-- [x] Dashboard, Calendar (month / week / day + iCal export), Profile page
-- [x] Published on Docker Hub
-
-### v1.x - Improvements
-- [ ] Multi-user roles (read-only viewer vs admin)
-- [ ] Jellyfin widget (live sessions + stats)
-- [ ] Discord / Ntfy / Telegram notifications
-- [ ] Historical bandwidth graphs
-- [ ] Public REST API for third-party integrations
-
-### v2.0 - Automation
-- [ ] Auto-import of an existing library
-- [ ] Custom processing rules
-- [ ] Optional MariaDB / PostgreSQL backend
+Everything lives on the [public Kanban](https://github.com/users/Shoshuo/projects/3): what's in progress, what's planned for the next release, and what's parked for later.
 
 ---
 
@@ -500,7 +478,7 @@ enough to keep me going. This release is for you.
 
 > ## Note on AI usage
 >
-> I'm the sole developer of Prismarr. Every architectural decision, every security trade-off, every UX choice and every "ship it or don't" call was mine. [Claude Code](https://claude.com/claude-code) (Anthropic) was used as a support tool, not as a co-author: it accelerated implementation in specific areas, but the design direction, the engineering judgement and the responsibility for the result are mine alone. The AI never had the final word on anything.
+> Prismarr is a solo project. I make the calls on what to ship, what to drop, how things plug together. The bugs are on me too. [Claude Code](https://claude.com/claude-code) (Anthropic) helped me move faster on the chunks listed below; the rest is mine.
 >
 > To stay transparent, here are the concrete areas where it was actively helpful:
 >
@@ -521,4 +499,4 @@ enough to keep me going. This release is for you.
 > - **Local commit messages and the private PROGRESSION.md log** - keeping the per-session journal readable. That file lives only on my machine and is never pushed to GitHub.
 > - **Single-container Docker design** - the FrankenPHP + s6-overlay layout that supervises the web server and the messenger worker.
 >
-> Every line of code was read, tested locally, and signed off by me before merging. `make check` (PHP lint + Twig lint + full PHPUnit suite) had to be green. The AI accelerated implementation; I kept the engineering judgement and the ownership of the project.
+> Nothing landed without me reading it, running it, and watching `make check` go green (PHP lint + Twig lint + full PHPUnit). Claude is a tool I leaned on, not a co-author.

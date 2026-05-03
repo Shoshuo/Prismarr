@@ -42,11 +42,38 @@ class MediaController extends AbstractController
     #[Route('/films', name: 'films')]
     public function films(): Response
     {
+        return $this->renderFilms(null);
+    }
+
+    /**
+     * v1.1.0 Phase B2 — multi-instance route. {slug} resolves to a Radarr
+     * ServiceInstance; the page then talks to that specific upstream.
+     * Slug pattern is restricted to lowercase alphanum + dash so it can
+     * never collide with the legacy sub-route names (e.g. `films/warnings`,
+     * `films/missing` declared further down — they all start with a word
+     * Symfony matches before this catch-all).
+     */
+    #[Route('/films/{slug}', name: 'films_for_instance', requirements: ['slug' => '[a-z0-9][a-z0-9-]*'])]
+    public function filmsForInstance(string $slug): Response
+    {
+        $instance = $this->instances->requireBySlug(ServiceInstance::TYPE_RADARR, $slug);
+        return $this->renderFilms($instance);
+    }
+
+    /**
+     * Shared rendering for /films and /films/{slug}. When $instance is null
+     * the autowired RadarrClient serves its default (= v1.0 behaviour).
+     * When provided, we clone-bind the client so this single request hits
+     * the chosen upstream without affecting any other in-flight controller.
+     */
+    private function renderFilms(?ServiceInstance $instance): Response
+    {
         // Issue #13 — large libraries (5k+ items) make the parse + Twig
         // render flirt with the default 60s ceiling. Bumped to give big
         // homelabs headroom until server-side pagination ships in 1.1.0.
         set_time_limit(120);
 
+        $radarr = $instance !== null ? $this->radarr->withInstance($instance) : $this->radarr;
         $movies = [];
         $queue  = [];
         $error  = false;
@@ -55,15 +82,15 @@ class MediaController extends AbstractController
         $warnings = [];
         try {
             // Check that Radarr is reachable
-            $status = $this->radarr->getSystemStatus();
+            $status = $radarr->getSystemStatus();
             if ($status === null) {
                 $error = true;
             }
 
             if (!$error) {
-            $movies = $this->radarr->getMovies();
-            $queue  = $this->radarr->getQueue();
-            $indexers = $this->radarr->getRadarrIndexers();
+            $movies = $radarr->getMovies();
+            $queue  = $radarr->getQueue();
+            $indexers = $radarr->getRadarrIndexers();
             $activeIndexers = array_filter($indexers, fn($i) => ($i['enableAutomaticSearch'] ?? false) || ($i['enableInteractiveSearch'] ?? false));
             $indexerCount = count($activeIndexers);
 
@@ -74,7 +101,7 @@ class MediaController extends AbstractController
 
             // Check Radarr health
             try {
-                $health = $this->radarr->getSystemHealth();
+                $health = $radarr->getSystemHealth();
                 foreach ($health as $h) {
                     $warnings[] = $this->translator->trans('media.api.warning_format', ['source' => $h['source'] ?? 'Radarr', 'message' => $h['message'] ?? '?']);
                 }
@@ -100,11 +127,13 @@ class MediaController extends AbstractController
         $monitored  = count(array_filter($movies, fn($m) => $m['monitored'] && !$m['hasFile']));
         $totalGb    = round(array_sum(array_column($movies, 'sizeGb')), 1);
 
+        $resolved = $instance ?? $this->instances->getDefault(ServiceInstance::TYPE_RADARR);
         return $this->render('media/films.html.twig', [
             'movies' => $movies,
             'queue'  => $queue,
             'error'  => $error,
-            'service_url' => $this->instances->getDefault(ServiceInstance::TYPE_RADARR)?->getUrl(),
+            'service_url' => $resolved?->getUrl(),
+            'current_instance' => $resolved,
             'warnings' => $warnings,
             'stats'  => compact('total', 'downloaded', 'monitored', 'totalGb'),
             'indexerCount' => $indexerCount,
@@ -114,21 +143,34 @@ class MediaController extends AbstractController
     #[Route('/series', name: 'series')]
     public function series(): Response
     {
+        return $this->renderSeries(null);
+    }
+
+    #[Route('/series/{slug}', name: 'series_for_instance', requirements: ['slug' => '[a-z0-9][a-z0-9-]*'])]
+    public function seriesForInstance(string $slug): Response
+    {
+        $instance = $this->instances->requireBySlug(ServiceInstance::TYPE_SONARR, $slug);
+        return $this->renderSeries($instance);
+    }
+
+    private function renderSeries(?ServiceInstance $instance): Response
+    {
         // Same rationale as films() — see issue #13.
         set_time_limit(120);
 
+        $sonarr = $instance !== null ? $this->sonarr->withInstance($instance) : $this->sonarr;
         $series   = [];
         $queue    = [];
         $calendar = [];
         $error    = false;
 
         try {
-            if ($this->sonarr->getSystemStatus() === null) {
+            if ($sonarr->getSystemStatus() === null) {
                 $error = true;
             } else {
-                $series   = $this->sonarr->getSeries();
-                $queue    = $this->sonarr->getQueue();
-                $calendar = $this->sonarr->getCalendar(14);
+                $series   = $sonarr->getSeries();
+                $queue    = $sonarr->getQueue();
+                $calendar = $sonarr->getCalendar(14);
             }
         } catch (\Throwable $e) {
             $this->logger->warning('Media series failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
@@ -142,12 +184,14 @@ class MediaController extends AbstractController
         $ended      = count(array_filter($series, fn($s) => $s['status'] === 'ended'));
         $totalGb    = round(array_sum(array_column($series, 'sizeGb')), 1);
 
+        $resolved = $instance ?? $this->instances->getDefault(ServiceInstance::TYPE_SONARR);
         return $this->render('media/series.html.twig', [
             'series'   => $series,
             'queue'    => $queue,
             'calendar' => $calendar,
             'error'    => $error,
-            'service_url' => $this->instances->getDefault(ServiceInstance::TYPE_SONARR)?->getUrl(),
+            'service_url' => $resolved?->getUrl(),
+            'current_instance' => $resolved,
             'stats'    => compact('total', 'continuing', 'ended', 'totalGb'),
         ]);
     }
