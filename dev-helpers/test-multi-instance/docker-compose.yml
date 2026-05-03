@@ -1,0 +1,36 @@
+# Throwaway Radarr + Sonarr instances for testing Prismarr's multi-instance
+# UI (issue #21, v1.1.0). NOT for production. Self-contained — config and
+# library mounts live next to this file and are gitignored. Stop + delete
+# the volumes when you're done (see README.md).
+#
+# Ports are deliberately NOT 7878/8989 to avoid clashing with whatever
+# Radarr/Sonarr you may already run on this host.
+
+services:
+  radarr-4k:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: prismarr-test-radarr-4k
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+    volumes:
+      - ./radarr-4k-config:/config
+      - ./radarr-4k-movies:/movies
+    ports:
+      - "7879:7878"
+    restart: unless-stopped
+
+  sonarr-anime:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: prismarr-test-sonarr-anime
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+    volumes:
+      - ./sonarr-anime-config:/config
+      - ./sonarr-anime-tv:/tv
+    ports:
+      - "8990:8989"
+    restart: unless-stopped

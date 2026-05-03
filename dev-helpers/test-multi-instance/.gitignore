@@ -1,0 +1,6 @@
+# Local config + library mounts created by docker-compose. Throwaway data,
+# never committed.
+radarr-4k-config/
+radarr-4k-movies/
+sonarr-anime-config/
+sonarr-anime-tv/

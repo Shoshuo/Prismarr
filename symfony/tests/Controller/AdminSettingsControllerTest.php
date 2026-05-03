@@ -276,6 +276,46 @@ class AdminSettingsControllerTest extends TestCase
             'API key must be re-injected from the existing default instance, not wiped to null');
     }
 
+    /**
+     * v1.1.0 — CRITICAL regression: posting the main /admin/settings form
+     * (Save button) MUST NOT touch the radarr/sonarr instances when the
+     * form does not carry their fields. Their inputs moved to the modales
+     * handled by AdminInstancesController, so the main form's POST body
+     * never includes them. Treating "absent key" as "intent to clear"
+     * would call saveDefault(type, null, null) and wipe the user's
+     * configured Radarr/Sonarr in a single click of "Save".
+     *
+     * This test was added after the bug was witnessed live in dev.
+     */
+    public function testMainSaveDoesNotWipeRadarrSonarrInstancesWhenFieldsAbsent(): void
+    {
+        $settings = $this->createMock(SettingRepository::class);
+        $config   = $this->createMock(ConfigService::class);
+        $health   = $this->createMock(HealthService::class);
+
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        // Hard expectation: the main save must NEVER call saveDefault on
+        // either type when the form did not carry their fields.
+        $instances->expects($this->never())->method('saveDefault');
+
+        $request = Request::create(
+            '/admin/settings',
+            'POST',
+            [
+                '_csrf_token'  => 'valid',
+                // Simulate the user editing only the theme color (or any
+                // other unrelated field) and clicking Save. NO radarr_url,
+                // radarr_api_key, sonarr_url, or sonarr_api_key.
+                'tmdb_api_key' => '',
+            ]
+        );
+        $request->setSession(new \Symfony\Component\HttpFoundation\Session\Session(
+            new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage()
+        ));
+
+        $this->controller($settings, $config, $health, $instances)->index($request);
+    }
+
     public function testPostPersistsSidebarHideFlagForUncheckedServices(): void
     {
         // Checkbox unchecked = not sent by the browser → hide flag = '1'.

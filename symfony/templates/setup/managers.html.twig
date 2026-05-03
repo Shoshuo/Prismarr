@@ -9,6 +9,10 @@
   <h2 class="wizard-title">{{ 'setup.step.managers.title'|trans }}</h2>
   <p class="wizard-subtitle">{{ 'setup.step.managers.subtitle'|trans }}</p>
 
+  <div class="alert alert-info" style="font-size: .85rem;">
+    {{ 'setup.step.managers.default_instance_hint'|trans }}
+  </div>
+
   <form action="{{ path('app_setup_managers') }}" method="post" autocomplete="off" novalidate>
     <input type="hidden" name="_csrf_token" value="{{ csrf_token('setup_managers') }}"/>
 

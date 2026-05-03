@@ -311,6 +311,12 @@
         {% for flash in app.flashes('success') %}
           <div class="alert alert-success mb-3">{{ flash }}</div>
         {% endfor %}
+        {% for flash in app.flashes('danger') %}
+          <div class="alert alert-danger mb-3">{{ flash }}</div>
+        {% endfor %}
+        {% for flash in app.flashes('warning') %}
+          <div class="alert alert-warning mb-3">{{ flash }}</div>
+        {% endfor %}
         {% for error in errors %}
           <div class="alert alert-danger mb-3">{{ error }}</div>
         {% endfor %}
@@ -346,8 +352,18 @@
               </div>
 
               {% for service_id in service_ids %}
-                {% set fields = groups[service_id] %}
                 {% set meta = service_meta[service_id] %}
+                {# v1.1.0 — radarr/sonarr render as a multi-instance list,
+                   not a single URL+API-key form. #}
+                {% if service_id in ['radarr', 'sonarr'] %}
+                  {% include 'admin/_instance_card.html.twig' with {
+                    service_id:    service_id,
+                    service_label: service_labels[service_id],
+                    instances:     instances_by_type[service_id]|default([]),
+                    meta:          meta,
+                  } only %}
+                {% else %}
+                {% set fields = groups[service_id] %}
                 <div class="service-card" data-service-card="{{ service_id }}">
                   <div class="service-card-head">
                     <div class="service-card-icon" style="background: {{ meta.icon_bg }};">
@@ -367,11 +383,18 @@
                          it would always come back "unknown". Hide the test
                          affordance until/unless we add a real Gluetun probe. #}
                       {% if service_id != 'gluetun' %}
-                        <span class="status-pill" data-service-result="{{ service_id }}">{{ 'admin.services.status.not_tested'|trans }}</span>
+                        {# v1.1.0 — same compact button as the per-instance
+                           Test: lightning icon + state-driven colour, no
+                           separate pill. JS handler updates label/class. #}
                         <button type="button"
                                 class="btn btn-sm btn-outline-secondary admin-settings-test"
                                 data-service="{{ service_id }}">
-                          {{ 'admin.services.test'|trans }}
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                               fill="none" stroke="currentColor" stroke-width="2"
+                               stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/>
+                          </svg>
+                          <span data-service-test-label="{{ service_id }}">{{ 'admin.services.test'|trans }}</span>
                         </button>
                       {% endif %}
                     </div>
@@ -432,6 +455,7 @@
                     </div>
                   {% endfor %}
                 </div>
+                {% endif %}
               {% endfor %}
             {% endfor %}
           </section>
@@ -568,6 +592,17 @@
             <button type="submit" class="btn btn-primary">{{ 'admin.save'|trans }}</button>
           </div>
         </form>
+
+        {# v1.1.0 — multi-instance modales rendered OUTSIDE the main form
+           (HTML doesn't allow nested forms). The Add / Edit buttons inside
+           the cards target these modales by id via data-bs-toggle. #}
+        {% for service_id, instances_list in instances_by_type %}
+          {% include 'admin/_instance_modals.html.twig' with {
+            service_id:    service_id,
+            service_label: service_labels[service_id],
+            instances:     instances_list,
+          } only %}
+        {% endfor %}
 
         {# ─── Section 3: Unified languages ────────────────────── #}
         <section id="section-languages" class="settings-group" data-section>
@@ -1033,12 +1068,30 @@
         tmdb:        ['tmdb_api_key'],
         qbittorrent: ['qbittorrent_url', 'qbittorrent_user', 'qbittorrent_password'],
       };
+      // Per-service test buttons (TMDb, Prowlarr, Jellyseerr, qBit). Same
+      // state-driven look as the per-instance Test (button colour + label
+      // change in place). Reuses the INSTANCE_TEST_LABELS / CATEGORIES
+      // dicts declared further down — they're hoisted as `var` so the
+      // forward reference is fine.
+      function setServiceTestBtnState(btn, state, opts) {
+        opts = opts || {};
+        var label = btn.querySelector('[data-service-test-label]');
+        btn.classList.remove('btn-outline-secondary', 'btn-outline-success', 'btn-outline-danger');
+        var nextClass = 'btn-outline-secondary';
+        var text = INSTANCE_TEST_LABELS.idle;
+        if (state === 'testing')     { text = INSTANCE_TEST_LABELS.testing; }
+        else if (state === 'ok')     { nextClass = 'btn-outline-success'; text = INSTANCE_TEST_LABELS.connected; }
+        else if (state === 'ko')     { nextClass = 'btn-outline-danger';  text = opts.label || INSTANCE_TEST_LABELS.unreachable; }
+        btn.classList.add(nextClass);
+        if (label) label.textContent = text;
+        if (opts.title) btn.title = opts.title;
+      }
+
       document.querySelectorAll('.admin-settings-test').forEach(function (btn) {
         btn.onclick = function () {
           var service = btn.dataset.service;
-          var pill = document.querySelector('[data-service-result="' + service + '"]');
-          pill.textContent = {{ 'admin.services.status.testing'|trans|json_encode|raw }};
-          pill.className = 'status-pill testing';
+          setServiceTestBtnState(btn, 'testing');
+          btn.disabled = true;
 
           var formData = new FormData();
           (TEST_FIELDS[service] || []).forEach(function (key) {
@@ -1056,16 +1109,165 @@
           })
             .then(function (r) { return r.json(); })
             .then(function (data) {
-              var label = data.message || (data.ok
-                ? {{ 'admin.services.status.connected'|trans|json_encode|raw }}
-                : {{ 'admin.services.status.unreachable'|trans|json_encode|raw }});
-              pill.textContent = label;
-              pill.className = 'status-pill ' + (data.ok ? 'ok' : 'ko');
-              pill.title = label;
+              if (data && data.ok) {
+                setServiceTestBtnState(btn, 'ok', {
+                  title: INSTANCE_TEST_LABELS.connected + (data.http ? ' (HTTP ' + data.http + ')' : ''),
+                });
+              } else {
+                var category = data && data.category;
+                var detail = INSTANCE_TEST_CATEGORIES[category] || INSTANCE_TEST_LABELS.unreachable;
+                var title = detail + (data && data.http ? ' (HTTP ' + data.http + ')' : '');
+                setServiceTestBtnState(btn, 'ko', { label: detail, title: title });
+              }
+              btn.disabled = false;
             })
             .catch(function () {
-              pill.textContent = {{ 'admin.services.status.error'|trans|json_encode|raw }};
-              pill.className = 'status-pill ko';
+              setServiceTestBtnState(btn, 'ko', { label: INSTANCE_TEST_LABELS.error });
+              btn.disabled = false;
+            });
+        };
+      });
+
+      // ── Multi-instance row actions (v1.1.0) ─────────────────────────
+      // Inline buttons (set-default, delete, toggle-enabled, test) submit
+      // via fetch instead of form POST. The cards live INSIDE the main
+      // admin_settings_index <form>, so a nested <form> would break the
+      // CSRF chain (HTML doesn't allow nested forms). Fetch sidesteps the
+      // problem entirely while keeping CSRF protection on every action.
+      function instanceFetch(btn, opts) {
+        var fd = new FormData();
+        fd.append('_csrf_token', btn.dataset.instanceCsrf || '');
+        if (opts && opts.body) {
+          Object.keys(opts.body).forEach(function (k) { fd.append(k, opts.body[k]); });
+        }
+        return fetch(btn.dataset.instanceUrl, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json' },
+          body: fd,
+        });
+      }
+
+      function reloadAfterMutation() {
+        // Force a hard reload to pick up the new instance list, default
+        // badge moves, sidebar dynamic update, etc.
+        window.location.reload();
+      }
+
+      // Set as default
+      document.querySelectorAll('[data-instance-action="set-default"]').forEach(function (btn) {
+        btn.onclick = function () {
+          btn.disabled = true;
+          instanceFetch(btn).then(reloadAfterMutation).catch(function () {
+            btn.disabled = false;
+            alert({{ 'admin.services.status.error'|trans|json_encode|raw }});
+          });
+        };
+      });
+
+      // Delete (with confirm — extra-strong wording when removing the
+      // last enabled instance of a service, since that hides the service
+      // from the sidebar entirely).
+      document.querySelectorAll('[data-instance-action="delete"]').forEach(function (btn) {
+        btn.onclick = function () {
+          var name = btn.dataset.instanceName || '';
+          var service = btn.dataset.instanceService || '';
+          var isLast = btn.dataset.instanceIsLastEnabled === '1';
+          var tpl = isLast
+            ? {{ 'admin.instances.action.delete_last_confirm'|trans({ '%name%': '__NAME__', '%service%': '__SERVICE__' })|json_encode|raw }}
+            : {{ 'admin.instances.action.delete_confirm'|trans({ '%name%': '__NAME__' })|json_encode|raw }};
+          var msg = tpl.replace('__NAME__', name).replace('__SERVICE__', service);
+          if (!confirm(msg)) return;
+          btn.disabled = true;
+          instanceFetch(btn).then(reloadAfterMutation).catch(function () {
+            btn.disabled = false;
+            alert({{ 'admin.services.status.error'|trans|json_encode|raw }});
+          });
+        };
+      });
+
+      // Toggle enabled (checkbox switch). Disabling the last enabled
+      // instance of a service removes it from the sidebar / dashboard,
+      // so we ask before going through.
+      document.querySelectorAll('[data-instance-action="toggle-enabled"]').forEach(function (cb) {
+        cb.onchange = function () {
+          var willDisable = !cb.checked;
+          if (willDisable && cb.dataset.instanceIsLastEnabled === '1') {
+            var tpl = {{ 'admin.instances.action.disable_last_confirm'|trans({ '%service%': '__SERVICE__' })|json_encode|raw }};
+            var msg = tpl.replace('__SERVICE__', cb.dataset.instanceService || '');
+            if (!confirm(msg)) {
+              cb.checked = true; // revert the UI flip the user just did
+              return;
+            }
+          }
+          var prev = !cb.checked;
+          cb.disabled = true;
+          instanceFetch(cb).then(reloadAfterMutation).catch(function () {
+            cb.checked = prev;
+            cb.disabled = false;
+            alert({{ 'admin.services.status.error'|trans|json_encode|raw }});
+          });
+        };
+      });
+
+      // Test connection per instance — single button, state-driven.
+      // Button colour switches to outline-success / outline-danger after
+      // the probe so the row stays compact (no separate status pill).
+      // The category map mirrors HealthService::diagnose() and reuses the
+      // setup wizard translations (same probe, same outcomes).
+      var INSTANCE_TEST_LABELS = {
+        idle:        {{ 'admin.services.test'|trans|json_encode|raw }},
+        testing:     {{ 'admin.services.status.testing'|trans|json_encode|raw }},
+        connected:   {{ 'admin.services.status.connected'|trans|json_encode|raw }},
+        unreachable: {{ 'admin.services.status.unreachable'|trans|json_encode|raw }},
+        error:       {{ 'admin.services.status.error'|trans|json_encode|raw }},
+      };
+      var INSTANCE_TEST_CATEGORIES = {
+        network:      {{ 'setup.test.category.network'|trans|json_encode|raw }},
+        auth:         {{ 'setup.test.category.auth'|trans|json_encode|raw }},
+        forbidden:    {{ 'setup.test.category.forbidden'|trans|json_encode|raw }},
+        not_found:    {{ 'setup.test.category.not_found'|trans|json_encode|raw }},
+        server_error: {{ 'setup.test.category.server_error'|trans|json_encode|raw }},
+        unconfigured: {{ 'setup.test.category.unconfigured'|trans|json_encode|raw }},
+        unknown:      {{ 'setup.test.category.unknown'|trans|json_encode|raw }},
+      };
+      function setInstanceTestBtnState(btn, state, opts) {
+        opts = opts || {};
+        var label = btn.querySelector('[data-instance-test-label]');
+        // Drop any previous outcome class, keep base classes.
+        btn.classList.remove('btn-outline-secondary', 'btn-outline-success', 'btn-outline-danger');
+        var nextClass = 'btn-outline-secondary';
+        var text = INSTANCE_TEST_LABELS.idle;
+        if (state === 'testing')     { text = INSTANCE_TEST_LABELS.testing; }
+        else if (state === 'ok')     { nextClass = 'btn-outline-success'; text = INSTANCE_TEST_LABELS.connected; }
+        else if (state === 'ko')     { nextClass = 'btn-outline-danger';  text = opts.label || INSTANCE_TEST_LABELS.unreachable; }
+        btn.classList.add(nextClass);
+        if (label) label.textContent = text;
+        if (opts.title) btn.title = opts.title;
+      }
+
+      document.querySelectorAll('[data-instance-action="test"]').forEach(function (btn) {
+        btn.onclick = function () {
+          setInstanceTestBtnState(btn, 'testing');
+          btn.disabled = true;
+          instanceFetch(btn)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (data && data.ok) {
+                setInstanceTestBtnState(btn, 'ok', {
+                  title: INSTANCE_TEST_LABELS.connected + (data.http ? ' (HTTP ' + data.http + ')' : ''),
+                });
+              } else {
+                var category = data && data.category;
+                var detail = INSTANCE_TEST_CATEGORIES[category] || INSTANCE_TEST_LABELS.unreachable;
+                var title = detail + (data && data.http ? ' (HTTP ' + data.http + ')' : '');
+                setInstanceTestBtnState(btn, 'ko', { label: detail, title: title });
+              }
+              btn.disabled = false;
+            })
+            .catch(function () {
+              setInstanceTestBtnState(btn, 'ko', { label: INSTANCE_TEST_LABELS.error });
+              btn.disabled = false;
             });
         };
       });

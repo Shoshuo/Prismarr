@@ -1,0 +1,161 @@
+{# v1.1.0 Phase B1 — multi-instance card for Radarr/Sonarr.
+   Renders ONLY the visible card (header + table). The add/edit modales
+   are rendered separately by _instance_modals.html.twig, outside the
+   admin_settings_index main form (HTML doesn't allow nested forms).
+
+   Inputs:
+     - service_id: 'radarr' | 'sonarr'
+     - instances: list<ServiceInstance>
+     - meta: { icon_bg, subtitle } from the parent template's service_meta
+     - service_label: human label from service_labels[service_id]
+
+   Inline actions (delete, set-default, toggle-enabled, test) submit via
+   fetch() — see admin-instances.js — to bypass the nested-form CSRF
+   issue and to keep the user on the same page (no full reload).
+#}
+
+<div class="service-card" data-service-card="{{ service_id }}">
+  <div class="service-card-head">
+    <div class="service-card-icon" style="background: {{ meta.icon_bg }};">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83a2 2 0 0 1 -2.83 0l-.06 -.06a1.65 1.65 0 0 0 -1.82 -.33a1.65 1.65 0 0 0 -1 1.51v.17a2 2 0 0 1 -2 2a2 2 0 0 1 -2 -2v-.09a1.65 1.65 0 0 0 -1 -1.51a1.65 1.65 0 0 0 -1.82 .33l-.06 .06a2 2 0 0 1 -2.83 0a2 2 0 0 1 0 -2.83l.06 -.06a1.65 1.65 0 0 0 .33 -1.82a1.65 1.65 0 0 0 -1.51 -1H3a2 2 0 0 1 -2 -2a2 2 0 0 1 2 -2h.09a1.65 1.65 0 0 0 1.51 -1a1.65 1.65 0 0 0 -.33 -1.82l-.06 -.06a2 2 0 0 1 0 -2.83a2 2 0 0 1 2.83 0l.06 .06a1.65 1.65 0 0 0 1.82 .33h.05a1.65 1.65 0 0 0 1 -1.51V3a2 2 0 0 1 2 -2a2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51h.05a1.65 1.65 0 0 0 1.82 -.33l.06 -.06a2 2 0 0 1 2.83 0a2 2 0 0 1 0 2.83l-.06 .06a1.65 1.65 0 0 0 -.33 1.82v.05a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-.09a1.65 1.65 0 0 0 -1.51 1z"/>
+      </svg>
+    </div>
+    <div>
+      <p class="service-card-title">{{ service_label }}</p>
+      <p class="service-card-sub">{{ meta.subtitle }}</p>
+    </div>
+    <div class="service-card-actions">
+      <button type="button"
+              class="btn btn-sm btn-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#instance-add-modal-{{ service_id }}">
+        {{ 'admin.instances.add'|trans({ '%service%': service_label }) }}
+      </button>
+    </div>
+  </div>
+
+  {% set enabled_count = instances|filter(i => i.enabled)|length %}
+  {% if instances is empty %}
+    <div class="instance-empty-state"
+         style="padding: 2rem 1rem; text-align: center; border: 1px dashed var(--tblr-border-color); border-radius: 8px; margin-top: .5rem;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="1.5"
+           stroke-linecap="round" stroke-linejoin="round"
+           style="color: var(--tblr-secondary); margin-bottom: .5rem;">
+        <path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2"/>
+        <path d="M12 10v6M9 13h6"/>
+      </svg>
+      <p style="font-weight: 500; margin: 0 0 .25rem;">{{ 'admin.instances.empty.title'|trans({ '%service%': service_label }) }}</p>
+      <p style="color: var(--tblr-secondary); font-size: .875rem; margin: 0 0 1rem;">{{ 'admin.instances.empty.subtitle'|trans({ '%service%': service_label }) }}</p>
+      <button type="button"
+              class="btn btn-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#instance-add-modal-{{ service_id }}">
+        {{ 'admin.instances.add'|trans({ '%service%': service_label }) }}
+      </button>
+    </div>
+  {% else %}
+    <div class="instance-list" style="margin-top: .5rem;">
+      <table class="table table-sm table-vcenter" style="margin: 0;">
+        <thead>
+          <tr style="font-size: .72rem; color: var(--tblr-secondary); text-transform: uppercase; letter-spacing: .04em;">
+            <th>{{ 'admin.instances.col.name'|trans }}</th>
+            <th>{{ 'admin.instances.col.url'|trans }}</th>
+            <th style="width: 1%; white-space: nowrap;">{{ 'admin.instances.col.default'|trans }}</th>
+            <th style="width: 1%; white-space: nowrap;">{{ 'admin.instances.col.enabled'|trans }}</th>
+            <th style="width: 1%; white-space: nowrap;">{{ 'admin.instances.col.test'|trans }}</th>
+            <th style="width: 1%; white-space: nowrap; text-align: right;">{{ 'admin.instances.col.actions'|trans }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for instance in instances %}
+            <tr data-instance-row="{{ instance.id }}">
+              <td>
+                <strong>{{ instance.name }}</strong>
+                <div class="text-secondary" style="font-size: .72rem; font-family: monospace;">{{ instance.slug }}</div>
+              </td>
+              <td style="font-family: monospace; font-size: .82rem;">{{ instance.url }}</td>
+              <td>
+                {% if instance.default %}
+                  <span class="badge"
+                        style="background: var(--tblr-primary); color: #fff; font-weight: 600;">
+                    {{ 'admin.instances.badge.default'|trans }}
+                  </span>
+                {% else %}
+                  <button type="button"
+                          class="btn btn-sm btn-outline-primary"
+                          data-instance-action="set-default"
+                          data-instance-url="{{ path('admin_instances_set_default', { id: instance.id }) }}"
+                          data-instance-csrf="{{ csrf_token('admin_instance_default_' ~ instance.id) }}"
+                          title="{{ 'admin.instances.action.set_default'|trans }}">
+                    {{ 'admin.instances.action.set_default'|trans }}
+                  </button>
+                {% endif %}
+              </td>
+              <td>
+                <label class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" {% if instance.enabled %}checked{% endif %}
+                         data-instance-action="toggle-enabled"
+                         data-instance-url="{{ path('admin_instances_toggle_enabled', { id: instance.id }) }}"
+                         data-instance-csrf="{{ csrf_token('admin_instance_toggle_' ~ instance.id) }}"
+                         data-instance-service="{{ service_label }}"
+                         {% if instance.enabled and enabled_count == 1 %}data-instance-is-last-enabled="1"{% endif %}>
+                </label>
+              </td>
+              <td>
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary instance-test-btn"
+                        data-instance-action="test"
+                        data-instance-id="{{ instance.id }}"
+                        data-instance-url="{{ path('admin_instances_test', { id: instance.id }) }}"
+                        data-instance-csrf="{{ csrf_token('admin_instance_test_' ~ instance.id) }}"
+                        title="{{ 'admin.services.test'|trans }}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                       fill="none" stroke="currentColor" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round" data-icon="idle">
+                    <path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/>
+                  </svg>
+                  <span data-instance-test-label="{{ instance.id }}">{{ 'admin.services.test'|trans }}</span>
+                </button>
+              </td>
+              <td style="text-align: right; white-space: nowrap;">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#instance-edit-modal-{{ instance.id }}"
+                        title="{{ 'admin.instances.action.edit'|trans }}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                       fill="none" stroke="currentColor" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4"/>
+                    <path d="M13.5 6.5l4 4"/>
+                  </svg>
+                </button>
+
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        data-instance-action="delete"
+                        data-instance-name="{{ instance.name }}"
+                        data-instance-service="{{ service_label }}"
+                        data-instance-url="{{ path('admin_instances_delete', { id: instance.id }) }}"
+                        data-instance-csrf="{{ csrf_token('admin_instance_delete_' ~ instance.id) }}"
+                        {% if instance.enabled and enabled_count == 1 %}data-instance-is-last-enabled="1"{% endif %}
+                        title="{{ 'admin.instances.action.delete'|trans }}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                       fill="none" stroke="currentColor" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 7l16 0M10 11l0 6M14 11l0 6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12M9 7V4a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>

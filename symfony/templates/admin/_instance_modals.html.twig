@@ -1,0 +1,131 @@
+{# v1.1.0 Phase B1 — modales (add/edit) for the multi-instance card.
+   MUST be rendered OUTSIDE the admin_settings_index main form because
+   HTML doesn't allow nested forms (CSRF gets confused otherwise).
+
+   The parent template includes this partial after the main form's
+   closing </form> tag, once per service_id (radarr, sonarr).
+
+   Inputs:
+     - service_id: 'radarr' | 'sonarr'
+     - service_label: human label
+     - instances: list<ServiceInstance>
+#}
+
+{# ─── Add modale ─────────────────────────────────────────────── #}
+<div class="modal modal-blur fade" id="instance-add-modal-{{ service_id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <form method="post" action="{{ path('admin_instances_add', { type: service_id }) }}" class="modal-content" autocomplete="off">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_instance_add_' ~ service_id) }}"/>
+      <div class="modal-header">
+        <h5 class="modal-title">{{ 'admin.instances.modal.add_title'|trans({ '%service%': service_label }) }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label" for="instance-add-name-{{ service_id }}">{{ 'admin.instances.field.name'|trans }}</label>
+          <input type="text" id="instance-add-name-{{ service_id }}" name="name" class="form-control"
+                 placeholder="{{ service_label }} 4K" required maxlength="120"/>
+          <small class="form-hint">{{ 'admin.instances.field.name_hint'|trans }}</small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="instance-add-url-{{ service_id }}">{{ 'admin.field.url'|trans }}</label>
+          <input type="text" id="instance-add-url-{{ service_id }}" name="url" class="form-control"
+                 placeholder="{% if service_id == 'radarr' %}http://host.docker.internal:7878{% else %}http://host.docker.internal:8989{% endif %}"
+                 required/>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="instance-add-key-{{ service_id }}">{{ 'admin.field.api_key'|trans }}</label>
+          <div class="secret-wrapper">
+            <input type="password" id="instance-add-key-{{ service_id }}" name="api_key" class="form-control"
+                   autocomplete="off" spellcheck="false"/>
+            <button type="button" class="secret-toggle" data-toggle-for="instance-add-key-{{ service_id }}"
+                    aria-label="{{ 'setup.step.admin.toggle_visibility'|trans }}">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>
+                <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <details>
+          <summary style="cursor: pointer; font-size: .85rem; color: var(--tblr-secondary);">
+            {{ 'admin.instances.field.advanced'|trans }}
+          </summary>
+          <div class="mt-3">
+            <label class="form-label" for="instance-add-slug-{{ service_id }}">{{ 'admin.instances.field.slug'|trans }}</label>
+            <input type="text" id="instance-add-slug-{{ service_id }}" name="slug" class="form-control"
+                   placeholder="{{ 'admin.instances.field.slug_auto'|trans }}" maxlength="60"/>
+            <small class="form-hint">{{ 'admin.instances.field.slug_hint'|trans }}</small>
+          </div>
+        </details>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'common.action.cancel'|trans }}</button>
+        <button type="submit" class="btn btn-primary">{{ 'admin.instances.action.add_submit'|trans }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# ─── Edit modales (one per existing instance) ───────────────── #}
+{% for instance in instances %}
+  <div class="modal modal-blur fade" id="instance-edit-modal-{{ instance.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <form method="post" action="{{ path('admin_instances_edit', { id: instance.id }) }}" class="modal-content" autocomplete="off">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('admin_instance_edit_' ~ instance.id) }}"/>
+        <input type="hidden" name="enabled" value="{{ instance.enabled ? '1' : '0' }}"/>
+        <div class="modal-header">
+          <h5 class="modal-title">{{ 'admin.instances.modal.edit_title'|trans({ '%name%': instance.name }) }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" for="instance-edit-name-{{ instance.id }}">{{ 'admin.instances.field.name'|trans }}</label>
+            <input type="text" id="instance-edit-name-{{ instance.id }}" name="name" class="form-control"
+                   value="{{ instance.name }}" required maxlength="120"/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="instance-edit-url-{{ instance.id }}">{{ 'admin.field.url'|trans }}</label>
+            <input type="text" id="instance-edit-url-{{ instance.id }}" name="url" class="form-control"
+                   value="{{ instance.url }}" required/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="instance-edit-key-{{ instance.id }}">{{ 'admin.field.api_key'|trans }}</label>
+            <div class="secret-wrapper">
+              <input type="password" id="instance-edit-key-{{ instance.id }}" name="api_key" class="form-control"
+                     value="{{ instance.apiKey ?? '' }}"
+                     autocomplete="off" spellcheck="false"/>
+              <button type="button" class="secret-toggle" data-toggle-for="instance-edit-key-{{ instance.id }}"
+                      aria-label="{{ 'setup.step.admin.toggle_visibility'|trans }}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>
+                  <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/>
+                </svg>
+              </button>
+            </div>
+            <small class="form-hint">{{ 'admin.instances.field.api_key_edit_hint'|trans }}</small>
+          </div>
+          <details>
+            <summary style="cursor: pointer; font-size: .85rem; color: var(--tblr-secondary);">
+              {{ 'admin.instances.field.advanced'|trans }}
+            </summary>
+            <div class="mt-3">
+              <label class="form-label" for="instance-edit-slug-{{ instance.id }}">{{ 'admin.instances.field.slug'|trans }}</label>
+              <input type="text" id="instance-edit-slug-{{ instance.id }}" name="slug" class="form-control"
+                     value="{{ instance.slug }}" maxlength="60"/>
+              <small class="form-hint text-danger">⚠ {{ 'admin.instances.field.slug_warning'|trans }}</small>
+            </div>
+          </details>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'common.action.cancel'|trans }}</button>
+          <button type="submit" class="btn btn-primary">{{ 'admin.instances.action.save'|trans }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endfor %}

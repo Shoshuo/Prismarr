@@ -191,6 +191,181 @@ class ServiceInstanceProvider implements ResetInterface
         $this->repository->save($remaining[0]);
     }
 
+    public function findById(int $id): ?ServiceInstance
+    {
+        return $this->repository->find($id);
+    }
+
+    /**
+     * Create a brand-new instance for $type. Slug is auto-generated from
+     * $name if $slug is null/empty, then deduplicated against existing
+     * instances of the same type. The first instance of a given type is
+     * automatically flagged is_default.
+     *
+     * @throws \InvalidArgumentException on empty name/url or duplicate slug.
+     */
+    public function create(
+        string $type,
+        string $name,
+        string $url,
+        ?string $apiKey,
+        ?string $slug = null,
+        bool $enabled = true,
+    ): ServiceInstance {
+        $name = trim($name);
+        $url  = trim($url);
+        if ($name === '') {
+            throw new \InvalidArgumentException('Instance name cannot be empty.');
+        }
+        if ($url === '') {
+            throw new \InvalidArgumentException('Instance URL cannot be empty.');
+        }
+        if (!in_array($type, ServiceInstance::TYPES, true)) {
+            throw new \InvalidArgumentException(sprintf('Unknown instance type "%s".', $type));
+        }
+
+        $finalSlug = $this->normalizeSlug($type, $slug, $name);
+        if ($this->repository->findOneBySlug($type, $finalSlug) !== null) {
+            throw new \InvalidArgumentException(sprintf(
+                'A %s instance with slug "%s" already exists.',
+                $type,
+                $finalSlug,
+            ));
+        }
+
+        $existing = $this->repository->findByType($type);
+        $isFirst  = $existing === [];
+        $position = $isFirst ? 0 : (max(array_map(fn ($i) => $i->getPosition(), $existing)) + 1);
+
+        $apiKey = $apiKey !== null ? trim($apiKey) : null;
+        $instance = new ServiceInstance(
+            type:   $type,
+            slug:   $finalSlug,
+            name:   $name,
+            url:    $url,
+            apiKey: $apiKey !== '' ? $apiKey : null,
+        );
+        $instance->setEnabled($enabled);
+        $instance->setIsDefault($isFirst); // first instance is automatically default
+        $instance->setPosition($position);
+        $this->repository->save($instance);
+        $this->invalidate();
+        return $instance;
+    }
+
+    /**
+     * Update an existing instance. Slug change is honored but the caller
+     * MUST have warned the user that bookmarks may break — the controller
+     * is responsible for the UI confirmation.
+     *
+     * @throws \InvalidArgumentException on empty name/url or duplicate slug.
+     */
+    public function update(
+        ServiceInstance $instance,
+        string $name,
+        string $url,
+        ?string $apiKey,
+        ?string $slug = null,
+        ?bool $enabled = null,
+    ): ServiceInstance {
+        $name = trim($name);
+        $url  = trim($url);
+        if ($name === '') {
+            throw new \InvalidArgumentException('Instance name cannot be empty.');
+        }
+        if ($url === '') {
+            throw new \InvalidArgumentException('Instance URL cannot be empty.');
+        }
+
+        $instance->setName($name);
+        $instance->setUrl($url);
+
+        if ($slug !== null && $slug !== '' && $slug !== $instance->getSlug()) {
+            $newSlug = ServiceInstance::slugify($slug);
+            $clash = $this->repository->findOneBySlug($instance->getType(), $newSlug);
+            if ($clash !== null && $clash->getId() !== $instance->getId()) {
+                throw new \InvalidArgumentException(sprintf(
+                    'A %s instance with slug "%s" already exists.',
+                    $instance->getType(),
+                    $newSlug,
+                ));
+            }
+            $instance->setSlug($newSlug);
+        }
+
+        // Empty submission of the API key field means "unchanged" (Firefox
+        // strips type=password autofill — same regression as v1.0 settings).
+        if ($apiKey !== null) {
+            $apiKey = trim($apiKey);
+            if ($apiKey !== '') {
+                $instance->setApiKey($apiKey);
+            }
+        }
+
+        if ($enabled !== null) {
+            $instance->setEnabled($enabled);
+        }
+
+        $this->repository->save($instance);
+        $this->invalidate();
+        return $instance;
+    }
+
+    /**
+     * Delete an instance. If it was the default, promote the next one of
+     * the same type. Returns true if a row was actually deleted.
+     */
+    public function delete(ServiceInstance $instance): void
+    {
+        $wasDefault = $instance->isDefault();
+        $type = $instance->getType();
+        $this->repository->remove($instance);
+        if ($wasDefault) {
+            $this->promoteFirstToDefault($type);
+        }
+        $this->invalidate();
+    }
+
+    /**
+     * Make $instance the default for its type, demoting the previous default.
+     * Idempotent: a no-op if $instance is already the default.
+     */
+    public function setDefault(ServiceInstance $instance): void
+    {
+        if ($instance->isDefault()) {
+            return;
+        }
+        foreach ($this->repository->findByType($instance->getType()) as $sibling) {
+            if ($sibling->isDefault() && $sibling->getId() !== $instance->getId()) {
+                $sibling->setIsDefault(false);
+                $this->repository->save($sibling, flush: false);
+            }
+        }
+        $instance->setIsDefault(true);
+        $this->repository->save($instance);
+        $this->invalidate();
+    }
+
+    /**
+     * Auto-generate a unique slug from $explicitSlug (if provided) or $name.
+     * If the resulting slug clashes, append `-2`, `-3`, … until unique.
+     */
+    private function normalizeSlug(string $type, ?string $explicitSlug, string $fallbackFromName): string
+    {
+        $base = $explicitSlug !== null && trim($explicitSlug) !== ''
+            ? ServiceInstance::slugify($explicitSlug)
+            : ServiceInstance::slugify($fallbackFromName);
+
+        if ($this->repository->findOneBySlug($type, $base) === null) {
+            return $base;
+        }
+        $n = 2;
+        while ($this->repository->findOneBySlug($type, $base . '-' . $n) !== null) {
+            $n++;
+        }
+        return $base . '-' . $n;
+    }
+
     private function load(): void
     {
         if ($this->byType !== null) {

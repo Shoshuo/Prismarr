@@ -315,6 +315,11 @@ class AdminSettingsController extends AbstractController
             'app_latest'         => $this->appVersion->latest(),
             'app_update_available' => $this->appVersion->isUpdateAvailable(),
             'app_releases'       => $this->appVersion->releases(),
+            // v1.1.0 — instance lists for the multi-instance card UI.
+            'instances_by_type'  => [
+                ServiceInstance::TYPE_RADARR => $this->instances->getAll(ServiceInstance::TYPE_RADARR),
+                ServiceInstance::TYPE_SONARR => $this->instances->getAll(ServiceInstance::TYPE_SONARR),
+            ],
         ]);
     }
 
@@ -791,10 +796,19 @@ class AdminSettingsController extends AbstractController
                     continue;
                 }
 
-                // Radarr / Sonarr URLs and api keys live in service_instance,
-                // not in the flat setting table — buffer them and skip the
-                // generic payload path so we don't write a duplicate row.
+                // Radarr / Sonarr URLs and api keys live in service_instance.
+                // Since v1.1.0 their HTML inputs are NOT part of the main
+                // form anymore (they live in AdminInstancesController-handled
+                // modales), so the POST never carries `radarr_url` etc. when
+                // the user clicks the main "Save" button. If the key is
+                // absent we MUST skip — otherwise the empty-string fallback
+                // below would deduce "intention to clear" and saveDefault()
+                // would happily delete the user's instance. This is the
+                // exact regression that wiped Radarr/Sonarr in B1.
                 if (isset(self::INSTANCE_BACKED_KEYS[$key])) {
+                    if (!$request->request->has($key)) {
+                        continue;
+                    }
                     $spec = self::INSTANCE_BACKED_KEYS[$key];
                     $instanceBuffer[$spec['type']][$spec['kind']] = $value !== '' ? $value : null;
                     continue;

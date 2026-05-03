@@ -257,6 +257,7 @@ setup:
       eyebrow: 'Étape 4 sur 7 · Optionnel'
       title: Gestionnaires médias
       subtitle: 'Radarr gère votre bibliothèque de films, Sonarr gère les séries. Vous pouvez configurer les deux, un seul, ou passer cette étape.'
+      default_instance_hint: 'Ce sera votre instance Radarr / Sonarr par défaut. Vous pourrez en ajouter d''autres plus tard depuis /admin/settings — pratique si vous avez un Radarr 1080p séparé d''un Radarr 4K, ou un Sonarr classique et un Sonarr animes.'
       radarr:
         section: '🎬 Radarr — Films'
         subtitle: Service de gestion automatisée des films.
@@ -526,6 +527,49 @@ admin:
       unreachable: Injoignable
       error: Erreur
     test: Tester
+  instances:
+    add: '+ Ajouter une instance {service}'
+    empty:
+      title: 'Aucune instance {service} configurée'
+      subtitle: 'Ajoutez-en une pour gérer votre bibliothèque via {service}.'
+    col:
+      name: Nom
+      url: URL
+      default: Défaut
+      enabled: Actif
+      test: Test
+      actions: Actions
+    badge:
+      default: Défaut
+    action:
+      set_default: Définir par défaut
+      edit: Modifier l''instance
+      delete: Supprimer l''instance
+      delete_confirm: 'Supprimer l''instance {name} ? Le service distant ne sera pas affecté.'
+      delete_last_confirm: '{name} est la dernière instance {service} active. La supprimer masquera {service} du menu latéral et bloquera l''accès à ses pages tant que vous n''en ajoutez pas une autre. Continuer ?'
+      disable_last_confirm: 'Désactiver cette instance masquera {service} du menu latéral et bloquera l''accès à ses pages (aucune autre instance {service} active). Continuer ?'
+      add_submit: Ajouter l''instance
+      save: Enregistrer
+    modal:
+      add_title: 'Ajouter une instance {service}'
+      edit_title: 'Modifier {name}'
+    field:
+      name: Nom affiché
+      name_hint: 'Affiché dans le menu latéral et le tableau de bord. Texte libre — ex. « Radarr 4K », « Sonarr Anime ».'
+      advanced: Options avancées
+      slug: Identifiant URL
+      slug_auto: Généré automatiquement à partir du nom
+      slug_hint: 'Utilisé dans les URLs (ex. /radarr/{slug}/films). Lettres minuscules, chiffres et tirets uniquement.'
+      slug_warning: 'Modifier l''identifiant cassera tous les signets et liens externes pointant vers l''ancienne URL.'
+      api_key_edit_hint: 'Laissez vide pour conserver la clé existante.'
+    flash:
+      created: Instance créée.
+      updated: Instance mise à jour.
+      deleted: Instance supprimée.
+      default_set: Instance par défaut mise à jour.
+      enabled: Instance activée.
+      disabled: Instance désactivée.
+      not_found: Instance introuvable.
   languages:
     tab_label: Langues
     description: 'Centralise les paramètres de langue de Prismarr et des services connectés. Les modifications côté Radarr/Sonarr/Prowlarr/Seerr sont poussées via leurs API.'

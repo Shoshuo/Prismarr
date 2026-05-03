@@ -258,6 +258,7 @@ setup:
       eyebrow: 'Step 4 of 7 · Optional'
       title: Media managers
       subtitle: 'Radarr manages your movie library, Sonarr manages TV shows. You can configure both, only one, or skip this step.'
+      default_instance_hint: 'This becomes your default Radarr / Sonarr instance. You can add more instances later from /admin/settings — useful when you run a separate 1080p + 4K Radarr, or a regular + anime Sonarr.'
       radarr:
         section: '🎬 Radarr — Movies'
         subtitle: Automated movie management service.
@@ -527,6 +528,49 @@ admin:
       unreachable: Unreachable
       error: Error
     test: Test
+  instances:
+    add: '+ Add a {service} instance'
+    empty:
+      title: 'No {service} instance configured'
+      subtitle: 'Add one to start managing your library through {service}.'
+    col:
+      name: Name
+      url: URL
+      default: Default
+      enabled: Enabled
+      test: Test
+      actions: Actions
+    badge:
+      default: Default
+    action:
+      set_default: Set as default
+      edit: Edit instance
+      delete: Delete instance
+      delete_confirm: 'Delete the {name} instance? This will not affect the upstream service itself.'
+      delete_last_confirm: '{name} is the last enabled {service} instance. Deleting it will hide {service} from the sidebar and block access to its pages until you add another. Continue?'
+      disable_last_confirm: 'Disabling this instance will hide {service} from the sidebar and block access to its pages (no other enabled {service} instance). Continue?'
+      add_submit: Add instance
+      save: Save changes
+    modal:
+      add_title: 'Add a {service} instance'
+      edit_title: 'Edit {name}'
+    field:
+      name: Display name
+      name_hint: 'Shown in the sidebar and the dashboard. Free text — e.g. "Radarr 4K", "Sonarr Anime".'
+      advanced: Advanced options
+      slug: URL slug
+      slug_auto: Auto-generated from the name
+      slug_hint: 'Used in URLs (e.g. /radarr/{slug}/films). Lowercase letters, digits and dashes only.'
+      slug_warning: 'Editing the slug will break any external bookmark or link pointing to the old URL.'
+      api_key_edit_hint: 'Leave blank to keep the existing key unchanged.'
+    flash:
+      created: Instance created.
+      updated: Instance updated.
+      deleted: Instance deleted.
+      default_set: Default instance updated.
+      enabled: Instance enabled.
+      disabled: Instance disabled.
+      not_found: Instance not found.
   languages:
     tab_label: Languages
     description: 'Central control for Prismarr UI language and connected services. Changes to Radarr/Sonarr/Prowlarr/Seerr are pushed via their APIs.'
