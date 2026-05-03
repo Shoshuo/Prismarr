@@ -28,6 +28,7 @@ class CalendrierControllerTest extends TestCase
         SonarrClient $sonarr,
         ?array &$capturedContext = null,
         ?ConfigService $config = null,
+        ?\App\Service\ServiceInstanceProvider $instances = null,
     ): CalendrierController {
         if ($config === null) {
             $config = $this->createMock(ConfigService::class);
@@ -35,12 +36,20 @@ class CalendrierControllerTest extends TestCase
             // the banner is driven purely by the throw / silent-error path.
             $config->method('get')->willReturn('configured');
         }
+        if ($instances === null) {
+            // Default: both radarr/sonarr instances exist (post-v1.1.0 source
+            // of truth for "configured"). Tests that need the unconfigured
+            // posture pass an empty mock explicitly.
+            $instances = $this->createMock(\App\Service\ServiceInstanceProvider::class);
+            $instances->method('hasAnyEnabled')->willReturn(true);
+        }
         $controller = new CalendrierController(
             $radarr,
             $sonarr,
             $this->createMock(LoggerInterface::class),
             $this->createMock(TranslatorInterface::class),
             $config,
+            $instances,
         );
 
         // Capture the Twig render context so we can assert on the flags

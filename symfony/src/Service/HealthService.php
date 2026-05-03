@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\ServiceInstance;
 use App\Service\Media\JellyseerrClient;
 use App\Service\Media\ProwlarrClient;
 use App\Service\Media\QBittorrentClient;
@@ -38,6 +39,7 @@ class HealthService
         private readonly TmdbClient        $tmdb,
         private readonly ?ConfigService    $config = null,
         private readonly ?ServiceHealthCache $serviceHealthCache = null,
+        private readonly ?ServiceInstanceProvider $instances = null,
     ) {}
 
     /**
@@ -88,8 +90,14 @@ class HealthService
             return true;
         }
         return match ($service) {
-            'radarr', 'sonarr', 'prowlarr' =>
-                $this->config->has($service . '_url') && $this->config->has($service . '_api_key'),
+            // v1.1.0 — radarr/sonarr moved to service_instance. "Configured"
+            // means at least one enabled instance exists.
+            'radarr' =>
+                $this->instances?->hasAnyEnabled(ServiceInstance::TYPE_RADARR) ?? false,
+            'sonarr' =>
+                $this->instances?->hasAnyEnabled(ServiceInstance::TYPE_SONARR) ?? false,
+            'prowlarr' =>
+                $this->config->has('prowlarr_url') && $this->config->has('prowlarr_api_key'),
             'jellyseerr' =>
                 $this->config->has('jellyseerr_url') && $this->config->has('jellyseerr_api_key'),
             'tmdb' =>
@@ -218,16 +226,38 @@ class HealthService
             return (string) ($this->config?->get($key) ?? '');
         };
 
+        // For radarr / sonarr the saved URL + key live on the default
+        // service_instance, not in `setting`. Build a per-service fallback
+        // that walks overrides → instance → null.
+        $getInstanceField = function (string $service, string $field) use ($overrides): string {
+            $key = $service . '_' . $field;
+            if (is_array($overrides) && array_key_exists($key, $overrides)) {
+                $v = trim((string) ($overrides[$key] ?? ''));
+                if ($v !== '') return $v;
+            }
+            $type = $service === 'radarr' ? ServiceInstance::TYPE_RADARR : ServiceInstance::TYPE_SONARR;
+            $instance = $this->instances?->getDefault($type);
+            if ($instance === null) return '';
+            return $field === 'url' ? $instance->getUrl() : ($instance->getApiKey() ?? '');
+        };
+
         switch ($service) {
             case 'radarr':
-            case 'sonarr':
-            case 'prowlarr': {
-                $url = $get($service . '_url');
-                $key = $get($service . '_api_key');
+            case 'sonarr': {
+                $url = $getInstanceField($service, 'url');
+                $key = $getInstanceField($service, 'api_key');
                 if ($url === '' || $key === '') return null;
-                $version = $service === 'prowlarr' ? 'v1' : 'v3';
                 return [
-                    'url'     => rtrim($url, '/') . '/api/' . $version . '/system/status',
+                    'url'     => rtrim($url, '/') . '/api/v3/system/status',
+                    'headers' => ['X-Api-Key: ' . $key, 'Accept: application/json'],
+                ];
+            }
+            case 'prowlarr': {
+                $url = $get('prowlarr_url');
+                $key = $get('prowlarr_api_key');
+                if ($url === '' || $key === '') return null;
+                return [
+                    'url'     => rtrim($url, '/') . '/api/v1/system/status',
                     'headers' => ['X-Api-Key: ' . $key, 'Accept: application/json'],
                 ];
             }

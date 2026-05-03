@@ -2,9 +2,9 @@
 
 namespace App\Tests\Service\Media;
 
-use App\Service\ConfigService;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\ServiceHealthCache;
+use App\Service\ServiceInstanceProvider;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -31,13 +31,13 @@ class ClientCircuitBreakerTest extends TestCase
         $cache = new ServiceHealthCache(new ArrayAdapter());
         $cache->markDown('radarr');
 
-        $config = $this->createMock(ConfigService::class);
-        // If the breaker leaks, the client would try to reach this URL —
-        // but the breaker should fire before ensureConfig() is called.
-        $config->method('require')->willReturn('http://wont-be-called.invalid');
+        // The breaker fires before ensureConfig() is reached, so the provider
+        // mock can stay empty (no instances). If the breaker leaked, the
+        // client would throw ServiceNotConfiguredException — easy to spot.
+        $instances = $this->createMock(ServiceInstanceProvider::class);
 
         $client = new RadarrClient(
-            $config,
+            $instances,
             $this->createMock(LoggerInterface::class),
             $cache,
         );
@@ -61,11 +61,10 @@ class ClientCircuitBreakerTest extends TestCase
         $cache = new ServiceHealthCache(new ArrayAdapter());
         $cache->markDown('radarr');
 
-        $config = $this->createMock(ConfigService::class);
-        $config->method('require')->willReturn('http://wont-be-called.invalid');
+        $instances = $this->createMock(ServiceInstanceProvider::class);
 
         $client = new RadarrClient(
-            $config,
+            $instances,
             $this->createMock(LoggerInterface::class),
             $cache,
         );
@@ -92,11 +91,10 @@ class ClientCircuitBreakerTest extends TestCase
         $cache = new ServiceHealthCache(new ArrayAdapter());
         $cache->markDown('radarr');
 
-        $config = $this->createMock(ConfigService::class);
-        $config->method('require')->willReturn('http://wont-be-called.invalid');
+        $instances = $this->createMock(ServiceInstanceProvider::class);
 
         $client = new RadarrClient(
-            $config,
+            $instances,
             $this->createMock(LoggerInterface::class),
             $cache,
         );
@@ -126,11 +124,10 @@ class ClientCircuitBreakerTest extends TestCase
         // permanently disable a healthy service.
         $cache = new ServiceHealthCache(new ArrayAdapter());
 
-        $config = $this->createMock(ConfigService::class);
-        $config->method('require')->willReturn('http://127.0.0.1:1/');
+        $instances = $this->createMock(ServiceInstanceProvider::class);
 
         $client = new RadarrClient(
-            $config,
+            $instances,
             $this->createMock(LoggerInterface::class),
             $cache,
         );

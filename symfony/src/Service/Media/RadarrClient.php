@@ -2,7 +2,9 @@
 
 namespace App\Service\Media;
 
-use App\Service\ConfigService;
+use App\Entity\ServiceInstance;
+use App\Exception\ServiceNotConfiguredException;
+use App\Service\ServiceInstanceProvider;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
@@ -13,6 +15,8 @@ class RadarrClient implements ResetInterface
 
     private string $baseUrl = '';
     private string $apiKey = '';
+    /** Bound instance for this client, or null = serve the default. */
+    private ?ServiceInstance $instance = null;
 
     /** @var array{code:int, method:string, path:string, message:string}|null */
     private ?array $lastError = null;
@@ -25,23 +29,58 @@ class RadarrClient implements ResetInterface
     private bool $serviceUnavailable = false;
 
     public function __construct(
-        private readonly ConfigService $config,
+        private readonly ServiceInstanceProvider $instances,
         private readonly LoggerInterface $logger,
         private readonly ServiceHealthCache $health,
     ) {}
 
+    /**
+     * Returns a clone bound to a specific Radarr instance, used by routes
+     * that carry an instance slug (e.g. /radarr/{slug}/films). The original
+     * autowired client keeps serving the default instance.
+     */
+    public function withInstance(ServiceInstance $instance): self
+    {
+        if ($instance->getType() !== ServiceInstance::TYPE_RADARR) {
+            throw new \InvalidArgumentException(sprintf(
+                'RadarrClient::withInstance() expects a radarr instance, got "%s".',
+                $instance->getType()
+            ));
+        }
+        $clone = clone $this;
+        $clone->instance = $instance;
+        $clone->baseUrl  = '';
+        $clone->apiKey   = '';
+        $clone->lastError = null;
+        $clone->serviceUnavailable = false;
+        return $clone;
+    }
+
+    /** Currently bound instance (after the first call), or null. */
+    public function getInstance(): ?ServiceInstance
+    {
+        return $this->instance;
+    }
+
     private function ensureConfig(): void
     {
-        if ($this->baseUrl === '') {
-            $this->baseUrl = $this->config->require('radarr_url', self::SERVICE);
-            $this->apiKey  = $this->config->require('radarr_api_key', self::SERVICE);
+        if ($this->baseUrl !== '') {
+            return;
         }
+        $instance = $this->instance ?? $this->instances->getDefault(ServiceInstance::TYPE_RADARR);
+        if ($instance === null || !$instance->isEnabled()) {
+            throw new ServiceNotConfiguredException(self::SERVICE, 'service_instance:radarr');
+        }
+        $this->instance = $instance;
+        $this->baseUrl  = $instance->getUrl();
+        $this->apiKey   = $instance->getApiKey() ?? '';
     }
 
     public function reset(): void
     {
-        $this->baseUrl = '';
-        $this->apiKey  = '';
+        $this->baseUrl  = '';
+        $this->apiKey   = '';
+        $this->instance = null;
         $this->lastError = null;
         $this->serviceUnavailable = false;
     }

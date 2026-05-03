@@ -2,9 +2,11 @@
 
 namespace App\Tests\EventSubscriber;
 
+use App\Entity\ServiceInstance;
 use App\EventSubscriber\ServiceRouteGuardSubscriber;
 use App\Service\ConfigService;
 use App\Service\HealthService;
+use App\Service\ServiceInstanceProvider;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -34,6 +36,24 @@ class ServiceRouteGuardSubscriberTest extends TestCase
         $config = $this->createMock(ConfigService::class);
         $config->method('has')->willReturnCallback(fn(string $k) => in_array($k, $configuredKeys, true));
 
+        // v1.1.0 — radarr/sonarr now go through ServiceInstanceProvider.
+        // Mirror the old "configuredKeys" semantics: presence of the api_key
+        // marker → at least one enabled instance exists. The `radarr_url`
+        // marker on its own is intentionally NOT enough (mirrors the v1.0
+        // "url + api_key both required" rule, kept by testPartiallyConfigured).
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('hasAnyEnabled')->willReturnCallback(
+            fn(string $type) => match ($type) {
+                ServiceInstance::TYPE_RADARR =>
+                    in_array('radarr_api_key', $configuredKeys, true)
+                    && in_array('radarr_url',     $configuredKeys, true),
+                ServiceInstance::TYPE_SONARR =>
+                    in_array('sonarr_api_key', $configuredKeys, true)
+                    && in_array('sonarr_url',     $configuredKeys, true),
+                default => false,
+            }
+        );
+
         $health = $this->createMock(HealthService::class);
         $health->method('isHealthy')->willReturnCallback(fn(string $s) => in_array($s, $healthy, true));
 
@@ -42,6 +62,7 @@ class ServiceRouteGuardSubscriberTest extends TestCase
 
         return new ServiceRouteGuardSubscriber(
             $config,
+            $instances,
             $health,
             $urls,
             $this->createMock(\Symfony\Contracts\Translation\TranslatorInterface::class),

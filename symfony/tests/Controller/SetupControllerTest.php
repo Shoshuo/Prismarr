@@ -7,6 +7,7 @@ use App\Repository\SettingRepository;
 use App\Repository\UserRepository;
 use App\Service\ConfigService;
 use App\Service\HealthService;
+use App\Service\ServiceInstanceProvider;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -40,11 +41,13 @@ class SetupControllerTest extends TestCase
         EntityManagerInterface $em,
         ?SettingRepository $settings = null,
         ?ConfigService $config = null,
+        ?ServiceInstanceProvider $instances = null,
     ): SetupController {
         $controller = new SetupController(
             $users,
             $settings ?? $this->createMock(SettingRepository::class),
             $config ?? $this->createMock(ConfigService::class),
+            $instances ?? $this->createMock(ServiceInstanceProvider::class),
             $em,
             $this->createMock(\Symfony\Contracts\Translation\TranslatorInterface::class),
         );

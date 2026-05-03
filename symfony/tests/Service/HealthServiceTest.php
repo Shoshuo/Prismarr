@@ -2,6 +2,7 @@
 
 namespace App\Tests\Service;
 
+use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
 use App\Service\HealthService;
 use App\Service\Media\JellyseerrClient;
@@ -10,6 +11,7 @@ use App\Service\Media\QBittorrentClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TmdbClient;
+use App\Service\ServiceInstanceProvider;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
@@ -25,6 +27,7 @@ class HealthServiceTest extends TestCase
         ?QBittorrentClient $qbittorrent = null,
         ?TmdbClient $tmdb = null,
         ?ConfigService $config = null,
+        ?ServiceInstanceProvider $instances = null,
     ): HealthService {
         return new HealthService(
             $radarr      ?? $this->createMock(RadarrClient::class),
@@ -34,7 +37,24 @@ class HealthServiceTest extends TestCase
             $qbittorrent ?? $this->createMock(QBittorrentClient::class),
             $tmdb        ?? $this->createMock(TmdbClient::class),
             $config,
+            null,
+            $instances,
         );
+    }
+
+    /**
+     * Convenience: build a provider that flags radarr/sonarr "configured"
+     * based on a list of types. Mirrors the legacy ConfigService-only tests.
+     *
+     * @param list<string> $configuredTypes
+     */
+    private function provider(array $configuredTypes): ServiceInstanceProvider
+    {
+        $provider = $this->createMock(ServiceInstanceProvider::class);
+        $provider->method('hasAnyEnabled')->willReturnCallback(
+            fn(string $type) => in_array($type, $configuredTypes, true)
+        );
+        return $provider;
     }
 
     public function testIsHealthyCallsTheRightClient(): void
@@ -130,26 +150,27 @@ class HealthServiceTest extends TestCase
         $radarr = $this->createMock(RadarrClient::class);
         $radarr->expects($this->once())->method('ping')->willReturn(true);
 
-        $config = $this->createMock(ConfigService::class);
-        // Both radarr_url and radarr_api_key present.
-        $config->method('has')->willReturn(true);
-
-        $svc = $this->makeService(radarr: $radarr, config: $config);
+        // v1.1.0 — radarr "configured" means the provider has at least one
+        // enabled instance, not the presence of radarr_url in `setting`.
+        $svc = $this->makeService(
+            radarr: $radarr,
+            config: $this->createMock(ConfigService::class),
+            instances: $this->provider([ServiceInstance::TYPE_RADARR]),
+        );
         $this->assertTrue($svc->isHealthy('radarr'));
     }
 
     public function testIsConfiguredChecksRequiredKeysPerService(): void
     {
         $config = $this->createMock(ConfigService::class);
-        // tmdb only needs the api key; radarr needs url + key.
+        // tmdb only needs the api key. radarr's check moved to the provider —
+        // an empty provider means no radarr instance configured.
         $config->method('has')->willReturnCallback(fn (string $k) => match ($k) {
             'tmdb_api_key'    => true,
-            'radarr_url'      => true,
-            'radarr_api_key'  => false,
             default           => false,
         });
 
-        $svc = $this->makeService(config: $config);
+        $svc = $this->makeService(config: $config, instances: $this->provider([]));
         $this->assertTrue($svc->isConfigured('tmdb'));
         $this->assertFalse($svc->isConfigured('radarr'));
         $this->assertFalse($svc->isConfigured('jellyseerr'));

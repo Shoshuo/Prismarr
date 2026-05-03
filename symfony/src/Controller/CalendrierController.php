@@ -2,9 +2,11 @@
 
 namespace App\Controller;
 
+use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
+use App\Service\ServiceInstanceProvider;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,19 +27,22 @@ class CalendrierController extends AbstractController
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
         private readonly ConfigService $config,
+        private readonly ServiceInstanceProvider $instances,
     ) {}
 
     /**
-     * "Configured" = the wizard saved at least a URL AND an API key for the
-     * service. Skipped or never-set keys leave both empty in the DB. We use
-     * this to tell apart "service down" (warning banner) from "service
-     * deliberately not used" (silent — no banner).
+     * "Configured" = at least one enabled instance exists for radarr/sonarr
+     * (v1.1.0 — moved from the legacy radarr_url/sonarr_url settings).
+     * Used to tell "service down" (banner) apart from "service deliberately
+     * not used" (silent — no banner).
      */
     private function isConfigured(string $service): bool
     {
-        $url = trim((string) ($this->config->get($service . '_url') ?? ''));
-        $key = trim((string) ($this->config->get($service . '_api_key') ?? ''));
-        return $url !== '' && $key !== '';
+        return match ($service) {
+            'radarr' => $this->instances->hasAnyEnabled(ServiceInstance::TYPE_RADARR),
+            'sonarr' => $this->instances->hasAnyEnabled(ServiceInstance::TYPE_SONARR),
+            default  => false,
+        };
     }
 
     #[Route('/calendrier', name: 'app_calendrier')]

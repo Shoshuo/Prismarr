@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\ServiceInstance;
 use App\Repository\SettingRepository;
 use App\Repository\UserRepository;
 use App\Service\ConfigService;
@@ -10,6 +11,7 @@ use App\Service\Media\JellyseerrClient;
 use App\Service\Media\ProwlarrClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
+use App\Service\ServiceInstanceProvider;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -261,6 +263,7 @@ class AdminSettingsController extends AbstractController
     public function __construct(
         private readonly SettingRepository $settings,
         private readonly ConfigService $config,
+        private readonly ServiceInstanceProvider $instances,
         private readonly HealthService $health,
         private readonly LoggerInterface $logger,
         #[Autowire(service: 'cache.app')]
@@ -487,7 +490,7 @@ class AdminSettingsController extends AbstractController
         }
 
         // Radarr UI + Movie Info lang (pushed via API, same /config/ui endpoint)
-        if ($this->config->get('radarr_url') && $this->config->get('radarr_api_key')
+        if ($this->instances->hasAnyEnabled(ServiceInstance::TYPE_RADARR)
             && (isset($payload['radarr_ui']) || isset($payload['radarr_info']))) {
             try {
                 /** @var RadarrClient $radarr */
@@ -519,7 +522,7 @@ class AdminSettingsController extends AbstractController
 
         // Sonarr UI lang (Sonarr v4 doesn't expose movieInfoLanguage/seriesInfoLanguage —
         // each series has its own originalLanguage, no global setting)
-        if ($this->config->get('sonarr_url') && $this->config->get('sonarr_api_key') && isset($payload['sonarr_ui'])) {
+        if ($this->instances->hasAnyEnabled(ServiceInstance::TYPE_SONARR) && isset($payload['sonarr_ui'])) {
             try {
                 /** @var SonarrClient $sonarr */
                 $sonarr = $this->container->get(SonarrClient::class);
@@ -610,7 +613,7 @@ class AdminSettingsController extends AbstractController
         ];
 
         // Radarr: id-based language list, /api/v3/language + /api/v3/config/ui
-        if ($this->config->get('radarr_url') && $this->config->get('radarr_api_key')) {
+        if ($this->instances->hasAnyEnabled(ServiceInstance::TYPE_RADARR)) {
             $out['radarr']['configured'] = true;
             try {
                 /** @var RadarrClient $radarr */
@@ -633,7 +636,7 @@ class AdminSettingsController extends AbstractController
 
         // Sonarr: UI language only — Sonarr v4 no longer offers a global setting
         // for series metadata language (each series has its own originalLanguage).
-        if ($this->config->get('sonarr_url') && $this->config->get('sonarr_api_key')) {
+        if ($this->instances->hasAnyEnabled(ServiceInstance::TYPE_SONARR)) {
             $out['sonarr']['configured'] = true;
             try {
                 /** @var SonarrClient $sonarr */
@@ -692,10 +695,30 @@ class AdminSettingsController extends AbstractController
         $out = [];
         foreach (self::FIELDS as $group) {
             foreach ($group as $field) {
-                $out[$field['key']] = (string) ($this->config->get($field['key']) ?? '');
+                $key = $field['key'];
+                $out[$key] = $this->loadFieldValue($key);
             }
         }
         return $out;
+    }
+
+    /**
+     * Source of truth for a single config field on the admin form.
+     * Routes radarr/sonarr URL + api key to the default instance, leaves
+     * the other services on their flat setting. Mirrors v1.0.6 behavior on
+     * sensitive fields: the value IS returned (so re-renders don't lose it),
+     * even though Firefox/Chrome strip type=password autofill at render —
+     * see saveSubmitted's empty-value guard for that regression.
+     */
+    private function loadFieldValue(string $key): string
+    {
+        return match ($key) {
+            'radarr_url'     => $this->instances->getDefault(ServiceInstance::TYPE_RADARR)?->getUrl() ?? '',
+            'sonarr_url'     => $this->instances->getDefault(ServiceInstance::TYPE_SONARR)?->getUrl() ?? '',
+            'radarr_api_key' => $this->instances->getDefault(ServiceInstance::TYPE_RADARR)?->getApiKey() ?? '',
+            'sonarr_api_key' => $this->instances->getDefault(ServiceInstance::TYPE_SONARR)?->getApiKey() ?? '',
+            default          => (string) ($this->config->get($key) ?? ''),
+        };
     }
 
     /**
@@ -724,9 +747,22 @@ class AdminSettingsController extends AbstractController
         return $out;
     }
 
+    /** Field keys handled by ServiceInstanceProvider rather than the flat setting table. */
+    private const INSTANCE_BACKED_KEYS = [
+        'radarr_url'     => ['type' => ServiceInstance::TYPE_RADARR, 'kind' => 'url'],
+        'radarr_api_key' => ['type' => ServiceInstance::TYPE_RADARR, 'kind' => 'api_key'],
+        'sonarr_url'     => ['type' => ServiceInstance::TYPE_SONARR, 'kind' => 'url'],
+        'sonarr_api_key' => ['type' => ServiceInstance::TYPE_SONARR, 'kind' => 'api_key'],
+    ];
+
     private function saveSubmitted(Request $request): void
     {
         $payload = [];
+        // Per-type buffer for instance-backed fields (radarr/sonarr). We collect
+        // the URL + api key from the form, then issue a single saveDefault()
+        // per type below — this avoids two DB writes that could leave the
+        // instance in a half-updated state if one of them throws.
+        $instanceBuffer = [];
         foreach (self::FIELDS as $group) {
             foreach ($group as $field) {
                 $key   = $field['key'];
@@ -754,8 +790,33 @@ class AdminSettingsController extends AbstractController
                 if (($field['type'] ?? null) === 'password' && $value === '') {
                     continue;
                 }
+
+                // Radarr / Sonarr URLs and api keys live in service_instance,
+                // not in the flat setting table — buffer them and skip the
+                // generic payload path so we don't write a duplicate row.
+                if (isset(self::INSTANCE_BACKED_KEYS[$key])) {
+                    $spec = self::INSTANCE_BACKED_KEYS[$key];
+                    $instanceBuffer[$spec['type']][$spec['kind']] = $value !== '' ? $value : null;
+                    continue;
+                }
+
                 $payload[$key] = $value !== '' ? $value : null;
             }
+        }
+
+        // Apply instance-backed updates. Empty api_key on a password field
+        // means "unchanged" (see guard above): we re-read the existing key
+        // off the default instance so saveDefault() doesn't wipe it.
+        foreach ($instanceBuffer as $type => $fields) {
+            $url = $fields['url'] ?? null;
+            // The url field is type=text and always submitted, so a null here
+            // means the form omitted it entirely (shouldn't happen) — keep
+            // the existing instance untouched in that case.
+            if (!array_key_exists('url', $fields)) {
+                continue;
+            }
+            $apiKey = $fields['api_key'] ?? $this->instances->getDefault($type)?->getApiKey();
+            $this->instances->saveDefault($type, $url, $apiKey);
         }
 
         // Sidebar visibility — one checkbox per service/feature. An unchecked

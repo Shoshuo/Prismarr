@@ -6,6 +6,7 @@ use App\Controller\AdminSettingsController;
 use App\Repository\SettingRepository;
 use App\Service\ConfigService;
 use App\Service\HealthService;
+use App\Service\ServiceInstanceProvider;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -21,6 +22,7 @@ class AdminSettingsControllerTest extends TestCase
         SettingRepository $settings,
         ConfigService $config,
         HealthService $health,
+        ?ServiceInstanceProvider $instances = null,
     ): AdminSettingsController {
         $appVersion = $this->createMock(\App\Service\AppVersion::class);
         $appVersion->method('current')->willReturn('test');
@@ -31,6 +33,7 @@ class AdminSettingsControllerTest extends TestCase
         $controller = new AdminSettingsController(
             $settings,
             $config,
+            $instances ?? $this->createMock(ServiceInstanceProvider::class),
             $health,
             $this->createMock(LoggerInterface::class),
             $this->createMock(\Symfony\Component\Cache\Adapter\AdapterInterface::class),
@@ -96,20 +99,40 @@ class AdminSettingsControllerTest extends TestCase
 
     public function testPostWithValidCsrfSavesAndInvalidatesCaches(): void
     {
+        // v1.1.0 — radarr_url / radarr_api_key are no longer in `setting`,
+        // they go through ServiceInstanceProvider::saveDefault(). The flat
+        // setMany() path now only carries non-instance-backed fields.
         $settings = $this->createMock(SettingRepository::class);
         $settings->expects($this->once())
             ->method('setMany')
             ->with($this->callback(function (array $payload) {
-                return $payload['radarr_url']     === 'http://new-radarr:7878'
-                    && $payload['radarr_api_key'] === 'new-key'
-                    // Empty submission of a password/api_key field must be
-                    // skipped entirely (no key in payload) to preserve the
-                    // existing value in DB — see testEmptyPasswordFieldsAreNotWiped.
-                    && !array_key_exists('tmdb_api_key', $payload);
+                // Radarr & sonarr fields must be ABSENT from the flat payload.
+                foreach (['radarr_url', 'radarr_api_key', 'sonarr_url', 'sonarr_api_key'] as $key) {
+                    if (array_key_exists($key, $payload)) {
+                        return false;
+                    }
+                }
+                // Empty sensitive submission (tmdb_api_key) must still be
+                // skipped — see testEmptyPasswordFieldsAreNotWiped.
+                return !array_key_exists('tmdb_api_key', $payload);
             }));
 
         $config = $this->createMock(ConfigService::class);
         $config->expects($this->once())->method('invalidate');
+
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        // Default instance has no existing api_key, so saveDefault gets the
+        // submitted value verbatim. Capture every saveDefault() call and
+        // assert on it after index() runs (PHPUnit's `with()` matcher only
+        // takes one arg per position, callback is awkward for 3-arg calls).
+        $instances->method('getDefault')->willReturn(null);
+        $captured = [];
+        $instances->expects($this->atLeastOnce())
+            ->method('saveDefault')
+            ->willReturnCallback(function (string $type, ?string $url, ?string $apiKey) use (&$captured) {
+                $captured[$type] = ['url' => $url, 'apiKey' => $apiKey];
+                return null;
+            });
 
         $health = $this->createMock(HealthService::class);
         $health->expects($this->once())->method('invalidate')->with(null);
@@ -128,7 +151,12 @@ class AdminSettingsControllerTest extends TestCase
             new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage()
         ));
 
-        $this->controller($settings, $config, $health)->index($request);
+        $this->controller($settings, $config, $health, $instances)->index($request);
+
+        $this->assertArrayHasKey(\App\Entity\ServiceInstance::TYPE_RADARR, $captured,
+            'Radarr saveDefault must be invoked when radarr_url is submitted');
+        $this->assertSame('http://new-radarr:7878', $captured[\App\Entity\ServiceInstance::TYPE_RADARR]['url']);
+        $this->assertSame('new-key', $captured[\App\Entity\ServiceInstance::TYPE_RADARR]['apiKey']);
     }
 
     public function testEmptyPasswordFieldsAreNotWiped(): void
@@ -143,13 +171,15 @@ class AdminSettingsControllerTest extends TestCase
         $settings->expects($this->once())
             ->method('setMany')
             ->with($this->callback(function (array $payload) {
-                // Plain-text URL fields still allowed to be cleared via empty submit.
-                if (!array_key_exists('radarr_url', $payload) || $payload['radarr_url'] !== null) {
-                    return false;
+                // Radarr/sonarr fields go through the instance provider, never the flat payload.
+                foreach (['radarr_url', 'radarr_api_key', 'sonarr_url', 'sonarr_api_key'] as $key) {
+                    if (array_key_exists($key, $payload)) {
+                        return false;
+                    }
                 }
-                // Every sensitive field must be ABSENT from the payload, not null.
+                // Every other sensitive field must be ABSENT from the payload, not null.
                 $sensitive = [
-                    'tmdb_api_key', 'radarr_api_key', 'sonarr_api_key',
+                    'tmdb_api_key',
                     'prowlarr_api_key', 'jellyseerr_api_key',
                     'qbittorrent_password', 'gluetun_api_key',
                 ];
@@ -169,7 +199,7 @@ class AdminSettingsControllerTest extends TestCase
             'POST',
             [
                 '_csrf_token'           => 'valid',
-                'radarr_url'            => '',  // plain text → cleared (null)
+                'radarr_url'            => '',  // routed through instance provider
                 'tmdb_api_key'          => '',  // sensitive → preserved (skipped)
                 'radarr_api_key'        => '',
                 'sonarr_api_key'        => '',
@@ -184,6 +214,66 @@ class AdminSettingsControllerTest extends TestCase
         ));
 
         $this->controller($settings, $config, $health)->index($request);
+    }
+
+    /**
+     * v1.1.0 regression — same Firefox/Chrome stripping issue on the new
+     * service_instance write path. When the admin POSTs `radarr_url=X` with
+     * an empty `radarr_api_key`, saveDefault() must receive the EXISTING api
+     * key from the default instance, not null. Otherwise saving the form
+     * after editing the URL alone wipes the API key (issue we already fixed
+     * in v1.0 for the flat settings — must hold post-migration too).
+     */
+    public function testRadarrInstanceApiKeyPreservedWhenFormSendsEmpty(): void
+    {
+        $existing = new \App\Entity\ServiceInstance(
+            \App\Entity\ServiceInstance::TYPE_RADARR,
+            'radarr-1',
+            'Radarr 1',
+            'http://old-radarr:7878',
+            'preserved-existing-key',
+        );
+
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getDefault')->willReturnCallback(
+            fn(string $type) => $type === \App\Entity\ServiceInstance::TYPE_RADARR ? $existing : null
+        );
+
+        // The crucial assertion: saveDefault must receive the preserved key,
+        // never null/empty when the form left the password field blank.
+        $captured = ['url' => null, 'apiKey' => null];
+        $instances->expects($this->atLeastOnce())
+            ->method('saveDefault')
+            ->willReturnCallback(function (string $type, ?string $url, ?string $apiKey) use (&$captured, $existing) {
+                if ($type === \App\Entity\ServiceInstance::TYPE_RADARR) {
+                    $captured['url']    = $url;
+                    $captured['apiKey'] = $apiKey;
+                }
+                return $existing;
+            });
+
+        $settings = $this->createMock(SettingRepository::class);
+        $config = $this->createMock(ConfigService::class);
+        $health = $this->createMock(HealthService::class);
+
+        $request = Request::create(
+            '/admin/settings',
+            'POST',
+            [
+                '_csrf_token'    => 'valid',
+                'radarr_url'     => 'http://new-radarr:7878', // user edited URL
+                'radarr_api_key' => '',                       // browser stripped it
+            ]
+        );
+        $request->setSession(new \Symfony\Component\HttpFoundation\Session\Session(
+            new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage()
+        ));
+
+        $this->controller($settings, $config, $health, $instances)->index($request);
+
+        $this->assertSame('http://new-radarr:7878', $captured['url']);
+        $this->assertSame('preserved-existing-key', $captured['apiKey'],
+            'API key must be re-injected from the existing default instance, not wiped to null');
     }
 
     public function testPostPersistsSidebarHideFlagForUncheckedServices(): void

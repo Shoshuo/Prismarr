@@ -2,12 +2,14 @@
 
 namespace App\Controller;
 
+use App\Entity\ServiceInstance;
 use App\Entity\User;
 use App\Repository\SettingRepository;
 use App\Repository\UserRepository;
 use App\EventSubscriber\LocaleSubscriber;
 use App\Service\ConfigService;
 use App\Service\HealthService;
+use App\Service\ServiceInstanceProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -31,6 +33,7 @@ class SetupController extends AbstractController
         private readonly UserRepository $users,
         private readonly SettingRepository $settings,
         private readonly ConfigService $config,
+        private readonly ServiceInstanceProvider $instances,
         private readonly EntityManagerInterface $em,
         private readonly TranslatorInterface $translator,
     ) {}
@@ -196,7 +199,7 @@ class SetupController extends AbstractController
             'sonarr_url' => 'http://host.docker.internal:8989',
             'sonarr_api_key' => '',
         ];
-        $this->prefill($fields);
+        $this->prefillManagersFromInstances($fields);
         $errors = [];
 
         if ($request->isMethod('POST')) {
@@ -207,7 +210,17 @@ class SetupController extends AbstractController
             }
 
             if ($errors === []) {
-                $this->save($fields, skip: $action === 'skip');
+                $skip = $action === 'skip';
+                $this->instances->saveDefault(
+                    ServiceInstance::TYPE_RADARR,
+                    $skip ? null : $fields['radarr_url'],
+                    $skip ? null : $fields['radarr_api_key'],
+                );
+                $this->instances->saveDefault(
+                    ServiceInstance::TYPE_SONARR,
+                    $skip ? null : $fields['sonarr_url'],
+                    $skip ? null : $fields['sonarr_api_key'],
+                );
                 return $this->redirectToRoute($this->nextRoute($action, 'app_setup_indexers', 'app_setup_tmdb'));
             }
         }
@@ -218,6 +231,26 @@ class SetupController extends AbstractController
             'errors'          => $errors,
             'values'          => $fields,
         ]);
+    }
+
+    /**
+     * Prefill the managers form from the existing default Radarr / Sonarr
+     * instances (v1.1.0). Mirrors prefill() but reads from service_instance
+     * instead of the legacy radarr_url / sonarr_url settings.
+     *
+     * @param array<string, string> $fields
+     */
+    private function prefillManagersFromInstances(array &$fields): void
+    {
+        $radarr = $this->instances->getDefault(ServiceInstance::TYPE_RADARR);
+        if ($radarr !== null) {
+            $fields['radarr_url'] = $radarr->getUrl();
+            // API key stays masked — sensitive, never re-emitted to the form.
+        }
+        $sonarr = $this->instances->getDefault(ServiceInstance::TYPE_SONARR);
+        if ($sonarr !== null) {
+            $fields['sonarr_url'] = $sonarr->getUrl();
+        }
     }
 
     // ─── Step 5: Indexers & requests (Prowlarr + Jellyseerr) ───────────────
@@ -553,16 +586,19 @@ class SetupController extends AbstractController
             $done[] = 'welcome';
             $done[] = 'admin';
         }
-        $checks = [
-            'tmdb'      => ['tmdb_api_key'],
-            'managers'  => ['radarr_api_key', 'sonarr_api_key'],
-            'indexers'  => ['prowlarr_api_key', 'jellyseerr_api_key'],
-            'downloads' => ['qbittorrent_url'],
-        ];
-        foreach ($checks as $step => $keys) {
-            foreach ($keys as $k) {
-                if ($this->config->has($k)) { $done[] = $step; break; }
-            }
+        if ($this->config->has('tmdb_api_key')) {
+            $done[] = 'tmdb';
+        }
+        // managers — at least one Radarr OR Sonarr instance configured.
+        if ($this->instances->hasAny(ServiceInstance::TYPE_RADARR)
+            || $this->instances->hasAny(ServiceInstance::TYPE_SONARR)) {
+            $done[] = 'managers';
+        }
+        if ($this->config->has('prowlarr_api_key') || $this->config->has('jellyseerr_api_key')) {
+            $done[] = 'indexers';
+        }
+        if ($this->config->has('qbittorrent_url')) {
+            $done[] = 'downloads';
         }
         return $done;
     }
@@ -574,8 +610,8 @@ class SetupController extends AbstractController
     {
         return [
             $this->summaryRow('TMDb',        'tmdb_api_key'),
-            $this->summaryRow('Radarr',      'radarr_url'),
-            $this->summaryRow('Sonarr',      'sonarr_url'),
+            $this->instanceSummaryRow('Radarr', ServiceInstance::TYPE_RADARR),
+            $this->instanceSummaryRow('Sonarr', ServiceInstance::TYPE_SONARR),
             $this->summaryRow('Prowlarr',    'prowlarr_url'),
             $this->summaryRow('Seerr',       'jellyseerr_url'),
             $this->summaryRow('qBittorrent', 'qbittorrent_url'),
@@ -594,5 +630,24 @@ class SetupController extends AbstractController
             'configured' => $value !== null,
             'detail'     => $value,
         ];
+    }
+
+    /**
+     * Summary row for a service backed by service_instance. The detail shows
+     * the default instance URL (or the count when more than one instance is
+     * configured, e.g. "3 instances").
+     *
+     * @return array{name: string, configured: bool, detail: ?string}
+     */
+    private function instanceSummaryRow(string $name, string $type): array
+    {
+        $count = $this->instances->count($type);
+        if ($count === 0) {
+            return ['name' => $name, 'configured' => false, 'detail' => null];
+        }
+        $detail = $count > 1
+            ? sprintf('%d instances', $count)
+            : ($this->instances->getDefault($type)?->getUrl() ?? null);
+        return ['name' => $name, 'configured' => true, 'detail' => $detail];
     }
 }

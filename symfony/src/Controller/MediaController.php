@@ -3,11 +3,13 @@
 namespace App\Controller;
 
 use App\Controller\Concerns\ApiClientErrorTrait;
+use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
 use App\Service\Media\ProwlarrClient;
 use App\Service\Media\QBittorrentClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
+use App\Service\ServiceInstanceProvider;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -32,6 +34,7 @@ class MediaController extends AbstractController
         private readonly QBittorrentClient $qbittorrent,
         private readonly CacheInterface    $cache,
         private readonly ConfigService     $config,
+        private readonly ServiceInstanceProvider $instances,
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
     ) {}
@@ -101,7 +104,7 @@ class MediaController extends AbstractController
             'movies' => $movies,
             'queue'  => $queue,
             'error'  => $error,
-            'service_url' => $this->config->get('radarr_url'),
+            'service_url' => $this->instances->getDefault(ServiceInstance::TYPE_RADARR)?->getUrl(),
             'warnings' => $warnings,
             'stats'  => compact('total', 'downloaded', 'monitored', 'totalGb'),
             'indexerCount' => $indexerCount,
@@ -144,7 +147,7 @@ class MediaController extends AbstractController
             'queue'    => $queue,
             'calendar' => $calendar,
             'error'    => $error,
-            'service_url' => $this->config->get('sonarr_url'),
+            'service_url' => $this->instances->getDefault(ServiceInstance::TYPE_SONARR)?->getUrl(),
             'stats'    => compact('total', 'continuing', 'ended', 'totalGb'),
         ]);
     }

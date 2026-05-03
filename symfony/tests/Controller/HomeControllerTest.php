@@ -3,9 +3,11 @@
 namespace App\Tests\Controller;
 
 use App\Controller\HomeController;
+use App\Entity\ServiceInstance;
 use App\EventSubscriber\LastVisitedRouteSubscriber;
 use App\Service\ConfigService;
 use App\Service\DisplayPreferencesService;
+use App\Service\ServiceInstanceProvider;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -57,6 +59,26 @@ class HomeControllerTest extends TestCase
         return $config;
     }
 
+    /**
+     * Mirror the legacy "radarr_api_key" / "sonarr_api_key" markers from
+     * $hasKeys into the v1.1.0 instance provider — keeps the tests below
+     * readable.
+     *
+     * @param list<string> $hasKeys
+     */
+    private function instances(array $hasKeys): ServiceInstanceProvider
+    {
+        $provider = $this->createMock(ServiceInstanceProvider::class);
+        $provider->method('hasAnyEnabled')->willReturnCallback(
+            fn(string $type) => match ($type) {
+                ServiceInstance::TYPE_RADARR => in_array('radarr_api_key', $hasKeys, true),
+                ServiceInstance::TYPE_SONARR => in_array('sonarr_api_key', $hasKeys, true),
+                default => false,
+            }
+        );
+        return $provider;
+    }
+
     private function prefs(string $homePage): DisplayPreferencesService
     {
         $prefs = $this->createMock(DisplayPreferencesService::class);
@@ -94,6 +116,7 @@ class HomeControllerTest extends TestCase
         $response = $this->newController()->index(
             $this->request(),
             $this->config([]),
+            $this->instances([]),
             $this->prefs('dashboard'),
             $this->router(),
         );
@@ -107,6 +130,7 @@ class HomeControllerTest extends TestCase
         $response = $this->newController()->index(
             $this->request(),
             $this->config(['tmdb_api_key']),
+            $this->instances(['tmdb_api_key']),
             $this->prefs('discovery'),
             $this->router(),
         );
@@ -119,6 +143,7 @@ class HomeControllerTest extends TestCase
         $response = $this->newController()->index(
             $this->request(),
             $this->config(['radarr_api_key']),
+            $this->instances(['radarr_api_key']),
             $this->prefs('films'),
             $this->router(),
         );
@@ -131,6 +156,7 @@ class HomeControllerTest extends TestCase
         $response = $this->newController()->index(
             $this->request(),
             $this->config(['sonarr_api_key']),
+            $this->instances(['sonarr_api_key']),
             $this->prefs('series'),
             $this->router(),
         );
@@ -143,6 +169,7 @@ class HomeControllerTest extends TestCase
         $response = $this->newController()->index(
             $this->request(),
             $this->config(['qbittorrent_url']),
+            $this->instances(['qbittorrent_url']),
             $this->prefs('qbittorrent'),
             $this->router(),
         );
@@ -155,6 +182,7 @@ class HomeControllerTest extends TestCase
         $response = $this->newController()->index(
             $this->request(),
             $this->config(['radarr_api_key']),
+            $this->instances(['radarr_api_key']),
             $this->prefs('discovery'),
             $this->router(),
         );
@@ -167,6 +195,7 @@ class HomeControllerTest extends TestCase
         $response = $this->newController()->index(
             $this->request('app_qbittorrent_index'),
             $this->config([]),
+            $this->instances([]),
             $this->prefs('last'),
             $this->router(['app_qbittorrent_index']),
         );
@@ -180,6 +209,7 @@ class HomeControllerTest extends TestCase
         $response = $this->newController()->index(
             $this->request('stale_renamed_route'),
             $this->config(['tmdb_api_key']),
+            $this->instances(['tmdb_api_key']),
             $this->prefs('last'),
             $this->router([]),
         );
@@ -192,6 +222,7 @@ class HomeControllerTest extends TestCase
         $response = $this->newController()->index(
             $this->request(),
             $this->config(['tmdb_api_key']),
+            $this->instances(['tmdb_api_key']),
             $this->prefs('last'),
             $this->router(),
         );
@@ -204,6 +235,7 @@ class HomeControllerTest extends TestCase
         $response = $this->newController()->index(
             $this->request(),
             $this->config([]),
+            $this->instances([]),
             $this->prefs('discovery'),
             $this->router(),
         );

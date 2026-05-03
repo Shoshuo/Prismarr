@@ -2,8 +2,10 @@
 
 namespace App\EventSubscriber;
 
+use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
 use App\Service\HealthService;
+use App\Service\ServiceInstanceProvider;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -20,19 +22,23 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  * The health-check is cached per-process via HealthService (1 ping per worker).
  * The index routes themselves are exempt from the health-check (they handle
  * their own banner, otherwise we would create a redirect loop).
+ *
+ * v1.1.0 — radarr/sonarr rules use `instance_type` (queried via
+ * ServiceInstanceProvider) instead of `keys` (queried via ConfigService),
+ * since their config moved to the service_instance table.
  */
 class ServiceRouteGuardSubscriber implements EventSubscriberInterface
 {
     /**
-     * @var array<string, array{service: string, service_id: string, keys: list<string>, wizard: string, index: string}>
+     * @var array<string, array{service: string, service_id: string, keys?: list<string>, instance_type?: string, wizard: string, index: string}>
      */
     private const RULES = [
-        'radarr_'           => ['service' => 'Radarr',      'service_id' => 'radarr',      'keys' => ['radarr_api_key', 'radarr_url'],         'wizard' => 'app_setup_managers',  'index' => 'app_media_films'],
-        'app_media_films'   => ['service' => 'Radarr',      'service_id' => 'radarr',      'keys' => ['radarr_api_key', 'radarr_url'],         'wizard' => 'app_setup_managers',  'index' => 'app_media_films'],
-        'app_media_radarr'  => ['service' => 'Radarr',      'service_id' => 'radarr',      'keys' => ['radarr_api_key', 'radarr_url'],         'wizard' => 'app_setup_managers',  'index' => 'app_media_films'],
-        'sonarr_'           => ['service' => 'Sonarr',      'service_id' => 'sonarr',      'keys' => ['sonarr_api_key', 'sonarr_url'],         'wizard' => 'app_setup_managers',  'index' => 'app_media_series'],
-        'app_media_series'  => ['service' => 'Sonarr',      'service_id' => 'sonarr',      'keys' => ['sonarr_api_key', 'sonarr_url'],         'wizard' => 'app_setup_managers',  'index' => 'app_media_series'],
-        'app_media_sonarr'  => ['service' => 'Sonarr',      'service_id' => 'sonarr',      'keys' => ['sonarr_api_key', 'sonarr_url'],         'wizard' => 'app_setup_managers',  'index' => 'app_media_series'],
+        'radarr_'           => ['service' => 'Radarr',      'service_id' => 'radarr',      'instance_type' => ServiceInstance::TYPE_RADARR,    'wizard' => 'app_setup_managers',  'index' => 'app_media_films'],
+        'app_media_films'   => ['service' => 'Radarr',      'service_id' => 'radarr',      'instance_type' => ServiceInstance::TYPE_RADARR,    'wizard' => 'app_setup_managers',  'index' => 'app_media_films'],
+        'app_media_radarr'  => ['service' => 'Radarr',      'service_id' => 'radarr',      'instance_type' => ServiceInstance::TYPE_RADARR,    'wizard' => 'app_setup_managers',  'index' => 'app_media_films'],
+        'sonarr_'           => ['service' => 'Sonarr',      'service_id' => 'sonarr',      'instance_type' => ServiceInstance::TYPE_SONARR,    'wizard' => 'app_setup_managers',  'index' => 'app_media_series'],
+        'app_media_series'  => ['service' => 'Sonarr',      'service_id' => 'sonarr',      'instance_type' => ServiceInstance::TYPE_SONARR,    'wizard' => 'app_setup_managers',  'index' => 'app_media_series'],
+        'app_media_sonarr'  => ['service' => 'Sonarr',      'service_id' => 'sonarr',      'instance_type' => ServiceInstance::TYPE_SONARR,    'wizard' => 'app_setup_managers',  'index' => 'app_media_series'],
         'prowlarr_'         => ['service' => 'Prowlarr',    'service_id' => 'prowlarr',    'keys' => ['prowlarr_api_key', 'prowlarr_url'],     'wizard' => 'app_setup_indexers',  'index' => 'prowlarr_index'],
         'jellyseerr_'       => ['service' => 'Jellyseerr',  'service_id' => 'jellyseerr',  'keys' => ['jellyseerr_api_key', 'jellyseerr_url'], 'wizard' => 'app_setup_indexers',  'index' => 'jellyseerr_index'],
         'qbittorrent_'      => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'keys' => ['qbittorrent_url', 'qbittorrent_user'],  'wizard' => 'app_setup_downloads', 'index' => 'app_qbittorrent_index'],
@@ -42,6 +48,7 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
 
     public function __construct(
         private readonly ConfigService $config,
+        private readonly ServiceInstanceProvider $instances,
         private readonly HealthService $health,
         private readonly UrlGeneratorInterface $urls,
         private readonly TranslatorInterface $translator,
@@ -72,12 +79,10 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         }
 
         // 1. Service not configured → wizard
-        foreach ($rule['keys'] as $key) {
-            if (!$this->config->has($key)) {
-                $this->flash($event, $this->translator->trans('error.service_not_configured.service_unavailable_flash', ['service' => $rule['service']]));
-                $event->setResponse(new RedirectResponse($this->urls->generate($rule['wizard'])));
-                return;
-            }
+        if (!$this->isConfigured($rule)) {
+            $this->flash($event, $this->translator->trans('error.service_not_configured.service_unavailable_flash', ['service' => $rule['service']]));
+            $event->setResponse(new RedirectResponse($this->urls->generate($rule['wizard'])));
+            return;
         }
 
         // 2. Service configured but unreachable → redirect to section index
@@ -91,7 +96,7 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * @return array{service: string, service_id: string, keys: list<string>, wizard: string, index: string}|null
+     * @return array{service: string, service_id: string, keys?: list<string>, instance_type?: string, wizard: string, index: string}|null
      */
     private function matchRule(string $route): ?array
     {
@@ -101,6 +106,22 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
             }
         }
         return null;
+    }
+
+    /**
+     * @param array{keys?: list<string>, instance_type?: string} $rule
+     */
+    private function isConfigured(array $rule): bool
+    {
+        if (isset($rule['instance_type'])) {
+            return $this->instances->hasAnyEnabled($rule['instance_type']);
+        }
+        foreach ($rule['keys'] ?? [] as $key) {
+            if (!$this->config->has($key)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private function flash(RequestEvent $event, string $message): void

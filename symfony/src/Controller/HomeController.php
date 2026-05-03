@@ -2,9 +2,11 @@
 
 namespace App\Controller;
 
+use App\Entity\ServiceInstance;
 use App\EventSubscriber\LastVisitedRouteSubscriber;
 use App\Service\ConfigService;
 use App\Service\DisplayPreferencesService;
+use App\Service\ServiceInstanceProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,10 +27,11 @@ class HomeController extends AbstractController
     public function index(
         Request $request,
         ConfigService $config,
+        ServiceInstanceProvider $instances,
         DisplayPreferencesService $prefs,
         RouterInterface $router,
     ): Response {
-        $preferred = $this->routeForPreference($prefs->getHomePage(), $config, $request, $router);
+        $preferred = $this->routeForPreference($prefs->getHomePage(), $config, $instances, $request, $router);
         if ($preferred !== null) {
             return $this->redirectToRoute($preferred);
         }
@@ -39,10 +42,10 @@ class HomeController extends AbstractController
         if ($config->has('tmdb_api_key')) {
             return $this->redirectToRoute('tmdb_index');
         }
-        if ($config->has('radarr_api_key')) {
+        if ($instances->hasAnyEnabled(ServiceInstance::TYPE_RADARR)) {
             return $this->redirectToRoute('app_media_films');
         }
-        if ($config->has('sonarr_api_key')) {
+        if ($instances->hasAnyEnabled(ServiceInstance::TYPE_SONARR)) {
             return $this->redirectToRoute('app_media_series');
         }
         if ($config->has('qbittorrent_url')) {
@@ -61,15 +64,16 @@ class HomeController extends AbstractController
     private function routeForPreference(
         string $homePage,
         ConfigService $config,
+        ServiceInstanceProvider $instances,
         Request $request,
         RouterInterface $router,
     ): ?string {
         return match ($homePage) {
             'dashboard'   => 'app_dashboard',
-            'discovery'   => $config->has('tmdb_api_key')    ? 'tmdb_index'              : null,
-            'films'       => $config->has('radarr_api_key')  ? 'app_media_films'         : null,
-            'series'      => $config->has('sonarr_api_key')  ? 'app_media_series'        : null,
-            'qbittorrent' => $config->has('qbittorrent_url') ? 'app_qbittorrent_index'   : null,
+            'discovery'   => $config->has('tmdb_api_key')                                 ? 'tmdb_index'              : null,
+            'films'       => $instances->hasAnyEnabled(ServiceInstance::TYPE_RADARR)      ? 'app_media_films'         : null,
+            'series'      => $instances->hasAnyEnabled(ServiceInstance::TYPE_SONARR)      ? 'app_media_series'        : null,
+            'qbittorrent' => $config->has('qbittorrent_url')                              ? 'app_qbittorrent_index'   : null,
             'last'        => $this->resolveLastVisitedRoute($request, $router),
             default       => null,
         };

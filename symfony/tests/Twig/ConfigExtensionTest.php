@@ -2,7 +2,9 @@
 
 namespace App\Tests\Twig;
 
+use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
+use App\Service\ServiceInstanceProvider;
 use App\Twig\ConfigExtension;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
@@ -10,13 +12,30 @@ use PHPUnit\Framework\TestCase;
 #[AllowMockObjectsWithoutExpectations]
 class ConfigExtensionTest extends TestCase
 {
+    /**
+     * Build the extension with a fake config + provider. The legacy test API
+     * (a flat list of "configured" keys) is preserved: if radarr_api_key /
+     * sonarr_api_key appears in $configuredKeys, the corresponding instance
+     * provider returns hasAnyEnabled() = true. Everything else keeps using
+     * ConfigService::has() so existing assertions stay readable.
+     *
+     * @param list<string> $configuredKeys
+     */
     private function extension(array $configuredKeys): ConfigExtension
     {
         $config = $this->createMock(ConfigService::class);
         $config->method('has')->willReturnCallback(
             fn(string $key) => in_array($key, $configuredKeys, true)
         );
-        return new ConfigExtension($config);
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('hasAnyEnabled')->willReturnCallback(
+            fn(string $type) => match ($type) {
+                ServiceInstance::TYPE_RADARR => in_array('radarr_api_key', $configuredKeys, true),
+                ServiceInstance::TYPE_SONARR => in_array('sonarr_api_key', $configuredKeys, true),
+                default => false,
+            }
+        );
+        return new ConfigExtension($config, $instances);
     }
 
     public function testRegistersTheServiceConfiguredFunction(): void
@@ -80,6 +99,10 @@ class ConfigExtensionTest extends TestCase
 
     // ── isServiceVisibleInSidebar ────────────────────────────────────────
 
+    /**
+     * @param list<string> $configuredKeys
+     * @param list<string> $hiddenServices
+     */
     private function extensionWithHideFlag(array $configuredKeys, array $hiddenServices): ConfigExtension
     {
         $config = $this->createMock(ConfigService::class);
@@ -94,7 +117,15 @@ class ConfigExtensionTest extends TestCase
             }
             return null;
         });
-        return new ConfigExtension($config);
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('hasAnyEnabled')->willReturnCallback(
+            fn(string $type) => match ($type) {
+                ServiceInstance::TYPE_RADARR => in_array('radarr_api_key', $configuredKeys, true),
+                ServiceInstance::TYPE_SONARR => in_array('sonarr_api_key', $configuredKeys, true),
+                default => false,
+            }
+        );
+        return new ConfigExtension($config, $instances);
     }
 
     public function testVisibleInSidebarWhenConfiguredAndNotHidden(): void

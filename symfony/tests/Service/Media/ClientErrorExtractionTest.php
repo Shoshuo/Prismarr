@@ -2,9 +2,9 @@
 
 namespace App\Tests\Service\Media;
 
-use App\Service\ConfigService;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\ServiceHealthCache;
+use App\Service\ServiceInstanceProvider;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -28,7 +28,7 @@ class ClientErrorExtractionTest extends TestCase
     protected function setUp(): void
     {
         $this->client = new RadarrClient(
-            $this->createMock(ConfigService::class),
+            $this->createMock(ServiceInstanceProvider::class),
             $this->createMock(LoggerInterface::class),
             new ServiceHealthCache(new ArrayAdapter()),
         );

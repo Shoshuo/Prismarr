@@ -2,6 +2,7 @@
 
 namespace App\Tests\Service\Media;
 
+use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
 use App\Service\Media\GluetunClient;
 use App\Service\Media\JellyseerrClient;
@@ -11,6 +12,7 @@ use App\Service\Media\RadarrClient;
 use App\Service\Media\ServiceHealthCache;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TmdbClient;
+use App\Service\ServiceInstanceProvider;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
@@ -89,11 +91,20 @@ class ClientResetTest extends TestCase
 
     public function testRadarrClientResetClearsBothBaseUrlAndApiKey(): void
     {
-        $config = $this->createMock(ConfigService::class);
-        $config->method('require')->willReturn('dummy'); // baseUrl or apiKey
+        // v1.1.0 — clients pull from ServiceInstanceProvider instead of
+        // ConfigService. Stub a default instance so ensureConfig() succeeds.
+        $instance = new ServiceInstance(
+            ServiceInstance::TYPE_RADARR,
+            'radarr-1',
+            'Radarr 1',
+            'http://radarr.test:7878',
+            'dummy-api-key',
+        );
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getDefault')->with(ServiceInstance::TYPE_RADARR)->willReturn($instance);
 
         $client = new RadarrClient(
-            $config,
+            $instances,
             $this->createMock(LoggerInterface::class),
             new ServiceHealthCache(new ArrayAdapter()),
         );

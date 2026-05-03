@@ -2,7 +2,9 @@
 
 namespace App\EventSubscriber;
 
+use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
+use App\Service\ServiceInstanceProvider;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -17,12 +19,15 @@ use Symfony\Component\HttpKernel\KernelEvents;
  *
  * script-src / connect-src / frame-ancestors stay strict — that is
  * where the real XSS/exfiltration protection lives.
+ *
+ * v1.1.0 — radarr/sonarr origins are aggregated across every enabled
+ * instance (a multi-instance install with a 1080p + 4K Radarr needs
+ * both whitelisted), the other services still use their flat setting.
  */
 final class CspHeaderSubscriber implements EventSubscriberInterface
 {
+    /** Services still on flat settings (radarr/sonarr migrated to service_instance). */
     private const SERVICE_URL_KEYS = [
-        'radarr_url',
-        'sonarr_url',
         'prowlarr_url',
         'jellyseerr_url',
         'qbittorrent_url',
@@ -35,7 +40,10 @@ final class CspHeaderSubscriber implements EventSubscriberInterface
         'https://artworks.thetvdb.com',
     ];
 
-    public function __construct(private readonly ConfigService $config) {}
+    public function __construct(
+        private readonly ConfigService $config,
+        private readonly ServiceInstanceProvider $instances,
+    ) {}
 
     public static function getSubscribedEvents(): array
     {
@@ -62,6 +70,14 @@ final class CspHeaderSubscriber implements EventSubscriberInterface
             $origin = $this->extractOrigin($url);
             if ($origin !== null) {
                 $imgHosts[] = $origin;
+            }
+        }
+        foreach ([ServiceInstance::TYPE_RADARR, ServiceInstance::TYPE_SONARR] as $type) {
+            foreach ($this->instances->getEnabled($type) as $instance) {
+                $origin = $this->extractOrigin($instance->getUrl());
+                if ($origin !== null) {
+                    $imgHosts[] = $origin;
+                }
             }
         }
         $imgHosts = array_unique($imgHosts);
