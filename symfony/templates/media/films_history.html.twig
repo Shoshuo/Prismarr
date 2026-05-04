@@ -33,7 +33,7 @@
         {value: '8', label: 'media.films_history.event_renamed'|trans},
       ] %}
       {% for et in eventTypes %}
-        <a href="{{ path('app_media_films_history', {eventType: et.value, page: 1}) }}"
+        <a href="{{ instance_path('app_media_films_history', {eventType: et.value, page: 1}) }}"
            class="btn btn-sm {{ eventType == et.value ? 'btn-primary' : 'btn-ghost-secondary' }}">
           {{ et.label }}
         </a>
@@ -129,10 +129,10 @@
     <p class="m-0 text-muted small">{{ 'media.films_history.pagination_summary'|trans({page: page, count: records|length, total: total}) }}</p>
     <div class="d-flex gap-2">
       {% if page > 1 %}
-        <a href="{{ path('app_media_films_history', {page: page - 1, eventType: eventType}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_history.prev'|trans }}</a>
+        <a href="{{ instance_path('app_media_films_history', {page: page - 1, eventType: eventType}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_history.prev'|trans }}</a>
       {% endif %}
       {% if records|length == 50 %}
-        <a href="{{ path('app_media_films_history', {page: page + 1, eventType: eventType}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_history.next'|trans }}</a>
+        <a href="{{ instance_path('app_media_films_history', {page: page + 1, eventType: eventType}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_history.next'|trans }}</a>
       {% endif %}
     </div>
   </div>

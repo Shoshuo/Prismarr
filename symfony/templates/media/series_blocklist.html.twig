@@ -116,7 +116,7 @@
     document.querySelectorAll('.blocklist-cb:checked').forEach(function(cb) { ids.push(parseInt(cb.dataset.id)); });
     if (!ids.length || !confirm(tpl(SB_I18N.confirm_bulk_delete_tpl, { COUNT: ids.length }))) return;
     bulkBtn.disabled = true;
-    fetch('/medias/series/blocklist/bulk-delete', {
+    fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/blocklist/bulk-delete', {
       method: 'POST',
       headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
       body: JSON.stringify({ids: ids})
@@ -133,7 +133,7 @@
     btn.addEventListener('click', function() {
       if (!confirm(SB_I18N.confirm_delete)) return;
       btn.disabled = true;
-      fetch('/medias/series/blocklist/' + btn.dataset.id + '/delete', {
+      fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/blocklist/' + btn.dataset.id + '/delete', {
         method: 'POST',
         headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
         body: '{}'

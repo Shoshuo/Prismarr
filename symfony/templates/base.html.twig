@@ -709,7 +709,12 @@
               {% set _radarr_instances = service_instances('radarr') %}
               {% set _radarr_count = _radarr_instances|length %}
               {% set _radarr_route = app.request.attributes.get('_route') %}
-              {% set _radarr_active = _radarr_route starts with 'app_media_films' or _radarr_route starts with 'radarr_' %}
+              {# Any route exposed by RadarrController, MediaController films/* or
+                 the legacy radarr_* prefix counts as "we're inside Radarr". Used
+                 to highlight the right per-instance entry on every sub-page. #}
+              {% set _radarr_active = _radarr_route starts with 'app_media_films'
+                                    or _radarr_route starts with 'app_media_radarr'
+                                    or _radarr_route starts with 'radarr_' %}
               {% set _radarr_slug = app.request.attributes.get('slug') %}
               {% set _radarr_icon %}
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
@@ -720,7 +725,7 @@
               {% if _radarr_count <= 1 %}
                 {# Single instance — keep the legacy URL so existing bookmarks survive. #}
                 <li class="nav-item">
-                  <a class="nav-link {{ _radarr_active ? 'active' }}" href="{{ path('app_media_films') }}">
+                  <a class="nav-link {{ _radarr_active ? 'active' }}" href="{{ instance_path('app_media_films') }}">
                     {{ _radarr_icon|raw }}
                     <span class="nav-link-title">Radarr</span>
                   </a>
@@ -728,8 +733,8 @@
               {% elseif _radarr_count <= 3 %}
                 {% for _inst in _radarr_instances %}
                   <li class="nav-item">
-                    <a class="nav-link {{ _radarr_route == 'app_media_films_for_instance' and _radarr_slug == _inst.slug ? 'active' }}"
-                       href="{{ path('app_media_films_for_instance', { slug: _inst.slug }) }}">
+                    <a class="nav-link {{ _radarr_active and _radarr_slug == _inst.slug ? 'active' }}"
+                       href="{{ instance_path('app_media_films', { slug: _inst.slug }) }}">
                       {{ _radarr_icon|raw }}
                       <span class="nav-link-title">{{ _inst.name }}</span>
                     </a>
@@ -744,8 +749,8 @@
                   </a>
                   <div class="dropdown-menu">
                     {% for _inst in _radarr_instances %}
-                      <a class="dropdown-item {{ _radarr_route == 'app_media_films_for_instance' and _radarr_slug == _inst.slug ? 'active' }}"
-                         href="{{ path('app_media_films_for_instance', { slug: _inst.slug }) }}">
+                      <a class="dropdown-item {{ _radarr_active and _radarr_slug == _inst.slug ? 'active' }}"
+                         href="{{ instance_path('app_media_films', { slug: _inst.slug }) }}">
                         {{ _inst.name }}
                       </a>
                     {% endfor %}
@@ -759,7 +764,9 @@
               {% set _sonarr_instances = service_instances('sonarr') %}
               {% set _sonarr_count = _sonarr_instances|length %}
               {% set _sonarr_route = app.request.attributes.get('_route') %}
-              {% set _sonarr_active = _sonarr_route starts with 'app_media_series' or _sonarr_route starts with 'sonarr_' %}
+              {% set _sonarr_active = _sonarr_route starts with 'app_media_series'
+                                    or _sonarr_route starts with 'app_media_sonarr'
+                                    or _sonarr_route starts with 'sonarr_' %}
               {% set _sonarr_slug = app.request.attributes.get('slug') %}
               {% set _sonarr_icon %}
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
@@ -769,7 +776,7 @@
 
               {% if _sonarr_count <= 1 %}
                 <li class="nav-item">
-                  <a class="nav-link {{ _sonarr_active ? 'active' }}" href="{{ path('app_media_series') }}">
+                  <a class="nav-link {{ _sonarr_active ? 'active' }}" href="{{ instance_path('app_media_series') }}">
                     {{ _sonarr_icon|raw }}
                     <span class="nav-link-title">Sonarr</span>
                   </a>
@@ -777,8 +784,8 @@
               {% elseif _sonarr_count <= 3 %}
                 {% for _inst in _sonarr_instances %}
                   <li class="nav-item">
-                    <a class="nav-link {{ _sonarr_route == 'app_media_series_for_instance' and _sonarr_slug == _inst.slug ? 'active' }}"
-                       href="{{ path('app_media_series_for_instance', { slug: _inst.slug }) }}">
+                    <a class="nav-link {{ _sonarr_active and _sonarr_slug == _inst.slug ? 'active' }}"
+                       href="{{ instance_path('app_media_series', { slug: _inst.slug }) }}">
                       {{ _sonarr_icon|raw }}
                       <span class="nav-link-title">{{ _inst.name }}</span>
                     </a>
@@ -793,8 +800,8 @@
                   </a>
                   <div class="dropdown-menu">
                     {% for _inst in _sonarr_instances %}
-                      <a class="dropdown-item {{ _sonarr_route == 'app_media_series_for_instance' and _sonarr_slug == _inst.slug ? 'active' }}"
-                         href="{{ path('app_media_series_for_instance', { slug: _inst.slug }) }}">
+                      <a class="dropdown-item {{ _sonarr_active and _sonarr_slug == _inst.slug ? 'active' }}"
+                         href="{{ instance_path('app_media_series', { slug: _inst.slug }) }}">
                         {{ _inst.name }}
                       </a>
                     {% endfor %}
@@ -1190,6 +1197,24 @@
      small — only the strings JS actually renders dynamically (the rest lives
      in the Twig markup directly). #}
   <script>
+    {# v1.1.0 — instance slugs exposed to inline JS so hardcoded URLs
+       (mostly fetch() calls in Radarr/Sonarr admin pages) can prefix
+       /medias/{slug}/ without a Twig round-trip. INSTANCE_SLUG is the
+       slug of the current request when the route is instance-aware,
+       otherwise the default-instance slug (films/series shortcuts from
+       Discover, sidebar, etc.). #}
+    {% set _radarr_default = service_instances('radarr')|first %}
+    {% set _sonarr_default = service_instances('sonarr')|first %}
+    {# Both `var` (lexical global, what scripts reference unprefixed) AND
+       window.* (cross-script lookup safety net). Setting only window.X
+       leaves bare `X` references undeclared in strict-mode scripts. #}
+    var INSTANCE_SLUG = {{ (app.request.attributes.get('slug') ?: '')|json_encode|raw }};
+    var DEFAULT_RADARR_SLUG = {{ (_radarr_default ? _radarr_default.slug : 'radarr-1')|json_encode|raw }};
+    var DEFAULT_SONARR_SLUG = {{ (_sonarr_default ? _sonarr_default.slug : 'sonarr-1')|json_encode|raw }};
+    window.INSTANCE_SLUG = INSTANCE_SLUG;
+    window.DEFAULT_RADARR_SLUG = DEFAULT_RADARR_SLUG;
+    window.DEFAULT_SONARR_SLUG = DEFAULT_SONARR_SLUG;
+
     window._i18n = {{ {
       'search.recent':         'topbar.search.recent'|trans,
       'search.empty':          'topbar.search.empty_short'|trans,
@@ -1423,7 +1448,7 @@
         showSpinner();
         var ctrl = new AbortController();
         currentReq = ctrl;
-        fetch('/medias/search?q=' + encodeURIComponent(q), { signal: ctrl.signal })
+        fetch('/medias/' + DEFAULT_RADARR_SLUG + '/search?q=' + encodeURIComponent(q), { signal: ctrl.signal })
           .then(function (r) { return r.json(); })
           .then(function (localItems) {
             hideSpinner();
@@ -1433,7 +1458,7 @@
 
             var ctrl2 = new AbortController();
             onlineReq = ctrl2;
-            fetch('/medias/search/online?q=' + encodeURIComponent(q), { signal: ctrl2.signal })
+            fetch('/medias/' + DEFAULT_RADARR_SLUG + '/search/online?q=' + encodeURIComponent(q), { signal: ctrl2.signal })
               .then(function (r) { return r.json(); })
               .then(function (onlineItems) {
                 onlineReq = null;
@@ -1623,8 +1648,8 @@
         if (qaCache[cacheKey]) {
           fillSelects(isFilm, qaCache[cacheKey]);
         } else {
-          var profileUrl = isFilm ? '/medias/films/quality-profiles' : '/medias/sonarr/quality-profiles';
-          var folderUrl = isFilm ? '/medias/films/root-folders' : '/medias/sonarr/root-folders';
+          var profileUrl = isFilm ? '/medias/' + DEFAULT_RADARR_SLUG + '/films/quality-profiles' : '/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/quality-profiles';
+          var folderUrl = isFilm ? '/medias/' + DEFAULT_RADARR_SLUG + '/films/root-folders' : '/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/root-folders';
           Promise.all([
             fetch(profileUrl).then(function (r) { return r.json(); }),
             fetch(folderUrl).then(function (r) { return r.json(); })
@@ -1719,7 +1744,7 @@
 
         var url, payload;
         if (isFilm) {
-          url = '/medias/films/add';
+          url = '/medias/' + DEFAULT_RADARR_SLUG + '/films/add';
           payload = {
             tmdbId: qaItem.id, title: qaItem.title, year: qaItem.year || 0,
             qualityProfileId: parseInt(qualVal), rootFolderPath: folderVal,
@@ -1728,7 +1753,7 @@
             searchForMovie: document.getElementById('qa-film-search').checked
           };
         } else {
-          url = '/medias/series/add';
+          url = '/medias/' + DEFAULT_SONARR_SLUG + '/series/add';
           payload = {
             tvdbId: qaItem.id, title: qaItem.title,
             qualityProfileId: parseInt(qualVal), rootFolderPath: folderVal,
@@ -2102,6 +2127,10 @@
         radarr: 'Radarr', sonarr: 'Sonarr', prowlarr: 'Prowlarr',
         jellyseerr: 'Seerr', qbittorrent: 'qBittorrent', tmdb: 'TMDb',
       };
+      // v1.1.0 — radarr/sonarr can have multiple instances; we render
+      // each instance on its own row instead of a single aggregate row.
+      var INSTANCE_TYPES = ['radarr', 'sonarr'];
+      var FLAT_SERVICES = ['tmdb', 'prowlarr', 'jellyseerr', 'qbittorrent'];
       var dot   = document.getElementById('topbar-health-dot');
       var summ  = document.getElementById('topbar-health-summary');
       var list  = document.getElementById('topbar-health-list');
@@ -2126,20 +2155,38 @@
           : (i18n['health.summary_tpl'] || '__OK__ / __TOTAL__ services up')
               .replace('__OK__', ok).replace('__TOTAL__', total);
 
-        var html = '';
-        Object.keys(SERVICE_LABELS).forEach(function (id) {
-          var state = services[id];
-          var cls   = state === null || state === undefined ? 'is-unk' : (state ? 'is-ok' : 'is-ko');
+        function rowFor(name, state) {
+          var cls = state === null || state === undefined ? 'is-unk' : (state ? 'is-ok' : 'is-ko');
           var label = state === null || state === undefined
             ? (i18n['health.status_unk']  || 'Not configured')
             : (state
                 ? (i18n['health.status_ok']   || 'Up')
                 : (i18n['health.status_down'] || 'Unreachable'));
-          html += '<div class="prismarr-health-row">'
+          return '<div class="prismarr-health-row">'
                +  '<span class="prismarr-health-row-dot ' + cls + '"></span>'
-               +  '<span class="prismarr-health-row-name">' + SERVICE_LABELS[id] + '</span>'
+               +  '<span class="prismarr-health-row-name">' + name + '</span>'
                +  '<span class="prismarr-health-row-state">' + label + '</span>'
                +  '</div>';
+        }
+
+        var html = '';
+        // TMDb first (cosmetic — matches the wizard order).
+        html += rowFor(SERVICE_LABELS.tmdb, services.tmdb);
+        // Multi-instance services — one row per configured instance, falls
+        // back to a single "Not configured" row when none enabled.
+        INSTANCE_TYPES.forEach(function (type) {
+          var insts = (data.instances || {})[type] || [];
+          if (insts.length === 0) {
+            html += rowFor(SERVICE_LABELS[type], services[type]);
+            return;
+          }
+          insts.forEach(function (inst) {
+            html += rowFor(inst.name, inst.state);
+          });
+        });
+        // Remaining flat services.
+        ['prowlarr', 'jellyseerr', 'qbittorrent'].forEach(function (id) {
+          html += rowFor(SERVICE_LABELS[id], services[id]);
         });
         list.innerHTML = html;
       }

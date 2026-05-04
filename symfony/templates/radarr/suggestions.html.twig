@@ -181,7 +181,7 @@ var allMovies = {{ movies|json_encode|raw }};
 var currentMovie = null;
 var modalEl = document.getElementById('modal-add');
 var feedback = document.getElementById('suggest-feedback');
-var addUrl = {{ path('app_media_films_add')|json_encode|raw }};
+var addUrl = {{ instance_path('app_media_films_add')|json_encode|raw }};
 
 function showFeedback(msg, type) {
   feedback.className = 'alert alert-' + (type || 'success') + ' mb-3';

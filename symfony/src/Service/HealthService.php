@@ -48,22 +48,58 @@ class HealthService
      * seconds without hammering upstreams. Unconfigured services are NOT
      * pinged at all — that avoids 4 s timeouts and warning-log spam every
      * poll for users who only enabled a subset of the stack.
+     *
+     * v1.1.0 — $instanceSlug scopes the cache + ping to a specific
+     * Radarr/Sonarr instance. Without it we ping the autowired client's
+     * current binding (= the default instance, or whatever the request
+     * subscriber bound). With it, we briefly bind the named instance for
+     * the ping so two instances of the same type cache independently
+     * (otherwise a broken Radarr 4K would mark Radarr 1 down too).
      */
-    public function isHealthy(string $service): ?bool
+    public function isHealthy(string $service, ?string $instanceSlug = null): ?bool
     {
+        $key = $instanceSlug !== null ? $service . ':' . $instanceSlug : $service;
         $now = time();
-        if (isset($this->cache[$service]) && ($now - $this->cache[$service]['at']) < self::CACHE_TTL) {
-            return $this->cache[$service]['ok'];
+        if (isset($this->cache[$key]) && ($now - $this->cache[$key]['at']) < self::CACHE_TTL) {
+            return $this->cache[$key]['ok'];
         }
 
         // Short-circuit on unconfigured services: don't ping, don't log.
         // Skipped when no ConfigService is wired (legacy test paths).
         if ($this->config !== null && !$this->isConfigured($service)) {
-            $this->cache[$service] = ['ok' => null, 'at' => $now];
+            $this->cache[$key] = ['ok' => null, 'at' => $now];
             return null;
         }
 
-        $ok = match ($service) {
+        // For radarr/sonarr with an explicit slug, bind the instance for
+        // this single ping. The client mutates back automatically on the
+        // next reset() (worker mode) or after this call when slug is null.
+        $ok = $this->pingFor($service, $instanceSlug);
+
+        $this->cache[$key] = ['ok' => $ok, 'at' => $now];
+        return $ok;
+    }
+
+    private function pingFor(string $service, ?string $instanceSlug): ?bool
+    {
+        if ($instanceSlug !== null && $this->instances !== null) {
+            $type = match ($service) {
+                'radarr' => ServiceInstance::TYPE_RADARR,
+                'sonarr' => ServiceInstance::TYPE_SONARR,
+                default  => null,
+            };
+            if ($type !== null) {
+                $instance = $this->instances->getBySlug($type, $instanceSlug);
+                if ($instance === null) {
+                    return null; // unknown slug → not_configured-ish
+                }
+                $client = $service === 'radarr'
+                    ? $this->radarr->withInstance($instance)
+                    : $this->sonarr->withInstance($instance);
+                return $client->ping();
+            }
+        }
+        return match ($service) {
             'radarr'      => $this->radarr->ping(),
             'sonarr'      => $this->sonarr->ping(),
             'prowlarr'    => $this->prowlarr->ping(),
@@ -72,9 +108,6 @@ class HealthService
             'tmdb'        => $this->tmdb->ping(),
             default       => true,
         };
-
-        $this->cache[$service] = ['ok' => $ok, 'at' => $now];
-        return $ok;
     }
 
     /**

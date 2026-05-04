@@ -1477,7 +1477,7 @@
     var id = btn.dataset.id;
     var mon = btn.dataset.monitored === '1';
     var newMon = !mon;
-    ajaxPost('/medias/series/' + id + '/monitor', { monitored: newMon }).then(function(data) {
+    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + id + '/monitor', { monitored: newMon }).then(function(data) {
       if (data.ok) {
         btn.dataset.monitored = newMon ? '1' : '0';
         var svg = btn.querySelector('svg');
@@ -1524,7 +1524,7 @@
     showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_refreshing_tpl, { COUNT: ids.length }), 'info');
     var done = 0;
     ids.forEach(function(sid) {
-      ajaxPost('/medias/series/' + sid + '/refresh', {}).then(function() {
+      ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + sid + '/refresh', {}).then(function() {
         done++;
         if (done >= ids.length) { btn.disabled = false; showPageBanner(tpl(SERIES_I18N.w_refresh_tpl, { COUNT: ids.length }), 'success'); }
       }).catch(function() { done++; });
@@ -1540,7 +1540,7 @@
     showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_searching_tpl, { COUNT: ids.length }), 'info');
     var done = 0;
     ids.forEach(function(sid) {
-      ajaxPost('/medias/series/' + sid + '/search', {}).then(function(d) {
+      ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + sid + '/search', {}).then(function(d) {
         done++;
         if (done >= ids.length) { btn.disabled = false; showPageBanner(tpl(SERIES_I18N.w_search_launched_tpl, { COUNT: ids.length }), 'success'); }
       }).catch(function() { done++; });
@@ -1645,7 +1645,7 @@
   });
   function ensureBulkConfig(cb) {
     if (bulkConfigLoaded) { cb(); return; }
-    Promise.all([ajaxGet('/medias/sonarr/quality-profiles'), ajaxGet('/medias/sonarr/root-folders'), ajaxGet('/medias/sonarr/tags')]).then(function(r) {
+    Promise.all([ajaxGet('/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/quality-profiles'), ajaxGet('/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/root-folders'), ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/tags-json')]).then(function(r) {
       bulkConfigLoaded = true;
       var qSel = document.getElementById('bulk-s-quality');
       if (qSel.options.length <= 1) (r[0]||[]).forEach(function(p) { var o = document.createElement('option'); o.value = p.id; o.textContent = p.name; qSel.appendChild(o); });
@@ -1689,7 +1689,7 @@
     v = document.getElementById('bulk-s-root').value; if (v) payload.rootFolderPath = v;
     v = document.getElementById('bulk-s-season-folder').value; if (v) payload.seasonFolder = v === 'true';
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-    ajaxPost('/medias/series/bulk/edit', payload).then(function(d) {
+    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/bulk/edit', payload).then(function(d) {
       btn.disabled = false; btn.innerHTML = SERIES_I18N.bulk_save;
       closeBulkModal('modal-bulk-edit-series');
       if (d.ok) { showPageBanner(tpl(SERIES_I18N.w_modified_ok_tpl, { COUNT: ids.length }), 'success'); setTimeout(function() { location.reload(); }, 1500); }
@@ -1712,7 +1712,7 @@
     var tagIds = []; document.querySelectorAll('.bulk-s-tag-cb:checked').forEach(function(cb) { tagIds.push(parseInt(cb.value)); });
     if (!tagIds.length) return;
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-    ajaxPost('/medias/series/bulk/edit', { seriesIds: ids, tags: tagIds, applyTags: document.getElementById('bulk-s-tags-action').value }).then(function(d) {
+    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/bulk/edit', { seriesIds: ids, tags: tagIds, applyTags: document.getElementById('bulk-s-tags-action').value }).then(function(d) {
       btn.disabled = false; btn.innerHTML = SERIES_I18N.bulk_apply;
       closeBulkModal('modal-bulk-tags-series');
       if (d.ok) showPageBanner(tpl(SERIES_I18N.w_tags_ok_tpl, { COUNT: ids.length }), 'success');
@@ -1734,7 +1734,7 @@
     var deleteFiles = document.getElementById('bulk-s-delete-files').checked;
     var addExclusion = document.getElementById('bulk-s-delete-exclude').checked;
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-    ajaxPost('/medias/series/bulk/delete', { seriesIds: ids, deleteFiles: deleteFiles, addImportExclusion: addExclusion }).then(function(d) {
+    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/bulk/delete', { seriesIds: ids, deleteFiles: deleteFiles, addImportExclusion: addExclusion }).then(function(d) {
       btn.disabled = false; btn.innerHTML = SERIES_I18N.bulk_delete_confirm;
       closeBulkModal('modal-bulk-delete-series');
       if (d.ok) {
@@ -1773,7 +1773,7 @@
     ids.forEach(function(sid) {
       var card = grid.querySelector('[data-id="' + sid + '"]');
       var title = card ? (card.getAttribute('title') || '?') : '?';
-      ajaxGet('/medias/series/' + sid + '/rename').then(function(proposals) {
+      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + sid + '/rename').then(function(proposals) {
         loaded++;
         if (proposals && proposals.length) {
           renameSeriesIds.push(sid);
@@ -1812,7 +1812,7 @@
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     var done = 0;
     renameSeriesIds.forEach(function(sid) {
-      ajaxPost('/medias/series/' + sid + '/rename', { fileIds: [] }).then(function() {
+      ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + sid + '/rename', { fileIds: [] }).then(function() {
         done++;
         if (done >= renameSeriesIds.length) {
           btn.innerHTML = SERIES_I18N.bulk_rename_go;
@@ -1914,7 +1914,7 @@
       btn.addEventListener('click', function() {
         if (!confirm(SERIES_I18N.queue_confirm_delete)) return;
         btn.disabled = true;
-        fetch('/medias/series/queue/' + btn.dataset.id + '/delete', {
+        fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/queue/' + btn.dataset.id + '/delete', {
           method: 'POST',
           headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
           body: JSON.stringify({ removeFromClient: true, blocklist: false }),
@@ -1929,7 +1929,7 @@
     queueTbody.querySelectorAll('.btn-queue-grab').forEach(function(btn) {
       btn.addEventListener('click', function() {
         btn.disabled = true;
-        fetch('/medias/series/queue/' + btn.dataset.id + '/grab', {
+        fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/queue/' + btn.dataset.id + '/grab', {
           method: 'POST',
           headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
           body: '{}'
@@ -1996,7 +1996,7 @@
           cleanBtn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:12px;height:12px;"></span> ' + SERIES_I18N.queue_cleaning;
           var done = 0;
           staleItems.forEach(function(w) {
-            fetch('/medias/series/queue/' + w.id + '/delete', {
+            fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/queue/' + w.id + '/delete', {
               method: 'POST',
               headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
               body: JSON.stringify({ removeFromClient: true, blocklist: false }),
@@ -2022,7 +2022,7 @@
               languages: [{ id: 1, name: 'English' }],
             };
           });
-          fetch('/medias/series/queue/import', {
+          fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/queue/import', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify({ files: files }),
@@ -2038,7 +2038,7 @@
   }
 
   function refreshQueue() {
-    fetch('/medias/series/queue', { headers: {'X-Requested-With': 'XMLHttpRequest'} })
+    fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/queue', { headers: {'X-Requested-With': 'XMLHttpRequest'} })
     .then(function(r) { return r.json(); })
     .then(function(items) { renderQueue(items); });
   }
@@ -2049,7 +2049,7 @@
   setInterval(refreshQueue, 2000);
   // RefreshMonitoredDownloads every 8s (tells Sonarr to check qBittorrent)
   setInterval(function() {
-    fetch('/medias/series/queue/refresh', {
+    fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/queue/refresh', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}',
@@ -2146,8 +2146,8 @@
     epContainer.innerHTML = '<div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-1"></span> ' + esc(SERIES_I18N.d_loading_episodes) + '</div>';
 
     Promise.all([
-      ajaxGet('/medias/series/' + currentId + '/episodes'),
-      ajaxGet('/medias/series/' + currentId + '/files')
+      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/episodes'),
+      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/files')
     ]).then(function(results) {
       var episodes = results[0] || [];
       var allFiles = results[1] || [];
@@ -2276,7 +2276,7 @@
           var epId = parseInt(btn.dataset.epId);
           btn.disabled = true;
           btn.innerHTML = SVG_SPIN_SM;
-          postAction('/medias/series/episode/search', { episodeIds: [epId] }, function(data) {
+          postAction('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/episode/search', { episodeIds: [epId] }, function(data) {
             if (data.cmdId) {
               pollCmd(data.cmdId, SERIES_I18N.d_search_cmd_episode, function(success) {
                 btn.innerHTML = success ? SVG_OK_SM : SVG_SEARCH_SM;
@@ -2296,7 +2296,7 @@
           e.stopPropagation();
           var mon = btn.dataset.monitored !== '1';
           btn.disabled = true;
-          postAction('/medias/series/season/monitor', {
+          postAction('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/season/monitor', {
             seriesId: parseInt(btn.dataset.seriesId),
             seasonNumber: parseInt(btn.dataset.season),
             monitored: mon,
@@ -2345,12 +2345,12 @@
 
             // Send all monitor changes
             epIds.forEach(function(epId) {
-              postAction('/medias/series/episode/' + epId + '/monitor', { monitored: mon }, function() {});
+              postAction('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/episode/' + epId + '/monitor', { monitored: mon }, function() {});
             });
           } else {
             // Single click
             btn.disabled = true;
-            postAction('/medias/series/episode/' + btn.dataset.epId + '/monitor', { monitored: mon }, function() {
+            postAction('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/episode/' + btn.dataset.epId + '/monitor', { monitored: mon }, function() {
               btn.dataset.monitored = mon ? '1' : '0';
               btn.innerHTML = mon ? SVG_MONITOR_ON : SVG_MONITOR_OFF;
               btn.title = mon ? SERIES_I18N.d_unmonitor : SERIES_I18N.d_monitor;
@@ -2395,7 +2395,7 @@
           content.innerHTML     = '';
           document.getElementById('ep-filemanager-feedback').style.display = 'none';
 
-          ajaxGet('/medias/series/' + seriesId + '/history')
+          ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + seriesId + '/history')
           .then(function(allHistory) {
             btn.innerHTML = SVG_HISTORY;
             loading.style.display = 'none';
@@ -2454,7 +2454,7 @@
           e.stopPropagation();
           btn.disabled = true;
           btn.innerHTML = SVG_SPIN_SM;
-          postAction('/medias/series/' + btn.dataset.seriesId + '/season/' + btn.dataset.season + '/search', {}, function(data) {
+          postAction('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + btn.dataset.seriesId + '/season/' + btn.dataset.season + '/search', {}, function(data) {
             if (data.cmdId) {
               pollCmd(data.cmdId, tpl(SERIES_I18N.d_search_season_tpl, { N: btn.dataset.season }), function(success) {
                 btn.innerHTML = success ? SVG_OK_SM : SVG_SEARCH_SM;
@@ -2492,7 +2492,7 @@
           document.getElementById('ep-releases-title').textContent = tpl(SERIES_I18N.d_releases_season_tpl, { N: sn });
 
           searchInProgress = true;
-          ajaxGet('/medias/series/' + seriesId + '/season/' + sn + '/releases')
+          ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + seriesId + '/season/' + sn + '/releases')
           .then(function(releases) {
             searchInProgress = false;
             btn.disabled = false;
@@ -2531,7 +2531,7 @@
           content.innerHTML = '';
           document.getElementById('ep-filemanager-feedback').style.display = 'none';
 
-          ajaxGet('/medias/series/' + seriesId + '/rename').then(function(proposals) {
+          ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + seriesId + '/rename').then(function(proposals) {
             btn.disabled = false;
             btn.innerHTML = RENAME_ICON;
             loading.style.display = 'none';
@@ -2570,10 +2570,10 @@
               var goBtn = this;
               goBtn.disabled = true;
               goBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + SERIES_I18N.d_rename_in_progress;
-              ajaxPost('/medias/series/' + seriesId + '/rename', { fileIds: fileIds }).then(function(data) {
+              ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + seriesId + '/rename', { fileIds: fileIds }).then(function(data) {
                 if (data.ok && data.cmdId) {
                   var pollRename = setInterval(function() {
-                    ajaxGet('/medias/series/command/' + data.cmdId).then(function(cmd) {
+                    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/' + data.cmdId).then(function(cmd) {
                       var st = (cmd.status || '').toLowerCase();
                       if (st === 'completed') {
                         clearInterval(pollRename);
@@ -2608,7 +2608,7 @@
           if (!confirm(SERIES_I18N.d_confirm_delete_file)) return;
           btn.disabled = true;
           btn.innerHTML = SVG_SPIN_SM;
-          postAction('/medias/series/file/' + btn.dataset.fileId + '/delete', {}, function() {
+          postAction('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/file/' + btn.dataset.fileId + '/delete', {}, function() {
             showBanner(SERIES_I18N.d_file_deleted, 'success');
             setTimeout(function() { hideBanner(); loadEpisodes(); }, 1500);
           }, function() {
@@ -2678,7 +2678,7 @@
   // Tout analyser + RSS Sync
   document.getElementById('btn-refresh-all-series').addEventListener('click', function() {
     var btn = this; btn.disabled = true;
-    ajaxPost('/medias/series/command/refresh-all', {}).then(function(d) {
+    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/refresh-all', {}).then(function(d) {
       btn.disabled = false;
       if (d.ok && d.cmdId) {
         pollCmd(d.cmdId, SERIES_I18N.w_refresh_label, function() {});
@@ -2690,7 +2690,7 @@
 
   document.getElementById('btn-rss-sync-series').addEventListener('click', function() {
     var btn = this; btn.disabled = true;
-    ajaxPost('/medias/series/command/rss-sync', {}).then(function(d) {
+    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/rss-sync', {}).then(function(d) {
       btn.disabled = false;
       if (d.ok && d.cmdId) {
         pollCmd(d.cmdId, SERIES_I18N.w_rss_label, function() {});
@@ -2705,7 +2705,7 @@
     if (bannerLocked) return;
     var el = document.getElementById('sonarr-warnings-banner');
     if (!el) return;
-    ajaxGet('/medias/series/warnings').then(function(warnings) {
+    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/warnings').then(function(warnings) {
       if (!warnings || !warnings.length) { el.innerHTML = ''; return; }
       el.innerHTML = '<div class="alert alert-warning mb-3"><div class="d-flex align-items-center"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2 flex-shrink-0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div>' + warnings.map(function(w) { return '<div>' + w + '</div>'; }).join('') + '</div></div></div>';
     }).catch(function(){});
@@ -2715,7 +2715,7 @@
 
   // Check for active commands on page load (only user-initiated ones)
   var POLL_COMMANDS = {'SeriesSearch':1,'SeasonSearch':1,'EpisodeSearch':1,'RenameFiles':1,'MissingEpisodeSearch':1};
-  ajaxGet('/medias/series/commands/active').then(function(cmds) {
+  ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/commands/active').then(function(cmds) {
     if (!cmds || !cmds.length) return;
     cmds.forEach(function(cmd) {
       var name = cmd.name || '';
@@ -2743,7 +2743,7 @@
     var timer = setInterval(function() {
       pollCount++;
       var elapsed = pollCount * 2;
-      fetch('/medias/series/command/' + cmdId, { headers: {'X-Requested-With':'XMLHttpRequest'} })
+      fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/' + cmdId, { headers: {'X-Requested-With':'XMLHttpRequest'} })
       .then(function(r) { return r.json(); })
       .then(function(cmd) {
         var st = (cmd.status || '').toLowerCase();
@@ -2795,7 +2795,7 @@
     var btn = this;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + SERIES_I18N.d_refresh_in_progress;
-    postAction('/medias/series/' + currentId + '/refresh', {}, function(data) {
+    postAction('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/refresh', {}, function(data) {
       if (data.cmdId) {
         pollCmd(data.cmdId, SERIES_I18N.w_refresh_label, function(success) {
           btn.disabled = false;
@@ -2817,7 +2817,7 @@
     var btn = this;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + SERIES_I18N.d_search_in_progress;
-    postAction('/medias/series/' + currentId + '/search', {}, function (data) {
+    postAction('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/search', {}, function (data) {
       if (data.cmdId) {
         var label = SERIES_I18N.d_search_series;
         pollCmd(data.cmdId, label, function() {
@@ -2853,7 +2853,7 @@
     content.innerHTML     = '';
     document.getElementById('ep-filemanager-feedback').style.display = 'none';
 
-    ajaxGet('/medias/series/' + currentId + '/history')
+    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/history')
     .then(function(history) {
       btn.disabled = false;
       btn.innerHTML = HISTORY_ICON + ' ' + SERIES_I18N.d_history;
@@ -2908,9 +2908,9 @@
     content.innerHTML     = '';
     document.getElementById('ep-filemanager-feedback').style.display = 'none';
 
-    var pFiles = ajaxGet('/medias/series/' + currentId + '/files');
-    var pQuals = qualityDefsCache ? Promise.resolve(qualityDefsCache) : ajaxGet('/medias/series/quality-definitions');
-    var pEpisodes = ajaxGet('/medias/series/' + currentId + '/episodes');
+    var pFiles = ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/files');
+    var pQuals = qualityDefsCache ? Promise.resolve(qualityDefsCache) : ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/quality-definitions');
+    var pEpisodes = ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/episodes');
 
     Promise.all([pFiles, pQuals, pEpisodes]).then(function(results) {
       btn.disabled = false;
@@ -2971,10 +2971,10 @@
     document.getElementById('ep-filemanager-feedback').style.display = 'none';
 
     Promise.all([
-      ajaxGet('/medias/series/' + currentId + '/info'),
-      ajaxGet('/medias/sonarr/quality-profiles'),
-      ajaxGet('/medias/sonarr/root-folders'),
-      ajaxGet('/medias/sonarr/tags')
+      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/info'),
+      ajaxGet('/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/quality-profiles'),
+      ajaxGet('/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/root-folders'),
+      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/tags-json')
     ]).then(function(results) {
       btn.disabled = false;
       btn.innerHTML = EDIT_ICON + ' ' + SERIES_I18N.d_modify;
@@ -3082,7 +3082,7 @@
         var val = input.value.trim();
         if (!val) return;
         input.value = '';
-        ajaxPost('/medias/sonarr/tags', { label: val }).then(function(data) {
+        ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/tags-json', { label: val }).then(function(data) {
           if (data.ok && data.tag) {
             var container = document.getElementById('edit-tags-container');
             var lbl = document.createElement('label');
@@ -3107,7 +3107,7 @@
       function browsePath(path) {
         browser.style.display = '';
         browser.innerHTML = '<div class="p-2 text-muted small"><span class="spinner-border spinner-border-sm me-1"></span> ' + esc(SERIES_I18N.d_edit_browse_loading) + '</div>';
-        ajaxGet('/medias/sonarr/filesystem?path=' + encodeURIComponent(path))
+        ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/filesystem?path=' + encodeURIComponent(path))
         .then(function(data) {
           var dirs = data.directories || [];
           var parentPath = data.parent || '/';
@@ -3152,7 +3152,7 @@
         if (!confirm(tpl(SERIES_I18N.d_confirm_move_tpl, { PATH: newPath }))) return;
         var updateBtn = this;
         updateBtn.disabled = true;
-        ajaxPost('/medias/series/' + currentId + '/edit', { path: newPath })
+        ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/edit', { path: newPath })
         .then(function(data) {
           updateBtn.disabled = false;
           if (data.ok) {
@@ -3176,7 +3176,7 @@
         var title = s.title || SERIES_I18N.d_confirm_delete_series_default;
         if (!confirm(tpl(SERIES_I18N.d_confirm_delete_series_tpl, { TITLE: title }))) return;
         var deleteFiles = confirm(SERIES_I18N.d_confirm_delete_files);
-        postAction('/medias/series/' + currentId + '/delete', { deleteFiles: deleteFiles }, function() {
+        postAction('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/delete', { deleteFiles: deleteFiles }, function() {
           closeFileOverlay();
           var card = grid.querySelector('[data-id="' + currentId + '"]');
           if (card) card.remove();
@@ -3202,7 +3202,7 @@
           path: document.getElementById('edit-path').value,
           tags: selectedTags
         };
-        ajaxPost('/medias/series/' + currentId + '/edit', payload)
+        ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/edit', payload)
         .then(function(data) {
           saveBtn.disabled = false;
           saveBtn.innerHTML = SERIES_I18N.d_edit_save;
@@ -3262,7 +3262,7 @@
     var newMonitored = !currentMonitored;
     this.disabled    = true;
     var btn          = this;
-    postAction('/medias/series/' + currentId + '/monitor', { monitored: newMonitored }, function (data) {
+    postAction('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/monitor', { monitored: newMonitored }, function (data) {
       currentMonitored = data.monitored;
       btn.disabled     = false;
       refreshSerieMonitorBtn();
@@ -3288,7 +3288,7 @@
     document.getElementById('ep-filemanager-feedback').style.display = 'none';
     document.getElementById('ep-filemanager-title').textContent = SERIES_I18N.d_rename_files;
 
-    ajaxGet('/medias/series/' + currentId + '/rename')
+    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/rename')
     .then(function(proposals) {
       loading.style.display = 'none';
 
@@ -3353,7 +3353,7 @@
         execBtn.disabled = true;
         execBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:12px;height:12px;"></span> ' + SERIES_I18N.d_rename_in_progress;
 
-        ajaxPost('/medias/series/' + currentId + '/rename', { fileIds: fileIds })
+        ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/rename', { fileIds: fileIds })
         .then(function(data) {
           if (!data.ok || !data.cmdId) {
             execBtn.disabled = false;
@@ -3364,7 +3364,7 @@
 
           // Poll
           var timer = setInterval(function() {
-            ajaxGet('/medias/series/command/' + data.cmdId)
+            ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/' + data.cmdId)
             .then(function(cmd) {
               var st = (cmd.status || '').toLowerCase();
               if (st === 'completed') {
@@ -3404,7 +3404,7 @@
     var deleteFiles = confirm(SERIES_I18N.d_confirm_delete_files);
     var btn = this;
     btn.disabled = true;
-    postAction('/medias/series/' + currentId + '/delete', { deleteFiles: deleteFiles }, function () {
+    postAction('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/delete', { deleteFiles: deleteFiles }, function () {
       // Supprimer la card de la grille
       var card = grid.querySelector('[data-id="' + currentId + '"]');
       if (card) card.remove();
@@ -3467,7 +3467,7 @@
     document.getElementById('ep-releases-title').textContent = tpl(SERIES_I18N.d_releases_episode_tpl, { LBL: (epLabel || SERIES_I18N.d_col_episode) });
 
     searchInProgress = true;
-    ajaxGet('/medias/series/episode/' + epId + '/releases')
+    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/episode/' + epId + '/releases')
     .then(function(releases) {
       searchInProgress = false;
       loading.style.display = 'none';
@@ -3576,7 +3576,7 @@
     if (!btn) return;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.7rem;height:.7rem"></span>';
-    ajaxPost('/medias/series/release/grab', { guid: btn.dataset.guid, indexerId: parseInt(btn.dataset.indexer) })
+    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/release/grab', { guid: btn.dataset.guid, indexerId: parseInt(btn.dataset.indexer) })
     .then(function(data) {
       if (data.ok) {
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -3646,7 +3646,7 @@
   });
 
   function refreshSeriesCard(seriesId) {
-    ajaxGet('/medias/series/' + seriesId + '/info').then(function(s) {
+    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + seriesId + '/info').then(function(s) {
       if (!s || !s.id) return;
       var card = grid.querySelector('[data-id="' + seriesId + '"]');
       if (!card) return;
@@ -3783,11 +3783,11 @@
     document.getElementById('ep-filemanager-feedback').style.display = 'none';
     document.getElementById('ep-filemanager-title').textContent = tpl(SERIES_I18N.d_filemanager_season_title_tpl, { N: seasonNumber });
 
-    var pFiles = ajaxGet('/medias/series/' + seriesId + '/files');
+    var pFiles = ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + seriesId + '/files');
     var pQuals = qualityDefsCache
       ? Promise.resolve(qualityDefsCache)
-      : ajaxGet('/medias/series/quality-definitions');
-    var pEpisodes = ajaxGet('/medias/series/' + seriesId + '/episodes');
+      : ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/quality-definitions');
+    var pEpisodes = ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + seriesId + '/episodes');
 
     Promise.all([pFiles, pQuals, pEpisodes]).then(function(results) {
       var allFiles = results[0] || [];
@@ -4445,7 +4445,7 @@
         // Only send bulk-update if non-episode fields changed
         var hasNonEpChanges = Object.keys(payload).length > 1; // more than just fileId
         if (hasNonEpChanges) {
-          promises.push(ajaxPost('/medias/series/files/bulk-update', payload));
+          promises.push(ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/files/bulk-update', payload));
         }
         // Send reassign if episode changed
         if (epChanged && curEpVal) {
@@ -4457,7 +4457,7 @@
             if ((ep.episodeNumber || 0) === targetEpNum) targetEpId = ep.id;
           });
           if (targetEpId) {
-            promises.push(ajaxPost('/medias/series/file/' + fileId + '/reassign', {
+            promises.push(ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/file/' + fileId + '/reassign', {
               seriesId: parseInt(currentId),
               episodeIds: [targetEpId]
             }));
@@ -4519,7 +4519,7 @@
         if (!confirm(SERIES_I18N.d_confirm_delete_file)) return;
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:12px;height:12px;"></span>';
-        ajaxPost('/medias/series/file/' + btn.dataset.fileId + '/delete')
+        ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/file/' + btn.dataset.fileId + '/delete')
         .then(function(data) {
           if (data && data.ok) {
             showFmFeedback(SERIES_I18N.d_file_deleted, 'success');
@@ -4585,9 +4585,9 @@
     if (!addConfigLoaded) {
       addConfigLoaded = true;
       Promise.all([
-        ajaxGet('/medias/sonarr/quality-profiles'),
-        ajaxGet('/medias/sonarr/root-folders'),
-        ajaxGet('/medias/sonarr/tags')
+        ajaxGet('/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/quality-profiles'),
+        ajaxGet('/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/root-folders'),
+        ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/tags-json')
       ]).then(function(results) {
         var profiles = results[0] || [];
         var roots = results[1] || [];
@@ -4629,7 +4629,7 @@
     addSearchTimer = setTimeout(function() {
       document.getElementById('add-serie-loading').style.display = '';
       document.getElementById('add-serie-results').innerHTML = '';
-      ajaxGet('/medias/series/lookup?term=' + encodeURIComponent(q)).then(function(results) {
+      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/lookup?term=' + encodeURIComponent(q)).then(function(results) {
         document.getElementById('add-serie-loading').style.display = 'none';
         var container = document.getElementById('add-serie-results');
         container.innerHTML = '';
@@ -4690,7 +4690,7 @@
     document.querySelectorAll('.add-tag-cb:checked').forEach(function(cb) {
       selectedTags.push(parseInt(cb.value));
     });
-    ajaxPost('/medias/series/add', {
+    ajaxPost('/medias/' + DEFAULT_SONARR_SLUG + '/series/add', {
       tvdbId: parseInt(document.getElementById('add-serie-tvdbid').value),
       rootFolderPath: document.getElementById('add-serie-root').value,
       qualityProfileId: parseInt(document.getElementById('add-serie-quality').value),

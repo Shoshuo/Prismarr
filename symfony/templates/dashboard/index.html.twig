@@ -562,8 +562,8 @@
                       {% set max_shown = 3 %}
                       {% for item in day.items|slice(0, max_shown) %}
                         {% set item_href = item.id ? (item.type == 'movie'
-                            ? path('app_media_films')  ~ '?open=' ~ item.id
-                            : path('app_media_series') ~ '?open=' ~ item.id) : '#' %}
+                            ? instance_path('app_media_films')  ~ '?open=' ~ item.id
+                            : instance_path('app_media_series') ~ '?open=' ~ item.id) : '#' %}
                         <a href="{{ item_href }}" class="mini-cal-item"
                            title="{{ item.title }}{% if item.subtitle %} — {{ item.subtitle }}{% endif %} · {{ item.date|prismarr_time }}{% if item.badge %} · {{ item.badge }}{% endif %}">
                           {% if item.poster %}

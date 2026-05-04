@@ -14,7 +14,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[IsGranted('ROLE_ADMIN')]
-#[Route('/radarr', name: 'radarr_')]
+#[Route('/medias/{slug}/radarr', name: 'radarr_', requirements: ['slug' => '[a-z0-9][a-z0-9-]*'])]
 class RadarrController extends AbstractController
 {
     use ApiClientErrorTrait;

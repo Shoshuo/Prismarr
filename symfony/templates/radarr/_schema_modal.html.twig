@@ -4,10 +4,10 @@
     modal_id       : modal id (ex: 'modal-indexer')
     modal_title_add: add title (ex: 'Add an indexer')
     modal_title_edit: edit title (ex: 'Edit the indexer')
-    schema_url     : URL of the GET schema endpoint (ex: path('radarr_indexers_schema'))
-    save_url_add   : POST URL to create (ex: path('radarr_indexer_add'))
-    save_url_edit  : POST URL to edit — __ID__ is replaced by the id (ex: '/radarr/indexeurs/__ID__/modifier')
-    test_url       : (optional) POST URL to test (ex: '/radarr/indexeurs/__ID__/tester')
+    schema_url     : URL of the GET schema endpoint (ex: instance_path('radarr_indexers_schema'))
+    save_url_add   : POST URL to create (ex: instance_path('radarr_indexer_add'))
+    save_url_edit  : POST URL to edit — __ID__ is replaced by the id (ex: '/medias/' + INSTANCE_SLUG + '/radarr/indexeurs/__ID__/modifier')
+    test_url       : (optional) POST URL to test (ex: '/medias/' + INSTANCE_SLUG + '/radarr/indexeurs/__ID__/tester')
     mode           : 'default' | 'notification' — notifications show triggers instead of RSS/search options
 #}
 <div class="modal modal-blur fade" id="{{ modal_id }}" tabindex="-1">
@@ -330,7 +330,7 @@
         schemaCache = Array.isArray(data) ? data : [];
         // Auto-detect Radarr vs Sonarr from the schema URL to show the right message
         if (!schemaCache.length) {
-          var isSonarr = SCHEMA_URL.indexOf('/sonarr/') !== -1;
+          var isSonarr = SCHEMA_URL.indexOf('/medias/' + INSTANCE_SLUG + '/sonarr/') !== -1;
           showFeedback(isSonarr ? I18N.error_schema_none_sonarr : I18N.error_schema_none_radarr, 'warning');
         }
         return schemaCache;

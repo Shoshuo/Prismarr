@@ -103,10 +103,10 @@
   modal_id: 'modal-notif',
   modal_title_add: 'media.arr_admin.notifications.modal_title_add'|trans,
   modal_title_edit: 'media.arr_admin.notifications.modal_title_edit'|trans,
-  schema_url: path('sonarr_notifications_schema'),
-  save_url_add: path('sonarr_notification_add'),
-  save_url_edit: '/sonarr/notifications/__ID__/modifier',
-  test_url: path('sonarr_notification_test_payload'),
+  schema_url: instance_path('sonarr_notifications_schema'),
+  save_url_add: instance_path('sonarr_notification_add'),
+  save_url_edit: '/medias/' ~ current_slug('sonarr') ~ '/sonarr/notifications/__ID__/modifier',
+  test_url: instance_path('sonarr_notification_test_payload'),
   mode: 'notification'
 } %}
 {% endblock %}
@@ -139,7 +139,7 @@
       var origHTML = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = SVG_SPIN;
-      fetch('/sonarr/notifications/' + btn.dataset.id + '/tester', {
+      fetch('/medias/' ~ current_slug('sonarr') ~ '/sonarr/notifications/' + btn.dataset.id + '/tester', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}',
@@ -159,7 +159,7 @@
   document.querySelectorAll('.btn-notif-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', btn.dataset.name))) return;
-      fetch('/sonarr/notifications/' + btn.dataset.id + '/supprimer', {
+      fetch('/medias/' ~ current_slug('sonarr') ~ '/sonarr/notifications/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}',

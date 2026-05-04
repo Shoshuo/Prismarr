@@ -62,6 +62,30 @@ class RadarrClient implements ResetInterface
         return $this->instance;
     }
 
+    /**
+     * Mutate this client to point at $instance for the rest of the request.
+     * Unlike withInstance() which clones, this is destructive: used by
+     * MultiInstanceBinderSubscriber on the autowired client so the 98+
+     * RadarrController methods don't have to care about the slug — they
+     * just keep calling $this->radarr and hit the right upstream.
+     *
+     * Worker-mode safe: reset() clears the binding between requests.
+     */
+    public function bindInstance(?ServiceInstance $instance): void
+    {
+        if ($instance !== null && $instance->getType() !== ServiceInstance::TYPE_RADARR) {
+            throw new \InvalidArgumentException(sprintf(
+                'RadarrClient::bindInstance() expects a radarr instance, got "%s".',
+                $instance->getType()
+            ));
+        }
+        $this->instance = $instance;
+        $this->baseUrl  = '';
+        $this->apiKey   = '';
+        $this->lastError = null;
+        $this->serviceUnavailable = false;
+    }
+
     private function ensureConfig(): void
     {
         if ($this->baseUrl !== '') {
@@ -1501,7 +1525,7 @@ class RadarrClient implements ResetInterface
 
     private function get(string $path, array $params = []): ?array
     {
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
             return null;
         }
@@ -1537,12 +1561,12 @@ class RadarrClient implements ResetInterface
             $this->recordError('GET', $path, (int) $code, is_string($body) ? $body : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY);
+                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
             }
             return null;
         }
 
-        $this->health->clear(self::SERVICE_KEY);
+        $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         return json_decode($body, true);
     }
 
@@ -1553,7 +1577,7 @@ class RadarrClient implements ResetInterface
 
     private function delete(string $path, array $params = []): bool
     {
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
             return false;
         }
@@ -1585,17 +1609,17 @@ class RadarrClient implements ResetInterface
             $this->recordError('DELETE', $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY);
+                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
             }
             return false;
         }
-        $this->health->clear(self::SERVICE_KEY);
+        $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         return true;
     }
 
     private function deleteWithBody(string $path, array $body): bool
     {
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
             return false;
         }
@@ -1626,17 +1650,17 @@ class RadarrClient implements ResetInterface
             $this->recordError('DELETE', $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY);
+                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
             }
             return false;
         }
-        $this->health->clear(self::SERVICE_KEY);
+        $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         return true;
     }
 
     private function request(string $method, string $path, array $params, array $body): ?array
     {
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
             return null;
         }
@@ -1671,12 +1695,12 @@ class RadarrClient implements ResetInterface
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY);
+                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
             }
             return null;
         }
 
-        $this->health->clear(self::SERVICE_KEY);
+        $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         return json_decode($resp ?: '{}', true) ?? [];
     }
 
@@ -1685,7 +1709,7 @@ class RadarrClient implements ResetInterface
      */
     private function requestWithError(string $method, string $path, array $body): array
     {
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
             return ['ok' => false, 'error' => 'Service unavailable (circuit breaker open)'];
         }
@@ -1715,13 +1739,13 @@ class RadarrClient implements ResetInterface
         if ($err) {
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY);
+            $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
             return ['ok' => false, 'error' => "Network error: {$err}"];
         }
         if ((int) $code === 0) {
             $this->recordError($method, $path, 0, is_string($resp) ? $resp : '', $err);
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY);
+            $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
             return ['ok' => false, 'error' => 'Network error: no HTTP response'];
         }
 
@@ -1740,7 +1764,7 @@ class RadarrClient implements ResetInterface
             return ['ok' => false, 'error' => $msg, 'details' => $data];
         }
 
-        $this->health->clear(self::SERVICE_KEY);
+        $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         return ['ok' => true, 'data' => $data];
     }
 }

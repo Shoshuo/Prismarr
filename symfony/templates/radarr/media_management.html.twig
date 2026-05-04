@@ -290,14 +290,14 @@
     });
   }
 
-  submitForm('form-naming', '{{ path("radarr_media_management_naming_save") }}', 'btn-save-naming');
-  submitForm('form-mm', '{{ path("radarr_media_management_mm_save") }}', 'btn-save-mm');
+  submitForm('form-naming', '{{ instance_path("radarr_media_management_naming_save") }}', 'btn-save-naming');
+  submitForm('form-mm', '{{ instance_path("radarr_media_management_mm_save") }}', 'btn-save-mm');
 
   document.getElementById('btn-naming-preview').addEventListener('click', function() {
     var btn = this;
     btn.disabled = true;
     btn.textContent = I18N.loading;
-    fetch('{{ path("radarr_media_management_naming_examples") }}', {
+    fetch('{{ instance_path("radarr_media_management_naming_examples") }}', {
       headers: {'X-Requested-With':'XMLHttpRequest'}
     }).then(function(r) { return r.json(); }).then(function(data) {
       btn.disabled = false;

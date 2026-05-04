@@ -189,8 +189,8 @@
     confirm_delete_tpl: {{ 'media.arr_admin.custom_formats.confirm_delete_tpl'|trans({name: '__NAME__'})|json_encode|raw }}
   };
 
-  var SCHEMA_URL = {{ path('sonarr_custom_format_schema')|json_encode|raw }};
-  var SAVE_URL   = {{ path('sonarr_custom_format_add')|json_encode|raw }};
+  var SCHEMA_URL = {{ instance_path('sonarr_custom_format_schema')|json_encode|raw }};
+  var SAVE_URL   = {{ instance_path('sonarr_custom_format_add')|json_encode|raw }};
   var feedback   = document.getElementById('cf-feedback');
   var schemaCache = null;
   var editingItem = null;
@@ -476,7 +476,7 @@
     try {
       var url = SAVE_URL;
       if (editingItem) {
-        url = '/sonarr/formats/' + editingItem.id + '/modifier';
+        url = '/medias/' + INSTANCE_SLUG + '/sonarr/formats/' + editingItem.id + '/modifier';
       }
       var r = await fetch(url, {
         method: 'POST',
@@ -504,7 +504,7 @@
     var btn = e.target.closest('.btn-cf-delete');
     if (!btn) return;
     if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', btn.dataset.name))) return;
-    fetch('/sonarr/formats/' + btn.dataset.id + '/supprimer', {
+    fetch('/medias/' + INSTANCE_SLUG + '/sonarr/formats/' + btn.dataset.id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}',

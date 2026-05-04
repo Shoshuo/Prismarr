@@ -107,10 +107,10 @@
   modal_id: 'modal-dc',
   modal_title_add: 'media.arr_admin.download_clients.modal_title_add'|trans,
   modal_title_edit: 'media.arr_admin.download_clients.modal_title_edit'|trans,
-  schema_url: path('radarr_download_client_schema'),
-  save_url_add: path('radarr_download_client_add'),
-  save_url_edit: '/radarr/clients-telechargement/__ID__/modifier',
-  test_url: path('radarr_download_client_test')
+  schema_url: instance_path('radarr_download_client_schema'),
+  save_url_add: instance_path('radarr_download_client_add'),
+  save_url_edit: '/medias/' ~ current_slug('radarr') ~ '/radarr/clients-telechargement/__ID__/modifier',
+  test_url: instance_path('radarr_download_client_test')
 } %}
 {% endblock %}
 
@@ -150,7 +150,7 @@
       try {
         const client = JSON.parse(btn.closest('tr').dataset.client);
         const name = client.name || I18N.fallback_name;
-        const r = await fetch('/radarr/clients-telechargement/tester', {
+        const r = await fetch('/medias/' ~ current_slug('radarr') ~ '/radarr/clients-telechargement/tester', {
           method: 'POST', headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
           body: JSON.stringify(client),
         });

@@ -109,7 +109,7 @@ if (movieSelect) {
     document.getElementById('proposals-loading').classList.remove('d-none');
     document.getElementById('btn-rename-all').classList.add('d-none');
 
-    fetch('/radarr/renommer/' + id + '/propositions', {
+    fetch('/medias/' + INSTANCE_SLUG + '/radarr/renommer/' + id + '/propositions', {
       headers: {'X-Requested-With': 'XMLHttpRequest'}
     }).then(function(r){ return r.json(); }).then(function(proposals){
       document.getElementById('proposals-loading').classList.add('d-none');
@@ -149,7 +149,7 @@ if (btnRenameAll) {
     progress.classList.remove('d-none');
     msg.textContent = _I18N.progress_starting;
 
-    fetch('/radarr/renommer/' + currentMovieId + '/executer', {
+    fetch('/medias/' + INSTANCE_SLUG + '/radarr/renommer/' + currentMovieId + '/executer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}'
@@ -157,7 +157,7 @@ if (btnRenameAll) {
       if (!data.ok || !data.cmdId) { msg.textContent = _I18N.generic_error; return; }
 
       var poll = setInterval(function() {
-        fetch('{{ path('radarr_command_status', {cmdId: '__ID__'}) }}'.replace('__ID__', data.cmdId)).then(function(sr){ return sr.json(); }).then(function(s){
+        fetch('{{ instance_path('radarr_command_status', {cmdId: '__ID__'}) }}'.replace('__ID__', data.cmdId)).then(function(sr){ return sr.json(); }).then(function(s){
           msg.textContent = _I18N.progress_status_tpl.replace('__STATUS__', (s.status != null ? s.status : '?'));
           if (s.status === 'completed' || s.status === 'failed') {
             clearInterval(poll);

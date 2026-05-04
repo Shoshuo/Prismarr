@@ -13,7 +13,7 @@
 
 <div class="card mb-4">
   <div class="card-body">
-    <form method="GET" action="{{ path('radarr_parse') }}" class="d-flex gap-2">
+    <form method="GET" action="{{ instance_path('radarr_parse') }}" class="d-flex gap-2">
       <input type="text" name="title" class="form-control" placeholder="{{ 'media.arr_admin.parse.example_placeholder'|trans }}" value="{{ title }}">
       <button type="submit" class="btn btn-primary">{{ 'media.arr_admin.parse.button_parse'|trans }}</button>
     </form>
@@ -44,7 +44,7 @@
         {% if result.movie is defined and result.movie %}
         <dt class="col-sm-3">{{ 'media.arr_admin.parse.matched_movie'|trans }}</dt>
         <dd class="col-sm-9">
-          <a href="{{ path('app_media_films') }}" class="fw-medium">{{ result.movie.title ?? '—' }}</a>
+          <a href="{{ instance_path('app_media_films') }}" class="fw-medium">{{ result.movie.title ?? '—' }}</a>
           ({{ result.movie.year ?? '' }})
         </dd>
         {% endif %}

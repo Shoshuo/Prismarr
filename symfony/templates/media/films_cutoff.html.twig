@@ -94,10 +94,10 @@
     <p class="m-0 text-muted small">{{ 'media.films_cutoff.pagination_summary'|trans({page: page, count: records|length, total: total}) }}</p>
     <div class="d-flex gap-2">
       {% if page > 1 %}
-        <a href="{{ path('app_media_films_cutoff', {page: page - 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_cutoff.prev'|trans }}</a>
+        <a href="{{ instance_path('app_media_films_cutoff', {page: page - 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_cutoff.prev'|trans }}</a>
       {% endif %}
       {% if records|length == 50 %}
-        <a href="{{ path('app_media_films_cutoff', {page: page + 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_cutoff.next'|trans }}</a>
+        <a href="{{ instance_path('app_media_films_cutoff', {page: page + 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_cutoff.next'|trans }}</a>
       {% endif %}
     </div>
   </div>
@@ -120,7 +120,7 @@
       var id = this.dataset.id;
       btn.disabled = true;
       btn.textContent = '…';
-      fetch('/medias/films/' + id + '/search', {
+      fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + id + '/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         body: '{}',

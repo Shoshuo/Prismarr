@@ -199,7 +199,7 @@
     btn.addEventListener('click', function() {
       var id = btn.dataset.id;
       var enabled = btn.dataset.enabled === '1';
-      fetch('/sonarr/metadata/' + id + '/modifier', {
+      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/metadata/' + id + '/modifier', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: JSON.stringify({enable: !enabled}),
@@ -218,7 +218,7 @@
     payload.name = document.getElementById('meta-name').value.trim();
     payload.enable = document.getElementById('meta-enable').checked;
     payload.fields = collectFields();
-    fetch('/sonarr/metadata/' + payload.id + '/modifier', {
+    fetch('/medias/' + INSTANCE_SLUG + '/sonarr/metadata/' + payload.id + '/modifier', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: JSON.stringify(payload),
@@ -237,7 +237,7 @@
   document.querySelectorAll('.btn-meta-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (!confirm(META_I18N.delete_confirm_tpl.replace('__NAME__', btn.dataset.name))) return;
-      fetch('/sonarr/metadata/' + btn.dataset.id + '/supprimer', {
+      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/metadata/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}',

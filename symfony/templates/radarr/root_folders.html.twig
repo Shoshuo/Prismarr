@@ -94,7 +94,7 @@ document.getElementById('btn-rf-save')?.addEventListener('click', async () => {
   const path = document.getElementById('rf-path').value.trim();
   const mfb  = document.getElementById('rf-modal-feedback');
   if (!path) { mfb.className = 'alert alert-warning mt-3'; mfb.textContent = I18N.errorPathRequired; mfb.classList.remove('d-none'); return; }
-  const r = await fetch('{{ path('radarr_root_folder_add') }}', {
+  const r = await fetch('{{ instance_path('radarr_root_folder_add') }}', {
     method: 'POST',
     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
     body: JSON.stringify({path}),

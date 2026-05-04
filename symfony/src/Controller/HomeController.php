@@ -43,10 +43,13 @@ class HomeController extends AbstractController
             return $this->redirectToRoute('tmdb_index');
         }
         if ($instances->hasAnyEnabled(ServiceInstance::TYPE_RADARR)) {
-            return $this->redirectToRoute('app_media_films');
+            // Phase C — slug is mandatory, plug the default instance.
+            $defaultRadarr = $instances->getDefault(ServiceInstance::TYPE_RADARR);
+            return $this->redirectToRoute('app_media_films', ['slug' => $defaultRadarr->getSlug()]);
         }
         if ($instances->hasAnyEnabled(ServiceInstance::TYPE_SONARR)) {
-            return $this->redirectToRoute('app_media_series');
+            $defaultSonarr = $instances->getDefault(ServiceInstance::TYPE_SONARR);
+            return $this->redirectToRoute('app_media_series', ['slug' => $defaultSonarr->getSlug()]);
         }
         if ($config->has('qbittorrent_url')) {
             return $this->redirectToRoute('app_qbittorrent_index');

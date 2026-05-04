@@ -36,24 +36,36 @@ class ServiceHealthCache
     public function __construct(private readonly CacheItemPoolInterface $cacheApp) {}
 
     /**
-     * @param string $service short slug, e.g. 'radarr', 'sonarr', 'prowlarr',
-     *                        'jellyseerr', 'qbittorrent'.
+     * @param string  $service       short slug, e.g. 'radarr', 'sonarr',
+     *                               'prowlarr', 'jellyseerr', 'qbittorrent'.
+     * @param ?string $instanceSlug  v1.1.0 — optional instance slug for
+     *                               radarr/sonarr so each instance has its
+     *                               own circuit-breaker entry. Without it,
+     *                               a single Radarr 4K outage would silence
+     *                               every other Radarr instance until TTL.
      */
-    public function isDown(string $service): bool
+    public function isDown(string $service, ?string $instanceSlug = null): bool
     {
-        return $this->cacheApp->getItem(self::KEY_PREFIX . $service)->isHit();
+        return $this->cacheApp->getItem($this->key($service, $instanceSlug))->isHit();
     }
 
-    public function markDown(string $service): void
+    public function markDown(string $service, ?string $instanceSlug = null): void
     {
-        $item = $this->cacheApp->getItem(self::KEY_PREFIX . $service);
+        $item = $this->cacheApp->getItem($this->key($service, $instanceSlug));
         $item->set(true);
         $item->expiresAfter(self::TTL_DOWN);
         $this->cacheApp->save($item);
     }
 
-    public function clear(string $service): void
+    public function clear(string $service, ?string $instanceSlug = null): void
     {
-        $this->cacheApp->deleteItem(self::KEY_PREFIX . $service);
+        $this->cacheApp->deleteItem($this->key($service, $instanceSlug));
+    }
+
+    private function key(string $service, ?string $instanceSlug): string
+    {
+        return $instanceSlug !== null
+            ? self::KEY_PREFIX . $service . '.' . $instanceSlug
+            : self::KEY_PREFIX . $service;
     }
 }

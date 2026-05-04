@@ -14,7 +14,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
           {{ 'media.arr_admin.import_lists.add'|trans }}
         </button>
-        <a href="{{ path('radarr_suggestions') }}" class="btn btn-ghost-primary btn-sm">{{ 'media.arr_admin.import_lists.suggestions'|trans }}</a>
+        <a href="{{ instance_path('radarr_suggestions') }}" class="btn btn-ghost-primary btn-sm">{{ 'media.arr_admin.import_lists.suggestions'|trans }}</a>
         {% include 'media/_radarr_nav.html.twig' %}
       </div>
     </div>
@@ -91,9 +91,9 @@
   modal_id: 'modal-il',
   modal_title_add: 'media.arr_admin.import_lists.modal_title_add'|trans,
   modal_title_edit: 'media.arr_admin.import_lists.modal_title_edit'|trans,
-  schema_url: path('radarr_import_list_schema'),
-  save_url_add: path('radarr_import_list_add'),
-  save_url_edit: '/radarr/listes-import/__ID__/modifier'
+  schema_url: instance_path('radarr_import_list_schema'),
+  save_url_add: instance_path('radarr_import_list_add'),
+  save_url_edit: '/medias/' ~ current_slug('radarr') ~ '/radarr/listes-import/__ID__/modifier'
 } %}
 {% endblock %}
 

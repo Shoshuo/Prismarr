@@ -470,7 +470,7 @@ if (formHost) {
     });
     if (!body.password) { delete body.password; delete body.passwordConfirmation; }
 
-    fetch('{{ path('radarr_settings_host_save') }}', {
+    fetch('{{ instance_path('radarr_settings_host_save') }}', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: JSON.stringify(body),

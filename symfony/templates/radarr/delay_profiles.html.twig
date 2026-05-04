@@ -282,9 +282,9 @@
     if (editingItem) {
       payload.id = editingItem.id;
       payload.order = editingItem.order;
-      url = '/radarr/profils-delai/' + editingItem.id + '/modifier';
+      url = '/medias/' + INSTANCE_SLUG + '/radarr/profils-delai/' + editingItem.id + '/modifier';
     } else {
-      url = {{ path('radarr_delay_profile_add')|json_encode|raw }};
+      url = {{ instance_path('radarr_delay_profile_add')|json_encode|raw }};
     }
 
     fetch(url, {
@@ -309,7 +309,7 @@
   document.querySelectorAll('.btn-delay-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (!confirm(I18N.confirm_delete)) return;
-      fetch('/radarr/profils-delai/' + btn.dataset.id + '/supprimer', {
+      fetch('/medias/' + INSTANCE_SLUG + '/radarr/profils-delai/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}'

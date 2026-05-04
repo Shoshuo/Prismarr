@@ -37,7 +37,7 @@
           <label class="form-label" for="instance-add-key-{{ service_id }}">{{ 'admin.field.api_key'|trans }}</label>
           <div class="secret-wrapper">
             <input type="password" id="instance-add-key-{{ service_id }}" name="api_key" class="form-control"
-                   autocomplete="off" spellcheck="false"/>
+                   autocomplete="new-password" spellcheck="false"/>
             <button type="button" class="secret-toggle" data-toggle-for="instance-add-key-{{ service_id }}"
                     aria-label="{{ 'setup.step.admin.toggle_visibility'|trans }}">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -96,7 +96,7 @@
             <div class="secret-wrapper">
               <input type="password" id="instance-edit-key-{{ instance.id }}" name="api_key" class="form-control"
                      value="{{ instance.apiKey ?? '' }}"
-                     autocomplete="off" spellcheck="false"/>
+                     autocomplete="new-password" spellcheck="false"/>
               <button type="button" class="secret-toggle" data-toggle-for="instance-edit-key-{{ instance.id }}"
                       aria-label="{{ 'setup.step.admin.toggle_visibility'|trans }}">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"

@@ -157,7 +157,7 @@
       return;
     }
     var payload = {host: host, remotePath: remotePath, localPath: localPath};
-    var url = id ? '/sonarr/chemins-distants/' + id + '/modifier' : '{{ path("radarr_remote_path_mapping_add") }}';
+    var url = id ? '/medias/' + INSTANCE_SLUG + '/sonarr/chemins-distants/' + id + '/modifier' : '{{ instance_path("radarr_remote_path_mapping_add") }}';
     if (id) payload.id = parseInt(id, 10);
     fetch(url, {
       method: 'POST',
@@ -172,7 +172,7 @@
   document.querySelectorAll('.btn-rpm-delete').forEach(function(btn) {
     btn.onclick = function() {
       if (!confirm(I18N.confirm_delete_tpl.replace('__HOST__', btn.dataset.host))) return;
-      fetch('/sonarr/chemins-distants/' + btn.dataset.id + '/supprimer', {
+      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/chemins-distants/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}',

@@ -227,7 +227,7 @@ if (form) {
       body[field] = form.querySelector('[name="' + field + '"]').checked;
     });
 
-    fetch('{{ path('radarr_ui_save') }}', {
+    fetch('{{ instance_path('radarr_ui_save') }}', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: JSON.stringify(body),

@@ -142,8 +142,8 @@ var _I18N = {
 var feedback = document.getElementById('import-feedback');
 var scanFolders = [];
 var rowData = [];
-var lookupUrl = {{ path('app_media_films_lookup')|json_encode|raw }};
-var addUrl = {{ path('app_media_films_add')|json_encode|raw }};
+var lookupUrl = {{ instance_path('app_media_films_lookup')|json_encode|raw }};
+var addUrl = {{ instance_path('app_media_films_add')|json_encode|raw }};
 var qualityOpts = '';
 {% for qp in qualityProfiles %}
 qualityOpts += '<option value="{{ qp.id }}">{{ qp.name }}</option>';
@@ -168,7 +168,7 @@ document.getElementById('btn-scan').addEventListener('click', function() {
   var spinner = document.getElementById('scan-spinner');
   spinner.classList.remove('d-none');
 
-  fetch('{{ path('radarr_library_import_scan') }}', {
+  fetch('{{ instance_path('radarr_library_import_scan') }}', {
     method: 'POST',
     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
     body: JSON.stringify({ folder: folder }),

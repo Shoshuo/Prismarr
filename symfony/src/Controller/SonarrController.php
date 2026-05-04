@@ -14,7 +14,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[IsGranted('ROLE_ADMIN')]
-#[Route('/sonarr', name: 'sonarr_')]
+#[Route('/medias/{slug}/sonarr', name: 'sonarr_', requirements: ['slug' => '[a-z0-9][a-z0-9-]*'])]
 class SonarrController extends AbstractController
 {
     use ApiClientErrorTrait;

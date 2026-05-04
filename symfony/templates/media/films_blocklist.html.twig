@@ -111,10 +111,10 @@
     <p class="m-0 text-muted small">{{ 'media.films_blocklist.pagination_summary'|trans({page: page, count: records|length, total: total}) }}</p>
     <div class="d-flex gap-2">
       {% if page > 1 %}
-        <a href="{{ path('app_media_films_blocklist', {page: page - 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_blocklist.prev'|trans }}</a>
+        <a href="{{ instance_path('app_media_films_blocklist', {page: page - 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_blocklist.prev'|trans }}</a>
       {% endif %}
       {% if records|length == 50 %}
-        <a href="{{ path('app_media_films_blocklist', {page: page + 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_blocklist.next'|trans }}</a>
+        <a href="{{ instance_path('app_media_films_blocklist', {page: page + 1}) }}" class="btn btn-sm btn-ghost-secondary">{{ 'media.films_blocklist.next'|trans }}</a>
       {% endif %}
     </div>
   </div>
@@ -170,7 +170,7 @@
       var row = this.closest('tr');
       if (!confirm(BL_I18N.confirm_delete)) return;
       btn.disabled = true;
-      postJson('/medias/films/blocklist/' + id + '/delete')
+      postJson('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/blocklist/' + id + '/delete')
       .then(function (data) {
         if (data.ok) row.remove();
         else { alert(BL_I18N.error); btn.disabled = false; }
@@ -186,7 +186,7 @@
     if (!confirm(BL_I18N.confirm_bulk_delete_tpl.replace('__COUNT__', checked.length))) return;
     var ids = Array.from(checked).map(function (c) { return parseInt(c.value); });
     bulkBtn.disabled = true;
-    postJson('/medias/films/blocklist/bulk-delete', { ids: ids })
+    postJson('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/blocklist/bulk-delete', { ids: ids })
     .then(function (data) {
       if (data.ok) {
         ids.forEach(function (id) {

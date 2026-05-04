@@ -79,17 +79,17 @@
 <nav class="mt-3">
   <ul class="pagination justify-content-center">
     <li class="page-item {{ page <= 1 ? 'disabled' }}">
-      <a class="page-link" href="{{ path('sonarr_logs', {page: page - 1}) }}">{{ 'media.arr_admin.logs.page_prev'|trans }}</a>
+      <a class="page-link" href="{{ instance_path('sonarr_logs', {page: page - 1}) }}">{{ 'media.arr_admin.logs.page_prev'|trans }}</a>
     </li>
     {% for p in 1..totalPages %}
       {% if p >= page - 3 and p <= page + 3 %}
       <li class="page-item {{ p == page ? 'active' }}">
-        <a class="page-link" href="{{ path('sonarr_logs', {page: p}) }}">{{ p }}</a>
+        <a class="page-link" href="{{ instance_path('sonarr_logs', {page: p}) }}">{{ p }}</a>
       </li>
       {% endif %}
     {% endfor %}
     <li class="page-item {{ page >= totalPages ? 'disabled' }}">
-      <a class="page-link" href="{{ path('sonarr_logs', {page: page + 1}) }}">{{ 'media.arr_admin.logs.page_next'|trans }}</a>
+      <a class="page-link" href="{{ instance_path('sonarr_logs', {page: page + 1}) }}">{{ 'media.arr_admin.logs.page_next'|trans }}</a>
     </li>
   </ul>
 </nav>

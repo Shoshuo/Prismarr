@@ -280,9 +280,9 @@
     if (editingItem) {
       payload.id = editingItem.id;
       payload.order = editingItem.order;
-      url = '/sonarr/profils-delai/' + editingItem.id + '/modifier';
+      url = '/medias/' + INSTANCE_SLUG + '/sonarr/profils-delai/' + editingItem.id + '/modifier';
     } else {
-      url = {{ path('sonarr_delay_profile_add')|json_encode|raw }};
+      url = {{ instance_path('sonarr_delay_profile_add')|json_encode|raw }};
     }
 
     fetch(url, {
@@ -306,7 +306,7 @@
   document.querySelectorAll('.btn-delay-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (!confirm(I18N.confirm_delete)) return;
-      fetch('/sonarr/profils-delai/' + btn.dataset.id + '/supprimer', {
+      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/profils-delai/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}'

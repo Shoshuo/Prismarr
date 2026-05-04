@@ -14,7 +14,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg>
           {{ 'media.arr_admin.auto_tags.btn_add'|trans }}
         </button>
-        <a href="{{ path('sonarr_tags') }}" class="btn btn-ghost-secondary btn-sm">{{ 'media.arr_admin.auto_tags.btn_tags'|trans }}</a>
+        <a href="{{ instance_path('sonarr_tags') }}" class="btn btn-ghost-secondary btn-sm">{{ 'media.arr_admin.auto_tags.btn_tags'|trans }}</a>
         {% include 'media/_sonarr_nav.html.twig' %}
       </div>
     </div>
@@ -387,9 +387,9 @@
     var url;
     if (editingItem) {
       payload.id = editingItem.id;
-      url = '/sonarr/auto-tags/' + editingItem.id + '/modifier';
+      url = '/medias/' + INSTANCE_SLUG + '/sonarr/auto-tags/' + editingItem.id + '/modifier';
     } else {
-      url = {{ path('sonarr_auto_tag_add')|json_encode|raw }};
+      url = {{ instance_path('sonarr_auto_tag_add')|json_encode|raw }};
     }
 
     fetch(url, {
@@ -413,7 +413,7 @@
   document.querySelectorAll('.btn-at-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (!confirm(_I18N.delete_confirm_tpl.replace('__NAME__', btn.dataset.name))) return;
-      fetch('/sonarr/auto-tags/' + btn.dataset.id + '/supprimer', {
+      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/auto-tags/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}'

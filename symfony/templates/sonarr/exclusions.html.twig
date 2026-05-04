@@ -77,7 +77,7 @@
     btn.addEventListener('click', function() {
       if (!confirm(_I18N.delete_confirm)) return;
       btn.disabled = true;
-      fetch('/sonarr/exclusions/' + btn.dataset.id + '/supprimer', {
+      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/exclusions/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
         body: '{}'

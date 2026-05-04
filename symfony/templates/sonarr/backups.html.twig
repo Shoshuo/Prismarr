@@ -149,7 +149,7 @@ if (btnCreate) {
     progress.classList.remove('d-none');
     msg.textContent = I18N.starting;
 
-    fetch('{{ path('sonarr_backup_create') }}', {
+    fetch('{{ instance_path('sonarr_backup_create') }}', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}'
@@ -158,7 +158,7 @@ if (btnCreate) {
 
       var cmdId = data.cmdId;
       var poll = setInterval(function() {
-        fetch('{{ path('sonarr_command_status', {cmdId: '__ID__'}) }}'.replace('__ID__', cmdId)).then(function(sr){ return sr.json(); }).then(function(s){
+        fetch('{{ instance_path('sonarr_command_status', {cmdId: '__ID__'}) }}'.replace('__ID__', cmdId)).then(function(sr){ return sr.json(); }).then(function(s){
           msg.textContent = I18N.statusTpl.replace('__STATUS__', (s.status != null ? s.status : '?'));
           if (s.status === 'completed' || s.status === 'failed') {
             clearInterval(poll);
@@ -183,7 +183,7 @@ document.querySelectorAll('.btn-backup-delete').forEach(function(btn) {
   btn.onclick = function() {
     if (!confirm(I18N.confirmDelete)) return;
     var id = btn.dataset.id;
-    fetch('/sonarr/sauvegardes/' + id + '/supprimer', {
+    fetch('/medias/' + INSTANCE_SLUG + '/sonarr/sauvegardes/' + id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}'
@@ -216,7 +216,7 @@ if (btnConfirmRestore) {
     alertEl.classList.remove('d-none');
     msg.textContent = I18N.restoreInProgress;
 
-    fetch('/sonarr/sauvegardes/' + pendingRestoreId + '/restaurer', {
+    fetch('/medias/' + INSTANCE_SLUG + '/sonarr/sauvegardes/' + pendingRestoreId + '/restaurer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}'

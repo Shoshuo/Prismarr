@@ -2,12 +2,14 @@
 
 namespace App\Controller;
 
+use App\Entity\ServiceInstance;
 use App\Repository\Media\WatchlistItemRepository;
 use App\Service\HealthService;
 use App\Service\Media\JellyseerrClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TmdbClient;
+use App\Service\ServiceInstanceProvider;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -48,9 +50,21 @@ class DashboardController extends AbstractController
         private readonly JellyseerrClient $jellyseerr,
         private readonly TmdbClient $tmdb,
         private readonly WatchlistItemRepository $watchlistRepo,
+        private readonly ServiceInstanceProvider $instances,
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
     ) {}
+
+    /**
+     * Slug helper for the deep-link URLs the dashboard renders into films
+     * and series. Dashboard pages aren't instance-scoped (they aggregate
+     * across instances), so we always link to the user's default Radarr /
+     * Sonarr — the films/series page itself can switch via the sidebar.
+     */
+    private function defaultSlug(string $type): string
+    {
+        return $this->instances->getDefault($type)?->getSlug() ?? $type . '-1';
+    }
 
     private function movies(): array
     {
@@ -360,7 +374,7 @@ class DashboardController extends AbstractController
                 'badge'        => $downloaded ? $this->translator->trans('dashboard.lib_badge.downloaded') : null,
                 'is_downloaded'=> $downloaded,
                 'addedAt'      => $m['addedAt'] ?? null,
-                'href'         => $this->generateUrl('app_media_films') . '?open=' . ($m['id'] ?? ''),
+                'href'         => $this->generateUrl('app_media_films', ['slug' => $this->defaultSlug(ServiceInstance::TYPE_RADARR)]) . '?open=' . ($m['id'] ?? ''),
             ];
         }
         foreach ($series as $s) {
@@ -371,7 +385,7 @@ class DashboardController extends AbstractController
                 'poster'   => $s['poster'] ?? null,
                 'badge'    => $s['network'] ?? null,
                 'addedAt'  => $s['addedAt'] ?? null,
-                'href'     => $this->generateUrl('app_media_series') . '?open=' . ($s['id'] ?? ''),
+                'href'     => $this->generateUrl('app_media_series', ['slug' => $this->defaultSlug(ServiceInstance::TYPE_SONARR)]) . '?open=' . ($s['id'] ?? ''),
             ];
         }
 
@@ -436,7 +450,7 @@ class DashboardController extends AbstractController
                     ? $this->translator->trans('dashboard.hero_badge.in_library')
                     : $this->translator->trans('dashboard.hero_badge.monitored'),
                 'cta'       => $this->translator->trans('dashboard.hero_badge.cta_view'),
-                'detailUrl' => $m['id'] ? $this->generateUrl('app_media_films') . '?open=' . $m['id'] : null,
+                'detailUrl' => $m['id'] ? $this->generateUrl('app_media_films', ['slug' => $this->defaultSlug(ServiceInstance::TYPE_RADARR)]) . '?open=' . $m['id'] : null,
             ];
         }
 

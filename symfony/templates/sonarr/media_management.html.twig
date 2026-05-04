@@ -165,7 +165,7 @@
     new FormData(this).forEach(function(v, k) { data[k] = v; });
     data.renameEpisodes = !!document.getElementById('renameEpisodes').checked;
     data.multiEpisodeStyle = parseInt(data.multiEpisodeStyle || 0);
-    fetch('/sonarr/gestion-medias/naming', {
+    fetch('/medias/' + INSTANCE_SLUG + '/sonarr/gestion-medias/naming', {
       method: 'POST', headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
       body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(d) {
@@ -177,7 +177,7 @@
     var btn = this;
     btn.disabled = true;
     btn.textContent = I18N.loading;
-    fetch('/sonarr/gestion-medias/naming/examples', {
+    fetch('/medias/' + INSTANCE_SLUG + '/sonarr/gestion-medias/naming/examples', {
       headers: {'X-Requested-With':'XMLHttpRequest'}
     }).then(function(r) { return r.json(); }).then(function(data) {
       btn.disabled = false;
@@ -213,7 +213,7 @@
     data.createEmptySeriesFolders = !!document.getElementById('createEmptyFolders').checked;
     data.deleteEmptyFolders = !!document.getElementById('deleteEmptyFolders').checked;
     data.recycleBinCleanupDays = parseInt(data.recycleBinCleanupDays || 7);
-    fetch('/sonarr/gestion-medias/mediamanagement', {
+    fetch('/medias/' + INSTANCE_SLUG + '/sonarr/gestion-medias/mediamanagement', {
       method: 'POST', headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
       body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(d) {

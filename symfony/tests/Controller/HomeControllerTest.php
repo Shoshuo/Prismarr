@@ -76,6 +76,20 @@ class HomeControllerTest extends TestCase
                 default => false,
             }
         );
+        // v1.1.0 Phase C — HomeController now reads getDefault() to plug
+        // the slug into redirectToRoute('app_media_films', [...]). Stub
+        // matching instances for whichever type is "configured".
+        $provider->method('getDefault')->willReturnCallback(
+            function (string $type) use ($hasKeys) {
+                $configured = match ($type) {
+                    ServiceInstance::TYPE_RADARR => in_array('radarr_api_key', $hasKeys, true),
+                    ServiceInstance::TYPE_SONARR => in_array('sonarr_api_key', $hasKeys, true),
+                    default => false,
+                };
+                if (!$configured) return null;
+                return new ServiceInstance($type, $type . '-1', ucfirst($type) . ' 1', 'http://test:1234');
+            }
+        );
         return $provider;
     }
 

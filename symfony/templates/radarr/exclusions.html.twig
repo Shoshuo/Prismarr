@@ -157,7 +157,7 @@ if (bulkBtn) {
   bulkBtn.addEventListener('click', async () => {
     const ids = [...document.querySelectorAll('.check-row:checked')].map(c => parseInt(c.value));
     if (!confirm(_I18N.bulk_confirm_tpl.replace('__COUNT__', ids.length))) return;
-    const r = await fetch('{{ path('radarr_exclusion_bulk_delete') }}', {
+    const r = await fetch('{{ instance_path('radarr_exclusion_bulk_delete') }}', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: JSON.stringify({ids}),
@@ -192,7 +192,7 @@ document.getElementById('form-add-exclusion').addEventListener('submit', async (
     movieTitle: fd.get('movieTitle'),
     year: parseInt(fd.get('year') || 0),
   };
-  const r = await fetch('{{ path('radarr_exclusion_add') }}', {
+  const r = await fetch('{{ instance_path('radarr_exclusion_add') }}', {
     method: 'POST',
     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
     body: JSON.stringify(body),

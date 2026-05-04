@@ -72,7 +72,7 @@ document.querySelectorAll('.btn-task-run').forEach(function(btn) {
     btn.disabled = true;
     btn.innerHTML = SVG_SPIN;
 
-    fetch('{{ path('sonarr_task_run') }}', {
+    fetch('{{ instance_path('sonarr_task_run') }}', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: JSON.stringify({commandName: commandName}),

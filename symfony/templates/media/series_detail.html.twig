@@ -276,7 +276,7 @@
   document.getElementById('btn-search-serie').addEventListener('click', function() {
     var btn = this;
     btn.disabled = true;
-    postJson('/medias/series/' + btn.dataset.id + '/search', {})
+    postJson('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + btn.dataset.id + '/search', {})
     .then(function(data) {
       btn.disabled = false;
       showFeedback(data.ok ? SD_I18N.search_launched : SD_I18N.error, data.ok ? 'success' : 'danger');
@@ -288,7 +288,7 @@
     var btn = this;
     var newMon = btn.dataset.monitored !== '1';
     btn.disabled = true;
-    postJson('/medias/series/' + btn.dataset.id + '/monitor', { monitored: newMon })
+    postJson('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + btn.dataset.id + '/monitor', { monitored: newMon })
     .then(function(data) {
       btn.disabled = false;
       if (data.ok) {
@@ -306,7 +306,7 @@
       var season = btn.dataset.season;
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></span>';
-      postJson('/medias/series/' + seriesId + '/season/' + season + '/search', {})
+      postJson('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + seriesId + '/season/' + season + '/search', {})
       .then(function(data) {
         btn.disabled = false;
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
@@ -322,7 +322,7 @@
       if (!epId) return;
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:12px;height:12px;"></span>';
-      postJson('/medias/series/episode/search', { episodeIds: [epId] })
+      postJson('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/episode/search', { episodeIds: [epId] })
       .then(function(data) {
         btn.disabled = false;
         if (data.ok) {

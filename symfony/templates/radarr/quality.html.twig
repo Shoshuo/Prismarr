@@ -541,7 +541,7 @@ document.getElementById('btn-save-definitions').addEventListener('click', functi
     orig.maxSize       = parseFloat(wrap.querySelector('.range-max').value);
     payload.push(orig);
   });
-  fetch('/radarr/qualite/definitions/sauvegarder', {
+  fetch('/medias/' + INSTANCE_SLUG + '/radarr/qualite/definitions/sauvegarder', {
     method: 'POST',
     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
     body: JSON.stringify(payload),
@@ -905,8 +905,8 @@ document.getElementById('btn-profile-save').addEventListener('click', function()
   }
 
   var url = isEdit
-    ? '/radarr/qualite/profils/' + editId + '/modifier'
-    : '/radarr/qualite/profils/ajouter';
+    ? '/medias/' + INSTANCE_SLUG + '/radarr/qualite/profils/' + editId + '/modifier'
+    : '/medias/' + INSTANCE_SLUG + '/radarr/qualite/profils/ajouter';
 
   fetch(url, {
     method: 'POST',
@@ -931,7 +931,7 @@ document.getElementById('btn-profile-delete-modal').addEventListener('click', fu
   var id = this.getAttribute('data-id');
   var name = this.getAttribute('data-name');
   if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', name))) return;
-  fetch('/radarr/qualite/profils/' + id + '/supprimer', {
+  fetch('/medias/' + INSTANCE_SLUG + '/radarr/qualite/profils/' + id + '/supprimer', {
     method: 'POST',
     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
     body: '{}',
@@ -951,7 +951,7 @@ document.getElementById('btn-profile-delete-modal').addEventListener('click', fu
 document.querySelectorAll('.btn-profile-delete').forEach(function(btn) {
   btn.addEventListener('click', function() {
     if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', btn.dataset.name))) return;
-    fetch('/radarr/qualite/profils/' + btn.dataset.id + '/supprimer', {
+    fetch('/medias/' + INSTANCE_SLUG + '/radarr/qualite/profils/' + btn.dataset.id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}',

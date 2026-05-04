@@ -17,7 +17,7 @@
 
 <div class="d-flex gap-2 align-items-center" style="position:relative;">
 
-  <a href="{{ path('app_media_series') }}"
+  <a href="{{ instance_path('app_media_series') }}"
      class="btn btn-sm btn-primary"
      title="{{ 'media.nav.library_series'|trans }}">
     {{ 'media.nav.series'|trans }}
@@ -32,9 +32,9 @@
     </button>
     <div class="dropdown-menu" id="snav-activity">
       <span class="dropdown-header">{{ 'media.group.activity'|trans }}</span>
-      <a class="dropdown-item {{ _route == 'app_media_series_history_page' ? 'active' }}" href="{{ path('app_media_series_history_page') }}">{{ 'media.item.history'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'app_media_series_blocklist' ? 'active' }}" href="{{ path('app_media_series_blocklist') }}">{{ 'media.item.blocklist'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_commands'  ? 'active' }}" href="{{ path('sonarr_commands') }}">{{ 'media.item.commands'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'app_media_series_history_page' ? 'active' }}" href="{{ instance_path('app_media_series_history_page') }}">{{ 'media.item.history'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'app_media_series_blocklist' ? 'active' }}" href="{{ instance_path('app_media_series_blocklist') }}">{{ 'media.item.blocklist'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_commands'  ? 'active' }}" href="{{ instance_path('sonarr_commands') }}">{{ 'media.item.commands'|trans }}</a>
     </div>
   </div>
 
@@ -47,9 +47,9 @@
     </button>
     <div class="dropdown-menu" id="snav-wanted">
       <span class="dropdown-header">{{ 'media.group.wanted'|trans }}</span>
-      <a class="dropdown-item {{ _route == 'app_media_series_missing' ? 'active' }}" href="{{ path('app_media_series_missing') }}">{{ 'media.item.missing'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'app_media_series_cutoff'  ? 'active' }}" href="{{ path('app_media_series_cutoff') }}">{{ 'media.item.cutoff'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_sonarr_library_import'    ? 'active' }}" href="{{ path('sonarr_sonarr_library_import') }}">{{ 'media.item.library_import'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'app_media_series_missing' ? 'active' }}" href="{{ instance_path('app_media_series_missing') }}">{{ 'media.item.missing'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'app_media_series_cutoff'  ? 'active' }}" href="{{ instance_path('app_media_series_cutoff') }}">{{ 'media.item.cutoff'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_sonarr_library_import'    ? 'active' }}" href="{{ instance_path('sonarr_sonarr_library_import') }}">{{ 'media.item.library_import'|trans }}</a>
     </div>
   </div>
 
@@ -62,8 +62,8 @@
     </button>
     <div class="dropdown-menu" id="snav-discover">
       <span class="dropdown-header">{{ 'media.group.discovery'|trans }}</span>
-      <a class="dropdown-item {{ _route == 'sonarr_calendar'    ? 'active' }}" href="{{ path('sonarr_calendar') }}">{{ 'calendar.title'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_exclusions'  ? 'active' }}" href="{{ path('sonarr_exclusions') }}">{{ 'media.item.exclusions'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_calendar'    ? 'active' }}" href="{{ instance_path('sonarr_calendar') }}">{{ 'calendar.title'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_exclusions'  ? 'active' }}" href="{{ instance_path('sonarr_exclusions') }}">{{ 'media.item.exclusions'|trans }}</a>
     </div>
   </div>
 
@@ -76,35 +76,35 @@
     </button>
     <div class="dropdown-menu" id="snav-settings" style="min-width:200px;right:0;left:auto;">
       <span class="dropdown-header">{{ 'media.group.profiles'|trans }}</span>
-      <a class="dropdown-item {{ _route == 'sonarr_quality'          ? 'active' }}" href="{{ path('sonarr_quality') }}">{{ 'media.item.quality'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_delay_profiles'   ? 'active' }}" href="{{ path('sonarr_delay_profiles') }}">{{ 'media.item.delay_profiles'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_custom_formats'   ? 'active' }}" href="{{ path('sonarr_custom_formats') }}">{{ 'media.item.custom_formats'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_custom_filters'  ? 'active' }}" href="{{ path('sonarr_custom_filters') }}">{{ 'media.item.custom_filters'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_quality'          ? 'active' }}" href="{{ instance_path('sonarr_quality') }}">{{ 'media.item.quality'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_delay_profiles'   ? 'active' }}" href="{{ instance_path('sonarr_delay_profiles') }}">{{ 'media.item.delay_profiles'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_custom_formats'   ? 'active' }}" href="{{ instance_path('sonarr_custom_formats') }}">{{ 'media.item.custom_formats'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_custom_filters'  ? 'active' }}" href="{{ instance_path('sonarr_custom_filters') }}">{{ 'media.item.custom_filters'|trans }}</a>
       <div class="dropdown-divider"></div>
       <span class="dropdown-header">{{ 'media.group.integrations'|trans }}</span>
-      <a class="dropdown-item {{ _route == 'sonarr_indexers'         ? 'active' }}" href="{{ path('sonarr_indexers') }}">{{ 'media.item.indexers'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_download_clients' ? 'active' }}" href="{{ path('sonarr_download_clients') }}">{{ 'media.item.download_clients'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_import_lists'     ? 'active' }}" href="{{ path('sonarr_import_lists') }}">{{ 'media.item.import_lists'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_notifications'    ? 'active' }}" href="{{ path('sonarr_notifications') }}">{{ 'media.item.notifications'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_indexers'         ? 'active' }}" href="{{ instance_path('sonarr_indexers') }}">{{ 'media.item.indexers'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_download_clients' ? 'active' }}" href="{{ instance_path('sonarr_download_clients') }}">{{ 'media.item.download_clients'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_import_lists'     ? 'active' }}" href="{{ instance_path('sonarr_import_lists') }}">{{ 'media.item.import_lists'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_notifications'    ? 'active' }}" href="{{ instance_path('sonarr_notifications') }}">{{ 'media.item.notifications'|trans }}</a>
       <div class="dropdown-divider"></div>
       <span class="dropdown-header">{{ 'media.group.general'|trans }}</span>
-      <a class="dropdown-item {{ _route == 'sonarr_auto_tags'        ? 'active' }}" href="{{ path('sonarr_auto_tags') }}">{{ 'media.item.auto_tags'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_tags'             ? 'active' }}" href="{{ path('sonarr_tags') }}">{{ 'media.item.tags'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_media_management'  ? 'active' }}" href="{{ path('sonarr_media_management') }}">{{ 'media.item.media_management'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_ui'              ? 'active' }}" href="{{ path('sonarr_ui') }}">{{ 'media.item.ui'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_root_folders'     ? 'active' }}" href="{{ path('sonarr_root_folders') }}">{{ 'media.item.root_folders'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_remote_path_mappings' ? 'active' }}" href="{{ path('sonarr_remote_path_mappings') }}">{{ 'media.item.remote_paths'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_metadata'        ? 'active' }}" href="{{ path('sonarr_metadata') }}">{{ 'media.item.metadata'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_auto_tags'        ? 'active' }}" href="{{ instance_path('sonarr_auto_tags') }}">{{ 'media.item.auto_tags'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_tags'             ? 'active' }}" href="{{ instance_path('sonarr_tags') }}">{{ 'media.item.tags'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_media_management'  ? 'active' }}" href="{{ instance_path('sonarr_media_management') }}">{{ 'media.item.media_management'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_ui'              ? 'active' }}" href="{{ instance_path('sonarr_ui') }}">{{ 'media.item.ui'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_root_folders'     ? 'active' }}" href="{{ instance_path('sonarr_root_folders') }}">{{ 'media.item.root_folders'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_remote_path_mappings' ? 'active' }}" href="{{ instance_path('sonarr_remote_path_mappings') }}">{{ 'media.item.remote_paths'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_metadata'        ? 'active' }}" href="{{ instance_path('sonarr_metadata') }}">{{ 'media.item.metadata'|trans }}</a>
       <div class="dropdown-divider"></div>
       <span class="dropdown-header">{{ 'media.group.system'|trans }}</span>
-      <a class="dropdown-item {{ _route == 'app_media_series_system' ? 'active' }}" href="{{ path('app_media_series_system') }}">{{ 'media.item.status'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_settings'         ? 'active' }}" href="{{ path('sonarr_settings') }}">{{ 'media.item.general'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_tasks'            ? 'active' }}" href="{{ path('sonarr_tasks') }}">{{ 'media.item.tasks'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_logs'             ? 'active' }}" href="{{ path('sonarr_logs') }}">{{ 'media.item.logs'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_stats'            ? 'active' }}" href="{{ path('sonarr_stats') }}">{{ 'media.item.stats'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_parse'            ? 'active' }}" href="{{ path('sonarr_parse') }}">{{ 'media.item.parse'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_backups'          ? 'active' }}" href="{{ path('sonarr_backups') }}">{{ 'media.item.backups'|trans }}</a>
-      <a class="dropdown-item {{ _route == 'sonarr_updates'          ? 'active' }}" href="{{ path('sonarr_updates') }}">{{ 'media.item.updates'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'app_media_series_system' ? 'active' }}" href="{{ instance_path('app_media_series_system') }}">{{ 'media.item.status'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_settings'         ? 'active' }}" href="{{ instance_path('sonarr_settings') }}">{{ 'media.item.general'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_tasks'            ? 'active' }}" href="{{ instance_path('sonarr_tasks') }}">{{ 'media.item.tasks'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_logs'             ? 'active' }}" href="{{ instance_path('sonarr_logs') }}">{{ 'media.item.logs'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_stats'            ? 'active' }}" href="{{ instance_path('sonarr_stats') }}">{{ 'media.item.stats'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_parse'            ? 'active' }}" href="{{ instance_path('sonarr_parse') }}">{{ 'media.item.parse'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_backups'          ? 'active' }}" href="{{ instance_path('sonarr_backups') }}">{{ 'media.item.backups'|trans }}</a>
+      <a class="dropdown-item {{ _route == 'sonarr_updates'          ? 'active' }}" href="{{ instance_path('sonarr_updates') }}">{{ 'media.item.updates'|trans }}</a>
     </div>
   </div>
 

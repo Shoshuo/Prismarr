@@ -103,10 +103,10 @@
   modal_id: 'modal-notif',
   modal_title_add: 'media.arr_admin.notifications.modal_title_add'|trans,
   modal_title_edit: 'media.arr_admin.notifications.modal_title_edit'|trans,
-  schema_url: path('radarr_notifications_schema'),
-  save_url_add: path('radarr_notification_add'),
-  save_url_edit: '/radarr/notifications/__ID__/modifier',
-  test_url: path('radarr_notification_test_payload'),
+  schema_url: instance_path('radarr_notifications_schema'),
+  save_url_add: instance_path('radarr_notification_add'),
+  save_url_edit: '/medias/' ~ current_slug('radarr') ~ '/radarr/notifications/__ID__/modifier',
+  test_url: instance_path('radarr_notification_test_payload'),
   mode: 'notification'
 } %}
 {% endblock %}

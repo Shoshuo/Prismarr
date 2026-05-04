@@ -90,8 +90,16 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         //    Strict comparison: isHealthy() now also returns null for
         //    unconfigured services, but step 1 above already redirects those
         //    to the wizard, so only "true down" should trigger this redirect.
-        if ($route !== $rule['index'] && $this->health->isHealthy($rule['service_id']) === false) {
-            $event->setResponse(new RedirectResponse($this->urls->generate($rule['index'])));
+        //    v1.1.0 — pass the slug so the health probe targets THIS instance,
+        //    not the default. Without it, breaking Radarr 4K would also flag
+        //    Radarr 1 as down (shared cache key). The redirect target also
+        //    needs the slug since /medias/{slug}/films expects it.
+        $slug = is_string($event->getRequest()->attributes->get('slug'))
+            ? $event->getRequest()->attributes->get('slug')
+            : null;
+        if ($route !== $rule['index'] && $this->health->isHealthy($rule['service_id'], $slug) === false) {
+            $params = $slug !== null ? ['slug' => $slug] : [];
+            $event->setResponse(new RedirectResponse($this->urls->generate($rule['index'], $params)));
         }
     }
 

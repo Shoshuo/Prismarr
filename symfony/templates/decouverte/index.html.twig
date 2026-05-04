@@ -981,7 +981,7 @@
           {% set statusColors = {'downloaded':'#22c55e','missing':'#f59e0b','announced':'#6366f1','inCinemas':'#6366f1','partial':'#3b82f6','unmonitored':'#6b7280'} %}
           {% set statusKey = 'decouverte.modal.status.' ~ (item.lib_status ?: 'downloaded') %}
           {% set statusLabel = item.lib_status ? statusKey|trans : 'decouverte.card.in_library_short'|trans %}
-          <a href="{{ (item.type == 'movie' ? '/medias/films' : '/medias/series') ~ '?open=' ~ item.lib_id }}" class="btn btn-sm" style="background:{{ statusColors[item.lib_status] ?? '#22c55e' }};color:#fff;">{{ statusLabel }}</a>
+          <a href="{{ (item.type == 'movie' ? '/medias/' ~ current_slug('radarr') ~ '/films' : '/medias/' ~ current_slug('sonarr') ~ '/series') ~ '?open=' ~ item.lib_id }}" class="btn btn-sm" style="background:{{ statusColors[item.lib_status] ?? '#22c55e' }};color:#fff;">{{ statusLabel }}</a>
         {% endif %}
       </div>
     </div>
@@ -1364,7 +1364,7 @@
       actions.push('<button class="btn btn-primary tmdb-add-btn" data-tmdb-id="' + d.id + '" data-tmdb-type="' + d.type + '" data-tmdb-title="' + safeTitle + '">'
         + '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 5v14"/><path d="M5 12h14"/></svg>' + (d.type === 'movie' ? TMDB_I18N.add_to_radarr : TMDB_I18N.add_to_sonarr) + '</button>');
     } else {
-      var libUrl = d.type === 'movie' ? '/medias/films' : '/medias/series';
+      var libUrl = d.type === 'movie' ? '/medias/' + DEFAULT_RADARR_SLUG + '/films' : '/medias/' + DEFAULT_SONARR_SLUG + '/series';
       if (d.lib_id) libUrl += '?open=' + d.lib_id;
       var btnClass = d.lib_status === 'downloaded' ? 'btn-success' : (d.lib_status === 'missing' || d.lib_status === 'partial' ? 'btn-warning' : 'btn-outline-primary');
       actions.push('<a href="' + libUrl + '" class="btn ' + btnClass + '">'
@@ -1748,7 +1748,7 @@
     var libBadge = item.in_library ? '<span class="lib-badge" style="background:' + (statusColors[item.lib_status] || '#22c55e') + ';">' + (cardShort[item.lib_status] || cardShort._default) + '</span>' : '';
     var voteBadge = item.vote ? '<span class="vote-badge ' + vc + '">★ ' + item.vote + '</span>' : '';
     var hoverBtn  = item.in_library
-      ? '<a href="' + (item.type === 'movie' ? '/medias/films' : '/medias/series') + '?open=' + (item.lib_id||'') + '" class="btn btn-sm" style="background:' + ({downloaded:'#22c55e',missing:'#f59e0b',announced:'#6366f1',inCinemas:'#6366f1',partial:'#3b82f6',unmonitored:'#6b7280'}[item.lib_status]||'#22c55e') + ';color:#fff;">' + (cardShort[item.lib_status] || inLibraryShort) + '</a>'
+      ? '<a href="' + (item.type === 'movie' ? '/medias/' + DEFAULT_RADARR_SLUG + '/films' : '/medias/' + DEFAULT_SONARR_SLUG + '/series') + '?open=' + (item.lib_id||'') + '" class="btn btn-sm" style="background:' + ({downloaded:'#22c55e',missing:'#f59e0b',announced:'#6366f1',inCinemas:'#6366f1',partial:'#3b82f6',unmonitored:'#6b7280'}[item.lib_status]||'#22c55e') + ';color:#fff;">' + (cardShort[item.lib_status] || inLibraryShort) + '</a>'
       : '<button type="button" class="btn btn-primary btn-sm tmdb-add-btn" data-tmdb-id="' + item.id + '" data-tmdb-type="' + item.type + '" data-tmdb-title="' + safeTitle + '">' + {{ 'decouverte.action.add'|trans|json_encode|raw }} + '</button>';
 
     var wlClass = (window._prismarrWatchlist && window._prismarrWatchlist[item.type + '_' + item.id]) ? ' in-wl' : '';

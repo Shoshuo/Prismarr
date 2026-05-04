@@ -62,6 +62,30 @@ class SonarrClient implements ResetInterface
         return $this->instance;
     }
 
+    /**
+     * Mutate this client to point at $instance for the rest of the request.
+     * Unlike withInstance() which clones, this is destructive: used by
+     * MultiInstanceBinderSubscriber on the autowired client so the 96+
+     * SonarrController methods don't have to care about the slug — they
+     * just keep calling $this->sonarr and hit the right upstream.
+     *
+     * Worker-mode safe: reset() clears the binding between requests.
+     */
+    public function bindInstance(?ServiceInstance $instance): void
+    {
+        if ($instance !== null && $instance->getType() !== ServiceInstance::TYPE_SONARR) {
+            throw new \InvalidArgumentException(sprintf(
+                'SonarrClient::bindInstance() expects a sonarr instance, got "%s".',
+                $instance->getType()
+            ));
+        }
+        $this->instance = $instance;
+        $this->baseUrl  = '';
+        $this->apiKey   = '';
+        $this->lastError = null;
+        $this->serviceUnavailable = false;
+    }
+
     private function ensureConfig(): void
     {
         if ($this->baseUrl !== '') {
@@ -1361,7 +1385,7 @@ class SonarrClient implements ResetInterface
 
     private function request(string $method, string $path, array $params, array $body): ?array
     {
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
             return null;
         }
@@ -1396,12 +1420,12 @@ class SonarrClient implements ResetInterface
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY);
+                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
             }
             return null;
         }
 
-        $this->health->clear(self::SERVICE_KEY);
+        $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         return json_decode($resp ?: '{}', true) ?? [];
     }
 
@@ -1410,7 +1434,7 @@ class SonarrClient implements ResetInterface
      */
     private function requestWithError(string $method, string $path, array $body): array
     {
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
             return ['ok' => false, 'error' => 'Service unavailable (circuit breaker open)'];
         }
@@ -1440,13 +1464,13 @@ class SonarrClient implements ResetInterface
         if ($err) {
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY);
+            $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
             return ['ok' => false, 'error' => "Network error: {$err}"];
         }
         if ((int) $code === 0) {
             $this->recordError($method, $path, 0, is_string($resp) ? $resp : '', $err);
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY);
+            $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
             return ['ok' => false, 'error' => 'Network error: no HTTP response'];
         }
 
@@ -1464,13 +1488,13 @@ class SonarrClient implements ResetInterface
             return ['ok' => false, 'error' => $msg, 'details' => $data];
         }
 
-        $this->health->clear(self::SERVICE_KEY);
+        $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         return ['ok' => true, 'data' => $data];
     }
 
     private function get(string $path, array $params = [], int $timeout = 4): ?array
     {
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
             return null;
         }
@@ -1506,18 +1530,18 @@ class SonarrClient implements ResetInterface
             $this->recordError('GET', $path, (int) $code, is_string($body) ? $body : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY);
+                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
             }
             return null;
         }
 
-        $this->health->clear(self::SERVICE_KEY);
+        $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         return json_decode($body, true);
     }
 
     private function delete(string $path, array $params = []): bool
     {
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
             return false;
         }
@@ -1549,17 +1573,17 @@ class SonarrClient implements ResetInterface
             $this->recordError('DELETE', $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY);
+                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
             }
             return false;
         }
-        $this->health->clear(self::SERVICE_KEY);
+        $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         return true;
     }
 
     private function deleteWithBody(string $path, array $body): bool
     {
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
             return false;
         }
@@ -1590,11 +1614,11 @@ class SonarrClient implements ResetInterface
             $this->recordError('DELETE', $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY);
+                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
             }
             return false;
         }
-        $this->health->clear(self::SERVICE_KEY);
+        $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         return true;
     }
 }

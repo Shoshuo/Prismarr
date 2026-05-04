@@ -5,6 +5,8 @@ namespace App\Twig;
 use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
 use App\Service\ServiceInstanceProvider;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -34,6 +36,8 @@ class ConfigExtension extends AbstractExtension
     public function __construct(
         private readonly ConfigService $config,
         private readonly ServiceInstanceProvider $instances,
+        private readonly ?UrlGeneratorInterface $urls = null,
+        private readonly ?RequestStack $requestStack = null,
     ) {}
 
     public function getFunctions(): array
@@ -43,7 +47,87 @@ class ConfigExtension extends AbstractExtension
             new TwigFunction('service_visible_in_sidebar', [$this, 'isServiceVisibleInSidebar']),
             new TwigFunction('feature_visible_in_sidebar', [$this, 'isFeatureVisibleInSidebar']),
             new TwigFunction('service_instances', [$this, 'getServiceInstances']),
+            new TwigFunction('instance_path', [$this, 'instancePath']),
+            new TwigFunction('current_slug', [$this, 'currentSlug']),
         ];
+    }
+
+    /**
+     * Returns the slug to use for a hardcoded URL of the given type. Same
+     * resolution chain as instance_path() but exposed standalone for the
+     * cases where the URL is built by string concat in a Twig literal
+     * (e.g. `'/medias/' ~ current_slug('radarr') ~ '/radarr/.../__ID__/...'`).
+     */
+    public function currentSlug(string $type): string
+    {
+        return $this->resolveSlug($type);
+    }
+
+    /**
+     * Drop-in replacement for path() on instance-aware routes (Phase C).
+     * Auto-injects the slug placeholder so templates don't have to thread
+     * the current instance through every link. Resolution order:
+     *
+     *   1. explicit `slug` in $params (caller knows what it wants)
+     *   2. current request's slug attribute (we're already on a per-instance
+     *      page → keep navigating in that instance)
+     *   3. default instance slug for the route's type (radarr/sonarr)
+     *
+     * For routes that are NOT instance-aware (anything not starting with
+     * radarr_/sonarr_/app_media_films/etc.) we just delegate to path() and
+     * pass $params untouched — the helper is safe to use everywhere.
+     *
+     * @param array<string, mixed> $params
+     */
+    public function instancePath(string $name, array $params = []): string
+    {
+        if ($this->urls === null) {
+            // Stateless test environment without RouterInterface — return
+            // a stub so unit tests of unrelated helpers don't blow up.
+            return '/_route/' . $name;
+        }
+        $type = $this->routeNameToType($name);
+        if ($type !== null && !isset($params['slug'])) {
+            $params['slug'] = $this->resolveSlug($type);
+        }
+        return $this->urls->generate($name, $params);
+    }
+
+    private function routeNameToType(string $name): ?string
+    {
+        if (str_starts_with($name, 'radarr_')) {
+            return ServiceInstance::TYPE_RADARR;
+        }
+        if (str_starts_with($name, 'sonarr_')) {
+            return ServiceInstance::TYPE_SONARR;
+        }
+        if (str_starts_with($name, 'app_media_films') || str_starts_with($name, 'app_media_radarr')) {
+            return ServiceInstance::TYPE_RADARR;
+        }
+        if (str_starts_with($name, 'app_media_series') || str_starts_with($name, 'app_media_sonarr')) {
+            return ServiceInstance::TYPE_SONARR;
+        }
+        return null;
+    }
+
+    private function resolveSlug(string $type): string
+    {
+        // 1. Current request already carries a slug → reuse it (but only if
+        //    it actually points to an instance of the right type — protects
+        //    against radarr-routed templates rendered during a sonarr request).
+        $request = $this->requestStack?->getCurrentRequest();
+        if ($request !== null) {
+            $candidate = $request->attributes->get('slug');
+            if (is_string($candidate) && $candidate !== ''
+                && $this->instances->getBySlug($type, $candidate) !== null) {
+                return $candidate;
+            }
+        }
+        // 2. Default instance of the type. Fallback to a placeholder so the
+        //    URL generator doesn't blow up — the request will 404 on hit,
+        //    which is what we want when no instance exists at all.
+        $default = $this->instances->getDefault($type);
+        return $default?->getSlug() ?? $type . '-1';
     }
 
     /**

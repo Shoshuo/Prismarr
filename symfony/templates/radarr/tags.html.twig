@@ -108,7 +108,7 @@ function showFeedback(msg, type) {
 document.getElementById('form-add-tag').addEventListener('submit', async function(e) {
   e.preventDefault();
   var label = new FormData(e.target).get('label');
-  var r = await fetch('{{ path('radarr_tag_add') }}', {
+  var r = await fetch('{{ instance_path('radarr_tag_add') }}', {
     method: 'POST',
     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
     body: JSON.stringify({label: label}),
@@ -128,7 +128,7 @@ document.querySelectorAll('.btn-tag-rename').forEach(function(btn) {
     var currentLabel = btn.dataset.label;
     var newLabel = prompt(TAGS_I18N.rename_prompt, currentLabel);
     if (!newLabel || newLabel.trim() === '' || newLabel === currentLabel) return;
-    var r = await fetch('/radarr/tags/' + btn.dataset.id + '/renommer', {
+    var r = await fetch('/medias/' + INSTANCE_SLUG + '/radarr/tags/' + btn.dataset.id + '/renommer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: JSON.stringify({label: newLabel.trim()}),
@@ -146,7 +146,7 @@ document.querySelectorAll('.btn-tag-rename').forEach(function(btn) {
 document.querySelectorAll('.btn-tag-delete').forEach(function(btn) {
   btn.addEventListener('click', async function() {
     if (!confirm(TAGS_I18N.delete_confirm_tpl.replace('__LABEL__', btn.dataset.label))) return;
-    var r = await fetch('/radarr/tags/' + btn.dataset.id + '/supprimer', {
+    var r = await fetch('/medias/' + INSTANCE_SLUG + '/radarr/tags/' + btn.dataset.id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}',

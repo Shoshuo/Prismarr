@@ -478,7 +478,7 @@
     if (!d.in_library) {
       html += '<button class="btn btn-primary btn-sm exd-add-btn" data-tmdb-id="' + escHtml(d.id) + '" data-type="' + escHtml(d.type) + '" data-title="' + escHtml(d.title) + '">' + (d.type === 'movie' ? EX_I18N.add_to_radarr : EX_I18N.add_to_sonarr) + '</button>';
     } else {
-      var libUrl = (d.type === 'movie' ? '/medias/films' : '/medias/series') + (d.lib_id ? '?open=' + encodeURIComponent(d.lib_id) : '');
+      var libUrl = (d.type === 'movie' ? '/medias/' + DEFAULT_RADARR_SLUG + '/films' : '/medias/' + DEFAULT_SONARR_SLUG + '/series') + (d.lib_id ? '?open=' + encodeURIComponent(d.lib_id) : '');
       html += '<a href="' + escHtml(libUrl) + '" class="btn btn-success btn-sm">' + (d.type === 'movie' ? EX_I18N.view_movies : EX_I18N.view_series) + '</a>';
     }
     html += '<button class="btn btn-sm ' + (isInWl ? 'btn-warning' : 'btn-outline-warning') + ' exd-wl-btn" data-tmdb-id="' + escHtml(d.id) + '" data-type="' + escHtml(d.type) + '" data-title="' + escHtml(d.title) + '" data-poster-path="' + escHtml(d.poster_path) + '" data-vote="' + escHtml(d.vote) + '" data-year="' + escHtml(d.year) + '">'
