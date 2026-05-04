@@ -915,7 +915,44 @@
           <div class="prismarr-topbar-row">
             {# Left : page title + breadcrumb #}
             <div class="prismarr-topbar-left">
-              <h2 class="page-title">{% block page_title '' %}</h2>
+              <h2 class="page-title">
+                {# v1.1.0 — instance-aware page title. We capture whatever
+                   the child template rendered into the page_title block,
+                   then on Radarr/Sonarr-scoped routes we replace it with
+                   "[icon] Instance Name · sub-page" so every admin page
+                   reads consistently regardless of which template owns
+                   the H2. Films/series index pages have an empty
+                   page_title block (their own label is the instance
+                   name, rendered here automatically). #}
+                {% set _page_title_content %}{% block page_title '' %}{% endset %}
+                {% set _route_now = app.request.attributes.get('_route') %}
+                {% set _slug_now = app.request.attributes.get('slug') %}
+                {% set _inst_type = null %}
+                {% if _slug_now %}
+                  {% if _route_now starts with 'radarr_' or _route_now starts with 'app_media_radarr' or _route_now starts with 'app_media_films' %}
+                    {% set _inst_type = 'radarr' %}
+                  {% elseif _route_now starts with 'sonarr_' or _route_now starts with 'app_media_sonarr' or _route_now starts with 'app_media_series' %}
+                    {% set _inst_type = 'sonarr' %}
+                  {% endif %}
+                {% endif %}
+                {% set _inst_match = null %}
+                {% if _inst_type %}
+                  {% set _inst_match = service_instances(_inst_type)|filter(i => i.slug == _slug_now)|first %}
+                {% endif %}
+                {% if _inst_match %}
+                  {% if _inst_type == 'radarr' %}
+                    <svg width="22" height="22" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" style="vertical-align:-3px;margin-right:.4rem;"><g transform="translate(70 21)"><path d="M105.3 154.9L112.8 869.5C52.7 877 7.5 846.9 7.5 786.8L0 192.6C0 4.5 173-40.6 278.3 34.6L812.3 343C887.5 395.6 902.6 493.4 865 561.1C857.5 508.5 834.9 478.4 789.8 448.3L188 109.8C142.9 79.7 105.3 87.2 105.3 154.9Z" fill="#FFC230"/><path d="M0 376.1C45.1 391.1 90.3 383.6 127.9 361L744.6 0C782.2 52.7 774.7 105.3 729.6 135.4L210.6 436.3C135.4 473.9 37.6 436.3 0 376.1Z" transform="translate(60.2 531)" fill="#FFC230"/><path d="M0 413.7L368.6 203.1L7.5 0L0 413.7Z" transform="translate(240.7 282.8)" fill="#FFC230"/></g></svg>
+                  {% else %}
+                    <svg width="22" height="22" viewBox="0 0 216.7 216.9" xmlns="http://www.w3.org/2000/svg" style="vertical-align:-3px;margin-right:.4rem;"><path d="M194.65 42.5l-22.4 22.4C159.15 78 158 89.4 158 109.5c0 17.93 2.85 34.35 16.2 47.7l19 18.95c-2.5 3.07-5.2 6.07-8.1 9-.7.83-1.48 1.6-2.35 2.3-2.53 2.5-5.17 4.82-7.9 6.95l-17.55-17.55c-15.6-15.6-28-17.1-48.6-17.1-19.77 0-33.22 1.82-47.7 16.3l-18.55 18.6c-3.77-2.87-7.33-6.03-10.7-9.5-2.8-2.8-5.42-5.67-7.85-8.6l19.15-19.2c13.85-13.85 16.1-29.92 16.1-47.85 0-17.5-2.87-33.82-15.6-46.55L22.45 43.85c2.83-3.6 5.92-7.07 9.25-10.4 2.93-2.87 5.93-5.55 9-8.05L61.1 43.85C74.1 56.85 90.77 60.2 108.7 60.2c18.47 0 35.08-3.58 48.6-17.1l19.3-19.25c2.9 2.37 5.73 4.93 8.5 7.7 3.47 3.53 6.65 7.18 9.55 10.95z" fill="#0CF"/><circle cx="108.35" cy="108.45" r="29.5" fill="#0CF" opacity=".8"/></svg>
+                  {% endif %}
+                  {{ _inst_match.name }}
+                  {% if _page_title_content|trim and _route_now != 'app_media_films' and _route_now != 'app_media_series' %}
+                    <small style="color: var(--tblr-secondary); font-weight: 400; margin-left: .5rem;">{{ _page_title_content|raw }}</small>
+                  {% endif %}
+                {% else %}
+                  {{ _page_title_content|raw }}
+                {% endif %}
+              </h2>
               {% block breadcrumb %}{% endblock %}
             </div>
 
