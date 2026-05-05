@@ -878,7 +878,16 @@
         {% if item.year %}<span>{{ item.year }}</span>{% endif %}
         {% if item.vote %}<span>★ {{ item.vote }}/10</span>{% endif %}
         {% if item.in_library %}
-          <span class="badge" style="background:#22c55e; color:#fff;">{{ 'decouverte.badge.in_library'|trans }}</span>
+          {# v1.1.0 — match the badge colour + label to the actual
+             library status (downloaded / missing / announced / inCinemas
+             / unmonitored), same scheme as the trending cards below.
+             Falls back to a plain green "in library" when no status is
+             attached (defensive — shouldn't happen post-refactor). #}
+          {% set _heroStatusColors = {'downloaded':'#22c55e','missing':'#f59e0b','announced':'#6366f1','inCinemas':'#6366f1','partial':'#3b82f6','unmonitored':'#6b7280'} %}
+          {% set _heroStatusKey = item.lib_status ? 'decouverte.modal.status.' ~ item.lib_status : null %}
+          <span class="badge" style="background:{{ _heroStatusColors[item.lib_status] ?? '#22c55e' }}; color:#fff;">
+            {{ _heroStatusKey ? _heroStatusKey|trans : 'decouverte.badge.in_library'|trans }}
+          </span>
         {% endif %}
       </div>
       {% if item.overview %}

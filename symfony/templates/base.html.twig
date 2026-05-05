@@ -23,6 +23,24 @@
     })();
   </script>
 
+  {# v1.1.0 — instance slugs exposed BEFORE any block body / block
+     javascripts script runs. Discovery, dashboard etc. reference these
+     during their initial IIFE (renderCardHTML calls the slug eagerly),
+     so they MUST be defined before the body parses. Both `var` (lexical
+     global, what scripts reference unprefixed) AND window.* (cross-script
+     lookup safety net) — strict-mode scripts can't see bare `X` declared
+     only on window. #}
+  {% set _radarr_default = service_instances('radarr')|first %}
+  {% set _sonarr_default = service_instances('sonarr')|first %}
+  <script>
+    var INSTANCE_SLUG = {{ (app.request.attributes.get('slug') ?: '')|json_encode|raw }};
+    var DEFAULT_RADARR_SLUG = {{ (_radarr_default ? _radarr_default.slug : 'radarr-1')|json_encode|raw }};
+    var DEFAULT_SONARR_SLUG = {{ (_sonarr_default ? _sonarr_default.slug : 'sonarr-1')|json_encode|raw }};
+    window.INSTANCE_SLUG = INSTANCE_SLUG;
+    window.DEFAULT_RADARR_SLUG = DEFAULT_RADARR_SLUG;
+    window.DEFAULT_SONARR_SLUG = DEFAULT_SONARR_SLUG;
+  </script>
+
   {% block head_meta %}{% endblock %}
 
   <style>
@@ -1234,24 +1252,9 @@
      small — only the strings JS actually renders dynamically (the rest lives
      in the Twig markup directly). #}
   <script>
-    {# v1.1.0 — instance slugs exposed to inline JS so hardcoded URLs
-       (mostly fetch() calls in Radarr/Sonarr admin pages) can prefix
-       /medias/{slug}/ without a Twig round-trip. INSTANCE_SLUG is the
-       slug of the current request when the route is instance-aware,
-       otherwise the default-instance slug (films/series shortcuts from
-       Discover, sidebar, etc.). #}
-    {% set _radarr_default = service_instances('radarr')|first %}
-    {% set _sonarr_default = service_instances('sonarr')|first %}
-    {# Both `var` (lexical global, what scripts reference unprefixed) AND
-       window.* (cross-script lookup safety net). Setting only window.X
-       leaves bare `X` references undeclared in strict-mode scripts. #}
-    var INSTANCE_SLUG = {{ (app.request.attributes.get('slug') ?: '')|json_encode|raw }};
-    var DEFAULT_RADARR_SLUG = {{ (_radarr_default ? _radarr_default.slug : 'radarr-1')|json_encode|raw }};
-    var DEFAULT_SONARR_SLUG = {{ (_sonarr_default ? _sonarr_default.slug : 'sonarr-1')|json_encode|raw }};
-    window.INSTANCE_SLUG = INSTANCE_SLUG;
-    window.DEFAULT_RADARR_SLUG = DEFAULT_RADARR_SLUG;
-    window.DEFAULT_SONARR_SLUG = DEFAULT_SONARR_SLUG;
-
+    {# Slug vars are now declared in <head> (above) so block body scripts
+       can reference them during their initial IIFE. _i18n stays here
+       because it's only consumed inside callbacks, not at parse time. #}
     window._i18n = {{ {
       'search.recent':         'topbar.search.recent'|trans,
       'search.empty':          'topbar.search.empty_short'|trans,

@@ -180,11 +180,12 @@ class TmdbController extends AbstractController
             $title = $type === 'movie' ? ($it['title'] ?? '') : ($it['name'] ?? '');
             $date  = $type === 'movie' ? ($it['release_date'] ?? null) : ($it['first_air_date'] ?? null);
             $year  = $date ? (int) substr($date, 0, 4) : null;
-            $inLib = $type === 'movie'
-                ? isset($library['movie'][(int) ($it['id'] ?? 0)])
-                : isset($library['tv']['tmdb_' . (int) ($it['id'] ?? 0)]);
+            $tmdbId = (int) ($it['id'] ?? 0);
+            $libInfo = $type === 'movie'
+                ? ($library['movie'][$tmdbId] ?? null)
+                : ($library['tv']['tmdb_' . $tmdbId] ?? null);
             return [
-                'id'         => (int) ($it['id'] ?? 0),
+                'id'         => $tmdbId,
                 'type'       => $type,
                 'title'      => $title,
                 'year'       => $year,
@@ -193,7 +194,14 @@ class TmdbController extends AbstractController
                 'backdrop'   => TmdbClient::backdropUrl($it['backdrop_path'] ?? null, 'w780'),
                 'vote'       => isset($it['vote_average']) ? round((float) $it['vote_average'], 1) : null,
                 'vote_count' => (int) ($it['vote_count'] ?? 0),
-                'in_library' => $inLib,
+                'in_library' => $libInfo !== null,
+                // v1.1.0 — also surface the detailed status (downloaded /
+                // missing / announced / inCinemas / unmonitored) so the hero
+                // and trending cards show the right colour + label instead
+                // of a flat "in library" green badge for movies that are
+                // tracked but not yet downloadable (announced / inCinemas).
+                'lib_status' => $libInfo['status'] ?? null,
+                'lib_id'     => $libInfo['id']     ?? null,
             ];
         };
 
