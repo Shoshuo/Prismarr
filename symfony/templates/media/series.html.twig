@@ -184,11 +184,17 @@
 .media-grid.view-wall .media-card:hover { transform: none; box-shadow: none; z-index: 2; }
 /* Vue étagères */
 .shelf-section { margin-bottom: 1.5rem; }
-.shelf-section h4 { font-size: .85rem; margin-bottom: .5rem; padding-left: .2rem; }
+.shelf-header { display: flex; align-items: center; gap: .35rem; margin-bottom: .5rem; padding-left: .2rem; }
+.shelf-section h4 { font-size: .85rem; margin: 0; }
+.shelf-toggle { border: 0; background: transparent; color: var(--tblr-muted); padding: .1rem .25rem; line-height: 1; border-radius: .25rem; transition: color .15s, background-color .15s, transform .15s; }
+.shelf-toggle:hover { color: var(--tblr-body-color); background: var(--tblr-bg-surface-secondary); }
+.shelf-toggle .shelf-chevron { display: inline-block; transition: transform .15s; }
+.shelf-section.is-expanded .shelf-toggle .shelf-chevron { transform: rotate(90deg); }
 .shelf-scroll {
     display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .5rem;
     scrollbar-width: thin;
 }
+.shelf-section.is-expanded .shelf-scroll { flex-wrap: wrap; overflow-x: visible; }
 .shelf-scroll .shelf-card {
     flex-shrink: 0; width: 110px; cursor: pointer; position: relative;
     border-radius: .4rem; overflow: hidden; transition: transform .15s;
@@ -1354,6 +1360,7 @@
   var tableView = document.getElementById('series-table-view');
   var shelfView = document.getElementById('series-shelf-view');
   var shelfBuilt = false;
+  var shelfExpanded = {};
 
   function buildShelfView() {
     if (shelfBuilt) return;
@@ -1399,7 +1406,10 @@
     ['continuing','anime','ended','upcoming','unmonitored'].forEach(function(key) {
       var g = groups[key];
       if (!g.items.length) return;
-      html += '<div class="shelf-section"><h4>' + g.label + ' <span class="text-muted fw-normal" style="font-size:.75rem;">(' + g.items.length + ')</span></h4>';
+      var isExpanded = !!shelfExpanded[key];
+      html += '<div class="shelf-section' + (isExpanded ? ' is-expanded' : '') + '" data-shelf="' + key + '">';
+      html += '<div class="shelf-header"><button type="button" class="shelf-toggle" data-shelf-toggle="' + key + '" aria-label="Toggle shelf" aria-expanded="' + (isExpanded ? 'true' : 'false') + '"><span class="shelf-chevron">›</span></button>';
+      html += '<h4>' + g.label + ' <span class="text-muted fw-normal" style="font-size:.75rem;">(' + g.items.length + ')</span></h4></div>';
       html += '<div class="shelf-scroll">';
       g.items.forEach(function(item) {
         var barColor = item.percent === 100 ? '#22c55e' : (item.percent > 0 ? '#ef4444' : '#6b7280');
@@ -1414,7 +1424,15 @@
     });
     shelfView.innerHTML = html;
     // Click handler
-    shelfView.addEventListener('click', function(e) {
+    shelfView.onclick = function(e) {
+      var toggle = e.target.closest('[data-shelf-toggle]');
+      if (toggle) {
+        var shelfKey = toggle.dataset.shelfToggle;
+        shelfExpanded[shelfKey] = !shelfExpanded[shelfKey];
+        shelfBuilt = false;
+        buildShelfView();
+        return;
+      }
       var sc = e.target.closest('.shelf-card');
       if (!sc) return;
       var id = sc.dataset.id;
@@ -1426,7 +1444,7 @@
       }
       var card = grid.querySelector('.media-card[data-id="' + id + '"]');
       if (card) card.click();
-    });
+    };
   }
 
   function setViewMode(mode) {
