@@ -55,6 +55,27 @@
     window.DEFAULT_SONARR_SLUG = DEFAULT_SONARR_SLUG;
     window.CURRENT_RADARR_SLUG = CURRENT_RADARR_SLUG;
     window.CURRENT_SONARR_SLUG = CURRENT_SONARR_SLUG;
+
+    // Global locale-aware byte formatter — must be defined here in <head>
+    // BEFORE any child template's javascripts block runs. The original
+    // location was a media-pages-only conditional script further down the
+    // body (see end of this template), but films.html.twig's renderQueue
+    // calls window.prismarrBytes() during the initial render and inside
+    // setInterval, so defining it later raced with the first call when the
+    // queue had items (e.g. blocked import).
+    if (!window.prismarrBytes) {
+      window.PRISMARR_BYTE_UNITS = {{ prismarr_byte_units()|json_encode|raw }};
+      window.prismarrBytes = function (bytes) {
+        if (typeof bytes !== 'number' || isNaN(bytes)) return '—';
+        var u = window.PRISMARR_BYTE_UNITS || {B:'B',KB:'KB',MB:'MB',GB:'GB',TB:'TB'};
+        var abs = Math.abs(bytes);
+        if (abs >= 1099511627776) return (bytes / 1099511627776).toFixed(1) + ' ' + u.TB;
+        if (abs >= 1073741824)    return (bytes / 1073741824).toFixed(1)    + ' ' + u.GB;
+        if (abs >= 1048576)       return (bytes / 1048576).toFixed(1)       + ' ' + u.MB;
+        if (abs >= 1024)          return (bytes / 1024).toFixed(1)          + ' ' + u.KB;
+        return Math.round(bytes) + ' ' + u.B;
+      };
+    }
   </script>
 
   {% block head_meta %}{% endblock %}
@@ -2048,23 +2069,10 @@
     function loadPrev() { try { return JSON.parse(localStorage.getItem(STATE_KEY) || '{}'); } catch (e) { return {}; } }
     function savePrev(map) { try { localStorage.setItem(STATE_KEY, JSON.stringify(map)); } catch (e) {} }
 
-    // Global locale-aware byte formatter, mirrors the server-side
-    // |prismarr_bytes Twig filter so JS-rendered sizes match Twig-rendered
-    // ones exactly. Units come from prismarr_byte_units() so EN gets
-    // GB / MB / KB / B and FR gets Go / Mo / Ko / o.
-    if (!window.prismarrBytes) {
-      window.PRISMARR_BYTE_UNITS = {{ prismarr_byte_units()|json_encode|raw }};
-      window.prismarrBytes = function (bytes) {
-        if (typeof bytes !== 'number' || isNaN(bytes)) return '—';
-        var u = window.PRISMARR_BYTE_UNITS || {B:'B',KB:'KB',MB:'MB',GB:'GB',TB:'TB'};
-        var abs = Math.abs(bytes);
-        if (abs >= 1099511627776) return (bytes / 1099511627776).toFixed(1) + ' ' + u.TB;
-        if (abs >= 1073741824)    return (bytes / 1073741824).toFixed(1)    + ' ' + u.GB;
-        if (abs >= 1048576)       return (bytes / 1048576).toFixed(1)       + ' ' + u.MB;
-        if (abs >= 1024)          return (bytes / 1024).toFixed(1)          + ' ' + u.KB;
-        return Math.round(bytes) + ' ' + u.B;
-      };
-    }
+    // window.prismarrBytes is defined in the head script at the top of
+    // base.html.twig so child templates' javascripts block can rely on it
+    // during initial render. Local fmtGo wrapper kept for the qBit poll
+    // block below.
     function fmtGo(bytes) { return window.prismarrBytes(bytes); }
 
     function updateBadge(active) {
