@@ -1029,6 +1029,7 @@ media:
     tmdb_person_schema_missing: TMDbPerson schema not found
     no_file: No file
     no_missing_episodes: No missing monitored episode.
+    network_error: Network or upstream error. Check the service is reachable.
     warning_format: '{source}: {message}'
   label:
     season_prefix: 'Season {number}'

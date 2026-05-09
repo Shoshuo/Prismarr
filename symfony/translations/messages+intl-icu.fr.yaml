@@ -1028,6 +1028,7 @@ media:
     tmdb_person_schema_missing: Schema TMDbPerson non trouvé
     no_file: Aucun fichier
     no_missing_episodes: Aucun épisode manquant surveillé.
+    network_error: Erreur réseau ou service injoignable.
     warning_format: '{source} : {message}'
   label:
     season_prefix: 'Saison {number}'

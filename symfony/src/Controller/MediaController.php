@@ -525,10 +525,15 @@ class MediaController extends AbstractController
             $ids = $request->toArray()['movieIds'] ?? [];
             if (!$ids) return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.no_movies_selected')]);
             $result = $this->radarr->sendCommand('RefreshMovie', ['movieIds' => $ids]);
-            return $this->json(['ok' => $result !== null, 'cmdId' => $result['id'] ?? null]);
+            if ($result === null) return $this->jsonClientError('Radarr', $this->radarr);
+            return $this->json(['ok' => true, 'cmdId' => $result['id'] ?? null]);
         } catch (\Throwable $e) {
             $this->logger->warning('Media filmsBulkRefresh failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
-            return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            // Surface upstream Radarr context if any (already sanitised by the
+            // client's extractApiErrorMessage); fall back to a generic label
+            // for parse/runtime errors that never reached HTTP, never the raw
+            // exception message which can leak server paths or stack hints.
+            return $this->jsonClientError('Radarr', $this->radarr, $this->translator->trans('media.api.network_error'));
         }
     }
 
@@ -539,10 +544,11 @@ class MediaController extends AbstractController
             $ids = $request->toArray()['movieIds'] ?? [];
             if (!$ids) return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.no_movies_selected')]);
             $result = $this->radarr->sendCommand('MoviesSearch', ['movieIds' => $ids]);
-            return $this->json(['ok' => $result !== null, 'cmdId' => $result['id'] ?? null]);
+            if ($result === null) return $this->jsonClientError('Radarr', $this->radarr);
+            return $this->json(['ok' => true, 'cmdId' => $result['id'] ?? null]);
         } catch (\Throwable $e) {
             $this->logger->warning('Media filmsBulkSearch failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
-            return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            return $this->jsonClientError('Radarr', $this->radarr, $this->translator->trans('media.api.network_error'));
         }
     }
 
@@ -851,7 +857,7 @@ class MediaController extends AbstractController
             return $this->json($result);
         } catch (\Throwable $e) {
             $this->logger->warning('Media filmQueueImport failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
-            return $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            return $this->jsonClientError('Radarr', $this->radarr, $this->translator->trans('media.api.network_error'));
         }
     }
 
