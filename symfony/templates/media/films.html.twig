@@ -3921,7 +3921,7 @@
     result.className = 'mt-3 alert alert-info'; result.classList.remove('d-none');
     result.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ' + FILM_I18N.m_adding;
 
-    ajaxPost('/medias/' + DEFAULT_RADARR_SLUG + '/films/add', {
+    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/add', {
       tmdbId:           parseInt(selectedMovie.tmdbId),
       title:            selectedMovie.title,
       year:             parseInt(selectedMovie.year),

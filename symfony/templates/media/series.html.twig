@@ -1668,7 +1668,7 @@
   });
   function ensureBulkConfig(cb) {
     if (bulkConfigLoaded) { cb(); return; }
-    Promise.all([ajaxGet('/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/quality-profiles'), ajaxGet('/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/root-folders'), ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/tags-json')]).then(function(r) {
+    Promise.all([ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/quality-profiles'), ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/root-folders'), ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/tags-json')]).then(function(r) {
       bulkConfigLoaded = true;
       var qSel = document.getElementById('bulk-s-quality');
       if (qSel.options.length <= 1) (r[0]||[]).forEach(function(p) { var o = document.createElement('option'); o.value = p.id; o.textContent = p.name; qSel.appendChild(o); });
@@ -3083,8 +3083,8 @@
 
     Promise.all([
       ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/info'),
-      ajaxGet('/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/quality-profiles'),
-      ajaxGet('/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/root-folders'),
+      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/quality-profiles'),
+      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/root-folders'),
       ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/tags-json')
     ]).then(function(results) {
       btn.disabled = false;
@@ -4696,8 +4696,8 @@
     if (!addConfigLoaded) {
       addConfigLoaded = true;
       Promise.all([
-        ajaxGet('/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/quality-profiles'),
-        ajaxGet('/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/root-folders'),
+        ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/quality-profiles'),
+        ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/root-folders'),
         ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/sonarr/tags-json')
       ]).then(function(results) {
         var profiles = results[0] || [];
@@ -4801,7 +4801,7 @@
     document.querySelectorAll('.add-tag-cb:checked').forEach(function(cb) {
       selectedTags.push(parseInt(cb.value));
     });
-    ajaxPost('/medias/' + DEFAULT_SONARR_SLUG + '/series/add', {
+    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/add', {
       tvdbId: parseInt(document.getElementById('add-serie-tvdbid').value),
       rootFolderPath: document.getElementById('add-serie-root').value,
       qualityProfileId: parseInt(document.getElementById('add-serie-quality').value),
