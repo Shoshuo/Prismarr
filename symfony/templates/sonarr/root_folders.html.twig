@@ -76,44 +76,48 @@
 {% block javascripts %}
 <script>
 (function(){
-const I18N = {
+var I18N = {
   errorPathRequired: {{ 'media.arr_admin.root_folders.error_path_required'|trans|json_encode|raw }},
   errorAdd: {{ 'media.arr_admin.root_folders.error_add_sonarr'|trans|json_encode|raw }},
   errorDelete: {{ 'media.arr_admin.root_folders.error_delete'|trans|json_encode|raw }},
   confirmDeleteTpl: {{ 'media.arr_admin.root_folders.confirm_delete_tpl'|trans({'{path}': '__PATH__'})|json_encode|raw }}
 };
-const feedback = document.getElementById('rf-feedback');
-function showFeedback(msg, type = 'success') {
-  feedback.className = `alert alert-${type} mb-3`;
+var feedback = document.getElementById('rf-feedback');
+function showFeedback(msg, type) {
+  type = type || 'success';
+  feedback.className = 'alert alert-' + type + ' mb-3';
   feedback.textContent = msg;
   feedback.classList.remove('d-none');
-  setTimeout(() => feedback.classList.add('d-none'), 4000);
+  setTimeout(function() { feedback.classList.add('d-none'); }, 4000);
 }
 
-document.getElementById('btn-rf-save')?.addEventListener('click', async () => {
-  const path = document.getElementById('rf-path').value.trim();
-  const mfb  = document.getElementById('rf-modal-feedback');
-  if (!path) { mfb.className = 'alert alert-warning mt-3'; mfb.textContent = I18N.errorPathRequired; mfb.classList.remove('d-none'); return; }
-  const r = await fetch('{{ instance_path('sonarr_root_folder_add') }}', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-    body: JSON.stringify({path}),
-  });
-  const data = await r.json();
-  if (data.ok) { location.reload(); return; }
-  else { mfb.className = 'alert alert-danger mt-3'; mfb.textContent = data.error || I18N.errorAdd; mfb.classList.remove('d-none'); }
-});
-
-document.querySelectorAll('.btn-rf-delete').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const msg = I18N.confirmDeleteTpl.replace('__PATH__', btn.dataset.path);
-    if (!confirm(msg)) return;
-    const r = await fetch(`/sonarr/dossiers-racine/${btn.dataset.id}/supprimer`, {
-      method: 'POST', headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'}, body: '{}',
+var btnRfSave = document.getElementById('btn-rf-save');
+if (btnRfSave) {
+  btnRfSave.addEventListener('click', function() {
+    var path = document.getElementById('rf-path').value.trim();
+    var mfb  = document.getElementById('rf-modal-feedback');
+    if (!path) { mfb.className = 'alert alert-warning mt-3'; mfb.textContent = I18N.errorPathRequired; mfb.classList.remove('d-none'); return; }
+    fetch('{{ instance_path('sonarr_root_folder_add') }}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+      body: JSON.stringify({path: path}),
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.ok) { location.reload(); return; }
+      mfb.className = 'alert alert-danger mt-3'; mfb.textContent = data.error || I18N.errorAdd; mfb.classList.remove('d-none');
     });
-    const data = await r.json();
-    if (data.ok) location.reload();
-    else showFeedback(data.error || I18N.errorDelete, 'danger');
+  });
+}
+
+document.querySelectorAll('.btn-rf-delete').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var msg = I18N.confirmDeleteTpl.replace('__PATH__', btn.dataset.path);
+    if (!confirm(msg)) return;
+    fetch('/medias/' + INSTANCE_SLUG + '/sonarr/dossiers-racine/' + btn.dataset.id + '/supprimer', {
+      method: 'POST', headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'}, body: '{}',
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.ok) location.reload();
+      else showFeedback(data.error || I18N.errorDelete, 'danger');
+    });
   });
 });
 })();
