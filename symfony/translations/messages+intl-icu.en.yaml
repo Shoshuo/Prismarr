@@ -580,13 +580,14 @@ admin:
     prismarr_metadata_label: TMDb metadata language
     prismarr_metadata_help: 'Language for titles, overviews and metadata fetched from TMDb (for the Discover page and enriched cards).'
     services_section: Connected services
-    radarr_ui_label: Radarr — UI language
-    radarr_info_label: Radarr — Movie info language
-    radarr_info_help: Language for movie titles, overviews and metadata fetched from TMDb by Radarr.
-    sonarr_ui_label: Sonarr — UI language
+    col_instance: Instance
+    radarr_ui_label: UI language
+    radarr_info_label: Movie info language
+    radarr_info_help: Movie info language drives titles and overviews fetched from TMDb by Radarr.
+    sonarr_ui_label: UI language
     sonarr_info_unavailable: 'Sonarr v4 no longer has a global series info language (each series has its own originalLanguage).'
-    prowlarr_ui_label: Prowlarr — UI language
-    jellyseerr_ui_label: Seerr — UI language (admin)
+    prowlarr_ui_label: UI language
+    jellyseerr_ui_label: UI language (admin)
     not_configured: Service not configured
     unreachable: Service unreachable
     save_btn: Save languages

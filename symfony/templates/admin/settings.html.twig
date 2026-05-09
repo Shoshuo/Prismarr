@@ -215,6 +215,64 @@
     margin-bottom: 0;
   }
   .display-help { font-size: .72rem; opacity: .55; margin: .1rem 0 0; }
+  /* Languages section: dense table per service block. */
+  .lang-svc-block { margin-bottom: 1.4rem; }
+  .lang-svc-block:last-child { margin-bottom: 0; }
+  .lang-svc-head {
+    display: flex; align-items: center; gap: .5rem;
+    margin-bottom: .55rem; padding-bottom: .4rem;
+    border-bottom: 1px solid var(--tblr-border-color);
+  }
+  .lang-svc-dot {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; flex-shrink: 0;
+  }
+  .lang-svc-name {
+    font-weight: 600; font-size: .9rem;
+    letter-spacing: .01em;
+  }
+  .lang-table-wrap { overflow-x: auto; }
+  .lang-table {
+    width: 100%; margin: 0;
+    font-size: .82rem;
+    border-collapse: collapse;
+  }
+  .lang-table th {
+    text-align: left; font-weight: 500;
+    opacity: .55;
+    font-size: .68rem;
+    text-transform: uppercase; letter-spacing: .05em;
+    padding: 0 .75rem .35rem 0;
+    white-space: nowrap;
+  }
+  .lang-table th:first-child { padding-left: 0; }
+  .lang-table td {
+    padding: .35rem .75rem .35rem 0;
+    vertical-align: middle;
+    border-top: 1px solid var(--tblr-border-color-translucent, rgba(255,255,255,.05));
+  }
+  .lang-table td:first-child { padding-left: 0; }
+  .lang-table tbody tr:first-child td { border-top: 0; }
+  .lang-table .lang-instance {
+    font-weight: 500;
+    width: 1%;       /* shrink to content */
+    white-space: nowrap;
+    padding-right: 1.5rem;
+  }
+  .lang-table .form-select-sm {
+    min-width: 160px;
+    max-width: 100%;
+  }
+  .lang-empty {
+    color: var(--tblr-secondary-color);
+    font-style: italic;
+    opacity: .7;
+  }
+  .lang-error {
+    color: var(--tblr-danger);
+    font-size: .78rem;
+    opacity: .85;
+  }
 
   /* Color swatches — 6 clickable circles */
   .color-swatches { display: flex; gap: .5rem; flex-wrap: wrap; }
@@ -667,94 +725,166 @@
                 </div>
               </div>
 
-              <div class="display-grid">
-                {# Radarr — UI #}
-                <div class="display-row">
-                  <label class="display-label" for="radarr_ui">{{ 'admin.languages.radarr_ui_label'|trans }}</label>
-                  {% if not languages.radarr.configured %}
-                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.not_configured'|trans }}">
-                  {% elseif languages.radarr.error %}
-                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.unreachable'|trans }}">
-                  {% else %}
-                    <select id="radarr_ui" name="radarr_ui" class="form-select form-select-sm">
-                      {% for id, name in languages.radarr.available %}
-                        <option value="{{ id }}" {% if languages.radarr.current == id %}selected{% endif %}>{{ name }}</option>
+              {# ── Radarr ── #}
+              <div class="lang-svc-block">
+                <div class="lang-svc-head">
+                  <span class="lang-svc-dot" style="background:#f59f00;"></span>
+                  <span class="lang-svc-name">Radarr</span>
+                </div>
+                <div class="lang-table-wrap">
+                  <table class="lang-table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'admin.languages.col_instance'|trans }}</th>
+                        <th>{{ 'admin.languages.radarr_ui_label'|trans }}</th>
+                        <th>{{ 'admin.languages.radarr_info_label'|trans }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for slug, lang in languages.radarr %}
+                        <tr>
+                          <td class="lang-instance">{{ lang.name }}</td>
+                          {% if lang.error %}
+                            <td colspan="2" class="lang-error">{{ 'admin.languages.unreachable'|trans }}</td>
+                          {% else %}
+                            <td>
+                              <select name="radarr_ui[{{ slug }}]" class="form-select form-select-sm">
+                                {% for id, name in lang.available %}
+                                  <option value="{{ id }}" {% if lang.current == id %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                              </select>
+                            </td>
+                            <td>
+                              <select name="radarr_info[{{ slug }}]" class="form-select form-select-sm">
+                                {% for id, name in lang.available %}
+                                  <option value="{{ id }}" {% if lang.current_info == id %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                              </select>
+                            </td>
+                          {% endif %}
+                        </tr>
+                      {% else %}
+                        <tr><td colspan="3" class="lang-empty">{{ 'admin.languages.not_configured'|trans }}</td></tr>
                       {% endfor %}
-                    </select>
-                  {% endif %}
+                    </tbody>
+                  </table>
                 </div>
+                {% if languages.radarr|length > 0 %}
+                  <small class="text-secondary d-block mt-1">{{ 'admin.languages.radarr_info_help'|trans }}</small>
+                {% endif %}
+              </div>
 
-                {# Radarr — Movie Info #}
-                <div class="display-row">
-                  <label class="display-label" for="radarr_info">{{ 'admin.languages.radarr_info_label'|trans }}</label>
-                  {% if not languages.radarr.configured %}
-                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.not_configured'|trans }}">
-                  {% elseif languages.radarr.error %}
-                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.unreachable'|trans }}">
-                  {% else %}
-                    <div>
-                      <select id="radarr_info" name="radarr_info" class="form-select form-select-sm">
-                        {% for id, name in languages.radarr.available %}
-                          <option value="{{ id }}" {% if languages.radarr.current_info == id %}selected{% endif %}>{{ name }}</option>
-                        {% endfor %}
-                      </select>
-                      <small class="text-secondary d-block mt-1">{{ 'admin.languages.radarr_info_help'|trans }}</small>
-                    </div>
-                  {% endif %}
+              {# ── Sonarr — Sonarr v4 doesn't expose a global "Series Info Language", just UI. ── #}
+              <div class="lang-svc-block">
+                <div class="lang-svc-head">
+                  <span class="lang-svc-dot" style="background:#3b82f6;"></span>
+                  <span class="lang-svc-name">Sonarr</span>
                 </div>
-
-                {# Sonarr — UI #}
-                <div class="display-row">
-                  <label class="display-label" for="sonarr_ui">{{ 'admin.languages.sonarr_ui_label'|trans }}</label>
-                  {% if not languages.sonarr.configured %}
-                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.not_configured'|trans }}">
-                  {% elseif languages.sonarr.error %}
-                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.unreachable'|trans }}">
-                  {% else %}
-                    <select id="sonarr_ui" name="sonarr_ui" class="form-select form-select-sm">
-                      {% for id, name in languages.sonarr.available %}
-                        <option value="{{ id }}" {% if languages.sonarr.current == id %}selected{% endif %}>{{ name }}</option>
+                <div class="lang-table-wrap">
+                  <table class="lang-table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'admin.languages.col_instance'|trans }}</th>
+                        <th>{{ 'admin.languages.sonarr_ui_label'|trans }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for slug, lang in languages.sonarr %}
+                        <tr>
+                          <td class="lang-instance">{{ lang.name }}</td>
+                          {% if lang.error %}
+                            <td class="lang-error">{{ 'admin.languages.unreachable'|trans }}</td>
+                          {% else %}
+                            <td>
+                              <select name="sonarr_ui[{{ slug }}]" class="form-select form-select-sm">
+                                {% for id, name in lang.available %}
+                                  <option value="{{ id }}" {% if lang.current == id %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                              </select>
+                            </td>
+                          {% endif %}
+                        </tr>
+                      {% else %}
+                        <tr><td colspan="2" class="lang-empty">{{ 'admin.languages.not_configured'|trans }}</td></tr>
                       {% endfor %}
-                    </select>
-                  {% endif %}
+                    </tbody>
+                  </table>
                 </div>
+              </div>
 
-                {# Sonarr v4 does not expose a global "Series Info Language" — each series has its own originalLanguage. The selector was removed to avoid writing to a field that does not exist. #}
-
-                {# Prowlarr #}
-                <div class="display-row">
-                  <label class="display-label" for="prowlarr_ui">{{ 'admin.languages.prowlarr_ui_label'|trans }}</label>
-                  {% if not languages.prowlarr.configured %}
-                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.not_configured'|trans }}">
-                  {% elseif languages.prowlarr.error %}
-                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.unreachable'|trans }}">
-                  {% else %}
-                    <select id="prowlarr_ui" name="prowlarr_ui" class="form-select form-select-sm">
-                      {% for code, name in languages.prowlarr.available %}
-                        <option value="{{ code }}" {% if languages.prowlarr.current == code %}selected{% endif %}>{{ name }}</option>
-                      {% endfor %}
-                    </select>
-                  {% endif %}
+              {# ── Prowlarr (mono-instance) ── #}
+              <div class="lang-svc-block">
+                <div class="lang-svc-head">
+                  <span class="lang-svc-dot" style="background:#8b5cf6;"></span>
+                  <span class="lang-svc-name">Prowlarr</span>
                 </div>
-
-                {# Seerr #}
-                <div class="display-row">
-                  <label class="display-label" for="jellyseerr_ui">{{ 'admin.languages.jellyseerr_ui_label'|trans }}</label>
-                  {% if not languages.jellyseerr.configured %}
-                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.not_configured'|trans }}">
-                  {% elseif languages.jellyseerr.error %}
-                    <input class="form-control form-control-sm" disabled value="{{ 'admin.languages.unreachable'|trans }}">
-                  {% else %}
-                    <div>
-                      <select id="jellyseerr_ui" name="jellyseerr_ui" class="form-select form-select-sm">
-                        {% for code, name in languages.jellyseerr.available %}
-                          <option value="{{ code }}" {% if languages.jellyseerr.current == code %}selected{% endif %}>{{ name }}</option>
-                        {% endfor %}
-                      </select>
-                      <small class="text-secondary d-block mt-1">{{ 'admin.languages.info_jellyseerr_global'|trans }}</small>
-                    </div>
-                  {% endif %}
+                <div class="lang-table-wrap">
+                  <table class="lang-table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'admin.languages.col_instance'|trans }}</th>
+                        <th>{{ 'admin.languages.prowlarr_ui_label'|trans }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="lang-instance">Prowlarr</td>
+                        {% if not languages.prowlarr.configured %}
+                          <td class="lang-empty">{{ 'admin.languages.not_configured'|trans }}</td>
+                        {% elseif languages.prowlarr.error %}
+                          <td class="lang-error">{{ 'admin.languages.unreachable'|trans }}</td>
+                        {% else %}
+                          <td>
+                            <select name="prowlarr_ui" class="form-select form-select-sm">
+                              {% for code, name in languages.prowlarr.available %}
+                                <option value="{{ code }}" {% if languages.prowlarr.current == code %}selected{% endif %}>{{ name }}</option>
+                              {% endfor %}
+                            </select>
+                          </td>
+                        {% endif %}
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
+              </div>
+
+              {# ── Seerr (mono-instance) ── #}
+              <div class="lang-svc-block">
+                <div class="lang-svc-head">
+                  <span class="lang-svc-dot" style="background:#ec4899;"></span>
+                  <span class="lang-svc-name">Seerr</span>
+                </div>
+                <div class="lang-table-wrap">
+                  <table class="lang-table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'admin.languages.col_instance'|trans }}</th>
+                        <th>{{ 'admin.languages.jellyseerr_ui_label'|trans }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="lang-instance">Seerr</td>
+                        {% if not languages.jellyseerr.configured %}
+                          <td class="lang-empty">{{ 'admin.languages.not_configured'|trans }}</td>
+                        {% elseif languages.jellyseerr.error %}
+                          <td class="lang-error">{{ 'admin.languages.unreachable'|trans }}</td>
+                        {% else %}
+                          <td>
+                            <select name="jellyseerr_ui" class="form-select form-select-sm">
+                              {% for code, name in languages.jellyseerr.available %}
+                                <option value="{{ code }}" {% if languages.jellyseerr.current == code %}selected{% endif %}>{{ name }}</option>
+                              {% endfor %}
+                            </select>
+                          </td>
+                        {% endif %}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                {% if languages.jellyseerr.configured and not languages.jellyseerr.error %}
+                  <small class="text-secondary d-block mt-1">{{ 'admin.languages.info_jellyseerr_global'|trans }}</small>
+                {% endif %}
               </div>
 
               <div class="alert alert-info mt-3" style="font-size:.78rem;">

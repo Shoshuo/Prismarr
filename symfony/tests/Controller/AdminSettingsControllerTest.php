@@ -23,6 +23,7 @@ class AdminSettingsControllerTest extends TestCase
         ConfigService $config,
         HealthService $health,
         ?ServiceInstanceProvider $instances = null,
+        array $services = [],
     ): AdminSettingsController {
         $appVersion = $this->createMock(\App\Service\AppVersion::class);
         $appVersion->method('current')->willReturn('test');
@@ -65,13 +66,17 @@ class AdminSettingsControllerTest extends TestCase
 
         $container->method('has')->willReturnCallback(
             fn(string $id) => in_array($id, ['twig', 'security.csrf.token_manager', 'request_stack', 'router'], true)
+                || array_key_exists($id, $services)
         );
-        $container->method('get')->willReturnCallback(fn(string $id) => match ($id) {
-            'twig'                        => $twig,
-            'security.csrf.token_manager' => $csrf,
-            'request_stack'               => $requestStack,
-            'router'                      => $router,
-            default                       => null,
+        $container->method('get')->willReturnCallback(function (string $id) use ($twig, $csrf, $requestStack, $router, $services) {
+            return match (true) {
+                $id === 'twig'                        => $twig,
+                $id === 'security.csrf.token_manager' => $csrf,
+                $id === 'request_stack'               => $requestStack,
+                $id === 'router'                      => $router,
+                array_key_exists($id, $services)      => $services[$id],
+                default                               => null,
+            };
         });
 
         $controller->setContainer($container);
@@ -425,6 +430,70 @@ class AdminSettingsControllerTest extends TestCase
         ]);
 
         $this->controller($settings, $config, $health)->test('radarr', $request);
+    }
+
+    /**
+     * v1.1.0 — Section Languages must update only the instance whose slug
+     * appears in the form. With 2 enabled Radarr instances, posting
+     * `radarr_ui[radarr-1]=2` (and nothing for `radarr-2`) must result in
+     * exactly one updateUiConfig call, on `radarr-1`. Touching the other
+     * would be a regression: a partial save would silently rewrite an
+     * unrelated instance's UI language.
+     */
+    public function testLanguagesSaveOnlyUpdatesInstanceMentionedInPayload(): void
+    {
+        $inst1 = new \App\Entity\ServiceInstance(
+            \App\Entity\ServiceInstance::TYPE_RADARR, 'radarr-1', 'Radarr',    'http://r1:7878', 'k1'
+        );
+        $inst2 = new \App\Entity\ServiceInstance(
+            \App\Entity\ServiceInstance::TYPE_RADARR, 'radarr-2', 'Radarr 4K', 'http://r2:7878', 'k2'
+        );
+
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getEnabled')->willReturnCallback(
+            fn(string $type) => $type === \App\Entity\ServiceInstance::TYPE_RADARR ? [$inst1, $inst2] : []
+        );
+
+        // Per-instance sub-clients. withInstance($inst1) returns $client1,
+        // withInstance($inst2) returns $client2. We then assert update is
+        // called on $client1 only.
+        $client1 = $this->createMock(\App\Service\Media\RadarrClient::class);
+        $client1->method('getUiConfig')->willReturn(['uiLanguage' => 1, 'movieInfoLanguage' => 1]);
+        $client1->expects($this->once())
+            ->method('updateUiConfig')
+            ->with($this->callback(fn(array $ui) => ($ui['uiLanguage'] ?? null) === 2));
+
+        $client2 = $this->createMock(\App\Service\Media\RadarrClient::class);
+        $client2->expects($this->never())->method('getUiConfig');
+        $client2->expects($this->never())->method('updateUiConfig');
+
+        $radarrTemplate = $this->createMock(\App\Service\Media\RadarrClient::class);
+        $radarrTemplate->method('withInstance')->willReturnCallback(
+            fn(\App\Entity\ServiceInstance $i) => $i->getSlug() === 'radarr-1' ? $client1 : $client2
+        );
+
+        $settings = $this->createMock(SettingRepository::class);
+        $config   = $this->createMock(ConfigService::class);
+        $health   = $this->createMock(HealthService::class);
+
+        $request = Request::create(
+            '/admin/settings/languages/save',
+            'POST',
+            [
+                '_csrf_token' => 'valid',
+                'radarr_ui'   => ['radarr-1' => '2'],
+            ]
+        );
+        $request->setSession(new \Symfony\Component\HttpFoundation\Session\Session(
+            new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage()
+        ));
+
+        $controller = $this->controller($settings, $config, $health, $instances, [
+            \App\Service\Media\RadarrClient::class => $radarrTemplate,
+        ]);
+
+        $response = $controller->languagesSave($request);
+        $this->assertSame(302, $response->getStatusCode());
     }
 
     public function testTestEndpointSwallowsExceptionsWithoutLeakingDetails(): void

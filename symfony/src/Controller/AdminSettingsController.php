@@ -494,52 +494,80 @@ class AdminSettingsController extends AbstractController
             try { $this->appCache->clear(); } catch (\Throwable) {}
         }
 
-        // Radarr UI + Movie Info lang (pushed via API, same /config/ui endpoint)
-        if ($this->instances->hasAnyEnabled(ServiceInstance::TYPE_RADARR)
-            && (isset($payload['radarr_ui']) || isset($payload['radarr_info']))) {
-            try {
-                /** @var RadarrClient $radarr */
-                $radarr   = $this->container->get(RadarrClient::class);
-                $ui       = $radarr->getUiConfig() ?? [];
-                $changed_ = false;
-                if (isset($payload['radarr_ui'])) {
-                    $newId = (int) $payload['radarr_ui'];
-                    if ($newId > 0 && ($ui['uiLanguage'] ?? null) !== $newId) {
-                        $ui['uiLanguage'] = $newId;
-                        $changed_ = true;
+        // Radarr UI + Movie Info lang per instance — form posts radarr_ui[<slug>]
+        // and radarr_info[<slug>]. We push one /config/ui per instance touched,
+        // and tag failures with the instance name so the user knows which one
+        // is unreachable (e.g. "Radarr 4K" vs "Radarr").
+        $radarrUiPayload   = is_array($payload['radarr_ui']   ?? null) ? $payload['radarr_ui']   : [];
+        $radarrInfoPayload = is_array($payload['radarr_info'] ?? null) ? $payload['radarr_info'] : [];
+        if ($radarrUiPayload !== [] || $radarrInfoPayload !== []) {
+            /** @var RadarrClient $radarrTemplate */
+            $radarrTemplate = $this->container->get(RadarrClient::class);
+            foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+                $slug    = $inst->getSlug();
+                $hasUi   = array_key_exists($slug, $radarrUiPayload);
+                $hasInfo = array_key_exists($slug, $radarrInfoPayload);
+                if (!$hasUi && !$hasInfo) {
+                    continue;
+                }
+                try {
+                    $client   = $radarrTemplate->withInstance($inst);
+                    $ui       = $client->getUiConfig() ?? [];
+                    $changed_ = false;
+                    if ($hasUi) {
+                        $newId = (int) $radarrUiPayload[$slug];
+                        if ($newId > 0 && ($ui['uiLanguage'] ?? null) !== $newId) {
+                            $ui['uiLanguage'] = $newId;
+                            $changed_ = true;
+                        }
                     }
-                }
-                if (isset($payload['radarr_info'])) {
-                    $newId = (int) $payload['radarr_info'];
-                    if ($newId > 0 && ($ui['movieInfoLanguage'] ?? null) !== $newId) {
-                        $ui['movieInfoLanguage'] = $newId;
-                        $changed_ = true;
+                    if ($hasInfo) {
+                        $newId = (int) $radarrInfoPayload[$slug];
+                        if ($newId > 0 && ($ui['movieInfoLanguage'] ?? null) !== $newId) {
+                            $ui['movieInfoLanguage'] = $newId;
+                            $changed_ = true;
+                        }
                     }
+                    if ($changed_) {
+                        $client->updateUiConfig($ui);
+                    }
+                } catch (\Throwable $e) {
+                    $failed[] = $inst->getName();
+                    $this->logger->warning('AdminSettings languagesSave radarr failed', [
+                        'instance' => $slug,
+                        'message'  => $e->getMessage(),
+                    ]);
                 }
-                if ($changed_) {
-                    $radarr->updateUiConfig($ui);
-                }
-            } catch (\Throwable $e) {
-                $failed[] = 'Radarr';
-                $this->logger->warning('AdminSettings languagesSave radarr failed', ['message' => $e->getMessage()]);
             }
         }
 
-        // Sonarr UI lang (Sonarr v4 doesn't expose movieInfoLanguage/seriesInfoLanguage —
-        // each series has its own originalLanguage, no global setting)
-        if ($this->instances->hasAnyEnabled(ServiceInstance::TYPE_SONARR) && isset($payload['sonarr_ui'])) {
-            try {
-                /** @var SonarrClient $sonarr */
-                $sonarr = $this->container->get(SonarrClient::class);
-                $ui     = $sonarr->getUiConfig() ?? [];
-                $newId  = (int) $payload['sonarr_ui'];
-                if ($newId > 0 && ($ui['uiLanguage'] ?? null) !== $newId) {
-                    $ui['uiLanguage'] = $newId;
-                    $sonarr->updateUiConfig($ui);
+        // Sonarr UI lang per instance — Sonarr v4 doesn't expose
+        // movieInfoLanguage/seriesInfoLanguage (each series has its own
+        // originalLanguage), so only one selector per instance.
+        $sonarrUiPayload = is_array($payload['sonarr_ui'] ?? null) ? $payload['sonarr_ui'] : [];
+        if ($sonarrUiPayload !== []) {
+            /** @var SonarrClient $sonarrTemplate */
+            $sonarrTemplate = $this->container->get(SonarrClient::class);
+            foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+                $slug = $inst->getSlug();
+                if (!array_key_exists($slug, $sonarrUiPayload)) {
+                    continue;
                 }
-            } catch (\Throwable $e) {
-                $failed[] = 'Sonarr';
-                $this->logger->warning('AdminSettings languagesSave sonarr failed', ['message' => $e->getMessage()]);
+                try {
+                    $client = $sonarrTemplate->withInstance($inst);
+                    $ui     = $client->getUiConfig() ?? [];
+                    $newId  = (int) $sonarrUiPayload[$slug];
+                    if ($newId > 0 && ($ui['uiLanguage'] ?? null) !== $newId) {
+                        $ui['uiLanguage'] = $newId;
+                        $client->updateUiConfig($ui);
+                    }
+                } catch (\Throwable $e) {
+                    $failed[] = $inst->getName();
+                    $this->logger->warning('AdminSettings languagesSave sonarr failed', [
+                        'instance' => $slug,
+                        'message'  => $e->getMessage(),
+                    ]);
+                }
             }
         }
 
@@ -606,59 +634,79 @@ class AdminSettingsController extends AbstractController
      * for each connected *Arr service. Best-effort: each service is wrapped
      * in try/catch so a single dead service doesn't break the page.
      *
-     * @return array<string, array{configured: bool, current: string|int|null, available: array<string|int, string>, error: bool}>
+     * Multi-instance shape: `radarr` and `sonarr` are keyed by instance slug
+     * so the form can render one row per instance. Prowlarr and Jellyseerr
+     * stay mono-instance (no slug routing for them in v1.1).
+     *
+     * @return array{
+     *   radarr: array<string, array{name: string, current: int|null, current_info: int|null, available: array<int, string>, error: bool}>,
+     *   sonarr: array<string, array{name: string, current: int|null, available: array<int, string>, error: bool}>,
+     *   prowlarr: array{configured: bool, current: string|null, available: array<string, string>, error: bool},
+     *   jellyseerr: array{configured: bool, current: string|null, available: array<string, string>, error: bool},
+     * }
      */
     private function loadServiceLanguages(): array
     {
         $out = [
-            'radarr'     => ['configured' => false, 'current' => null, 'current_info' => null, 'available' => [], 'error' => false],
-            'sonarr'     => ['configured' => false, 'current' => null, 'available' => [], 'error' => false],
+            'radarr'     => [],
+            'sonarr'     => [],
             'prowlarr'   => ['configured' => false, 'current' => null, 'available' => self::PROWLARR_UI_LANGUAGES, 'error' => false],
             'jellyseerr' => ['configured' => false, 'current' => null, 'available' => self::JELLYSEERR_UI_LANGUAGES, 'error' => false],
         ];
 
-        // Radarr: id-based language list, /api/v3/language + /api/v3/config/ui
-        if ($this->instances->hasAnyEnabled(ServiceInstance::TYPE_RADARR)) {
-            $out['radarr']['configured'] = true;
+        // Radarr: id-based language list, /api/v3/language + /api/v3/config/ui.
+        // One row per enabled instance — withInstance() returns a fresh client
+        // bound to that instance, so the autowired one (driven by the request
+        // slug binder, which doesn't fire on /admin/settings) stays untouched.
+        /** @var RadarrClient $radarrTemplate */
+        $radarrTemplate = $this->container->get(RadarrClient::class);
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+            $row = ['name' => $inst->getName(), 'current' => null, 'current_info' => null, 'available' => [], 'error' => false];
             try {
-                /** @var RadarrClient $radarr */
-                $radarr = $this->container->get(RadarrClient::class);
-                $ui     = $radarr->getUiConfig() ?? [];
-                $langs  = $radarr->getLanguages();
-                $out['radarr']['current']      = $ui['uiLanguage'] ?? null;
-                $out['radarr']['current_info'] = $ui['movieInfoLanguage'] ?? null;
-                $out['radarr']['available']    = [];
+                $client = $radarrTemplate->withInstance($inst);
+                $ui     = $client->getUiConfig() ?? [];
+                $langs  = $client->getLanguages();
+                $row['current']      = isset($ui['uiLanguage']) ? (int) $ui['uiLanguage'] : null;
+                $row['current_info'] = isset($ui['movieInfoLanguage']) ? (int) $ui['movieInfoLanguage'] : null;
                 foreach ($langs as $l) {
                     if (isset($l['id'], $l['name'])) {
-                        $out['radarr']['available'][(int) $l['id']] = (string) $l['name'];
+                        $row['available'][(int) $l['id']] = (string) $l['name'];
                     }
                 }
             } catch (\Throwable $e) {
-                $out['radarr']['error'] = true;
-                $this->logger->warning('AdminSettings loadLanguages radarr failed', ['message' => $e->getMessage()]);
+                $row['error'] = true;
+                $this->logger->warning('AdminSettings loadLanguages radarr failed', [
+                    'instance' => $inst->getSlug(),
+                    'message'  => $e->getMessage(),
+                ]);
             }
+            $out['radarr'][$inst->getSlug()] = $row;
         }
 
         // Sonarr: UI language only — Sonarr v4 no longer offers a global setting
         // for series metadata language (each series has its own originalLanguage).
-        if ($this->instances->hasAnyEnabled(ServiceInstance::TYPE_SONARR)) {
-            $out['sonarr']['configured'] = true;
+        /** @var SonarrClient $sonarrTemplate */
+        $sonarrTemplate = $this->container->get(SonarrClient::class);
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+            $row = ['name' => $inst->getName(), 'current' => null, 'available' => [], 'error' => false];
             try {
-                /** @var SonarrClient $sonarr */
-                $sonarr = $this->container->get(SonarrClient::class);
-                $ui     = $sonarr->getUiConfig() ?? [];
-                $langs  = $sonarr->getLanguages();
-                $out['sonarr']['current']   = $ui['uiLanguage'] ?? null;
-                $out['sonarr']['available'] = [];
+                $client = $sonarrTemplate->withInstance($inst);
+                $ui     = $client->getUiConfig() ?? [];
+                $langs  = $client->getLanguages();
+                $row['current'] = isset($ui['uiLanguage']) ? (int) $ui['uiLanguage'] : null;
                 foreach ($langs as $l) {
                     if (isset($l['id'], $l['name'])) {
-                        $out['sonarr']['available'][(int) $l['id']] = (string) $l['name'];
+                        $row['available'][(int) $l['id']] = (string) $l['name'];
                     }
                 }
             } catch (\Throwable $e) {
-                $out['sonarr']['error'] = true;
-                $this->logger->warning('AdminSettings loadLanguages sonarr failed', ['message' => $e->getMessage()]);
+                $row['error'] = true;
+                $this->logger->warning('AdminSettings loadLanguages sonarr failed', [
+                    'instance' => $inst->getSlug(),
+                    'message'  => $e->getMessage(),
+                ]);
             }
+            $out['sonarr'][$inst->getSlug()] = $row;
         }
 
         // Prowlarr: ISO codes (no /language endpoint), curated list

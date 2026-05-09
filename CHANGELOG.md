@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Expandable shelves in the Radarr and Sonarr shelf views, allowing shelves to wrap into multi-row grids while keeping the collapsed behavior.
 
+### Changed
+- **Multi-instance Languages section in `/admin/settings`.** With v1.1.0's multi-instance support for Radarr and Sonarr, the Languages card now renders one sub-block per enabled instance (e.g. "Radarr", "Radarr 4K") with its own UI Language and Movie Info Language selectors. Each instance is fetched and saved independently, so an unreachable instance only flags itself as `unreachable` instead of disabling the whole card. The save endpoint accepts the new array form (`radarr_ui[<slug>]`, `radarr_info[<slug>]`, `sonarr_ui[<slug>]`) and partial failures are reported by instance name (e.g. "Radarr 4K failed"). Prowlarr and Seerr remain mono-instance and unchanged.
+
 ## [1.0.6] - 2026-05-03
 
 ### Added

@@ -579,13 +579,14 @@ admin:
     prismarr_metadata_label: Langue des métadonnées TMDb
     prismarr_metadata_help: 'Langue des titres, synopsis et fiches récupérées depuis TMDb (pour la page Découverte et les fiches enrichies).'
     services_section: Services connectés
-    radarr_ui_label: Radarr — Langue UI
-    radarr_info_label: Radarr — Langue infos film
-    radarr_info_help: Langue des titres, synopsis et metadata des films récupérés depuis TMDb par Radarr.
-    sonarr_ui_label: Sonarr — Langue UI
+    col_instance: Instance
+    radarr_ui_label: Langue UI
+    radarr_info_label: Langue infos film
+    radarr_info_help: La langue des infos film pilote les titres et synopsis récupérés depuis TMDb par Radarr.
+    sonarr_ui_label: Langue UI
     sonarr_info_unavailable: 'Sonarr v4 ne propose plus de langue globale pour les séries (chaque série a son originalLanguage propre).'
-    prowlarr_ui_label: Prowlarr — Langue UI
-    jellyseerr_ui_label: Seerr — Langue UI (admin)
+    prowlarr_ui_label: Langue UI
+    jellyseerr_ui_label: Langue UI (admin)
     not_configured: Service non configuré
     unreachable: Service injoignable
     save_btn: Enregistrer les langues
