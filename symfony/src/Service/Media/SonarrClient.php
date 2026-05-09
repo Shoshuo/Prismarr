@@ -504,7 +504,17 @@ class SonarrClient implements ResetInterface
             'episode'       => $e['episodeNumber'] ?? 0,
             'title'         => $e['title'] ?? '—',
             'overview'      => $e['overview'] ?? ($e['series']['overview'] ?? null),
-            'airDate'       => isset($e['airDateUtc']) ? new \DateTimeImmutable($e['airDateUtc']) : null,
+            // `airDate` is the local broadcast date (e.g. "2024-01-15" for a
+            // Saturday 9pm GMT premiere) — same value TVDB/Trakt/Plex use.
+            // `airDateUtc` is the actual instant; using it would shift the
+            // day by one for any user whose TZ pushes the broadcast time
+            // across midnight (issue #26 — calendar entries one day off).
+            // Anchored in UTC so format('Y-m-d') stays stable regardless of
+            // the user's TZ; falls back to airDateUtc only if Sonarr omits
+            // the local field.
+            'airDate'       => isset($e['airDate'])
+                ? new \DateTimeImmutable($e['airDate'], new \DateTimeZone('UTC'))
+                : (isset($e['airDateUtc']) ? new \DateTimeImmutable($e['airDateUtc']) : null),
             'hasFile'       => (bool) ($e['hasFile'] ?? false),
             'monitored'     => (bool) ($e['monitored'] ?? false),
             'runtime'       => $e['runtime'] ?? ($e['series']['runtime'] ?? null),

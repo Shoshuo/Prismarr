@@ -48,7 +48,7 @@
               <span class="badge bg-blue-lt">{{ ep.episodeFile.quality.quality.name ?? '—' }}</span>
             {% else %}—{% endif %}
           </td>
-          <td class="text-muted">{{ ep.airDateUtc ? ep.airDateUtc|date('d/m/Y', 'Europe/Paris') : '—' }}</td>
+          <td class="text-muted">{{ ep.airDate ?? (ep.airDateUtc ? ep.airDateUtc|date('Y-m-d') : '—') }}</td>
         </tr>
         {% else %}
         <tr><td colspan="5" class="text-center text-muted py-4">{{ 'media.series_cutoff.empty'|trans }}</td></tr>
