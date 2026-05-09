@@ -1389,15 +1389,31 @@
   var ICON_SEARCH = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
 
   var bannerLocked = false; // Empêcher refreshWarnings d'écraser le bandeau pendant une action
+  // Defense-in-depth: showPageBanner is the safe form — `msg` is treated as
+  // plain text via textContent so an upstream-controlled string (Radarr movie
+  // title, Sonarr file path, etc.) can never inject markup. Call sites that
+  // legitimately need HTML (spinner SVG + i18n template) call
+  // showPageBannerHtml explicitly, narrowing the XSS surface to a handful
+  // of audited literals instead of the whole 57-call-site sweep.
   function showPageBanner(msg, type) {
+    showPageBannerInternal(String(msg ?? ''), type, false);
+  }
+  function showPageBannerHtml(msg, type) {
+    showPageBannerInternal(String(msg ?? ''), type, true);
+  }
+  function showPageBannerInternal(msg, type, allowHtml) {
     var el = document.getElementById('warnings-banner');
     if (!el) return;
     bannerLocked = true;
     var existing = el.querySelector('.alert');
     if (existing && existing.classList.contains('alert-' + type)) {
-      existing.innerHTML = msg;
+      if (allowHtml) existing.innerHTML = msg; else existing.textContent = msg;
     } else {
-      el.innerHTML = '<div class="alert alert-' + type + ' mb-3">' + msg + '</div>';
+      el.innerHTML = '';
+      var alert = document.createElement('div');
+      alert.className = 'alert alert-' + type + ' mb-3';
+      if (allowHtml) alert.innerHTML = msg; else alert.textContent = msg;
+      el.appendChild(alert);
     }
     if (type === 'success' || type === 'warning' || type === 'danger') {
       setTimeout(function() { bannerLocked = false; refreshWarnings(); }, 6000);
@@ -1410,7 +1426,7 @@
     var btn = this;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + ids.length + '...';
-    showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_update_tpl, {COUNT: ids.length}), 'info');
+    showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_update_tpl, {COUNT: ids.length}), 'info');
 
     ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/refresh', { movieIds: ids })
     .then(function(data) {
@@ -1441,7 +1457,7 @@
     var btn = this;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + ids.length + '...';
-    showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_search_progress_tpl, {COUNT: ids.length, IDX: INDEXER_COUNT}), 'info');
+    showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_search_progress_tpl, {COUNT: ids.length, IDX: INDEXER_COUNT}), 'info');
 
     var filmNames = [];
     grid.querySelectorAll('.media-card').forEach(function(c) {
@@ -1490,7 +1506,7 @@
               }
               var progress = filmsDone > 0 ? tpl(FILM_I18N.w_search_progress_suffix_tpl, {DONE: filmsDone, TOTAL: ids.length}) : '';
               var display = msg || tpl(FILM_I18N.w_search_in_progress_tpl, {SEC: elapsed});
-              showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_search_elapsed_tpl, {MSG: display, PROG: progress}), 'info');
+              showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_search_elapsed_tpl, {MSG: display, PROG: progress}), 'info');
             }
           });
         }, 2000);
@@ -3634,7 +3650,7 @@
       else if (cmd.name === 'RenameMovie') label = FILM_I18N.w_cmd_rename;
       else if (cmd.name === 'ManualImport') label = FILM_I18N.w_cmd_import;
 
-      showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_in_progress_tpl, {LBL: label}), 'info');
+      showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_in_progress_tpl, {LBL: label}), 'info');
 
       var pollCount = 0;
       var pollCmd = setInterval(function() {
@@ -3668,7 +3684,7 @@
             showPageBanner(tpl(FILM_I18N.w_cmd_failed_tpl, {LBL: label, ERR: msg || FILM_I18N.unknown_error}), 'danger');
           } else {
             var display = msg || tpl(FILM_I18N.w_search_in_progress_tpl, {SEC: elapsed});
-            showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_elapsed_tpl, {LBL: label, MSG: display}), 'info');
+            showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_elapsed_tpl, {LBL: label, MSG: display}), 'info');
           }
         });
       }, 2000);
@@ -4003,7 +4019,7 @@
      ══════════════════════════════════════════════════════════════════════════ */
   function pollFilmCmd(cmdId, label) {
     var pollCount = 0;
-    showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_in_progress_tpl, {LBL: label}), 'info');
+    showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_in_progress_tpl, {LBL: label}), 'info');
     var timer = setInterval(function() {
       pollCount++;
       ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + cmdId).then(function(cmd) {
@@ -4017,7 +4033,7 @@
           showPageBanner(tpl(FILM_I18N.w_cmd_failed_tpl, {LBL: label, ERR: msg || FILM_I18N.unknown_error}), 'danger');
         } else {
           var display = msg || tpl(FILM_I18N.w_search_in_progress_tpl, {SEC: pollCount * 2});
-          showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_elapsed_tpl, {LBL: label, MSG: display}), 'info');
+          showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_elapsed_tpl, {LBL: label, MSG: display}), 'info');
         }
       });
     }, 2000);

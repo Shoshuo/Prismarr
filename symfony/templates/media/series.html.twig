@@ -1544,7 +1544,7 @@
     var ids = visibleCards().map(function(c) { return parseInt(c.dataset.id); });
     if (!ids.length) return;
     var btn = this; btn.disabled = true;
-    showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_refreshing_tpl, { COUNT: ids.length }), 'info');
+    showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_refreshing_tpl, { COUNT: ids.length }), 'info');
     var done = 0;
     ids.forEach(function(sid) {
       ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + sid + '/refresh', {}).then(function() {
@@ -1560,7 +1560,7 @@
     if (!ids.length) { showPageBanner(SERIES_I18N.w_no_monitored_filtered, 'warning'); return; }
     if (!confirm(tpl(SERIES_I18N.w_confirm_search_filtered_tpl, { COUNT: ids.length }))) return;
     var btn = this; btn.disabled = true;
-    showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_searching_tpl, { COUNT: ids.length }), 'info');
+    showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_searching_tpl, { COUNT: ids.length }), 'info');
     var done = 0;
     ids.forEach(function(sid) {
       ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + sid + '/search', {}).then(function(d) {
@@ -2728,16 +2728,45 @@
   var bannerLocked = false;
   var pageBannerSeriesId = null;
 
+  // Defense-in-depth: showPageBanner is the safe form — `msg` is treated as
+  // plain text via textContent. showPageBannerHtml is the explicit-HTML form
+  // for the few call sites that inject a spinner SVG alongside an i18n
+  // template. Same split as films.html.twig.
   function showPageBanner(msg, type, seriesId) {
+    showPageBannerInternal(String(msg ?? ''), type, seriesId, false);
+  }
+  function showPageBannerHtml(msg, type, seriesId) {
+    showPageBannerInternal(String(msg ?? ''), type, seriesId, true);
+  }
+  function showPageBannerInternal(msg, type, seriesId, allowHtml) {
     bannerLocked = true;
     if (seriesId) pageBannerSeriesId = seriesId;
     var el = document.getElementById('sonarr-warnings-banner');
-    var openBtn = pageBannerSeriesId ? ' <button class="btn btn-sm py-0 px-1 ms-auto page-banner-open" style="opacity:.7" title="' + esc(SERIES_I18N.w_open_series_title) + '"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>' : '';
+    // openBtn HTML is built from i18n strings only (esc() on the title) — the
+    // outer msg is the part that may carry untrusted content, so we build the
+    // alert differently depending on allowHtml: textContent for the msg in
+    // safe mode, then append the openBtn HTML via insertAdjacentHTML.
+    var openBtnHtml = pageBannerSeriesId ? ' <button class="btn btn-sm py-0 px-1 ms-auto page-banner-open" style="opacity:.7" title="' + esc(SERIES_I18N.w_open_series_title) + '"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>' : '';
     var existing = el.querySelector('.alert');
     if (existing && existing.classList.contains('alert-' + type)) {
-      existing.innerHTML = msg + openBtn;
+      if (allowHtml) {
+        existing.innerHTML = msg + openBtnHtml;
+      } else {
+        existing.textContent = msg;
+        if (openBtnHtml) existing.insertAdjacentHTML('beforeend', openBtnHtml);
+      }
     } else {
-      el.innerHTML = '<div class="alert alert-' + (type || 'info') + ' mb-3 d-flex align-items-center" style="font-size:.82rem;">' + msg + openBtn + '</div>';
+      el.innerHTML = '';
+      var alert = document.createElement('div');
+      alert.className = 'alert alert-' + (type || 'info') + ' mb-3 d-flex align-items-center';
+      alert.style.fontSize = '.82rem';
+      if (allowHtml) {
+        alert.innerHTML = msg + openBtnHtml;
+      } else {
+        alert.textContent = msg;
+        if (openBtnHtml) alert.insertAdjacentHTML('beforeend', openBtnHtml);
+      }
+      el.appendChild(alert);
     }
     var openEl = el.querySelector('.page-banner-open');
     if (openEl) {
@@ -2818,7 +2847,7 @@
   function pollCmd(cmdId, label, onDone, seriesId) {
     var pollSeriesId = seriesId || currentId;
     var pollCount = 0;
-    showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_cmd_in_progress_tpl, { LBL: label }), 'info', pollSeriesId);
+    showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_cmd_in_progress_tpl, { LBL: label }), 'info', pollSeriesId);
     if (pollSeriesId && pollSeriesId == currentId) {
       showBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_cmd_in_progress_tpl, { LBL: label }), 'info');
     }
@@ -2858,7 +2887,7 @@
         } else {
           var display = msg || tpl(SERIES_I18N.d_search_in_progress_generic_tpl, { SEC: elapsed });
           if (isCurrentModal) showBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_cmd_elapsed_tpl, { LBL: label, MSG: display }), 'info');
-          showPageBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_cmd_elapsed_tpl, { LBL: label, MSG: display }), 'info', pollSeriesId);
+          showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_cmd_elapsed_tpl, { LBL: label, MSG: display }), 'info', pollSeriesId);
         }
       });
     }, 2000);
