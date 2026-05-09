@@ -176,6 +176,22 @@ class RadarrClient implements ResetInterface
         ];
     }
 
+    /**
+     * Defense-in-depth: scrub magnet links and api keys before pushing the
+     * upstream body into the warning log, then truncate to 200 chars. The
+     * log destination is `docker logs prismarr`, accessible only to the
+     * host admin, so the leak surface is small — but a screenshot, a bug
+     * report copy-paste, or a future log-export feature would otherwise
+     * carry indexer / tracker secrets verbatim.
+     */
+    private static function sanitizeLogBody(?string $body): string
+    {
+        if ($body === null || $body === '') return '';
+        $body = preg_replace('/magnet:\?xt=urn:btih:[a-zA-Z0-9]+[^\s"\']*/', '[magnet]', $body) ?? $body;
+        $body = preg_replace('/(api[_-]?key)=[^&"\'\s]+/i', '$1=[redacted]', $body) ?? $body;
+        return mb_strlen($body) > 200 ? mb_substr($body, 0, 200) . '…' : $body;
+    }
+
     /** Light ping — true if the API responds and accepts the key. */
     public function ping(): bool
     {
@@ -1752,7 +1768,7 @@ class RadarrClient implements ResetInterface
         $data = json_decode($resp ?: '{}', true) ?? [];
 
         if ($code < 200 || $code >= 300) {
-            $this->logger->warning("RadarrClient {$method} {$path} → HTTP {$code}", ['response' => $resp]);
+            $this->logger->warning("RadarrClient {$method} {$path} → HTTP {$code}", ['response' => self::sanitizeLogBody($resp)]);
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             // Radarr may return either a {message} object or an array [{propertyName, errorMessage}]
             if (isset($data[0]['errorMessage'])) {

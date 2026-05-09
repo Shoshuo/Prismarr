@@ -165,6 +165,20 @@ class SonarrClient implements ResetInterface
         ];
     }
 
+    /**
+     * Defense-in-depth: scrub magnet links and api keys before pushing the
+     * upstream body into the warning log, then truncate to 200 chars. Same
+     * helper as RadarrClient — the two clients don't share a parent yet,
+     * so the helper is duplicated rather than abstracted.
+     */
+    private static function sanitizeLogBody(?string $body): string
+    {
+        if ($body === null || $body === '') return '';
+        $body = preg_replace('/magnet:\?xt=urn:btih:[a-zA-Z0-9]+[^\s"\']*/', '[magnet]', $body) ?? $body;
+        $body = preg_replace('/(api[_-]?key)=[^&"\'\s]+/i', '$1=[redacted]', $body) ?? $body;
+        return mb_strlen($body) > 200 ? mb_substr($body, 0, 200) . '…' : $body;
+    }
+
     /** Light ping — true if the API responds and accepts the key. */
     public function ping(): bool
     {
@@ -1635,7 +1649,7 @@ class SonarrClient implements ResetInterface
         $data = json_decode($resp ?: '{}', true) ?? [];
 
         if ($code < 200 || $code >= 300) {
-            $this->logger->warning("SonarrClient {$method} {$path} → HTTP {$code}", ['response' => $resp]);
+            $this->logger->warning("SonarrClient {$method} {$path} → HTTP {$code}", ['response' => self::sanitizeLogBody($resp)]);
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if (isset($data[0]['errorMessage'])) {
                 $messages = array_map(fn($e) => ($e['propertyName'] ?? '') . ' : ' . ($e['errorMessage'] ?? '?'), $data);
