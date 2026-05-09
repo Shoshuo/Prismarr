@@ -139,7 +139,7 @@
       var origHTML = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = SVG_SPIN;
-      fetch('/medias/' ~ current_slug('sonarr') ~ '/sonarr/notifications/' + btn.dataset.id + '/tester', {
+      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/notifications/' + btn.dataset.id + '/tester', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}',
@@ -159,7 +159,7 @@
   document.querySelectorAll('.btn-notif-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', btn.dataset.name))) return;
-      fetch('/medias/' ~ current_slug('sonarr') ~ '/sonarr/notifications/' + btn.dataset.id + '/supprimer', {
+      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/notifications/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}',
