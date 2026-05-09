@@ -2868,7 +2868,7 @@
     // Show current filename from movieFile
     var curName = (currentMovie.movieFile && currentMovie.movieFile.relativePath) ? currentMovie.movieFile.relativePath : '';
 
-    ajaxGet('/radarr/renommer/' + movieId + '/propositions')
+    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + movieId + '/rename-preview')
     .then(function (proposals) {
       loading.style.display = 'none';
       if (!proposals || !proposals.length) {
