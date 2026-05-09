@@ -32,13 +32,29 @@
      only on window. #}
   {% set _radarr_default = service_instances('radarr')|first %}
   {% set _sonarr_default = service_instances('sonarr')|first %}
+  {# CURRENT_*_SLUG: resolve to the current page's slug if the page is type-
+     specific (Radarr or Sonarr admin / films / series), otherwise fall back
+     to the default instance slug. Lets the global Quick-Add modal target
+     the right instance per type even when triggered cross-service (e.g.
+     Ctrl+K from a Sonarr page asking to add a movie still goes to the
+     default Radarr, not to the Sonarr slug). #}
+  {% set _slug = app.request.attributes.get('slug') ?: '' %}
+  {% set _route = app.request.attributes.get('_route') ?: '' %}
+  {% set _is_radarr_page = _slug != '' and (_route starts with 'radarr_' or _route starts with 'app_media_films' or _route starts with 'app_media_radarr') %}
+  {% set _is_sonarr_page = _slug != '' and (_route starts with 'sonarr_' or _route starts with 'app_media_series' or _route starts with 'app_media_sonarr') %}
+  {% set _current_radarr_slug = _is_radarr_page ? _slug : (_radarr_default ? _radarr_default.slug : 'radarr-1') %}
+  {% set _current_sonarr_slug = _is_sonarr_page ? _slug : (_sonarr_default ? _sonarr_default.slug : 'sonarr-1') %}
   <script>
-    var INSTANCE_SLUG = {{ (app.request.attributes.get('slug') ?: '')|json_encode|raw }};
+    var INSTANCE_SLUG = {{ _slug|json_encode|raw }};
     var DEFAULT_RADARR_SLUG = {{ (_radarr_default ? _radarr_default.slug : 'radarr-1')|json_encode|raw }};
     var DEFAULT_SONARR_SLUG = {{ (_sonarr_default ? _sonarr_default.slug : 'sonarr-1')|json_encode|raw }};
+    var CURRENT_RADARR_SLUG = {{ _current_radarr_slug|json_encode|raw }};
+    var CURRENT_SONARR_SLUG = {{ _current_sonarr_slug|json_encode|raw }};
     window.INSTANCE_SLUG = INSTANCE_SLUG;
     window.DEFAULT_RADARR_SLUG = DEFAULT_RADARR_SLUG;
     window.DEFAULT_SONARR_SLUG = DEFAULT_SONARR_SLUG;
+    window.CURRENT_RADARR_SLUG = CURRENT_RADARR_SLUG;
+    window.CURRENT_SONARR_SLUG = CURRENT_SONARR_SLUG;
   </script>
 
   {% block head_meta %}{% endblock %}
@@ -1688,8 +1704,8 @@
         if (qaCache[cacheKey]) {
           fillSelects(isFilm, qaCache[cacheKey]);
         } else {
-          var profileUrl = isFilm ? '/medias/' + DEFAULT_RADARR_SLUG + '/films/quality-profiles' : '/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/quality-profiles';
-          var folderUrl = isFilm ? '/medias/' + DEFAULT_RADARR_SLUG + '/films/root-folders' : '/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/root-folders';
+          var profileUrl = isFilm ? '/medias/' + CURRENT_RADARR_SLUG + '/films/quality-profiles' : '/medias/' + CURRENT_SONARR_SLUG + '/sonarr/quality-profiles';
+          var folderUrl = isFilm ? '/medias/' + CURRENT_RADARR_SLUG + '/films/root-folders' : '/medias/' + CURRENT_SONARR_SLUG + '/sonarr/root-folders';
           Promise.all([
             fetch(profileUrl).then(function (r) { return r.json(); }),
             fetch(folderUrl).then(function (r) { return r.json(); })
@@ -1784,7 +1800,7 @@
 
         var url, payload;
         if (isFilm) {
-          url = '/medias/' + DEFAULT_RADARR_SLUG + '/films/add';
+          url = '/medias/' + CURRENT_RADARR_SLUG + '/films/add';
           payload = {
             tmdbId: qaItem.id, title: qaItem.title, year: qaItem.year || 0,
             qualityProfileId: parseInt(qualVal), rootFolderPath: folderVal,
@@ -1793,7 +1809,7 @@
             searchForMovie: document.getElementById('qa-film-search').checked
           };
         } else {
-          url = '/medias/' + DEFAULT_SONARR_SLUG + '/series/add';
+          url = '/medias/' + CURRENT_SONARR_SLUG + '/series/add';
           payload = {
             tvdbId: qaItem.id, title: qaItem.title,
             qualityProfileId: parseInt(qualVal), rootFolderPath: folderVal,

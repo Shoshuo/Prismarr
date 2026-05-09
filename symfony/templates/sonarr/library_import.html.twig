@@ -331,7 +331,7 @@
       var statusCell = tr.querySelector('.status-cell');
       statusCell.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></span>';
 
-      fetch('/medias/' + DEFAULT_SONARR_SLUG + '/series/add', {
+      fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/add', {
         method: 'POST',
         headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
         body: JSON.stringify({
