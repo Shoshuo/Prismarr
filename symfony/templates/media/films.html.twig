@@ -285,7 +285,7 @@
 {# ── Download queue (auto-refresh) ── #}
 <div id="queue-card" class="card mb-3" style="{{ queue is empty ? 'display:none' : '' }}">
   <div class="card-header">
-    <h3 class="card-title">⬇️ {{ 'media.films.queue.title'|trans }} <span class="badge bg-primary ms-1" id="queue-count">{{ queue|length }}</span></h3>
+    <h3 class="card-title">⬇️ {{ 'media.films.queue.title'|trans }} <span class="badge bg-primary text-white ms-1" id="queue-count">{{ queue|length }}</span></h3>
     <div class="card-actions">
       <span class="text-muted small" id="queue-refresh-label"></span>
     </div>
