@@ -1269,12 +1269,160 @@ class SonarrClient implements ResetInterface
 
     // ── Manual Import ─────────────────────────────────────────────────────────
 
-    public function getManualImportPreview(string $folder, bool $filterExistingFiles = true): array
+    /**
+     * Sonarr's manual-import preview. Two query modes:
+     *
+     *   - by `downloadId` (= torrent hash): Sonarr resolves the candidates
+     *     in the context of the original grab, so each file already carries
+     *     `series` + `episodes` pre-matched. Always preferred when known.
+     *   - by `folder`: filesystem scan, Sonarr re-parses every file from
+     *     scratch. Falls back when no downloadId is available (manual
+     *     drop-in folders).
+     *
+     * @param string|null $folder       Absolute path of the download folder
+     * @param string|null $downloadId   Torrent hash (download client id), or null
+     * @param bool        $filterExistingFiles
+     */
+    public function getManualImportPreview(?string $folder, ?string $downloadId = null, bool $filterExistingFiles = true): array
     {
-        return $this->get('/api/v3/manualimport', [
-            'folder'              => $folder,
-            'filterExistingFiles' => $filterExistingFiles ? 'true' : 'false',
-        ]) ?? [];
+        $query = ['filterExistingFiles' => $filterExistingFiles ? 'true' : 'false'];
+        if ($downloadId !== null && $downloadId !== '') {
+            $query['downloadId'] = $downloadId;
+        } elseif ($folder !== null && $folder !== '') {
+            $query['folder'] = $folder;
+        } else {
+            return [];
+        }
+        return $this->get('/api/v3/manualimport', $query) ?? [];
+    }
+
+    /**
+     * Run a Sonarr manual import on a list of download queue items.
+     *
+     * Sonarr v4's `ManualImport` command requires `episodeIds`, `quality`,
+     * `releaseGroup`, etc. — none of which are available from the queue
+     * payload alone. The legacy frontend tried to build that payload by
+     * hand and Sonarr accepted the command but silently imported nothing.
+     *
+     * The correct flow is:
+     *   1. Call GET /api/v3/manualimport?downloadId=<hash> (preferred) or
+     *      ?folder=<path> for each item so Sonarr matches files to episodes
+     *      itself — using the original grab context when downloadId is known
+     *      (it inspects mediainfo, hashes, parsed names, etc. and pre-fills
+     *      `series` + `episodes` per candidate file).
+     *   2. Filter files that are usable: have at least one matched episode
+     *      AND no blocking rejections.
+     *   3. POST /api/v3/command with the enriched payload, importMode=auto.
+     *
+     * Why downloadId matters: a folder-only scan ("Le.Show.S01.MULTI.1080p")
+     * sees raw filenames Sonarr can't always parse (e.g. "01. Soirée des
+     * débutants.mkv"), giving "Invalid season or episode" rejections. Same
+     * folder queried by downloadId returns the files with episodes already
+     * matched from the queue context.
+     *
+     * @param list<array{path?: ?string, downloadId?: ?string}> $items
+     * @return array{ok: bool, cmdId: int|null, imported: int, skipped: int, reasons: list<string>}
+     */
+    public function manualImportFromQueueItems(array $items): array
+    {
+        $files     = [];
+        $skipped   = 0;
+        $reasons   = [];
+
+        // Sonarr v4 splits each episode into its own queue item, but every
+        // item from the same torrent shares the same downloadId. Calling
+        // /manualimport once per item would then return the SAME N files
+        // multiplied by N items (e.g. 7 queue items × 7 files in the torrent
+        // = 49 duplicates), and each duplicate gets the same rejection.
+        // Dedupe by downloadId first; fall back to path for items missing a
+        // hash (drop-in folders without a download client tracker).
+        $unique = [];
+        foreach ($items as $item) {
+            $path       = trim((string) ($item['path']       ?? ''));
+            $downloadId = trim((string) ($item['downloadId'] ?? ''));
+            if ($path === '' && $downloadId === '') { $skipped++; $reasons[] = 'empty item'; continue; }
+            $key = $downloadId !== '' ? ('dl:' . $downloadId) : ('path:' . $path);
+            if (!isset($unique[$key])) {
+                $unique[$key] = ['path' => $path, 'downloadId' => $downloadId];
+            }
+        }
+
+        foreach ($unique as $item) {
+            $path       = $item['path'];
+            $downloadId = $item['downloadId'];
+            $candidates = $this->getManualImportPreview(
+                $path !== '' ? $path : null,
+                $downloadId !== '' ? $downloadId : null,
+                false,
+            );
+            $label = $path !== '' ? basename($path) : ('downloadId ' . substr($downloadId, 0, 8));
+            if ($candidates === []) {
+                $skipped++;
+                $reasons[] = sprintf('no preview for %s', $label);
+                continue;
+            }
+
+            foreach ($candidates as $c) {
+                $rejections = $c['rejections'] ?? [];
+                $episodes   = $c['episodes']   ?? [];
+                $fallback = $path !== '' ? $path : $label;
+                if ($rejections !== []) {
+                    $skipped++;
+                    $reasons[] = sprintf(
+                        '%s: %s',
+                        basename((string)($c['path'] ?? $fallback)),
+                        (string)($rejections[0]['reason'] ?? 'rejected'),
+                    );
+                    continue;
+                }
+                if ($episodes === []) {
+                    $skipped++;
+                    $reasons[] = sprintf('%s: no episode match', basename((string)($c['path'] ?? $fallback)));
+                    continue;
+                }
+
+                // Re-post the enriched payload Sonarr gave us, plus a couple
+                // of identifiers the command endpoint expects. Anything the
+                // preview already filled in (quality, languages, releaseGroup,
+                // customFormats) is forwarded verbatim — Sonarr's preview
+                // does the heavy work for us. downloadId is propagated so
+                // Sonarr links the import back to the original grab.
+                $files[] = [
+                    'path'             => $c['path']           ?? $path,
+                    'folderName'       => $c['folderName']     ?? null,
+                    'seriesId'         => $c['series']['id']   ?? null,
+                    'episodeIds'       => array_map(static fn($e) => (int)($e['id'] ?? 0), $episodes),
+                    'releaseGroup'     => $c['releaseGroup']   ?? null,
+                    'quality'          => $c['quality']        ?? null,
+                    'languages'        => $c['languages']      ?? [],
+                    'indexerFlags'     => $c['indexerFlags']   ?? 0,
+                    'releaseType'      => $c['releaseType']    ?? null,
+                    'downloadId'       => $c['downloadId']     ?? ($downloadId !== '' ? $downloadId : null),
+                    'customFormats'    => $c['customFormats']  ?? [],
+                    'customFormatScore'=> $c['customFormatScore'] ?? 0,
+                ];
+            }
+        }
+
+        if ($files === []) {
+            return ['ok' => false, 'cmdId' => null, 'imported' => 0, 'skipped' => $skipped, 'reasons' => $reasons];
+        }
+
+        $cmdData = $this->sendCommand('ManualImport', [
+            'importMode' => 'auto',
+            'files'      => $files,
+        ]);
+        if ($cmdData === null) {
+            return ['ok' => false, 'cmdId' => null, 'imported' => 0, 'skipped' => $skipped + count($files), 'reasons' => array_merge($reasons, ['Sonarr command rejected'])];
+        }
+
+        return [
+            'ok'       => true,
+            'cmdId'    => isset($cmdData['id']) ? (int) $cmdData['id'] : null,
+            'imported' => count($files),
+            'skipped'  => $skipped,
+            'reasons'  => $reasons,
+        ];
     }
 
     // ── Parse ─────────────────────────────────────────────────────────────────

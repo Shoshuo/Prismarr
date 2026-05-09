@@ -1590,6 +1590,9 @@ media:
       confirm_clean: "Supprimer {count} item(s) déjà importés de la queue ?"
       cleaning: "Nettoyage..."
       importing: "Import..."
+      import_done_tpl: "{IMPORTED} fichier(s) importé(s)"
+      import_partial_tpl: "{IMPORTED} sur {TOTAL} importé(s), {SKIPPED} ignoré(s) — {REASONS}"
+      import_none_tpl: "0 sur {TOTAL} importé(s) — {REASONS}"
       error: Erreur
     calendar:
       title: Prochains épisodes

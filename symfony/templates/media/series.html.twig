@@ -987,6 +987,9 @@
     queue_confirm_clean_tpl: {{ 'media.series.queue.confirm_clean'|trans({count: '__COUNT__'})|json_encode|raw }},
     queue_cleaning: {{ 'media.series.queue.cleaning'|trans|json_encode|raw }},
     queue_importing: {{ 'media.series.queue.importing'|trans|json_encode|raw }},
+    queue_import_done_tpl: {{ 'media.series.queue.import_done_tpl'|trans({IMPORTED: '__IMPORTED__'})|json_encode|raw }},
+    queue_import_partial_tpl: {{ 'media.series.queue.import_partial_tpl'|trans({IMPORTED: '__IMPORTED__', TOTAL: '__TOTAL__', SKIPPED: '__SKIPPED__', REASONS: '__REASONS__'})|json_encode|raw }},
+    queue_import_none_tpl: {{ 'media.series.queue.import_none_tpl'|trans({TOTAL: '__TOTAL__', REASONS: '__REASONS__'})|json_encode|raw }},
     queue_error: {{ 'media.series.queue.error'|trans|json_encode|raw }},
     // Modal add
     modal_add_button: {{ 'media.series.modal.add_button'|trans|json_encode|raw }},
@@ -1866,6 +1869,28 @@
     return (bytes / 1048576).toFixed(0) + ' ' + SERIES_I18N.mo_suffix;
   }
 
+  // Group skip reasons returned by SonarrClient::manualImportFromFolders into
+  // a compact summary like "5× Invalid season or episode, 2× Existing file".
+  // Strips the "<filename>: " prefix so identical Sonarr rejections collapse
+  // to one entry. Top 3 only — anything beyond gets "+N more".
+  function formatImportReasons(reasons) {
+    if (!reasons || !reasons.length) return '';
+    var counts = {};
+    reasons.forEach(function(r) {
+      var clean = String(r);
+      var idx = clean.indexOf(': ');
+      if (idx >= 0 && idx < clean.length - 2) clean = clean.substring(idx + 2);
+      counts[clean] = (counts[clean] || 0) + 1;
+    });
+    var ordered = Object.keys(counts).map(function(k) { return { text: k, count: counts[k] }; });
+    ordered.sort(function(a, b) { return b.count - a.count; });
+    var top = ordered.slice(0, 3).map(function(g) {
+      return g.count > 1 ? (g.count + '× ' + g.text) : g.text;
+    });
+    if (ordered.length > 3) top.push('+' + (ordered.length - 3) + ' more');
+    return top.join(', ');
+  }
+
   var prevQueueSeriesIds = {};
   function renderQueue(items) {
     // Detect series whose items disappeared (download completed) → refresh their card
@@ -2027,27 +2052,52 @@
         });
       }
 
-      // Import real blocked items
+      // Import real blocked items.
+      // v1.1.0: backend now receives { paths: [...] } only — Sonarr's manual
+      // import preview enriches each path with episodeIds/releaseGroup/quality
+      // server-side, so the frontend doesn't try to forge a payload by hand.
       var importBtn = document.getElementById('btn-import-blocked');
       if (importBtn) {
         importBtn.addEventListener('click', function() {
           importBtn.disabled = true;
           importBtn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:12px;height:12px;"></span> ' + SERIES_I18N.queue_importing;
-          var files = realBlocked.map(function(w) {
-            return {
-              path: w.outputPath || '',
-              seriesId: w.seriesId || 0,
-              quality: { quality: { name: w.quality }, revision: { version: 1 } },
-              languages: [{ id: 1, name: 'English' }],
-            };
-          });
+          var items = realBlocked.map(function(w) {
+            return { path: w.outputPath || '', downloadId: w.downloadId || '' };
+          }).filter(function(it) { return it.path !== '' || it.downloadId !== ''; });
           fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/queue/import', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-            body: JSON.stringify({ files: files }),
+            body: JSON.stringify({ items: items }),
           }).then(function(r) { return r.json(); }).then(function(data) {
-            if (data.ok) setTimeout(refreshQueue, 3000);
-            else { importBtn.disabled = false; importBtn.textContent = SERIES_I18N.queue_error; }
+            var imported = data.imported || 0;
+            var skipped  = data.skipped  || 0;
+            var total    = imported + skipped;
+            // Group raw reasons returned by Sonarr (one per skipped file) by
+            // their core message — typically the part after the colon, since
+            // Sonarr prefixes with the filename. Top 3 are summarised so the
+            // banner stays readable when 30 files share the same rejection.
+            var reasonsLine = formatImportReasons(data.reasons || []);
+            if (data.ok && imported > 0 && skipped === 0) {
+              showPageBanner(tpl(SERIES_I18N.queue_import_done_tpl, { IMPORTED: imported }), 'success');
+              setTimeout(refreshQueue, 3000);
+            } else if (imported > 0) {
+              // Partial success — keep the success colour, append the
+              // skipped count and the reasons so the user knows what to fix.
+              showPageBanner(tpl(SERIES_I18N.queue_import_partial_tpl, {
+                IMPORTED: imported, TOTAL: total, SKIPPED: skipped, REASONS: reasonsLine,
+              }), 'warning');
+              setTimeout(refreshQueue, 3000);
+            } else {
+              // Nothing got through — e.g. files don't carry a season/episode
+              // marker that Sonarr can match. The button stays clickable so
+              // the user can retry after renaming.
+              importBtn.disabled = false;
+              importBtn.textContent = SERIES_I18N.queue_error;
+              var msg = total > 0
+                ? tpl(SERIES_I18N.queue_import_none_tpl, { TOTAL: total, REASONS: reasonsLine })
+                : SERIES_I18N.queue_error;
+              showPageBanner(msg, 'danger');
+            }
           });
         });
       }

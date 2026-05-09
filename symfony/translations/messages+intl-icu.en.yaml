@@ -1591,6 +1591,9 @@ media:
       confirm_clean: "Remove {count} already-imported item(s) from the queue?"
       cleaning: "Cleaning..."
       importing: "Importing..."
+      import_done_tpl: "Imported {IMPORTED} file(s)"
+      import_partial_tpl: "Imported {IMPORTED} of {TOTAL}, {SKIPPED} skipped — {REASONS}"
+      import_none_tpl: "0 of {TOTAL} imported — {REASONS}"
       error: Error
     calendar:
       title: Upcoming episodes

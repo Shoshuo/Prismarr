@@ -1252,11 +1252,28 @@ class MediaController extends AbstractController
     #[Route('/series/queue/import', name: 'series_queue_import', methods: ['POST'])]
     public function seriesQueueImport(Request $request): JsonResponse
     {
-        $files = $request->toArray()['files'] ?? [];
-        if (empty($files)) {
+        // v1.1.0: payload is now { items: [{ path, downloadId }, ...] }.
+        // Passing downloadId (= torrent hash) lets Sonarr resolve the import
+        // candidates with the original grab context, so files are matched to
+        // episodes correctly even when their filenames lack a SxxEyy marker
+        // (e.g. "01. Soirée des débutants.mkv"). Folder-only fallback is kept
+        // for drop-in imports without a download client tracker.
+        $items = $request->toArray()['items'] ?? [];
+        if (!is_array($items) || $items === []) {
             return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.no_file')]);
         }
-        return $this->json($this->sonarr->manualImport($files));
+        $clean = [];
+        foreach ($items as $item) {
+            if (!is_array($item)) continue;
+            $path       = trim((string) ($item['path']       ?? ''));
+            $downloadId = trim((string) ($item['downloadId'] ?? ''));
+            if ($path === '' && $downloadId === '') continue;
+            $clean[] = ['path' => $path, 'downloadId' => $downloadId];
+        }
+        if ($clean === []) {
+            return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.no_file')]);
+        }
+        return $this->json($this->sonarr->manualImportFromQueueItems($clean));
     }
 
     #[Route('/series/queue/refresh', name: 'series_queue_refresh', methods: ['POST'])]
