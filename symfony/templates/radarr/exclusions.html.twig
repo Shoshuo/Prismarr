@@ -119,7 +119,7 @@
 {% block javascripts %}
 <script>
 (function(){
-const _I18N = {
+var _I18N = {
   bulk_confirm_tpl: {{ 'media.arr_admin.exclusions.bulk_confirm_tpl'|trans({count: '__COUNT__'})|json_encode|raw }},
   delete_confirm: {{ 'media.arr_admin.exclusions.delete_confirm'|trans|json_encode|raw }},
   delete_error: {{ 'media.arr_admin.exclusions.delete_error'|trans|json_encode|raw }},
@@ -127,84 +127,86 @@ const _I18N = {
   added_ok: {{ 'media.arr_admin.exclusions.added_ok'|trans|json_encode|raw }},
   add_error: {{ 'media.arr_admin.exclusions.add_error'|trans|json_encode|raw }}
 };
-const feedback = document.getElementById('excl-feedback');
-function showFeedback(msg, type = 'success') {
-  feedback.className = `alert alert-${type} mb-3`;
+var feedback = document.getElementById('excl-feedback');
+function showFeedback(msg, type) {
+  type = type || 'success';
+  feedback.className = 'alert alert-' + type + ' mb-3';
   feedback.textContent = msg;
   feedback.classList.remove('d-none');
-  setTimeout(() => feedback.classList.add('d-none'), 4000);
+  setTimeout(function() { feedback.classList.add('d-none'); }, 4000);
 }
 
 // Check all
-const checkAll = document.getElementById('check-all');
+var checkAll = document.getElementById('check-all');
 if (checkAll) {
-  checkAll.addEventListener('change', () => {
-    document.querySelectorAll('.check-row').forEach(c => c.checked = checkAll.checked);
+  checkAll.addEventListener('change', function() {
+    document.querySelectorAll('.check-row').forEach(function(c) { c.checked = checkAll.checked; });
     updateBulkBtn();
   });
-  document.querySelectorAll('.check-row').forEach(c => c.addEventListener('change', updateBulkBtn));
+  document.querySelectorAll('.check-row').forEach(function(c) { c.addEventListener('change', updateBulkBtn); });
 }
 
 function updateBulkBtn() {
-  const checked = document.querySelectorAll('.check-row:checked');
-  const btn = document.getElementById('btn-bulk-delete');
+  var checked = document.querySelectorAll('.check-row:checked');
+  var btn = document.getElementById('btn-bulk-delete');
   if (btn) btn.classList.toggle('d-none', checked.length === 0);
 }
 
 // Bulk delete
-const bulkBtn = document.getElementById('btn-bulk-delete');
+var bulkBtn = document.getElementById('btn-bulk-delete');
 if (bulkBtn) {
-  bulkBtn.addEventListener('click', async () => {
-    const ids = [...document.querySelectorAll('.check-row:checked')].map(c => parseInt(c.value));
+  bulkBtn.addEventListener('click', function() {
+    var ids = Array.prototype.slice.call(document.querySelectorAll('.check-row:checked')).map(function(c) { return parseInt(c.value); });
     if (!confirm(_I18N.bulk_confirm_tpl.replace('__COUNT__', ids.length))) return;
-    const r = await fetch('{{ instance_path('radarr_exclusion_bulk_delete') }}', {
+    fetch('{{ instance_path('radarr_exclusion_bulk_delete') }}', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-      body: JSON.stringify({ids}),
+      body: JSON.stringify({ids: ids}),
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.ok) location.reload();
+      else showFeedback(_I18N.delete_error, 'danger');
     });
-    const data = await r.json();
-    if (data.ok) location.reload();
-    else showFeedback(_I18N.delete_error, 'danger');
   });
 }
 
 // Supprimer ligne
-document.querySelectorAll('.btn-excl-delete').forEach(btn => {
-  btn.addEventListener('click', async () => {
+document.querySelectorAll('.btn-excl-delete').forEach(function(btn) {
+  btn.addEventListener('click', function() {
     if (!confirm(_I18N.delete_confirm)) return;
-    const r = await fetch(`/radarr/exclusions/${btn.dataset.id}/supprimer`, {
+    fetch('/medias/' + INSTANCE_SLUG + '/radarr/exclusions/' + btn.dataset.id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}',
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.ok) location.reload();
+      else showFeedback(_I18N.generic_error, 'danger');
     });
-    const data = await r.json();
-    if (data.ok) location.reload();
-    else showFeedback(_I18N.generic_error, 'danger');
   });
 });
 
 // Form ajout
-document.getElementById('form-add-exclusion').addEventListener('submit', async (e) => {
+document.getElementById('form-add-exclusion').addEventListener('submit', function(e) {
   e.preventDefault();
-  const fd = new FormData(e.target);
-  const body = {
+  var fd = new FormData(e.target);
+  var body = {
     tmdbId: parseInt(fd.get('tmdbId')),
     movieTitle: fd.get('movieTitle'),
     year: parseInt(fd.get('year') || 0),
   };
-  const r = await fetch('{{ instance_path('radarr_exclusion_add') }}', {
+  var formEl = e.target;
+  fetch('{{ instance_path('radarr_exclusion_add') }}', {
     method: 'POST',
     headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
     body: JSON.stringify(body),
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data.ok) {
+      showFeedback(_I18N.added_ok);
+      formEl.reset();
+      setTimeout(function() { location.reload(); }, 1000);
+    } else {
+      showFeedback(_I18N.add_error, 'danger');
+    }
   });
-  const data = await r.json();
-  if (data.ok) {
-    showFeedback(_I18N.added_ok);
-    e.target.reset();
-    setTimeout(() => location.reload(), 1000);
-  } else {
-    showFeedback(_I18N.add_error, 'danger');
-  }
 });
 })();
 </script>
