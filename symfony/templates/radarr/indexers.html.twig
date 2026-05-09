@@ -118,31 +118,39 @@
     confirm_delete_tpl: {{ 'media.arr_admin.indexers.confirm_delete_tpl'|trans({name: '__NAME__'})|json_encode|raw }}
   };
 
-  const feedback = document.getElementById('idx-feedback');
-  function showFeedback(msg, type = 'success') {
-    feedback.className = `alert alert-${type} mb-3`;
+  var feedback = document.getElementById('idx-feedback');
+  function showFeedback(msg, type) {
+    type = type || 'success';
+    feedback.className = 'alert alert-' + type + ' mb-3';
     feedback.textContent = msg;
     feedback.classList.remove('d-none');
-    setTimeout(() => feedback.classList.add('d-none'), type === 'danger' ? 10000 : 4000);
+    setTimeout(function() { feedback.classList.add('d-none'); }, type === 'danger' ? 10000 : 4000);
   }
 
-  const SVG_CHECK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>';
-  const SVG_OK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
-  const SVG_FAIL = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
-  const SVG_SPIN = '<span class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></span>';
+  var SVG_CHECK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>';
+  var SVG_OK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  var SVG_FAIL = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+  var SVG_SPIN = '<span class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></span>';
 
-  document.querySelectorAll('.btn-idx-test').forEach(btn => {
-    btn.addEventListener('click', async () => {
+  document.querySelectorAll('.btn-idx-test').forEach(function(btn) {
+    btn.addEventListener('click', function() {
       btn.disabled = true;
       btn.innerHTML = SVG_SPIN;
+      var indexer, name;
       try {
-        const indexer = JSON.parse(btn.closest('tr').dataset.indexer);
-        const name = indexer.name || I18N.fallback_name;
-        const r = await fetch('/medias/' + INSTANCE_SLUG + '/radarr/indexeurs/tester', {
-          method: 'POST', headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-          body: JSON.stringify(indexer),
-        });
-        const data = await r.json();
+        indexer = JSON.parse(btn.closest('tr').dataset.indexer);
+        name = indexer.name || I18N.fallback_name;
+      } catch (e) {
+        btn.innerHTML = SVG_FAIL; btn.title = I18N.error_network_title;
+        showFeedback(I18N.error_network, 'danger');
+        btn.disabled = false;
+        setTimeout(function() { btn.innerHTML = SVG_CHECK; btn.title = I18N.test_label; }, 3000);
+        return;
+      }
+      fetch('/medias/' + INSTANCE_SLUG + '/radarr/indexeurs/tester', {
+        method: 'POST', headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+        body: JSON.stringify(indexer),
+      }).then(function(r) { return r.json(); }).then(function(data) {
         btn.innerHTML = data.ok ? SVG_OK : SVG_FAIL;
         btn.title = data.ok ? I18N.test_success_title : (data.error || I18N.test_failure);
         if (data.ok) {
@@ -150,23 +158,25 @@
         } else {
           showFeedback(I18N.test_failure_feedback_tpl.replace('__NAME__', name).replace('__ERR__', (data.error || I18N.test_failure)), 'danger');
         }
-      } catch { btn.innerHTML = SVG_FAIL; btn.title = I18N.error_network_title; showFeedback(I18N.error_network, 'danger'); }
-      finally {
+      }).catch(function() {
+        btn.innerHTML = SVG_FAIL; btn.title = I18N.error_network_title;
+        showFeedback(I18N.error_network, 'danger');
+      }).then(function() {
         btn.disabled = false;
-        setTimeout(() => { btn.innerHTML = SVG_CHECK; btn.title = I18N.test_label; }, 3000);
-      }
+        setTimeout(function() { btn.innerHTML = SVG_CHECK; btn.title = I18N.test_label; }, 3000);
+      });
     });
   });
 
-  document.querySelectorAll('.btn-idx-delete').forEach(btn => {
-    btn.addEventListener('click', async () => {
+  document.querySelectorAll('.btn-idx-delete').forEach(function(btn) {
+    btn.addEventListener('click', function() {
       if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', btn.dataset.name))) return;
-      const r = await fetch(`/radarr/indexeurs/${btn.dataset.id}/supprimer`, {
+      fetch('/medias/' + INSTANCE_SLUG + '/radarr/indexeurs/' + btn.dataset.id + '/supprimer', {
         method: 'POST', headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'}, body: '{}',
+      }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.ok) location.reload();
+        else showFeedback(data.error || I18N.error_delete, 'danger');
       });
-      const data = await r.json();
-      if (data.ok) location.reload();
-      else showFeedback(data.error || I18N.error_delete, 'danger');
     });
   });
 })();
