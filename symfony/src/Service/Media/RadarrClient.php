@@ -505,9 +505,10 @@ class RadarrClient implements ResetInterface
         curl_close($ch);
 
         if ($code < 200 || $code >= 300) {
-            $this->logger->warning("RadarrClient POST /api/v3/release → HTTP {$code} {$err} — body: " . ($resp ?: '(empty)'));
-            $data = json_decode($resp ?: '{}', true) ?? [];
-            $msg = $data['message'] ?? $err ?: "HTTP error {$code}";
+            $this->logger->warning("RadarrClient POST /api/v3/release → HTTP {$code} {$err}", ['response' => self::sanitizeLogBody($resp)]);
+            $decoded = json_decode($resp ?: '{}', true);
+            $data    = is_array($decoded) ? $decoded : [];
+            $msg = $data['message'] ?? ($err !== '' ? $err : "HTTP error {$code}");
             return ['ok' => false, 'error' => $msg];
         }
 
@@ -1717,7 +1718,11 @@ class RadarrClient implements ResetInterface
         }
 
         $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
-        return json_decode($resp ?: '{}', true) ?? [];
+        // Some Radarr endpoints return bare JSON strings (e.g. "OK") which
+        // would violate the ?array return contract. Coerce non-array decode
+        // results to [] so the caller's behaviour stays consistent.
+        $decoded = json_decode($resp ?: '{}', true);
+        return is_array($decoded) ? $decoded : [];
     }
 
     /**
@@ -1765,7 +1770,8 @@ class RadarrClient implements ResetInterface
             return ['ok' => false, 'error' => 'Network error: no HTTP response'];
         }
 
-        $data = json_decode($resp ?: '{}', true) ?? [];
+        $decoded = json_decode($resp ?: '{}', true);
+        $data    = is_array($decoded) ? $decoded : [];
 
         if ($code < 200 || $code >= 300) {
             $this->logger->warning("RadarrClient {$method} {$path} → HTTP {$code}", ['response' => self::sanitizeLogBody($resp)]);

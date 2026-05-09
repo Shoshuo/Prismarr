@@ -1598,7 +1598,14 @@ class SonarrClient implements ResetInterface
         }
 
         $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
-        return json_decode($resp ?: '{}', true) ?? [];
+        // Sonarr v4 occasionally returns a bare JSON string (e.g. "OK") on
+        // notification test / delete endpoints. json_decode then yields a
+        // string, which would violate this method's `?array` return type.
+        // Coerce any non-array decode result (string, int, float, bool) to
+        // [] so the return contract holds — callers already treat [] as
+        // "no payload, success".
+        $decoded = json_decode($resp ?: '{}', true);
+        return is_array($decoded) ? $decoded : [];
     }
 
     /**
@@ -1646,7 +1653,8 @@ class SonarrClient implements ResetInterface
             return ['ok' => false, 'error' => 'Network error: no HTTP response'];
         }
 
-        $data = json_decode($resp ?: '{}', true) ?? [];
+        $decoded = json_decode($resp ?: '{}', true);
+        $data    = is_array($decoded) ? $decoded : [];
 
         if ($code < 200 || $code >= 300) {
             $this->logger->warning("SonarrClient {$method} {$path} → HTTP {$code}", ['response' => self::sanitizeLogBody($resp)]);
