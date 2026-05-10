@@ -188,7 +188,14 @@ class DashboardController extends AbstractController
         // by (type, tmdbId/year/title) and keep the earliest date.
         $items = [];
         $movieKey = fn(array $m): string => 'movie:' . ($m['tmdbId'] ?? ($m['title'] ?? '?') . ':' . ($m['year'] ?? '?'));
-        $episodeKey = fn(array $e): string => 'episode:' . ($e['seriesId'] ?? '?') . ':S' . ($e['season'] ?? 0) . 'E' . ($e['episode'] ?? 0);
+        // tvdbId is stable across Sonarr instances; seriesId is per-instance
+        // and would split the same episode into 2 rows when two Sonarr
+        // instances both follow the show. SonarrClient::getCalendar()
+        // surfaces tvdbId since v1.1.0 — fall back to seriesTitle for
+        // legacy payloads that omit it.
+        $episodeKey = fn(array $e): string => 'episode:'
+            . ($e['tvdbId'] ?? $e['seriesTitle'] ?? '?')
+            . ':S' . ($e['season'] ?? 0) . 'E' . ($e['episode'] ?? 0);
         $seen = [];
 
         foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
@@ -370,12 +377,39 @@ class DashboardController extends AbstractController
 
     /**
      * @return array<string, bool|null>  service id => healthy?  (null = not configured)
+     *
+     * v1.1.0 — radarr/sonarr aggregate across every enabled instance:
+     * the dashboard card shows green only when ALL instances are up
+     * (matches the topbar dropdown / `/api/health/services` semantics).
+     * Mono-instance / mono-service entries (prowlarr, jellyseerr, qbit, tmdb)
+     * keep the simple isHealthy() flow.
      */
     private function servicesHealth(): array
     {
-        $services = ['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'tmdb'];
         $out = [];
-        foreach ($services as $s) {
+
+        foreach ([ServiceInstance::TYPE_RADARR, ServiceInstance::TYPE_SONARR] as $type) {
+            $enabled = $this->instances->getEnabled($type);
+            if ($enabled === []) {
+                $out[$type] = null;
+                continue;
+            }
+            $allOk     = true;
+            $anyTested = false;
+            foreach ($enabled as $inst) {
+                try {
+                    $h = $this->health->isHealthy($type, $inst->getSlug());
+                } catch (\Throwable) {
+                    $h = false;
+                }
+                if ($h === null) continue; // instance not configured — skip
+                $anyTested = true;
+                if ($h === false) { $allOk = false; break; }
+            }
+            $out[$type] = $anyTested ? $allOk : null;
+        }
+
+        foreach (['prowlarr', 'jellyseerr', 'qbittorrent', 'tmdb'] as $s) {
             try {
                 $out[$s] = $this->health->isHealthy($s);
             } catch (\Throwable) {

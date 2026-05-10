@@ -198,6 +198,36 @@ class ServiceInstanceProviderTest extends TestCase
         $this->provider($repo)->create('jellyseerr', 'name', 'http://j', 'k');
     }
 
+    /**
+     * Defense in depth — even though every cURL call is pinned to
+     * CURLPROTO_HTTP|HTTPS, an admin form that accepted file:// or
+     * javascript: into the DB would be a footgun for any future code path
+     * that didn't go through cURL. Provider-level validation catches it
+     * at write time.
+     *
+     * @dataProvider blockedUrls
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('blockedUrls')]
+    public function testCreateRejectsBlockedUrlScheme(string $url): void
+    {
+        $repo = $this->createMock(ServiceInstanceRepository::class);
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/Invalid instance URL/');
+        $this->provider($repo)->create(ServiceInstance::TYPE_RADARR, 'Bad', $url, 'k');
+    }
+
+    /** @return list<array{0: string}> */
+    public static function blockedUrls(): array
+    {
+        return [
+            ['file:///etc/passwd'],
+            ['javascript:alert(1)'],
+            ['gopher://attacker.example/'],
+            ['ftp://internal-only/'],
+            ['http:///no-host-here'],
+        ];
+    }
+
     public function testCreateAutoRenamesDuplicateSlug(): void
     {
         // When the caller-provided slug already exists, normalizeSlug() walks

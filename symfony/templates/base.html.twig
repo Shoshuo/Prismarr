@@ -1425,13 +1425,13 @@
         // exactly which Radarr 4K / Sonarr Anime owns the match. Default
         // instance stays unlabelled to avoid noise on single-instance setups.
         var instanceLabel = (item.instance && item.instance.name)
-          ? ' · <span class="text-info">' + item.instance.name + '</span>'
+          ? ' · <span class="text-info">' + window.escHtml(item.instance.name) + '</span>'
           : '';
         return '<a href="#" class="prismarr-search-item" role="option" data-item-index="' + i + '"' + dataAttr + '>'
           + poster
           + '<div class="overflow-hidden flex-grow-1">'
-          + '<div class="d-flex align-items-center gap-1">' + typeIcon + ' <span class="small fw-medium text-truncate">' + item.title + '</span></div>'
-          + '<div class="text-secondary" style="font-size:.7rem;">' + (item.year || '') + instanceLabel + '</div>'
+          + '<div class="d-flex align-items-center gap-1">' + typeIcon + ' <span class="small fw-medium text-truncate">' + window.escHtml(item.title) + '</span></div>'
+          + '<div class="text-secondary" style="font-size:.7rem;">' + window.escHtml(item.year || '') + instanceLabel + '</div>'
           + '</div>'
           + badge
           + '</a>';

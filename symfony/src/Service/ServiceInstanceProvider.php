@@ -220,6 +220,14 @@ class ServiceInstanceProvider implements ResetInterface
         if ($url === '') {
             throw new \InvalidArgumentException('Instance URL cannot be empty.');
         }
+        // Defense in depth — even though every cURL call is already pinned to
+        // CURLPROTO_HTTP|HTTPS, reject obviously invalid URLs at write time
+        // so the row never lands in the DB. Same helper that guards the
+        // /setup/test/<service> SSRF path; reasons surfaced verbatim
+        // ('scheme', 'host', 'link-local', …) so the admin form can map them.
+        if (($reason = HealthService::urlBlockedReason($url)) !== null) {
+            throw new \InvalidArgumentException(sprintf('Invalid instance URL (%s).', $reason));
+        }
         if (!in_array($type, ServiceInstance::TYPES, true)) {
             throw new \InvalidArgumentException(sprintf('Unknown instance type "%s".', $type));
         }
@@ -275,6 +283,9 @@ class ServiceInstanceProvider implements ResetInterface
         }
         if ($url === '') {
             throw new \InvalidArgumentException('Instance URL cannot be empty.');
+        }
+        if (($reason = HealthService::urlBlockedReason($url)) !== null) {
+            throw new \InvalidArgumentException(sprintf('Invalid instance URL (%s).', $reason));
         }
 
         $instance->setName($name);
