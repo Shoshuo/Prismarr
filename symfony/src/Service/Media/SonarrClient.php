@@ -176,6 +176,10 @@ class SonarrClient implements ResetInterface
         if ($body === null || $body === '') return '';
         $body = preg_replace('/magnet:\?xt=urn:btih:[a-zA-Z0-9]+[^\s"\']*/', '[magnet]', $body) ?? $body;
         $body = preg_replace('/(api[_-]?key)=[^&"\'\s]+/i', '$1=[redacted]', $body) ?? $body;
+        // Same redaction in JSON form: Radarr/Sonarr error payloads sometimes
+        // echo back the request including {"apiKey":"abc..."}. The query-form
+        // pattern above does NOT match here because there is no '=' separator.
+        $body = preg_replace('/("api[_-]?[Kk]ey"\s*:\s*)"[^"]+"/', '$1"[redacted]"', $body) ?? $body;
         return mb_strlen($body) > 200 ? mb_substr($body, 0, 200) . '…' : $body;
     }
 
