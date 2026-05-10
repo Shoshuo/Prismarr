@@ -76,6 +76,24 @@
         return Math.round(bytes) + ' ' + u.B;
       };
     }
+
+    // HTML escape helper used wherever JS builds strings via innerHTML with
+    // operator-side-controlled values (instance names, search results titles,
+    // upstream messages). Self-XSS today (ROLE_ADMIN is the only writer for
+    // ServiceInstance.name), but the few innerHTML call sites that surface
+    // user-typed strings should always pass through this so a future split
+    // ROLE_USER/ROLE_ADMIN doesn't open a cross-user XSS path.
+    if (!window.escHtml) {
+      window.escHtml = function (s) {
+        if (s === null || s === undefined) return '';
+        return String(s)
+          .replace(/&/g,  '&amp;')
+          .replace(/</g,  '&lt;')
+          .replace(/>/g,  '&gt;')
+          .replace(/"/g,  '&quot;')
+          .replace(/'/g, '&#39;');
+      };
+    }
   </script>
 
   {% block head_meta %}{% endblock %}
@@ -1739,9 +1757,9 @@
           var url = '/medias/' + inst.slug + (isFilm ? '/films?open=' : '/series?open=') + inst.id;
           return '<div class="d-flex align-items-center gap-2 p-2 mb-1 rounded" style="background:rgba(255,255,255,.04);">'
             + '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M5 12l5 5l10-10"/></svg>'
-            + '<span class="small fw-medium">' + inst.name + '</span>'
-            + '<span class="badge bg-secondary-lt text-secondary" style="font-size:.65rem;">' + lbl + '</span>'
-            + '<a href="' + url + '" class="btn btn-sm btn-outline-primary ms-auto" style="padding:.1rem .5rem;font-size:.7rem;">' + openLbl + '</a>'
+            + '<span class="small fw-medium">' + window.escHtml(inst.name) + '</span>'
+            + '<span class="badge bg-secondary-lt text-secondary" style="font-size:.65rem;">' + window.escHtml(lbl) + '</span>'
+            + '<a href="' + window.escHtml(url) + '" class="btn btn-sm btn-outline-primary ms-auto" style="padding:.1rem .5rem;font-size:.7rem;">' + window.escHtml(openLbl) + '</a>'
             + '</div>';
         }).join('');
         container.innerHTML = rows;
@@ -1757,8 +1775,8 @@
           return candidates && candidates[0] ? candidates[0].slug : defaultSlug;
         }
         sel.innerHTML = candidates.map(function (c) {
-          var sel = c.is_default ? ' selected' : '';
-          return '<option value="' + c.slug + '"' + sel + '>' + c.name + (c.is_default ? ' (default)' : '') + '</option>';
+          var selAttr = c.is_default ? ' selected' : '';
+          return '<option value="' + window.escHtml(c.slug) + '"' + selAttr + '>' + window.escHtml(c.name) + (c.is_default ? ' (default)' : '') + '</option>';
         }).join('');
         row.style.display = '';
         // Pre-select default if any, otherwise first.
@@ -2346,7 +2364,7 @@
                 : (i18n['health.status_down'] || 'Unreachable'));
           return '<div class="prismarr-health-row">'
                +  '<span class="prismarr-health-row-dot ' + cls + '"></span>'
-               +  '<span class="prismarr-health-row-name">' + name + '</span>'
+               +  '<span class="prismarr-health-row-name">' + window.escHtml(name) + '</span>'
                +  '<span class="prismarr-health-row-state">' + label + '</span>'
                +  '</div>';
         }

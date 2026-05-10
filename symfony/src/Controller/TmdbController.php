@@ -114,27 +114,59 @@ class TmdbController extends AbstractController
         $library = $this->buildLibraryIndex();
         $seeds   = [];
 
-        // Movie seeds: the 8 most recently added movies (no monitored filter, this is for recommendations)
-        try {
-            $movies = $this->radarr->getMovies();
-            // Sort by added desc
-            usort($movies, fn($a, $b) => strcmp($b['added'] ?? '', $a['added'] ?? ''));
-            foreach (array_slice($movies, 0, 8) as $m) {
-                if (!empty($m['tmdbId'])) $seeds[] = ['type' => 'movie', 'id' => (int) $m['tmdbId']];
+        // Movie seeds: the 8 most recently added movies across every enabled
+        // Radarr instance (post-v1.1.0 multi-instance: a single getMovies()
+        // on the autowired client only sees the default instance, so users
+        // running 2+ Radarrs would get heavily biased recommendations).
+        // Dedup by tmdbId — same film mirrored across instances should still
+        // count as one seed.
+        $seenMovieTmdb = [];
+        $movieRows = [];
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+            try {
+                $client = $this->radarr->withInstance($inst);
+                foreach ($client->getMovies() as $m) {
+                    $tmdbId = (int) ($m['tmdbId'] ?? 0);
+                    if (!$tmdbId || isset($seenMovieTmdb[$tmdbId])) continue;
+                    $seenMovieTmdb[$tmdbId] = true;
+                    $movieRows[] = ['tmdbId' => $tmdbId, 'added' => (string) ($m['added'] ?? '')];
+                }
+            } catch (\Throwable $e) {
+                $this->logger->warning('TMDb myRecommendations: radarr seed fetch failed', [
+                    'instance' => $inst->getSlug(),
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ]);
             }
-        } catch (\Throwable $e) {
-            $this->logger->warning('TMDb myRecommendations failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
+        usort($movieRows, fn($a, $b) => strcmp($b['added'], $a['added']));
+        foreach (array_slice($movieRows, 0, 8) as $row) {
+            $seeds[] = ['type' => 'movie', 'id' => $row['tmdbId']];
         }
 
-        // Series seeds: the 8 most recently added
-        try {
-            $series = $this->sonarr->getRawAllSeries();
-            usort($series, fn($a, $b) => strcmp($b['added'] ?? '', $a['added'] ?? ''));
-            foreach (array_slice($series, 0, 8) as $s) {
-                if (!empty($s['tmdbId'])) $seeds[] = ['type' => 'tv', 'id' => (int) $s['tmdbId']];
+        // Series seeds: same approach across every Sonarr instance.
+        $seenTvTmdb = [];
+        $seriesRows = [];
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+            try {
+                $client = $this->sonarr->withInstance($inst);
+                foreach ($client->getRawAllSeries() as $s) {
+                    $tmdbId = (int) ($s['tmdbId'] ?? 0);
+                    if (!$tmdbId || isset($seenTvTmdb[$tmdbId])) continue;
+                    $seenTvTmdb[$tmdbId] = true;
+                    $seriesRows[] = ['tmdbId' => $tmdbId, 'added' => (string) ($s['added'] ?? '')];
+                }
+            } catch (\Throwable $e) {
+                $this->logger->warning('TMDb myRecommendations: sonarr seed fetch failed', [
+                    'instance' => $inst->getSlug(),
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ]);
             }
-        } catch (\Throwable $e) {
-            $this->logger->warning('TMDb myRecommendations failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+        }
+        usort($seriesRows, fn($a, $b) => strcmp($b['added'], $a['added']));
+        foreach (array_slice($seriesRows, 0, 8) as $row) {
+            $seeds[] = ['type' => 'tv', 'id' => $row['tmdbId']];
         }
 
         if (empty($seeds)) {

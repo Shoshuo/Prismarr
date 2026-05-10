@@ -24,10 +24,11 @@ class ControllersSmokeTest extends AbstractWebTestCase
     public static function routesProvider(): array
     {
         return [
-            // Main media landings
+            // Main media landings (slug-aware since v1.1.0 Phase A→C —
+            // AbstractWebTestCase seeds a default radarr-1/sonarr-1 instance)
             'dashboard'           => ['/tableau-de-bord', 'DashboardController::index'],
-            'media films'         => ['/medias/films', 'MediaController::films'],
-            'media series'        => ['/medias/series', 'MediaController::series'],
+            'media films'         => ['/medias/radarr-1/films', 'MediaController::films'],
+            'media series'        => ['/medias/sonarr-1/series', 'MediaController::series'],
             'tmdb discovery'      => ['/decouverte', 'TmdbController::index'],
             'calendrier'          => ['/calendrier', 'CalendrierController::index'],
             'calendrier ical'     => ['/calendrier.ics', 'CalendrierController::ical'],
@@ -35,8 +36,8 @@ class ControllersSmokeTest extends AbstractWebTestCase
             'settings export'     => ['/admin/settings/export', 'AdminSettingsController::export'],
 
             // Arrs system pages (not service-data-heavy, still need to render)
-            'radarr updates'      => ['/radarr/mises-a-jour', 'RadarrController::updates'],
-            'sonarr updates'      => ['/sonarr/mises-a-jour', 'SonarrController::updates'],
+            'radarr updates'      => ['/medias/radarr-1/radarr/mises-a-jour', 'RadarrController::updates'],
+            'sonarr updates'      => ['/medias/sonarr-1/sonarr/mises-a-jour', 'SonarrController::updates'],
 
             // Service indexes
             'prowlarr index'      => ['/prowlarr', 'ProwlarrController::index'],

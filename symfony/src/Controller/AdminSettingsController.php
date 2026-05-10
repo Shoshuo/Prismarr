@@ -335,17 +335,56 @@ class AdminSettingsController extends AbstractController
 
         // Library counts are best-effort — if Radarr/Sonarr are down we
         // render "—" instead of crashing the whole page.
+        // Multi-instance (v1.1.0): aggregate counts across every enabled
+        // Radarr/Sonarr instance, deduped by tmdbId/tvdbId so the same item
+        // mirrored across instances doesn't double-count. If every instance
+        // throws, the count stays null and the template renders "—".
         $films  = null;
         $series = null;
         try {
             /** @var RadarrClient $radarr */
             $radarr = $this->container->get(RadarrClient::class);
-            $films  = count($radarr->getMovies());
+            $seenMovies = [];
+            $anyOk = false;
+            foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+                try {
+                    foreach ($radarr->withInstance($inst)->getMovies() as $m) {
+                        $tmdbId = (int) ($m['tmdbId'] ?? 0);
+                        if ($tmdbId > 0) {
+                            $seenMovies[$tmdbId] = true;
+                        } else {
+                            // Fall back to the per-instance row id when tmdbId
+                            // is missing — keeps "rare untagged" rows in the count.
+                            $seenMovies[$inst->getSlug() . ':' . ($m['id'] ?? spl_object_id((object) $m))] = true;
+                        }
+                    }
+                    $anyOk = true;
+                } catch (\Throwable) {}
+            }
+            if ($anyOk) {
+                $films = count($seenMovies);
+            }
         } catch (\Throwable) {}
         try {
             /** @var SonarrClient $sonarr */
             $sonarr = $this->container->get(SonarrClient::class);
-            $series = count($sonarr->getSeries());
+            $seenSeries = [];
+            $anyOk = false;
+            foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+                try {
+                    foreach ($sonarr->withInstance($inst)->getSeries() as $s) {
+                        $tvdbId = (int) ($s['tvdbId'] ?? 0);
+                        $tmdbId = (int) ($s['tmdbId'] ?? 0);
+                        if ($tvdbId > 0)        $seenSeries['tvdb_' . $tvdbId] = true;
+                        elseif ($tmdbId > 0)    $seenSeries['tmdb_' . $tmdbId] = true;
+                        else                    $seenSeries[$inst->getSlug() . ':' . ($s['id'] ?? spl_object_id((object) $s))] = true;
+                    }
+                    $anyOk = true;
+                } catch (\Throwable) {}
+            }
+            if ($anyOk) {
+                $series = count($seenSeries);
+            }
         } catch (\Throwable) {}
 
         /** @var UserRepository $users */

@@ -3,6 +3,7 @@
 namespace App\Tests;
 
 use App\Controller\SetupController;
+use App\Entity\ServiceInstance;
 use App\Entity\Setting;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
@@ -34,8 +35,35 @@ abstract class AbstractWebTestCase extends WebTestCase
         $this->resetSchema($em);
         $this->admin = $this->seedAdmin($em);
         $this->seedSetupCompleted($em);
+        $this->seedDefaultInstances($em);
 
         $this->client->loginUser($this->admin);
+    }
+
+    /**
+     * v1.1.0 Phase A→C — every Radarr/Sonarr-backed route is now slug-aware
+     * (`/medias/{slug}/films`). Smoke tests need at least one default
+     * instance per type so the slug-prefixed routes resolve, otherwise
+     * everything 404s and the smoke tests stop catching real regressions.
+     *
+     * The instances point at unreachable hosts (the dev container's loopback)
+     * so the controllers still surface the "service not configured / down"
+     * banner — the goal is to verify the controllers render cleanly, not
+     * that the upstream services are reachable.
+     */
+    private function seedDefaultInstances(EntityManagerInterface $em): void
+    {
+        $radarr = new ServiceInstance(ServiceInstance::TYPE_RADARR, 'radarr-1', 'Radarr', 'http://radarr.invalid:7878', 'k');
+        $radarr->setIsDefault(true);
+        $radarr->setEnabled(true);
+        $em->persist($radarr);
+
+        $sonarr = new ServiceInstance(ServiceInstance::TYPE_SONARR, 'sonarr-1', 'Sonarr', 'http://sonarr.invalid:8989', 'k');
+        $sonarr->setIsDefault(true);
+        $sonarr->setEnabled(true);
+        $em->persist($sonarr);
+
+        $em->flush();
     }
 
     protected function em(): EntityManagerInterface
