@@ -1732,8 +1732,15 @@
         if (qaCache[cacheKey]) {
           fillSelects(isFilm, qaCache[cacheKey]);
         } else {
-          var profileUrl = isFilm ? '/medias/' + CURRENT_RADARR_SLUG + '/films/quality-profiles' : '/medias/' + CURRENT_SONARR_SLUG + '/sonarr/quality-profiles';
-          var folderUrl = isFilm ? '/medias/' + CURRENT_RADARR_SLUG + '/films/root-folders' : '/medias/' + CURRENT_SONARR_SLUG + '/sonarr/root-folders';
+          // Quick-Add is a global modal (Ctrl+K, can be triggered from
+          // anywhere). Profiles / root folders / target slug always come
+          // from the default instance — pre-Phase-E we don't ask the user
+          // to pick. The earlier CURRENT_*_SLUG resolution was useful for
+          // per-page actions (library import, collection add) but surprised
+          // users on a Radarr 4K page who expected Ctrl+K → Add to land on
+          // their default Radarr.
+          var profileUrl = isFilm ? '/medias/' + DEFAULT_RADARR_SLUG + '/films/quality-profiles' : '/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/quality-profiles';
+          var folderUrl  = isFilm ? '/medias/' + DEFAULT_RADARR_SLUG + '/films/root-folders'      : '/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/root-folders';
           Promise.all([
             fetch(profileUrl).then(function (r) { return r.json(); }),
             fetch(folderUrl).then(function (r) { return r.json(); })
@@ -1828,7 +1835,7 @@
 
         var url, payload;
         if (isFilm) {
-          url = '/medias/' + CURRENT_RADARR_SLUG + '/films/add';
+          url = '/medias/' + DEFAULT_RADARR_SLUG + '/films/add';
           payload = {
             tmdbId: qaItem.id, title: qaItem.title, year: qaItem.year || 0,
             qualityProfileId: parseInt(qualVal), rootFolderPath: folderVal,
@@ -1837,7 +1844,7 @@
             searchForMovie: document.getElementById('qa-film-search').checked
           };
         } else {
-          url = '/medias/' + CURRENT_SONARR_SLUG + '/series/add';
+          url = '/medias/' + DEFAULT_SONARR_SLUG + '/series/add';
           payload = {
             tvdbId: qaItem.id, title: qaItem.title,
             qualityProfileId: parseInt(qualVal), rootFolderPath: folderVal,
