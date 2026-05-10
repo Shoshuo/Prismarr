@@ -54,7 +54,7 @@
           <td class="fw-medium">{{ ep.series.title ?? '—' }}</td>
           <td><span class="badge bg-secondary-lt">S{{ '%02d'|format(ep.seasonNumber ?? 0) }}E{{ '%02d'|format(ep.episodeNumber ?? 0) }}</span></td>
           <td class="text-muted">{{ ep.title ?? '—' }}</td>
-          <td class="text-muted">{{ ep.airDate ?? (ep.airDateUtc ? ep.airDateUtc|date('Y-m-d') : '—') }}</td>
+          <td class="text-muted">{{ (ep.airDate ?? ep.airDateUtc)|prismarr_date|default('—') }}</td>
           <td class="text-end">
             <button class="btn btn-ghost-primary btn-icon btn-sm btn-search-ep" data-ep-id="{{ ep.id }}" title="{{ 'media.series_missing.search_title'|trans }}">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
