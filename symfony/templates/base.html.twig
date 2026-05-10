@@ -1394,11 +1394,18 @@
           ? '<img src="' + item.poster + '" style="width:30px;height:45px;object-fit:cover;border-radius:4px;" class="flex-shrink-0" loading="lazy">'
           : '<div style="width:30px;height:45px;background:rgba(255,255,255,.05);border-radius:4px;display:flex;align-items:center;justify-content:center;" class="flex-shrink-0">' + typeIcon + '</div>';
         var dataAttr = ' data-quick-add=\'' + JSON.stringify(item).replace(/'/g, '&#39;') + '\'';
+        // v1.1.0 multi-instance: when the result comes from a non-default
+        // instance, surface its name in the meta line so the user knows
+        // exactly which Radarr 4K / Sonarr Anime owns the match. Default
+        // instance stays unlabelled to avoid noise on single-instance setups.
+        var instanceLabel = (item.instance && item.instance.name)
+          ? ' · <span class="text-info">' + item.instance.name + '</span>'
+          : '';
         return '<a href="#" class="prismarr-search-item" role="option" data-item-index="' + i + '"' + dataAttr + '>'
           + poster
           + '<div class="overflow-hidden flex-grow-1">'
           + '<div class="d-flex align-items-center gap-1">' + typeIcon + ' <span class="small fw-medium text-truncate">' + item.title + '</span></div>'
-          + '<div class="text-secondary" style="font-size:.7rem;">' + (item.year || '') + '</div>'
+          + '<div class="text-secondary" style="font-size:.7rem;">' + (item.year || '') + instanceLabel + '</div>'
           + '</div>'
           + badge
           + '</a>';

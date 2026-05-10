@@ -1711,45 +1711,70 @@ class MediaController extends AbstractController
 
         $results = [];
 
-        // Lightweight search-only cache (60s TTL) — stores only title/id/poster/year
-        $movies = $this->cache->get('prismarr_search_movies', function (ItemInterface $item) {
+        // Phase D — flatten every enabled Radarr/Sonarr instance into the
+        // search index. Each item is tagged with `instance: {slug, name}`
+        // so the Ctrl+K dropdown can show "Le Parrain — Radarr 4K" and
+        // navigate to /medias/<slug>/films?open=X for the right instance.
+        // Cache key bumped to _v2 so the v1 single-instance cache from a
+        // previous build doesn't keep serving stale, untagged results.
+        $movies = $this->cache->get('prismarr_search_movies_v2', function (ItemInterface $item) {
             $item->expiresAfter(60);
-            try {
-                $raw = $this->radarr->getRawMovies();
-                return array_map(fn($m) => [
-                    'id'            => $m['id'] ?? null,
-                    'title'         => $m['title'] ?? '—',
-                    'originalTitle' => $m['originalTitle'] ?? null,
-                    'sortTitle'     => $m['sortTitle'] ?? '',
-                    'year'          => $m['year'] ?? null,
-                    'hasFile'       => (bool) ($m['hasFile'] ?? false),
-                    'poster'        => $this->extractPoster($m),
-                ], $raw);
-            } catch (\Throwable $e) {
-                $this->logger->warning('Media globalSearch failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
-                $item->expiresAfter(5);
-                return [];
+            $out = [];
+            foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+                try {
+                    $raw = $this->radarr->withInstance($inst)->getRawMovies();
+                } catch (\Throwable $e) {
+                    $this->logger->warning('Media globalSearch radarr failed', [
+                        'instance' => $inst->getSlug(),
+                        'exception' => $e::class,
+                        'message'   => $e->getMessage(),
+                    ]);
+                    continue;
+                }
+                foreach ($raw as $m) {
+                    $out[] = [
+                        'id'            => $m['id'] ?? null,
+                        'title'         => $m['title'] ?? '—',
+                        'originalTitle' => $m['originalTitle'] ?? null,
+                        'sortTitle'     => $m['sortTitle'] ?? '',
+                        'year'          => $m['year'] ?? null,
+                        'hasFile'       => (bool) ($m['hasFile'] ?? false),
+                        'poster'        => $this->extractPoster($m),
+                        'instance'      => ['slug' => $inst->getSlug(), 'name' => $inst->getName()],
+                    ];
+                }
             }
+            return $out;
         });
 
-        $series = $this->cache->get('prismarr_search_series', function (ItemInterface $item) {
+        $series = $this->cache->get('prismarr_search_series_v2', function (ItemInterface $item) {
             $item->expiresAfter(60);
-            try {
-                $raw = $this->sonarr->getRawAllSeries();
-                return array_map(fn($s) => [
-                    'id'            => $s['id'] ?? null,
-                    'title'         => $s['title'] ?? '—',
-                    'originalTitle' => $s['originalTitle'] ?? null,
-                    'sortTitle'     => $s['sortTitle'] ?? '',
-                    'year'          => $s['year'] ?? null,
-                    'hasFile'       => true,
-                    'poster'        => $this->extractPoster($s),
-                ], $raw);
-            } catch (\Throwable $e) {
-                $this->logger->warning('Media globalSearch failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
-                $item->expiresAfter(5);
-                return [];
+            $out = [];
+            foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+                try {
+                    $raw = $this->sonarr->withInstance($inst)->getRawAllSeries();
+                } catch (\Throwable $e) {
+                    $this->logger->warning('Media globalSearch sonarr failed', [
+                        'instance' => $inst->getSlug(),
+                        'exception' => $e::class,
+                        'message'   => $e->getMessage(),
+                    ]);
+                    continue;
+                }
+                foreach ($raw as $s) {
+                    $out[] = [
+                        'id'            => $s['id'] ?? null,
+                        'title'         => $s['title'] ?? '—',
+                        'originalTitle' => $s['originalTitle'] ?? null,
+                        'sortTitle'     => $s['sortTitle'] ?? '',
+                        'year'          => $s['year'] ?? null,
+                        'hasFile'       => true,
+                        'poster'        => $this->extractPoster($s),
+                        'instance'      => ['slug' => $inst->getSlug(), 'name' => $inst->getName()],
+                    ];
+                }
             }
+            return $out;
         });
 
         // Local filter, case- and accent-insensitive
@@ -1791,13 +1816,18 @@ class MediaController extends AbstractController
             return $this->json([]);
         }
 
-        // Local IDs used to flag "already in library"
+        // Local IDs used to flag "already in library". The TMDb / TVDB lookup
+        // returns the same Radarr/Sonarr internal id regardless of which
+        // instance the caller used — but the same TMDb id can exist as a
+        // different internal id across instances, so we collect the FULL set
+        // of local ids cross-instance to make sure "already in library" is
+        // truthful for users running multiple Radarr / Sonarr.
         $localMovieIds = array_column(
-            $this->cache->get('prismarr_search_movies', fn(ItemInterface $item) => ($item->expiresAfter(60)) ?: []),
+            $this->cache->get('prismarr_search_movies_v2', fn(ItemInterface $item) => ($item->expiresAfter(60)) ?: []),
             'id'
         );
         $localSeriesIds = array_column(
-            $this->cache->get('prismarr_search_series', fn(ItemInterface $item) => ($item->expiresAfter(60)) ?: []),
+            $this->cache->get('prismarr_search_series_v2', fn(ItemInterface $item) => ($item->expiresAfter(60)) ?: []),
             'id'
         );
 
