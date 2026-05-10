@@ -956,10 +956,16 @@ class AdminSettingsController extends AbstractController
     public function export(): Response
     {
         $all = $this->settings->findAll();
+        // v2 (Prismarr v1.1.0): added the `instances` section. Radarr/Sonarr
+        // URLs and api keys moved out of the flat `setting` table into a
+        // dedicated `service_instance` table — exporting only `settings`
+        // would silently drop the user's multi-instance config on backup.
+        // v1 imports stay supported for backwards compatibility.
         $payload = [
-            'prismarr_export_version' => 1,
+            'prismarr_export_version' => 2,
             'exported_at'             => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
             'settings'                => [],
+            'instances'               => [],
         ];
 
         foreach ($all as $setting) {
@@ -971,6 +977,23 @@ class AdminSettingsController extends AbstractController
         }
 
         ksort($payload['settings']);
+
+        // Instances are exported WITHOUT api_key — same hygiene rule as the
+        // sensitive settings above. The admin retypes the keys after import,
+        // exactly like they retype TMDB / Prowlarr / etc. credentials.
+        foreach ([ServiceInstance::TYPE_RADARR, ServiceInstance::TYPE_SONARR] as $type) {
+            foreach ($this->instances->getAll($type) as $instance) {
+                $payload['instances'][] = [
+                    'type'       => $instance->getType(),
+                    'slug'       => $instance->getSlug(),
+                    'name'       => $instance->getName(),
+                    'url'        => $instance->getUrl(),
+                    'enabled'    => $instance->isEnabled(),
+                    'position'   => $instance->getPosition(),
+                    'is_default' => $instance->isDefault(),
+                ];
+            }
+        }
 
         $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
@@ -1019,8 +1042,9 @@ class AdminSettingsController extends AbstractController
             return $this->redirectToRoute('admin_settings_index');
         }
 
-        if (!is_array($payload) || ($payload['prismarr_export_version'] ?? 0) !== 1 || !is_array($payload['settings'] ?? null)) {
-            $this->addFlash('error', $this->translator?->trans('admin.import.unknown_format') ?? 'Unknown format (export v1 expected).');
+        $version = is_array($payload) ? (int) ($payload['prismarr_export_version'] ?? 0) : 0;
+        if (!is_array($payload) || !in_array($version, [1, 2], true) || !is_array($payload['settings'] ?? null)) {
+            $this->addFlash('error', $this->translator?->trans('admin.import.unknown_format') ?? 'Unknown format (export v1 or v2 expected).');
             return $this->redirectToRoute('admin_settings_index');
         }
 
@@ -1054,12 +1078,78 @@ class AdminSettingsController extends AbstractController
             $this->appCache->clear();
         }
 
+        // v2 — restore the instances section. Existing instances with the
+        // same (type, slug) are updated in place (so the api_key the user
+        // already typed survives the round-trip); missing ones are created
+        // with an empty api_key (the admin retypes it post-import, same as
+        // for the sensitive flat settings above). Instances present in the
+        // DB but absent from the payload are left intact: import is additive,
+        // not destructive.
+        $instancesApplied = 0;
+        $instancesSkipped = 0;
+        if ($version >= 2 && isset($payload['instances']) && is_array($payload['instances'])) {
+            $defaults = []; // type → slug to flag as default at the end
+            foreach ($payload['instances'] as $row) {
+                if (!is_array($row)) { $instancesSkipped++; continue; }
+                $type = (string) ($row['type'] ?? '');
+                $slug = (string) ($row['slug'] ?? '');
+                $name = (string) ($row['name'] ?? '');
+                $url  = (string) ($row['url']  ?? '');
+                if (!in_array($type, ServiceInstance::TYPES, true) || $slug === '' || $name === '' || $url === '') {
+                    $instancesSkipped++;
+                    continue;
+                }
+                $existing = $this->instances->getBySlug($type, $slug);
+                try {
+                    if ($existing !== null) {
+                        $this->instances->update(
+                            $existing,
+                            $name,
+                            $url,
+                            null, // empty api key submission preserves the existing one
+                            $slug,
+                            (bool) ($row['enabled'] ?? true),
+                        );
+                    } else {
+                        $this->instances->create(
+                            $type,
+                            $name,
+                            $url,
+                            null, // no api key in the export — admin retypes
+                            $slug,
+                            (bool) ($row['enabled'] ?? true),
+                        );
+                    }
+                    $instancesApplied++;
+                    if (!empty($row['is_default'])) {
+                        $defaults[$type] = $slug;
+                    }
+                } catch (\Throwable) {
+                    $instancesSkipped++;
+                }
+            }
+            // Apply default flags after every row so a slug renamed mid-loop
+            // is already in place when setDefault() looks it up.
+            foreach ($defaults as $type => $slug) {
+                $i = $this->instances->getBySlug($type, $slug);
+                if ($i !== null) {
+                    $this->instances->setDefault($i);
+                }
+            }
+        }
+
         $this->addFlash(
             'success',
             $this->translator?->trans('admin.import.result', [
-                'applied' => $applied,
-                'skipped' => $skipped,
-            ]) ?? sprintf('%d setting%s imported, %d skipped.', $applied, $applied > 1 ? 's' : '', $skipped),
+                'applied'           => $applied,
+                'skipped'           => $skipped,
+                'instances_applied' => $instancesApplied,
+                'instances_skipped' => $instancesSkipped,
+            ]) ?? sprintf(
+                '%d setting%s imported, %d skipped. %d instance%s restored, %d skipped.',
+                $applied, $applied > 1 ? 's' : '', $skipped,
+                $instancesApplied, $instancesApplied > 1 ? 's' : '', $instancesSkipped,
+            ),
         );
 
         return $this->redirectToRoute('admin_settings_index');

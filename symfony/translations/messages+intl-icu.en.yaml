@@ -750,8 +750,8 @@ admin:
     too_big: 'File too large (64 KB max).'
     read_failed: Cannot read file.
     invalid_json: Invalid JSON
-    unknown_format: 'Unknown format (export v1 expected).'
-    result: '{applied, plural, =0 {No settings imported} one {# setting imported} other {# settings imported}}, {skipped, plural, one {# skipped.} other {# skipped.}}'
+    unknown_format: 'Unknown format (export v1 or v2 expected).'
+    result: '{applied, plural, =0 {No settings imported} one {# setting imported} other {# settings imported}}, {skipped, plural, one {# skipped.} other {# skipped.}} {instances_applied, plural, =0 {} one {# instance restored.} other {# instances restored.}}'
   updates:
     title: Updates
     description: 'Track the version you are running and review release notes published on GitHub. Prismarr does not auto-update — you stay in control.'

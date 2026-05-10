@@ -749,8 +749,8 @@ admin:
     too_big: 'Fichier trop volumineux (max 64 Ko).'
     read_failed: Lecture du fichier impossible.
     invalid_json: JSON invalide
-    unknown_format: 'Format non reconnu (version export v1 attendue).'
-    result: '{applied, plural, =0 {Aucun réglage importé} one {# réglage importé} other {# réglages importés}}, {skipped, plural, one {# ignoré.} other {# ignorés.}}'
+    unknown_format: 'Format non reconnu (version export v1 ou v2 attendue).'
+    result: '{applied, plural, =0 {Aucun réglage importé} one {# réglage importé} other {# réglages importés}}, {skipped, plural, one {# ignoré.} other {# ignorés.}} {instances_applied, plural, =0 {} one {# instance restaurée.} other {# instances restaurées.}}'
   updates:
     title: Mises à jour
     description: 'Suivez la version que vous utilisez et consultez les notes de version publiées sur GitHub. Prismarr ne se met pas à jour automatiquement — vous gardez le contrôle.'

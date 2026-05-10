@@ -515,4 +515,119 @@ class AdminSettingsControllerTest extends TestCase
         $this->assertStringContainsString('"ok":false', $response->getContent());
         $this->assertStringContainsString('"category":"unknown"', $response->getContent());
     }
+
+    /**
+     * Phase D #2 — the export must include a v2 'instances' section so a
+     * user backing up their multi-instance config in v1.1.0 can re-import
+     * it after a fresh install. Pre-Phase-D the dump only carried the flat
+     * `setting` rows and silently lost every Radarr/Sonarr instance the
+     * user had configured (URLs and api keys had moved to service_instance
+     * with the multi-instance migration).
+     */
+    public function testExportPayloadIncludesV2InstancesSection(): void
+    {
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->method('findAll')->willReturn([]);
+        $config   = $this->createMock(ConfigService::class);
+        $health   = $this->createMock(HealthService::class);
+
+        $radarrInst = new \App\Entity\ServiceInstance(
+            \App\Entity\ServiceInstance::TYPE_RADARR, 'radarr-1', 'Radarr', 'http://r:7878', 'secret-key'
+        );
+        $radarrInst->setIsDefault(true);
+        $radarrInst->setEnabled(true);
+        $radarrInst->setPosition(0);
+
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getAll')->willReturnCallback(
+            fn(string $type) => $type === \App\Entity\ServiceInstance::TYPE_RADARR ? [$radarrInst] : []
+        );
+
+        $response = $this->controller($settings, $config, $health, $instances)->export();
+        $this->assertSame(200, $response->getStatusCode());
+        $payload = json_decode($response->getContent(), true);
+
+        $this->assertSame(2, $payload['prismarr_export_version']);
+        $this->assertIsArray($payload['instances']);
+        $this->assertCount(1, $payload['instances']);
+        $this->assertSame('radarr', $payload['instances'][0]['type']);
+        $this->assertSame('radarr-1', $payload['instances'][0]['slug']);
+        $this->assertSame('http://r:7878', $payload['instances'][0]['url']);
+        $this->assertTrue($payload['instances'][0]['is_default']);
+        // Critical: api keys must NOT leak through the export.
+        $this->assertArrayNotHasKey('api_key', $payload['instances'][0]);
+        $this->assertArrayNotHasKey('apiKey',  $payload['instances'][0]);
+        $this->assertStringNotContainsString('secret-key', $response->getContent());
+    }
+
+    public function testImportV2RestoresInstancesViaProvider(): void
+    {
+        $settings = $this->createMock(SettingRepository::class);
+        $config   = $this->createMock(ConfigService::class);
+        $health   = $this->createMock(HealthService::class);
+
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getBySlug')->willReturn(null); // every imported slug is new
+        // The controller must call create() exactly once per instance row,
+        // with api_key=null (the export never carries the secret).
+        $createCalls = [];
+        $instances->expects($this->exactly(2))
+            ->method('create')
+            ->willReturnCallback(function (string $type, string $name, string $url, ?string $apiKey, ?string $slug, bool $enabled) use (&$createCalls) {
+                $createCalls[] = compact('type', 'name', 'url', 'apiKey', 'slug', 'enabled');
+                return new \App\Entity\ServiceInstance($type, $slug ?? 'auto', $name, $url, $apiKey);
+            });
+
+        $payload = json_encode([
+            'prismarr_export_version' => 2,
+            'settings'  => [],
+            'instances' => [
+                ['type' => 'radarr', 'slug' => 'radarr-1', 'name' => 'Radarr', 'url' => 'http://r:7878', 'enabled' => true,  'position' => 0, 'is_default' => true],
+                ['type' => 'sonarr', 'slug' => 'sonarr-1', 'name' => 'Sonarr', 'url' => 'http://s:8989', 'enabled' => true,  'position' => 0, 'is_default' => true],
+            ],
+        ]);
+
+        $tmp = tempnam(sys_get_temp_dir(), 'prismarr-export-');
+        file_put_contents($tmp, $payload);
+        $file = new \Symfony\Component\HttpFoundation\File\UploadedFile($tmp, 'export.json', 'application/json', test: true);
+
+        $request = Request::create('/admin/settings/import', 'POST', ['_csrf_token' => 'valid'], [], ['config' => $file]);
+        $request->setSession(new \Symfony\Component\HttpFoundation\Session\Session(
+            new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage()
+        ));
+
+        $this->controller($settings, $config, $health, $instances)->import($request);
+
+        $this->assertCount(2, $createCalls);
+        $this->assertSame('radarr-1', $createCalls[0]['slug']);
+        $this->assertNull($createCalls[0]['apiKey'], 'api key must NOT be passed by the import — the admin retypes it');
+        $this->assertSame('sonarr-1', $createCalls[1]['slug']);
+    }
+
+    public function testImportV1StaysSupportedForBackwardsCompat(): void
+    {
+        $settings = $this->createMock(SettingRepository::class);
+        $config   = $this->createMock(ConfigService::class);
+        $health   = $this->createMock(HealthService::class);
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        // v1 doesn't carry instances — the provider must NOT be touched.
+        $instances->expects($this->never())->method('create');
+        $instances->expects($this->never())->method('update');
+
+        $payload = json_encode([
+            'prismarr_export_version' => 1,
+            'settings' => ['display_language' => 'en'],
+        ]);
+        $tmp = tempnam(sys_get_temp_dir(), 'prismarr-export-');
+        file_put_contents($tmp, $payload);
+        $file = new \Symfony\Component\HttpFoundation\File\UploadedFile($tmp, 'export.json', 'application/json', test: true);
+
+        $request = Request::create('/admin/settings/import', 'POST', ['_csrf_token' => 'valid'], [], ['config' => $file]);
+        $request->setSession(new \Symfony\Component\HttpFoundation\Session\Session(
+            new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage()
+        ));
+
+        $response = $this->controller($settings, $config, $health, $instances)->import($request);
+        $this->assertSame(302, $response->getStatusCode(), 'v1 imports must still redirect cleanly');
+    }
 }
