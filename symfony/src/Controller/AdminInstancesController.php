@@ -183,6 +183,14 @@ class AdminInstancesController extends AbstractController
         if (!$this->isCsrfTokenValid('admin_instance_test_' . $id, (string) $request->request->get('_csrf_token'))) {
             return new JsonResponse(['ok' => false, 'category' => 'csrf'], 400);
         }
+        // HealthService::diagnose() short-circuits unknown service ids to
+        // category=unknown, but a future probeFor() that lazily accepts more
+        // types must not silently dispatch a Sonarr probe against a Prowlarr
+        // row in the service_instance table. ServiceInstance::TYPES is the
+        // single source of truth — bail out cleanly otherwise.
+        if (!in_array($instance->getType(), ServiceInstance::TYPES, true)) {
+            return new JsonResponse(['ok' => false, 'category' => 'unknown'], 400);
+        }
 
         $overrides = [
             $instance->getType() . '_url'     => $instance->getUrl(),

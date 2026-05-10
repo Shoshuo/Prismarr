@@ -25,6 +25,21 @@ services:
     ports:
       - "7070:7070"
 
+    # Optional runtime overrides. The defaults below are baked into the image
+    # and only need to be uncommented if you actually want to change them.
+    environment:
+      # IANA timezone applied to the container's clock, PHP date functions,
+      # and the /admin/settings server-time line. Falls back to UTC if unset
+      # or invalid. (Issue #12.)
+      # TZ: Europe/Paris
+
+      # PHP runtime ceilings — bump these when /medias/films or /medias/series
+      # crashes with ERR_EMPTY_RESPONSE on very large libraries (issue #13).
+      # The image already ships with 1024 MB / 120 s as a sane default for
+      # medium-large homelabs; users with >50 000 items should set 2048M+.
+      # PHP_MEMORY_LIMIT: 1024M
+      # PHP_MAX_EXECUTION_TIME: 120
+
     # Persistent volume — contains SQLite DB, .env.local, sessions, cache.
     volumes:
       - prismarr_data:/var/www/html/var/data

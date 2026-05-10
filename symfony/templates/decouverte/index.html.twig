@@ -1466,7 +1466,8 @@
     var qiRows = [];
     function qi(icon, label, value) {
       if (!value) return;
-      qiRows.push('<div class="qi-row"><span class="qi-icon">' + icon + '</span><span class="qi-label">' + label + '</span><span class="qi-value" title="' + String(value).replace(/"/g,'&quot;') + '">' + value + '</span></div>');
+      var safe = escHtml(String(value));
+      qiRows.push('<div class="qi-row"><span class="qi-icon">' + icon + '</span><span class="qi-label">' + escHtml(label) + '</span><span class="qi-value" title="' + safe + '">' + safe + '</span></div>');
     }
     qi('📅', TMDB_I18N.qi.release, d.release || null);
     if (d.type === 'movie' && d.runtime) {
@@ -1770,14 +1771,20 @@
       if (diff > 0 && diff <= 365) countdown = '<span class="countdown-badge">J-' + diff + '</span>';
     }
 
-    return '<div class="media-card" data-tmdb-id="' + item.id + '" data-tmdb-type="' + item.type + '" data-tmdb-title="' + safeTitle + '" data-tmdb-vote="' + (item.vote||'') + '" data-tmdb-year="' + (item.year||'') + '" data-release="' + (item.release||'') + '">'
+    // safeTitle is already escHtml'd above; also escape the textual fields
+    // (title fallback "—" already safe, but item.title was untrusted and
+    // splat raw into innerHTML before this pass). item.year is server-side
+    // numeric but defense-in-depth costs nothing.
+    var titleOrDash = item.title ? safeTitle : '—';
+    var safeYear    = escHtml(item.year || '');
+    return '<div class="media-card" data-tmdb-id="' + item.id + '" data-tmdb-type="' + item.type + '" data-tmdb-title="' + safeTitle + '" data-tmdb-vote="' + (item.vote||'') + '" data-tmdb-year="' + safeYear + '" data-release="' + escHtml(item.release||'') + '">'
       + poster
       + '<span class="quality-badge ' + item.type + '">' + (item.type === 'movie' ? TMDB_I18N.type_film : TMDB_I18N.type_series) + '</span>'
       + libBadge + countdown + wlStar + voteBadge
-      + '<div class="card-overlay"><div class="card-title-text" title="' + safeTitle + '">' + (item.title || '—') + '</div>'
-      + '<div class="card-year">' + (item.year || '') + '</div></div>'
-      + '<div class="hover-info"><div class="h-title">' + (item.title || '—') + '</div>'
-      + '<div class="h-year">' + (item.year || '') + (item.vote ? ' · ★ ' + item.vote : '') + '</div>'
+      + '<div class="card-overlay"><div class="card-title-text" title="' + safeTitle + '">' + titleOrDash + '</div>'
+      + '<div class="card-year">' + safeYear + '</div></div>'
+      + '<div class="hover-info"><div class="h-title">' + titleOrDash + '</div>'
+      + '<div class="h-year">' + safeYear + (item.vote ? ' · ★ ' + item.vote : '') + '</div>'
       + '<div class="h-actions">' + hoverBtn + '</div></div></div>';
   }
 

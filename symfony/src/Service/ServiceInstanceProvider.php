@@ -211,6 +211,7 @@ class ServiceInstanceProvider implements ResetInterface
         ?string $apiKey,
         ?string $slug = null,
         bool $enabled = true,
+        ?int $position = null,
     ): ServiceInstance {
         $name = trim($name);
         $url  = trim($url);
@@ -243,7 +244,11 @@ class ServiceInstanceProvider implements ResetInterface
 
         $existing = $this->repository->findByType($type);
         $isFirst  = $existing === [];
-        $position = $isFirst ? 0 : (max(array_map(fn ($i) => $i->getPosition(), $existing)) + 1);
+        $autoPosition = $isFirst ? 0 : (max(array_map(fn ($i) => $i->getPosition(), $existing)) + 1);
+        // Caller-supplied position wins when explicit — used by the v2
+        // import path to preserve the original sidebar ordering when an
+        // admin restores a backup. Falls back to "append at end" otherwise.
+        $finalPosition = $position ?? $autoPosition;
 
         $apiKey = $apiKey !== null ? trim($apiKey) : null;
         $instance = new ServiceInstance(
@@ -255,7 +260,7 @@ class ServiceInstanceProvider implements ResetInterface
         );
         $instance->setEnabled($enabled);
         $instance->setIsDefault($isFirst); // first instance is automatically default
-        $instance->setPosition($position);
+        $instance->setPosition($finalPosition);
         $this->repository->save($instance);
         $this->invalidate();
         return $instance;
@@ -275,6 +280,7 @@ class ServiceInstanceProvider implements ResetInterface
         ?string $apiKey,
         ?string $slug = null,
         ?bool $enabled = null,
+        ?int $position = null,
     ): ServiceInstance {
         $name = trim($name);
         $url  = trim($url);
@@ -315,6 +321,10 @@ class ServiceInstanceProvider implements ResetInterface
 
         if ($enabled !== null) {
             $instance->setEnabled($enabled);
+        }
+
+        if ($position !== null) {
+            $instance->setPosition($position);
         }
 
         $this->repository->save($instance);

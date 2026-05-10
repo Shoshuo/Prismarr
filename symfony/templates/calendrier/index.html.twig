@@ -817,10 +817,16 @@
         var relColors = { cinema:'#dc2626', digital:'#a855f7', physical:'#22c55e', episode:'#38bdf8', unknown:'#6b7280' };
         var relColor = relColors[ev.releaseType] || '#6b7280';
 
-        var fanartHtml = ev.fanart ? '<img src="' + ev.fanart + '" class="cal-tooltip-fanart">' : '<div class="cal-tooltip-fanart-ph"></div>';
+        // ev fields (title, seriesTitle, network, studio, certification,
+        // genres, overview, fanart URL) ultimately come from Radarr/Sonarr/TMDb
+        // metadata. Even though the writers are admin-trusted today, splicing
+        // them raw into innerHTML risks XSS the day a guest role is added.
+        // window.escHtml is hoisted in base.html.twig.
+        var esc = window.escHtml || function (s) { return s == null ? '' : String(s); };
+        var fanartHtml = ev.fanart ? '<img src="' + esc(ev.fanart) + '" class="cal-tooltip-fanart">' : '<div class="cal-tooltip-fanart-ph"></div>';
 
         var typeLabel = ev.type === 'film' ? (releaseLabels[ev.releaseType] || CAL_I18N.event_film) : CAL_I18N.event_episode;
-        var titleText = ev.type === 'film' ? ev.title : (ev.seriesTitle || '');
+        var titleText = ev.type === 'film' ? (ev.title || '') : (ev.seriesTitle || '');
         var epName = ev.type === 'episode' ? 'S' + String(ev.season||0).padStart(2,'0') + 'E' + String(ev.episode||0).padStart(2,'0') + (ev.title ? ' — ' + ev.title : '') : '';
 
         // Meta infos
@@ -836,14 +842,14 @@
         if (ev.year && ev.type === 'film') metas.push(String(ev.year));
         if (ev.certification) metas.push(ev.certification);
 
-        var metaHtml = metas.length ? '<div class="cal-tooltip-meta">' + metas.map(function(m) { return '<span>' + m + '</span>'; }).join('<span style="opacity:.3;">·</span>') + '</div>' : '';
+        var metaHtml = metas.length ? '<div class="cal-tooltip-meta">' + metas.map(function(m) { return '<span>' + esc(m) + '</span>'; }).join('<span style="opacity:.3;">·</span>') + '</div>' : '';
 
         var genresHtml = '';
         if (ev.genres && ev.genres.length) {
-            genresHtml = '<div class="cal-tooltip-badges">' + ev.genres.slice(0,4).map(function(g) { return '<span class="cal-tooltip-badge" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);">' + g + '</span>'; }).join('') + '</div>';
+            genresHtml = '<div class="cal-tooltip-badges">' + ev.genres.slice(0,4).map(function(g) { return '<span class="cal-tooltip-badge" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);">' + esc(g) + '</span>'; }).join('') + '</div>';
         }
 
-        var descHtml = ev.overview ? '<div class="cal-tooltip-desc">' + ev.overview + '</div>' : '';
+        var descHtml = ev.overview ? '<div class="cal-tooltip-desc">' + esc(ev.overview) + '</div>' : '';
 
         // Badges statut
         var statusBadge = '';
@@ -854,8 +860,8 @@
         tooltip.innerHTML = fanartHtml
             + '<div class="cal-tooltip-body">'
             + '<div class="cal-tooltip-type" style="color:' + relColor + ';">' + typeLabel + ' ' + statusBadge + '</div>'
-            + '<div class="cal-tooltip-title">' + titleText + '</div>'
-            + (epName ? '<div class="cal-tooltip-epname">' + epName + '</div>' : '')
+            + '<div class="cal-tooltip-title">' + esc(titleText) + '</div>'
+            + (epName ? '<div class="cal-tooltip-epname">' + esc(epName) + '</div>' : '')
             + metaHtml
             + descHtml
             + genresHtml

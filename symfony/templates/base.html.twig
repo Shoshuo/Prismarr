@@ -32,29 +32,14 @@
      only on window. #}
   {% set _radarr_default = service_instances('radarr')|first %}
   {% set _sonarr_default = service_instances('sonarr')|first %}
-  {# CURRENT_*_SLUG: resolve to the current page's slug if the page is type-
-     specific (Radarr or Sonarr admin / films / series), otherwise fall back
-     to the default instance slug. Lets the global Quick-Add modal target
-     the right instance per type even when triggered cross-service (e.g.
-     Ctrl+K from a Sonarr page asking to add a movie still goes to the
-     default Radarr, not to the Sonarr slug). #}
   {% set _slug = app.request.attributes.get('slug') ?: '' %}
-  {% set _route = app.request.attributes.get('_route') ?: '' %}
-  {% set _is_radarr_page = _slug != '' and (_route starts with 'radarr_' or _route starts with 'app_media_films' or _route starts with 'app_media_radarr') %}
-  {% set _is_sonarr_page = _slug != '' and (_route starts with 'sonarr_' or _route starts with 'app_media_series' or _route starts with 'app_media_sonarr') %}
-  {% set _current_radarr_slug = _is_radarr_page ? _slug : (_radarr_default ? _radarr_default.slug : 'radarr-1') %}
-  {% set _current_sonarr_slug = _is_sonarr_page ? _slug : (_sonarr_default ? _sonarr_default.slug : 'sonarr-1') %}
   <script>
     var INSTANCE_SLUG = {{ _slug|json_encode|raw }};
     var DEFAULT_RADARR_SLUG = {{ (_radarr_default ? _radarr_default.slug : 'radarr-1')|json_encode|raw }};
     var DEFAULT_SONARR_SLUG = {{ (_sonarr_default ? _sonarr_default.slug : 'sonarr-1')|json_encode|raw }};
-    var CURRENT_RADARR_SLUG = {{ _current_radarr_slug|json_encode|raw }};
-    var CURRENT_SONARR_SLUG = {{ _current_sonarr_slug|json_encode|raw }};
     window.INSTANCE_SLUG = INSTANCE_SLUG;
     window.DEFAULT_RADARR_SLUG = DEFAULT_RADARR_SLUG;
     window.DEFAULT_SONARR_SLUG = DEFAULT_SONARR_SLUG;
-    window.CURRENT_RADARR_SLUG = CURRENT_RADARR_SLUG;
-    window.CURRENT_SONARR_SLUG = CURRENT_SONARR_SLUG;
 
     // Global locale-aware byte formatter — must be defined here in <head>
     // BEFORE any child template's javascripts block runs. The original
@@ -1468,11 +1453,16 @@
         }
         var html = '<div class="prismarr-search-section">' + (window._i18n && window._i18n['search.recent'] || 'Recent searches') + '</div>';
         recent.forEach(function (q) {
-          html += '<div class="prismarr-search-recent" data-recent-q="' + q.replace(/"/g, '&quot;') + '">'
+          // `q` is user-typed and round-tripped through localStorage —
+          // escape it before splicing into innerHTML even on the visible
+          // text path (self-XSS today, but a future shared-search feature
+          // would expose it to other users).
+          var safeQ = window.escHtml(q);
+          html += '<div class="prismarr-search-recent" data-recent-q="' + safeQ + '">'
                 + '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
                 + '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>'
-                + '<span class="text-truncate">' + q + '</span>'
-                + '<span class="clear-x" data-remove-q="' + q.replace(/"/g, '&quot;') + '" title="' + (window._i18n && window._i18n['search.forget'] || 'Forget') + '">'
+                + '<span class="text-truncate">' + safeQ + '</span>'
+                + '<span class="clear-x" data-remove-q="' + safeQ + '" title="' + (window._i18n && window._i18n['search.forget'] || 'Forget') + '">'
                 + '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
                 + '</span></div>';
         });
@@ -1882,11 +1872,16 @@
         var prefix = isFilm ? 'qa-film' : 'qa-serie';
         var qSel = document.getElementById(prefix + '-quality');
         var fSel = document.getElementById(prefix + '-folder');
+        // Profile names and folder paths come from the upstream Radarr/Sonarr
+        // admin and are otherwise rendered raw into <option>. Escape them
+        // so a malicious admin-controlled profile name can't break out of
+        // the option markup.
         qSel.innerHTML = (data.profiles || []).map(function (p) {
-          return '<option value="' + p.id + '">' + (p.name || p.id) + '</option>';
+          return '<option value="' + window.escHtml(p.id) + '">' + window.escHtml(p.name || p.id) + '</option>';
         }).join('');
         fSel.innerHTML = (data.folders || []).map(function (f) {
-          return '<option value="' + (f.path || f) + '">' + (f.path || f) + '</option>';
+          var path = f.path || f;
+          return '<option value="' + window.escHtml(path) + '">' + window.escHtml(path) + '</option>';
         }).join('');
       }
 

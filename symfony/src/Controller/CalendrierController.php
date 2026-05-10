@@ -261,7 +261,12 @@ class CalendrierController extends AbstractController
                 ];
                 foreach ($slots as $s) {
                     if (!$s['at'] instanceof \DateTimeInterface) continue;
-                    $key = ($m['tmdbId'] ?? ($m['title'] ?? '?') . '|' . ($m['year'] ?? '?')) . '|' . $s['suffix'] . '|' . $s['at']->format('Y-m-d');
+                    // Parenthesise the tmdbId fallback explicitly — `??` has
+                    // lower precedence than `.`, so `$a ?? $b . $c` reads as
+                    // `$a ?? ($b . $c)` and was technically correct, but the
+                    // visual ambiguity has bitten reviewers more than once.
+                    $stableId = $m['tmdbId'] ?? (($m['title'] ?? '?') . '|' . ($m['year'] ?? '?'));
+                    $key      = $stableId . '|' . $s['suffix'] . '|' . $s['at']->format('Y-m-d');
                     if (isset($movieSeen[$key])) continue;
                     $movieSeen[$key] = true;
                     $lines = array_merge($lines, $this->movieEventLines($m, $s['at'], $s['label'], $s['suffix'], $now));

@@ -1139,6 +1139,13 @@ class AdminSettingsController extends AbstractController
                     continue;
                 }
                 $existing = $this->instances->getBySlug($type, $slug);
+                // Preserve the sidebar ordering exported alongside each row
+                // — without this the v2 import would append every instance
+                // at max(position)+1 and silently reshuffle the user's
+                // hand-curated order.
+                $position = isset($row['position']) && is_numeric($row['position'])
+                    ? (int) $row['position']
+                    : null;
                 try {
                     if ($existing !== null) {
                         $this->instances->update(
@@ -1148,6 +1155,7 @@ class AdminSettingsController extends AbstractController
                             null, // empty api key submission preserves the existing one
                             $slug,
                             (bool) ($row['enabled'] ?? true),
+                            $position,
                         );
                     } else {
                         $this->instances->create(
@@ -1157,6 +1165,7 @@ class AdminSettingsController extends AbstractController
                             null, // no api key in the export — admin retypes
                             $slug,
                             (bool) ($row['enabled'] ?? true),
+                            $position,
                         );
                     }
                     $instancesApplied++;
