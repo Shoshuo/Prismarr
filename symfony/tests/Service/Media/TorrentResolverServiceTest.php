@@ -14,9 +14,9 @@ use PHPUnit\Framework\TestCase;
 class TorrentResolverServiceTest extends TestCase
 {
     /**
-     * Mock provider that returns a default Radarr instance with slug 'radarr-1'
-     * and a default Sonarr instance with slug 'sonarr-1'. Used by every resolve()
-     * test case to mimic a fresh single-instance install.
+     * Mock provider that returns one default Radarr instance ('radarr-1')
+     * and one default Sonarr instance ('sonarr-1'). Mimics a fresh single-
+     * instance install for tests that don't care about cross-instance.
      */
     private function instancesMock(): ServiceInstanceProvider
     {
@@ -30,7 +30,24 @@ class TorrentResolverServiceTest extends TestCase
                 default                       => null,
             }
         );
+        $mock->method('getEnabled')->willReturnCallback(
+            fn(string $type) => match ($type) {
+                ServiceInstance::TYPE_RADARR => [$radarrInst],
+                ServiceInstance::TYPE_SONARR => [$sonarrInst],
+                default                       => [],
+            }
+        );
         return $mock;
+    }
+
+    /**
+     * Wire $client->withInstance(...) to return $client itself so the
+     * existing single-instance tests keep working without spawning
+     * sub-mocks for every per-instance call.
+     */
+    private function selfBind(RadarrClient|SonarrClient $client): void
+    {
+        $client->method('withInstance')->willReturn($client);
     }
 
     // ── parseReleaseName ────────────────────────────────────────────────
@@ -117,6 +134,7 @@ class TorrentResolverServiceTest extends TestCase
             ['id' => 3, 'title' => 'Dune Part Two',  'year' => 2024],
         ]);
         $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
 
         $svc = new TorrentResolverService($radarr, $sonarr, $this->instancesMock());
         // Release says 2021 → must return the 2021 one, not the 1984.
@@ -133,6 +151,7 @@ class TorrentResolverServiceTest extends TestCase
             ['id' => 42, 'title' => 'Split', 'year' => 2016],
         ]);
         $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
 
         $svc = new TorrentResolverService($radarr, $sonarr, $this->instancesMock());
         $r = $svc->resolve('radarr', 'It.2017.1080p.BluRay');
@@ -146,6 +165,7 @@ class TorrentResolverServiceTest extends TestCase
             ['id' => 1, 'title' => 'Completely Different Title', 'year' => 2020],
         ]);
         $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
 
         $svc = new TorrentResolverService($radarr, $sonarr, $this->instancesMock());
         $r = $svc->resolve('radarr', 'Dune.2021.1080p');
@@ -157,6 +177,7 @@ class TorrentResolverServiceTest extends TestCase
     {
         $radarr = $this->createMock(RadarrClient::class);
         $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
 
         $svc = new TorrentResolverService($radarr, $sonarr, $this->instancesMock());
         $r = $svc->resolve('unknown', 'Whatever.2020.1080p');
@@ -168,6 +189,7 @@ class TorrentResolverServiceTest extends TestCase
     {
         $radarr = $this->createMock(RadarrClient::class);
         $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
         $sonarr->method('getRawAllSeries')->willReturn([
             ['id' => 99, 'title' => 'Breaking Bad', 'year' => 2008],
         ]);
@@ -192,6 +214,7 @@ class TorrentResolverServiceTest extends TestCase
             ['id' => 7, 'title' => 'Dune', 'year' => 2021],
         ]);
         $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
 
         $svc = new TorrentResolverService($radarr, $sonarr, $this->instancesMock());
         $r = $svc->resolve('radarr', 'Dune.2021.1080p.BluRay');
@@ -218,6 +241,7 @@ class TorrentResolverServiceTest extends TestCase
             ],
         ]);
         $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
 
         $svc = new TorrentResolverService($radarr, $sonarr, $this->instancesMock());
         $r = $svc->resolve('radarr', 'Swapped.2026.MULTi.1080p.WEB.x264-FW');
@@ -245,6 +269,7 @@ class TorrentResolverServiceTest extends TestCase
             ],
         ]);
         $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
 
         $svc = new TorrentResolverService($radarr, $sonarr, $this->instancesMock());
         $r = $svc->resolve('radarr', 'One.Life.2023.MULTI.VFF.1080p.10bit.WEBRip.6CH.x265.HEVC-SERQPH');
@@ -266,6 +291,7 @@ class TorrentResolverServiceTest extends TestCase
             ['id' => 17, 'title' => 'La traversée', 'year' => 2022],
         ]);
         $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
 
         $svc = new TorrentResolverService($radarr, $sonarr, $this->instancesMock());
         $r = $svc->resolve('radarr', 'La.Traversee.2022.FRENCH.1080p.WEB.H264-SEiGHT');
@@ -286,6 +312,7 @@ class TorrentResolverServiceTest extends TestCase
             new \App\Exception\ServiceNotConfiguredException('Radarr', 'service_instance:radarr')
         );
         $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
 
         $svc = new TorrentResolverService($radarr, $sonarr, $this->instancesMock());
         $r = $svc->resolve('radarr', 'Whatever.2024.1080p');
@@ -302,6 +329,7 @@ class TorrentResolverServiceTest extends TestCase
     {
         $radarr = $this->createMock(RadarrClient::class);
         $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
         $sonarr->method('getRawAllSeries')->willThrowException(new \RuntimeException('cURL connect failed'));
 
         $svc = new TorrentResolverService($radarr, $sonarr, $this->instancesMock());
@@ -322,6 +350,7 @@ class TorrentResolverServiceTest extends TestCase
             ['id' => 1, 'title' => 'Dune', 'year' => 2021],
         ]);
         $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
 
         $instances = $this->createMock(ServiceInstanceProvider::class);
         $instances->method('getDefault')->willReturn(null);
@@ -330,5 +359,82 @@ class TorrentResolverServiceTest extends TestCase
         $r = $svc->resolve('radarr', 'Dune.2021.1080p');
         $this->assertFalse($r['found']);
         $this->assertSame('No Radarr instance', $r['error']);
+    }
+
+    /**
+     * Phase D — the resolver iterates over every enabled Radarr instance
+     * and returns the slug of the instance that actually owns the match.
+     * A movie present only in 'radarr-4k' must produce a URL pointing at
+     * /medias/radarr-4k/films?open=..., not the default radarr-1 URL.
+     */
+    public function testResolveCrossInstanceReturnsSourceInstanceSlug(): void
+    {
+        $instDefault = new ServiceInstance(ServiceInstance::TYPE_RADARR, 'radarr-1',  'Radarr',    'http://r1', 'k');
+        $inst4k      = new ServiceInstance(ServiceInstance::TYPE_RADARR, 'radarr-4k', 'Radarr 4K', 'http://r2', 'k');
+
+        $defaultClient = $this->createMock(RadarrClient::class);
+        $defaultClient->method('getRawMovies')->willReturn([]); // default has no Dune
+        $fourKClient = $this->createMock(RadarrClient::class);
+        $fourKClient->method('getRawMovies')->willReturn([
+            ['id' => 99, 'title' => 'Dune', 'year' => 2021],
+        ]);
+
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('withInstance')->willReturnCallback(
+            fn(ServiceInstance $i) => $i->getSlug() === 'radarr-4k' ? $fourKClient : $defaultClient
+        );
+        $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($sonarr);
+
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getEnabled')->willReturnCallback(
+            fn(string $type) => $type === ServiceInstance::TYPE_RADARR ? [$instDefault, $inst4k] : []
+        );
+
+        $svc = new TorrentResolverService($radarr, $sonarr, $instances);
+        $r = $svc->resolve('radarr', 'Dune.2021.1080p.BluRay');
+
+        $this->assertTrue($r['found']);
+        $this->assertSame(99, $r['id']);
+        $this->assertSame('/medias/radarr-4k/films?open=99', $r['url'],
+            'URL must carry the slug of the instance that owns the match, not the default');
+    }
+
+    /**
+     * Phase D regression: if one Radarr instance is unreachable but another
+     * one responds, the resolver must NOT bail out with "Radarr unavailable"
+     * — it should skip the failing instance and use whatever the reachable
+     * one returns.
+     */
+    public function testResolveCrossInstanceTolaratesOneUnreachableInstance(): void
+    {
+        $down = new ServiceInstance(ServiceInstance::TYPE_RADARR, 'radarr-down', 'Down', 'http://r1', 'k');
+        $up   = new ServiceInstance(ServiceInstance::TYPE_RADARR, 'radarr-up',   'Up',   'http://r2', 'k');
+
+        $downClient = $this->createMock(RadarrClient::class);
+        $downClient->method('getRawMovies')->willThrowException(new \RuntimeException('cURL'));
+        $upClient = $this->createMock(RadarrClient::class);
+        $upClient->method('getRawMovies')->willReturn([
+            ['id' => 7, 'title' => 'Dune', 'year' => 2021],
+        ]);
+
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('withInstance')->willReturnCallback(
+            fn(ServiceInstance $i) => $i->getSlug() === 'radarr-down' ? $downClient : $upClient
+        );
+        $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($sonarr);
+
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getEnabled')->willReturnCallback(
+            fn(string $type) => $type === ServiceInstance::TYPE_RADARR ? [$down, $up] : []
+        );
+
+        $svc = new TorrentResolverService($radarr, $sonarr, $instances);
+        $r = $svc->resolve('radarr', 'Dune.2021.1080p');
+
+        $this->assertTrue($r['found']);
+        $this->assertSame(7, $r['id']);
+        $this->assertSame('/medias/radarr-up/films?open=7', $r['url']);
     }
 }

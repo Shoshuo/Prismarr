@@ -43,44 +43,56 @@ class TorrentResolverService
 
     private function resolveMovie(string $needle, array $parsed): array
     {
-        // Radarr may not be configured (fresh install, user doesn't run
-        // Radarr at all, or the instance is currently unreachable). The qBit
-        // resolve endpoint must answer cleanly with `found: false` instead of
-        // bubbling up a 500 — the badge just stays grey, no toast.
-        try {
-            $movies = $this->radarr->getRawMovies();
-        } catch (\Throwable) {
-            return ['found' => false, 'error' => 'Radarr unavailable', 'parsed' => $parsed];
+        // Phase D — iterate over every enabled Radarr instance and keep the
+        // best score globally. This matches the user's mental model: a
+        // torrent should be linkable to whichever instance has the movie
+        // (Radarr 1080p OR Radarr 4K OR Radarr Anime), not just the default.
+        // The per-instance call is wrapped so a single unreachable instance
+        // doesn't kill the whole resolve — its movies are simply skipped and
+        // the badge falls through to the default-unavailable answer if no
+        // instance returned anything.
+        $enabled = $this->instances->getEnabled(ServiceInstance::TYPE_RADARR);
+        if ($enabled === []) {
+            return ['found' => false, 'error' => 'No Radarr instance', 'parsed' => $parsed];
         }
 
         $best = null;
         $bestScore = 0;
-        foreach ($movies as $m) {
-            // Scoring is done against every known title for the movie:
-            //   - `title`         (configured Radarr language, often FR)
-            //   - `originalTitle` (TMDb original, often EN)
-            //   - `alternateTitles[*].title` (regional + studio variants)
-            // A torrent named after the EN title must still match a Radarr
-            // movie stored under its FR translation, and vice-versa.
-            foreach ($this->collectMovieTitles($m) as $candidate) {
-                $score = $this->scoreMatch($candidate, $needle, $m['year'] ?? null, $parsed['year']);
-                if ($score > $bestScore) { $bestScore = $score; $best = $m; }
+        $bestSlug = null;
+        $reachedAny = false;
+        foreach ($enabled as $instance) {
+            try {
+                $movies = $this->radarr->withInstance($instance)->getRawMovies();
+                $reachedAny = true;
+            } catch (\Throwable) {
+                continue; // instance unreachable, skip but keep going
+            }
+            foreach ($movies as $m) {
+                // Scoring is done against every known title for the movie:
+                //   - `title`         (configured Radarr language, often FR)
+                //   - `originalTitle` (TMDb original, often EN)
+                //   - `alternateTitles[*].title` (regional + studio variants)
+                // A torrent named after the EN title must still match a Radarr
+                // movie stored under its FR translation, and vice-versa.
+                foreach ($this->collectMovieTitles($m) as $candidate) {
+                    $score = $this->scoreMatch($candidate, $needle, $m['year'] ?? null, $parsed['year']);
+                    if ($score > $bestScore) {
+                        $bestScore = $score;
+                        $best      = $m;
+                        $bestSlug  = $instance->getSlug();
+                    }
+                }
             }
         }
-        if ($best && $bestScore >= self::MIN_SCORE) {
-            // Multi-instance v1.1.0: matching is currently scoped to the default
-            // Radarr instance only, so the URL falls back on the default slug.
-            // Phase D will iterate enabled instances and return the source slug
-            // alongside the match.
-            $slug = $this->instances->getDefault(ServiceInstance::TYPE_RADARR)?->getSlug();
-            if ($slug === null) {
-                return ['found' => false, 'error' => 'No Radarr instance', 'parsed' => $parsed];
-            }
+        if (!$reachedAny) {
+            return ['found' => false, 'error' => 'Radarr unavailable', 'parsed' => $parsed];
+        }
+        if ($best !== null && $bestSlug !== null && $bestScore >= self::MIN_SCORE) {
             return [
                 'found' => true,
                 'id'    => (int)$best['id'],
                 'title' => (string)($best['title'] ?? ''),
-                'url'   => '/medias/' . $slug . '/films?open=' . (int)$best['id'],
+                'url'   => '/medias/' . $bestSlug . '/films?open=' . (int)$best['id'],
             ];
         }
         return ['found' => false, 'error' => 'No match in library', 'parsed' => $parsed];
@@ -88,32 +100,43 @@ class TorrentResolverService
 
     private function resolveSeries(string $needle, array $parsed): array
     {
-        try {
-            $series = $this->sonarr->getRawAllSeries();
-        } catch (\Throwable) {
-            return ['found' => false, 'error' => 'Sonarr unavailable', 'parsed' => $parsed];
+        // Same iteration pattern as resolveMovie — see comments there.
+        $enabled = $this->instances->getEnabled(ServiceInstance::TYPE_SONARR);
+        if ($enabled === []) {
+            return ['found' => false, 'error' => 'No Sonarr instance', 'parsed' => $parsed];
         }
 
         $best = null;
         $bestScore = 0;
-        foreach ($series as $s) {
-            // Same multi-title pattern as resolveMovie() — Sonarr exposes
-            // `alternateTitles` with regional and per-season variants.
-            foreach ($this->collectSeriesTitles($s) as $candidate) {
-                $score = $this->scoreMatch($candidate, $needle, $s['year'] ?? null, $parsed['year']);
-                if ($score > $bestScore) { $bestScore = $score; $best = $s; }
+        $bestSlug = null;
+        $reachedAny = false;
+        foreach ($enabled as $instance) {
+            try {
+                $series = $this->sonarr->withInstance($instance)->getRawAllSeries();
+                $reachedAny = true;
+            } catch (\Throwable) {
+                continue;
+            }
+            foreach ($series as $s) {
+                foreach ($this->collectSeriesTitles($s) as $candidate) {
+                    $score = $this->scoreMatch($candidate, $needle, $s['year'] ?? null, $parsed['year']);
+                    if ($score > $bestScore) {
+                        $bestScore = $score;
+                        $best      = $s;
+                        $bestSlug  = $instance->getSlug();
+                    }
+                }
             }
         }
-        if ($best && $bestScore >= self::MIN_SCORE) {
-            $slug = $this->instances->getDefault(ServiceInstance::TYPE_SONARR)?->getSlug();
-            if ($slug === null) {
-                return ['found' => false, 'error' => 'No Sonarr instance', 'parsed' => $parsed];
-            }
+        if (!$reachedAny) {
+            return ['found' => false, 'error' => 'Sonarr unavailable', 'parsed' => $parsed];
+        }
+        if ($best !== null && $bestSlug !== null && $bestScore >= self::MIN_SCORE) {
             return [
                 'found' => true,
                 'id'    => (int)$best['id'],
                 'title' => (string)($best['title'] ?? ''),
-                'url'   => '/medias/' . $slug . '/series?open=' . (int)$best['id'],
+                'url'   => '/medias/' . $bestSlug . '/series?open=' . (int)$best['id'],
             ];
         }
         return ['found' => false, 'error' => 'No match in library', 'parsed' => $parsed];
