@@ -1810,15 +1810,27 @@
           .then(function (r) { return r.json(); })
           .then(function (resolved) {
             var defaultSlug = isFilm ? DEFAULT_RADARR_SLUG : DEFAULT_SONARR_SLUG;
-            // "Already in library" path — surface every owning instance
-            // and skip the form entirely.
-            if (resolved.instances && resolved.instances.length) {
-              renderAlreadyList(resolved.instances, isFilm);
+            var owners      = resolved.instances || [];
+            var candidates  = resolved.candidates || [];
+
+            // 1. Always surface the existing owners (if any) so the user can
+            //    jump to them via "Voir".
+            renderAlreadyList(owners, isFilm);
+
+            // 2. The picker should only list instances that DON'T already
+            //    own the item — re-adding to an instance that already has
+            //    it would just be rejected by Radarr/Sonarr. If every
+            //    candidate is already an owner, hide the form entirely.
+            var ownedSlugs = owners.map(function (o) { return o.slug; });
+            var addable    = candidates.filter(function (c) { return ownedSlugs.indexOf(c.slug) === -1; });
+            if (addable.length === 0) {
+              document.getElementById('qa-form-film').style.display  = 'none';
+              document.getElementById('qa-form-serie').style.display = 'none';
+              document.getElementById('qa-instance-row').style.display = 'none';
               return;
             }
-            // Add path — pick instance, load profiles/folders for it, show
-            // the right form. Picker hides itself for single-instance setups.
-            var slug = renderInstancePicker(resolved.candidates || [], defaultSlug);
+
+            var slug = renderInstancePicker(addable, defaultSlug);
             qaSelectedSlug = slug;
             document.getElementById(isFilm ? 'qa-form-film' : 'qa-form-serie').style.display = '';
             loadProfilesFolders(isFilm, slug);
