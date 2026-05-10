@@ -293,27 +293,31 @@ class TmdbController extends AbstractController
             return $this->json(['error' => $this->translator->trans('decouverte.error.not_found_tmdb')], 404);
         }
 
-        $library = $this->buildLibraryIndex();
-
         if ($type === 'movie') {
-            $year   = !empty($detail['release_date']) ? (int) substr($detail['release_date'], 0, 4) : 0;
-            $inLib  = isset($library['movie'][(int) $detail['id']]);
+            $year     = !empty($detail['release_date']) ? (int) substr($detail['release_date'], 0, 4) : 0;
+            $tmdbId   = (int) $detail['id'];
+            // Phase D #7 — instances that already own the movie + candidates
+            // for the Phase E quick-add picker. Computed independently from
+            // buildLibraryIndex() because that one only tracks the first
+            // owning instance, while the picker needs the full set.
+            $owners     = $this->collectMovieOwners($tmdbId);
+            $candidates = $this->candidatesForType(ServiceInstance::TYPE_RADARR);
             return $this->json([
                 'type'       => 'film',
-                'id'         => (int) $detail['id'],
-                'tmdbId'     => (int) $detail['id'],
+                'id'         => $tmdbId,
+                'tmdbId'     => $tmdbId,
                 'title'      => $detail['title'] ?? '',
                 'year'       => $year,
                 'poster'     => TmdbClient::posterUrl($detail['poster_path'] ?? null, 'w342'),
-                'inLibrary'  => $inLib,
+                'inLibrary'  => $owners !== [],
+                'instances'  => $owners,
+                'candidates' => $candidates,
             ]);
         }
 
         // TV — we need a tvdbId for Sonarr
         $tvdbId = $detail['external_ids']['tvdb_id'] ?? null;
         $year   = !empty($detail['first_air_date']) ? (int) substr($detail['first_air_date'], 0, 4) : 0;
-        $inLib  = isset($library['tv']['tmdb_' . (int) $detail['id']])
-               || ($tvdbId && isset($library['tv']['tvdb_' . (int) $tvdbId]));
 
         if (!$tvdbId) {
             return $this->json([
@@ -326,6 +330,9 @@ class TmdbController extends AbstractController
         $origin   = $detail['origin_country'] ?? [];
         $isAnime  = in_array(16, $genres, true) && in_array('JP', $origin, true);
 
+        $owners     = $this->collectSeriesOwners((int) $tvdbId, (int) $detail['id']);
+        $candidates = $this->candidatesForType(ServiceInstance::TYPE_SONARR);
+
         return $this->json([
             'type'       => 'serie',
             'id'         => (int) $tvdbId,
@@ -334,7 +341,9 @@ class TmdbController extends AbstractController
             'title'      => $detail['name'] ?? '',
             'year'       => $year,
             'poster'     => TmdbClient::posterUrl($detail['poster_path'] ?? null, 'w342'),
-            'inLibrary'  => $inLib,
+            'inLibrary'  => $owners !== [],
+            'instances'  => $owners,
+            'candidates' => $candidates,
             'seriesType' => $isAnime ? 'anime' : 'standard',
         ]);
     }
@@ -1039,6 +1048,103 @@ class TmdbController extends AbstractController
                 'in_library'  => $libInfo !== null,
                 'lib_status'  => $libInfo['status'] ?? null,
                 'lib_id'      => $libInfo['id'] ?? null,
+            ];
+        }
+        return $out;
+    }
+
+    /**
+     * Phase D #7 — full list of Radarr instances that already own the movie
+     * with the given tmdbId, not just the first one (that's
+     * buildLibraryIndex's job). Feeds the quick-add picker so the user can
+     * see "Already in Radarr 1080p AND Radarr 4K" rather than just the
+     * winning slug.
+     *
+     * @return list<array{slug: string, name: string, id: int, status: string}>
+     */
+    private function collectMovieOwners(int $tmdbId): array
+    {
+        $owners = [];
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+            try {
+                foreach ($this->radarr->withInstance($inst)->getMovies() as $m) {
+                    if ((int) ($m['tmdbId'] ?? 0) !== $tmdbId) continue;
+                    $owners[] = [
+                        'slug'   => $inst->getSlug(),
+                        'name'   => $inst->getName(),
+                        'id'     => (int) ($m['id'] ?? 0),
+                        'status' => !empty($m['hasFile']) ? 'downloaded' : (!empty($m['monitored']) ? 'missing' : 'unmonitored'),
+                    ];
+                    break; // one entry per instance — same tmdbId can't be on the same Radarr twice
+                }
+            } catch (\Throwable $e) {
+                $this->logger->warning('TMDb resolve owners radarr failed', [
+                    'instance'  => $inst->getSlug(),
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ]);
+            }
+        }
+        return $owners;
+    }
+
+    /**
+     * Same as collectMovieOwners but for Sonarr — matched on either tvdbId
+     * (canonical) or tmdbId (fallback Sonarr also stores).
+     *
+     * @return list<array{slug: string, name: string, id: int, status: string}>
+     */
+    private function collectSeriesOwners(int $tvdbId, int $tmdbId): array
+    {
+        $owners = [];
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+            try {
+                foreach ($this->sonarr->withInstance($inst)->getRawAllSeries() as $s) {
+                    $matchTvdb = $tvdbId > 0 && (int) ($s['tvdbId'] ?? 0) === $tvdbId;
+                    $matchTmdb = $tmdbId > 0 && (int) ($s['tmdbId'] ?? 0) === $tmdbId;
+                    if (!$matchTvdb && !$matchTmdb) continue;
+                    $stats     = $s['statistics'] ?? [];
+                    $fileCount = (int) ($stats['episodeFileCount'] ?? 0);
+                    $totalEps  = (int) ($stats['episodeCount'] ?? 0);
+                    if (!($s['monitored'] ?? false)) {
+                        $status = 'unmonitored';
+                    } elseif ($totalEps > 0 && $fileCount >= $totalEps) {
+                        $status = 'downloaded';
+                    } elseif ($fileCount > 0) {
+                        $status = 'partial';
+                    } else {
+                        $status = 'missing';
+                    }
+                    $owners[] = [
+                        'slug'   => $inst->getSlug(),
+                        'name'   => $inst->getName(),
+                        'id'     => (int) ($s['id'] ?? 0),
+                        'status' => $status,
+                    ];
+                    break;
+                }
+            } catch (\Throwable $e) {
+                $this->logger->warning('TMDb resolve owners sonarr failed', [
+                    'instance'  => $inst->getSlug(),
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ]);
+            }
+        }
+        return $owners;
+    }
+
+    /**
+     * @return list<array{slug: string, name: string, is_default: bool}>
+     */
+    private function candidatesForType(string $type): array
+    {
+        $out = [];
+        foreach ($this->instances->getEnabled($type) as $inst) {
+            $out[] = [
+                'slug'       => $inst->getSlug(),
+                'name'       => $inst->getName(),
+                'is_default' => $inst->isDefault(),
             ];
         }
         return $out;
