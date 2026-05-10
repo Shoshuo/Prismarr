@@ -50,15 +50,43 @@ class CalendrierController extends AbstractController
     {
         $radarrCal = [];
         $sonarrCal = [];
-        // Track whether each fetch crashed (vs. simply returned no events) so
-        // the template can show a "service unreachable" banner. Without this,
-        // a Radarr outage and an empty library look identical to the user.
+        // Phase D — fan out across every enabled Radarr/Sonarr instance and
+        // dedupe identical entries (same movie tracked on 1080p + 4K would
+        // otherwise show twice on the same date). The first instance to
+        // surface an event wins and its slug is stamped onto the row so the
+        // click handler can navigate to the right /medias/<slug>/films.
+        // Failure tracking is per-type (any instance failing flips the
+        // banner) so a Radarr 4K outage doesn't silently hide events.
         $radarrFailed = false;
         $sonarrFailed = false;
+        $radarrSeen   = [];
+        $sonarrSeen   = [];
 
-        try {
-            $radarrMovies = $this->radarr->getCalendar(90, 90);
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+            $client = $this->radarr->withInstance($inst);
+            try {
+                $radarrMovies = $client->getCalendar(90, 90);
+            } catch (\Throwable $e) {
+                $radarrFailed = true;
+                $this->logger->warning('Radarr calendar failed', [
+                    'instance'  => $inst->getSlug(),
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ]);
+                continue;
+            }
+            // Same silent-failure detection as the legacy single-instance code.
+            // getCalendar() returns [] both when Radarr has nothing scheduled
+            // AND when the HTTP call bailed (timeout/401). getLastError() lets
+            // us tell those apart without throwing inside the client.
+            if ($radarrMovies === [] && $client->getLastError() !== null) {
+                $radarrFailed = true;
+            }
             foreach ($radarrMovies as $m) {
+                // Dedup key: tmdbId (stable cross-instance) with title+year as
+                // fallback. The Radarr internal id differs per instance so it
+                // can't be the dedup key.
+                $dedupBase = 'r:' . ($m['tmdbId'] ?? (($m['title'] ?? '?') . '|' . ($m['year'] ?? '?')));
                 $base = [
                     'type'      => 'film',
                     'title'     => $m['title'] ?? '—',
@@ -74,36 +102,47 @@ class CalendrierController extends AbstractController
                     'studio'    => $m['studio'] ?? null,
                     'genres'    => $m['genres'] ?? [],
                     'certification' => $m['certification'] ?? null,
+                    '_instanceSlug' => $inst->getSlug(),
+                    '_instanceName' => $inst->getName(),
                 ];
-                if ($m['inCinemasAt'] ?? null) {
-                    $radarrCal[] = array_merge($base, ['date' => $m['inCinemasAt'], 'releaseType' => 'cinema']);
-                }
-                if ($m['digitalAt'] ?? null) {
-                    $radarrCal[] = array_merge($base, ['date' => $m['digitalAt'], 'releaseType' => 'digital']);
-                }
-                if ($m['physicalAt'] ?? null) {
-                    $radarrCal[] = array_merge($base, ['date' => $m['physicalAt'], 'releaseType' => 'physical']);
-                }
-                if (!($m['inCinemasAt'] ?? null) && !($m['digitalAt'] ?? null) && !($m['physicalAt'] ?? null)) {
-                    $radarrCal[] = array_merge($base, ['date' => null, 'releaseType' => 'unknown']);
+                $candidates = [];
+                if ($m['inCinemasAt'] ?? null) $candidates[] = ['date' => $m['inCinemasAt'], 'releaseType' => 'cinema'];
+                if ($m['digitalAt']   ?? null) $candidates[] = ['date' => $m['digitalAt'],   'releaseType' => 'digital'];
+                if ($m['physicalAt']  ?? null) $candidates[] = ['date' => $m['physicalAt'],  'releaseType' => 'physical'];
+                if ($candidates === []) $candidates[] = ['date' => null, 'releaseType' => 'unknown'];
+                foreach ($candidates as $c) {
+                    $key = $dedupBase . '|' . $c['releaseType'] . '|' . ($c['date'] instanceof \DateTimeInterface ? $c['date']->format('Y-m-d') : 'none');
+                    if (isset($radarrSeen[$key])) continue;
+                    $radarrSeen[$key] = true;
+                    $radarrCal[] = array_merge($base, $c);
                 }
             }
-        } catch (\Throwable $e) {
-            $radarrFailed = true;
-            $this->logger->warning('Radarr calendar failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
-        }
-        // Silent failure path: getCalendar() returns [] both when Radarr has
-        // genuinely nothing scheduled AND when the HTTP request bailed out
-        // (timeout, 401, network error). The latter sets a non-null
-        // getLastError(), so we use that to tell "service down" apart from
-        // "library quiet" without having to throw inside the client.
-        if ($radarrCal === [] && $this->radarr->getLastError() !== null) {
-            $radarrFailed = true;
         }
 
-        try {
-            $sonarrEpisodes = $this->sonarr->getCalendar(90, 90);
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+            $client = $this->sonarr->withInstance($inst);
+            try {
+                $sonarrEpisodes = $client->getCalendar(90, 90);
+            } catch (\Throwable $e) {
+                $sonarrFailed = true;
+                $this->logger->warning('Sonarr calendar failed', [
+                    'instance'  => $inst->getSlug(),
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ]);
+                continue;
+            }
+            if ($sonarrEpisodes === [] && $client->getLastError() !== null) {
+                $sonarrFailed = true;
+            }
             foreach ($sonarrEpisodes as $e) {
+                // Dedup key for episodes: tvdbId+season+episode (stable across
+                // instances). Series internal id differs per Sonarr so it
+                // can't be the key. Fallback on seriesTitle+S/E.
+                $dedupBase = 's:' . ($e['tvdbId'] ?? ($e['seriesTitle'] ?? '?'));
+                $key = $dedupBase . '|S' . ($e['season'] ?? 0) . 'E' . ($e['episode'] ?? 0);
+                if (isset($sonarrSeen[$key])) continue;
+                $sonarrSeen[$key] = true;
                 $sonarrCal[] = [
                     'type'        => 'episode',
                     'seriesTitle' => $e['seriesTitle'] ?? '—',
@@ -121,15 +160,10 @@ class CalendrierController extends AbstractController
                     'network'     => $e['network'] ?? null,
                     'genres'      => $e['genres'] ?? [],
                     'releaseType' => 'episode',
+                    '_instanceSlug' => $inst->getSlug(),
+                    '_instanceName' => $inst->getName(),
                 ];
             }
-        } catch (\Throwable $e) {
-            $sonarrFailed = true;
-            $this->logger->warning('Sonarr calendar failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
-        }
-        // Same silent-failure detection as Radarr above.
-        if ($sonarrCal === [] && $this->sonarr->getLastError() !== null) {
-            $sonarrFailed = true;
         }
 
         // Merge and sort by date
@@ -198,8 +232,28 @@ class CalendrierController extends AbstractController
 
         $now = (new \DateTimeImmutable())->format('Ymd\THis\Z');
 
-        try {
-            foreach ($this->radarr->getCalendar(self::ICAL_DAYS_AHEAD, self::ICAL_DAYS_BEFORE) as $m) {
+        // Phase D — fan out and dedupe so the subscribed iCal feed isn't
+        // duplicated for users running the same library on multiple Radarr
+        // instances (1080p + 4K). UID is rooted on tmdbId / tvdbId now so
+        // it stays stable across instances; the previous radarr-{id} form
+        // would have shifted across instances and produced ghost events.
+        // Caveat: existing subscribers will see calendar apps re-create the
+        // events under new UIDs once. Documented in CHANGELOG.
+        $movieSeen   = [];
+        $episodeSeen = [];
+
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+            try {
+                $movies = $this->radarr->withInstance($inst)->getCalendar(self::ICAL_DAYS_AHEAD, self::ICAL_DAYS_BEFORE);
+            } catch (\Throwable $e) {
+                $this->logger->warning('iCal Radarr export failed', [
+                    'instance'  => $inst->getSlug(),
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ]);
+                continue;
+            }
+            foreach ($movies as $m) {
                 $slots = [
                     ['at' => $m['inCinemasAt'] ?? null, 'label' => $this->translator->trans('calendar.event.type_cinema'),   'suffix' => 'cinema'],
                     ['at' => $m['digitalAt']   ?? null, 'label' => $this->translator->trans('calendar.event.type_digital'),  'suffix' => 'digital'],
@@ -207,20 +261,32 @@ class CalendrierController extends AbstractController
                 ];
                 foreach ($slots as $s) {
                     if (!$s['at'] instanceof \DateTimeInterface) continue;
+                    $key = ($m['tmdbId'] ?? ($m['title'] ?? '?') . '|' . ($m['year'] ?? '?')) . '|' . $s['suffix'] . '|' . $s['at']->format('Y-m-d');
+                    if (isset($movieSeen[$key])) continue;
+                    $movieSeen[$key] = true;
                     $lines = array_merge($lines, $this->movieEventLines($m, $s['at'], $s['label'], $s['suffix'], $now));
                 }
             }
-        } catch (\Throwable $e) {
-            $this->logger->warning('iCal Radarr export failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
         }
 
-        try {
-            foreach ($this->sonarr->getCalendar(self::ICAL_DAYS_AHEAD, self::ICAL_DAYS_BEFORE) as $e) {
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+            try {
+                $episodes = $this->sonarr->withInstance($inst)->getCalendar(self::ICAL_DAYS_AHEAD, self::ICAL_DAYS_BEFORE);
+            } catch (\Throwable $e) {
+                $this->logger->warning('iCal Sonarr export failed', [
+                    'instance'  => $inst->getSlug(),
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ]);
+                continue;
+            }
+            foreach ($episodes as $e) {
                 if (!($e['airDate'] ?? null) instanceof \DateTimeInterface) continue;
+                $key = ($e['tvdbId'] ?? ($e['seriesTitle'] ?? '?')) . '|S' . ($e['season'] ?? 0) . 'E' . ($e['episode'] ?? 0);
+                if (isset($episodeSeen[$key])) continue;
+                $episodeSeen[$key] = true;
                 $lines = array_merge($lines, $this->episodeEventLines($e, $now));
             }
-        } catch (\Throwable $e) {
-            $this->logger->warning('iCal Sonarr export failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
         }
 
         $lines[] = 'END:VCALENDAR';
@@ -244,7 +310,15 @@ class CalendrierController extends AbstractController
      */
     private function movieEventLines(array $movie, \DateTimeInterface $at, string $label, string $suffix, string $nowUtc): array
     {
-        $uid      = sprintf('radarr-%d-%s@prismarr.local', $movie['id'] ?? 0, $suffix);
+        // UID rooted on tmdbId so the same release stays stable across
+        // Radarr instances (1080p / 4K) and across reinstalls. Falls back
+        // on the per-instance Radarr id when tmdbId is missing — pre-Phase-D
+        // exports that referenced 'radarr-{id}' will be re-created under
+        // 'radarr-tmdb-{tmdbId}' on the next sync (calendar apps drop the
+        // old ones automatically).
+        $uid      = $movie['tmdbId']
+            ? sprintf('radarr-tmdb-%d-%s@prismarr.local', $movie['tmdbId'], $suffix)
+            : sprintf('radarr-%d-%s@prismarr.local', $movie['id'] ?? 0, $suffix);
         $title    = sprintf('🎬 %s — %s', $movie['title'] ?? '—', $label);
         $desc     = $movie['overview'] ?? '';
         $allDay   = $at->format('Ymd');
@@ -273,12 +347,22 @@ class CalendrierController extends AbstractController
         $runtime  = (int) ($episode['runtime'] ?? 30);
         $start    = $at instanceof \DateTimeImmutable ? $at : \DateTimeImmutable::createFromInterface($at);
         $end      = $start->modify("+{$runtime} minutes");
-        $uid      = sprintf(
-            'sonarr-%d-s%02de%02d@prismarr.local',
-            $episode['seriesId'] ?? 0,
-            $episode['season']   ?? 0,
-            $episode['episode']  ?? 0,
-        );
+        // Same stable-UID pattern as Radarr — tvdbId is shared across Sonarr
+        // instances, so subscribed apps don't see ghost duplicates when the
+        // user switches the series between Sonarr default / Anime / etc.
+        $uid      = isset($episode['tvdbId']) && $episode['tvdbId']
+            ? sprintf(
+                'sonarr-tvdb-%d-s%02de%02d@prismarr.local',
+                $episode['tvdbId'],
+                $episode['season']  ?? 0,
+                $episode['episode'] ?? 0,
+            )
+            : sprintf(
+                'sonarr-%d-s%02de%02d@prismarr.local',
+                $episode['seriesId'] ?? 0,
+                $episode['season']   ?? 0,
+                $episode['episode']  ?? 0,
+            );
         $sxe      = sprintf('S%02dE%02d', $episode['season'] ?? 0, $episode['episode'] ?? 0);
         $title    = sprintf('📺 %s · %s', $episode['seriesTitle'] ?? '—', $sxe);
         $desc     = trim(($episode['title'] ?? '') . "\n\n" . ($episode['overview'] ?? ''));

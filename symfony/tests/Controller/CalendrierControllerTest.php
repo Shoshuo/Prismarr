@@ -40,9 +40,22 @@ class CalendrierControllerTest extends TestCase
             // Default: both radarr/sonarr instances exist (post-v1.1.0 source
             // of truth for "configured"). Tests that need the unconfigured
             // posture pass an empty mock explicitly.
+            $radarrInst = new \App\Entity\ServiceInstance(\App\Entity\ServiceInstance::TYPE_RADARR, 'radarr-1', 'Radarr', 'http://r:7878', 'k');
+            $sonarrInst = new \App\Entity\ServiceInstance(\App\Entity\ServiceInstance::TYPE_SONARR, 'sonarr-1', 'Sonarr', 'http://s:8989', 'k');
             $instances = $this->createMock(\App\Service\ServiceInstanceProvider::class);
             $instances->method('hasAnyEnabled')->willReturn(true);
+            // Phase D — index() iterates over getEnabled() and calls
+            // withInstance() per instance, so every test needs at least one
+            // instance per type to feed the loop.
+            $instances->method('getEnabled')->willReturnCallback(
+                fn(string $type) => $type === \App\Entity\ServiceInstance::TYPE_RADARR ? [$radarrInst] : [$sonarrInst]
+            );
         }
+        // Self-bind so $client->withInstance(\$i) returns the same mock — the
+        // test cases configure getCalendar() on the mock and don't care
+        // about per-instance routing.
+        $radarr->method('withInstance')->willReturn($radarr);
+        $sonarr->method('withInstance')->willReturn($sonarr);
         $controller = new CalendrierController(
             $radarr,
             $sonarr,

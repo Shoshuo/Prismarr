@@ -515,6 +515,11 @@ class SonarrClient implements ResetInterface
         return array_map(fn($e) => [
             'id'            => $e['id'] ?? null,
             'seriesId'      => $e['seriesId'] ?? null,
+            // tvdbId is stable across Sonarr instances (1080p / 4K / Anime)
+            // and across reinstalls, so consumers like the calendar dedupe
+            // and the iCal UID generator can root on it.
+            'tvdbId'        => $e['series']['tvdbId'] ?? null,
+            'tmdbId'        => $e['series']['tmdbId'] ?? null,
             'seriesTitle'   => $e['series']['title'] ?? '—',
             'poster'        => $this->posterUrl($e['series'] ?? []),
             'fanart'        => $this->fanartUrl($e['series'] ?? []),

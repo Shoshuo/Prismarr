@@ -901,10 +901,16 @@
         if (isNaN(idx) || !allEvents[idx]) return;
         var ev = allEvents[idx];
         var target = null;
+        // Phase D — each event carries _instanceSlug from the controller so
+        // the click navigates to the page of the instance that owns it.
+        // Default fallback if for some reason the slug is missing (older
+        // cached JSON or edge case with empty libraries).
         if (ev.type === 'film' && ev.id) {
-            target = '{{ instance_path('app_media_films') }}?open=' + ev.id;
+            var radarrSlug = ev._instanceSlug || DEFAULT_RADARR_SLUG;
+            target = '/medias/' + radarrSlug + '/films?open=' + ev.id;
         } else if (ev.type === 'episode' && ev.seriesId) {
-            target = '{{ instance_path('app_media_series') }}?open=' + ev.seriesId;
+            var sonarrSlug = ev._instanceSlug || DEFAULT_SONARR_SLUG;
+            target = '/medias/' + sonarrSlug + '/series?open=' + ev.seriesId;
         }
         if (target) {
             e.preventDefault();
