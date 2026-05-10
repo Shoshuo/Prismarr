@@ -107,4 +107,52 @@ class ServiceHealthCacheTest extends TestCase
             'Entry should be expired once its TTL elapses'
         );
     }
+
+    /**
+     * v1.1.0 — each Radarr/Sonarr instance has its own circuit breaker.
+     * Marking 'radarr-4k' down must NOT silence 'radarr-1080p' or any other
+     * sibling, otherwise a single ailing instance would freeze the whole
+     * media UI for TTL_DOWN seconds across instances.
+     */
+    public function testInstancesOfTheSameServiceAreIndependent(): void
+    {
+        $cache = new ServiceHealthCache(new ArrayAdapter());
+
+        $cache->markDown('radarr', 'radarr-4k');
+
+        $this->assertTrue($cache->isDown('radarr', 'radarr-4k'));
+        $this->assertFalse($cache->isDown('radarr', 'radarr-1080p'));
+        $this->assertFalse($cache->isDown('radarr'), 'unkeyed lookup must not pick up an instance-keyed mark');
+    }
+
+    public function testClearOnOneInstanceLeavesSiblingsAlone(): void
+    {
+        $cache = new ServiceHealthCache(new ArrayAdapter());
+
+        $cache->markDown('radarr', 'radarr-4k');
+        $cache->markDown('radarr', 'radarr-1080p');
+
+        $cache->clear('radarr', 'radarr-4k');
+
+        $this->assertFalse($cache->isDown('radarr', 'radarr-4k'));
+        $this->assertTrue($cache->isDown('radarr', 'radarr-1080p'),
+            'clearing one instance must not clear another');
+    }
+
+    public function testUnkeyedAndKeyedEntriesCoexist(): void
+    {
+        // Defensive: callers that don't pass a slug (legacy, jellyseerr,
+        // prowlarr, qbittorrent — all single-instance services) keep using
+        // the unkeyed form. That entry is independent of the per-instance
+        // ones.
+        $cache = new ServiceHealthCache(new ArrayAdapter());
+
+        $cache->markDown('jellyseerr');
+        $cache->markDown('radarr', 'radarr-1');
+
+        $this->assertTrue($cache->isDown('jellyseerr'));
+        $this->assertTrue($cache->isDown('radarr', 'radarr-1'));
+        $this->assertFalse($cache->isDown('radarr'));
+        $this->assertFalse($cache->isDown('jellyseerr', 'radarr-1'));
+    }
 }
