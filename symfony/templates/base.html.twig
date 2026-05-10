@@ -1188,9 +1188,17 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'quickadd.close'|trans }}"></button>
           </div>
           <div class="modal-body">
-            <div id="qa-already" class="alert alert-success d-flex align-items-center gap-2" style="display:none !important;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M9 12l2 2l4 -4"/></svg>
-              {{ 'quickadd.already_in_library'|trans }}
+            {# Phase E — replaced the static "already in library" alert with
+               a per-instance breakdown populated by tmdb_resolve. The user
+               sees exactly which instances own the item and can jump to
+               the right page via the per-row "Voir" button. #}
+            <div id="qa-already-list" class="mb-3" style="display:none"></div>
+
+            {# ── Instance picker (Phase E). Hidden when only one candidate
+                 exists (single-instance setups stay flat). #}
+            <div id="qa-instance-row" class="mb-3" style="display:none">
+              <label class="form-label small mb-1">{{ 'quickadd.field.target_instance'|trans }}</label>
+              <select id="qa-instance" class="form-select form-select-sm"></select>
             </div>
 
             {# ── MOVIE form (Radarr) ── #}
@@ -1686,6 +1694,79 @@
       var qaCache = {};
       function getQaModal() { return document.getElementById('modal-quick-add'); }
 
+      // qaCache is now keyed by (type, instanceSlug) so switching instances
+      // in the picker doesn't reuse the previous instance's profiles/folders.
+      // qaSelectedSlug tracks the slug currently chosen in #qa-instance —
+      // doAdd() reads it instead of the legacy DEFAULT_*_SLUG.
+      var qaSelectedSlug = null;
+
+      function loadProfilesFolders(isFilm, slug) {
+        var cacheKey = (isFilm ? 'film:' : 'serie:') + slug;
+        if (qaCache[cacheKey]) {
+          fillSelects(isFilm, qaCache[cacheKey]);
+          return Promise.resolve();
+        }
+        var profileUrl = isFilm
+          ? '/medias/' + slug + '/films/quality-profiles'
+          : '/medias/' + slug + '/sonarr/quality-profiles';
+        var folderUrl = isFilm
+          ? '/medias/' + slug + '/films/root-folders'
+          : '/medias/' + slug + '/sonarr/root-folders';
+        return Promise.all([
+          fetch(profileUrl).then(function (r) { return r.json(); }),
+          fetch(folderUrl).then(function (r) { return r.json(); })
+        ]).then(function (results) {
+          qaCache[cacheKey] = { profiles: results[0], folders: results[1] };
+          fillSelects(isFilm, qaCache[cacheKey]);
+        });
+      }
+
+      function renderAlreadyList(instances, isFilm) {
+        var container = document.getElementById('qa-already-list');
+        if (!instances || !instances.length) { container.style.display = 'none'; return; }
+        var i18n = window._i18n || {};
+        var statusLabels = {
+          downloaded:  i18n['qa.status.downloaded']   || 'Downloaded',
+          partial:     i18n['qa.status.partial']      || 'Partial',
+          missing:     i18n['qa.status.missing']      || 'Missing',
+          announced:   i18n['qa.status.announced']    || 'Announced',
+          inCinemas:   i18n['qa.status.in_cinemas']   || 'In cinemas',
+          unmonitored: i18n['qa.status.unmonitored']  || 'Unmonitored',
+        };
+        var rows = instances.map(function (inst) {
+          var lbl = statusLabels[inst.status] || inst.status;
+          var openLbl = i18n['qa.action.view'] || 'Voir';
+          var url = '/medias/' + inst.slug + (isFilm ? '/films?open=' : '/series?open=') + inst.id;
+          return '<div class="d-flex align-items-center gap-2 p-2 mb-1 rounded" style="background:rgba(255,255,255,.04);">'
+            + '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M5 12l5 5l10-10"/></svg>'
+            + '<span class="small fw-medium">' + inst.name + '</span>'
+            + '<span class="badge bg-secondary-lt text-secondary" style="font-size:.65rem;">' + lbl + '</span>'
+            + '<a href="' + url + '" class="btn btn-sm btn-outline-primary ms-auto" style="padding:.1rem .5rem;font-size:.7rem;">' + openLbl + '</a>'
+            + '</div>';
+        }).join('');
+        container.innerHTML = rows;
+        container.style.display = '';
+      }
+
+      function renderInstancePicker(candidates, defaultSlug) {
+        var sel = document.getElementById('qa-instance');
+        var row = document.getElementById('qa-instance-row');
+        if (!candidates || candidates.length <= 1) {
+          // Single-instance setup → keep the modal flat.
+          row.style.display = 'none';
+          return candidates && candidates[0] ? candidates[0].slug : defaultSlug;
+        }
+        sel.innerHTML = candidates.map(function (c) {
+          var sel = c.is_default ? ' selected' : '';
+          return '<option value="' + c.slug + '"' + sel + '>' + c.name + (c.is_default ? ' (default)' : '') + '</option>';
+        }).join('');
+        row.style.display = '';
+        // Pre-select default if any, otherwise first.
+        var pick = candidates.find(function (c) { return c.is_default; }) || candidates[0];
+        sel.value = pick.slug;
+        return pick.slug;
+      }
+
       document.addEventListener('click', function (e) {
         var el = e.target.closest('[data-quick-add]');
         if (!el) return;
@@ -1707,53 +1788,52 @@
           : '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0CF" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg> ' + ((window._i18n && window._i18n['qa.toast_series']) || 'TV Show'))
           + (qaItem.year ? ' · ' + qaItem.year : '');
 
-        // Show the right form
-        document.getElementById('qa-form-film').style.display = isFilm ? '' : 'none';
-        document.getElementById('qa-form-serie').style.display = isFilm ? 'none' : '';
-
-        // In library?
-        var alreadyEl = document.getElementById('qa-already');
-        if (qaItem.inLibrary) {
-          alreadyEl.style.cssText = '';
-          document.getElementById('qa-form-film').style.display = 'none';
-          document.getElementById('qa-form-serie').style.display = 'none';
-        } else {
-          alreadyEl.style.cssText = 'display:none !important';
-        }
-
-        // Reset
+        // Reset state
+        document.getElementById('qa-already-list').style.display = 'none';
+        document.getElementById('qa-instance-row').style.display = 'none';
+        document.getElementById('qa-form-film').style.display  = 'none';
+        document.getElementById('qa-form-serie').style.display = 'none';
         document.getElementById('qa-result').className = 'mt-3 alert d-none';
         var confirmBtn = document.getElementById(isFilm ? 'qa-film-confirm' : 'qa-serie-confirm');
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 5l0 14"/><path d="M5 12l14 0"/></svg> ' + (isFilm ? (window._i18n['qa.add_radarr'] || 'Add to Radarr') : (window._i18n['qa.add_sonarr'] || 'Add to Sonarr'));
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 5l0 14"/><path d="M5 12l14 0"/></svg> ' + (isFilm ? (window._i18n['qa.add_radarr'] || 'Add to Radarr') : (window._i18n['qa.add_sonarr'] || 'Add to Sonarr'));
+        }
 
-        // Load profiles/folders
-        var cacheKey = isFilm ? 'film' : 'serie';
-        if (qaCache[cacheKey]) {
-          fillSelects(isFilm, qaCache[cacheKey]);
-        } else {
-          // Quick-Add is a global modal (Ctrl+K, can be triggered from
-          // anywhere). Profiles / root folders / target slug always come
-          // from the default instance — pre-Phase-E we don't ask the user
-          // to pick. The earlier CURRENT_*_SLUG resolution was useful for
-          // per-page actions (library import, collection add) but surprised
-          // users on a Radarr 4K page who expected Ctrl+K → Add to land on
-          // their default Radarr.
-          var profileUrl = isFilm ? '/medias/' + DEFAULT_RADARR_SLUG + '/films/quality-profiles' : '/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/quality-profiles';
-          var folderUrl  = isFilm ? '/medias/' + DEFAULT_RADARR_SLUG + '/films/root-folders'      : '/medias/' + DEFAULT_SONARR_SLUG + '/sonarr/root-folders';
-          Promise.all([
-            fetch(profileUrl).then(function (r) { return r.json(); }),
-            fetch(folderUrl).then(function (r) { return r.json(); })
-          ]).then(function (results) {
-            qaCache[cacheKey] = { profiles: results[0], folders: results[1] };
-            fillSelects(isFilm, qaCache[cacheKey]);
+        // Phase E — fetch resolve to get owning instances + candidates. The
+        // tmdb_resolve route does the heavy lookup once and returns both
+        // the per-instance state and the picker options. Network failure
+        // falls back to default-only behaviour so the modal still works.
+        var resolveType = isFilm ? 'movie' : 'tv';
+        var resolveId   = qaItem.tmdbId || qaItem.id;
+        fetch('/decouverte/resolve/' + resolveType + '/' + resolveId)
+          .then(function (r) { return r.json(); })
+          .then(function (resolved) {
+            var defaultSlug = isFilm ? DEFAULT_RADARR_SLUG : DEFAULT_SONARR_SLUG;
+            // "Already in library" path — surface every owning instance
+            // and skip the form entirely.
+            if (resolved.instances && resolved.instances.length) {
+              renderAlreadyList(resolved.instances, isFilm);
+              return;
+            }
+            // Add path — pick instance, load profiles/folders for it, show
+            // the right form. Picker hides itself for single-instance setups.
+            var slug = renderInstancePicker(resolved.candidates || [], defaultSlug);
+            qaSelectedSlug = slug;
+            document.getElementById(isFilm ? 'qa-form-film' : 'qa-form-serie').style.display = '';
+            loadProfilesFolders(isFilm, slug);
+            // Auto-detect anime
+            if (!isFilm && qaItem.seriesType === 'anime') {
+              document.getElementById('qa-serie-type').value = 'anime';
+            }
+          })
+          .catch(function () {
+            // Network/resolve failure — degrade to legacy default-only flow.
+            var slug = isFilm ? DEFAULT_RADARR_SLUG : DEFAULT_SONARR_SLUG;
+            qaSelectedSlug = slug;
+            document.getElementById(isFilm ? 'qa-form-film' : 'qa-form-serie').style.display = '';
+            loadProfilesFolders(isFilm, slug);
           });
-        }
-
-        // Auto-detect anime
-        if (!isFilm && qaItem.seriesType === 'anime') {
-          document.getElementById('qa-serie-type').value = 'anime';
-        }
 
         // Open modal
         var searchResults = document.getElementById('global-search-results');
@@ -1816,8 +1896,17 @@
         if (result) result.className = 'mt-3 alert d-none';
       }
 
+      // Re-load profiles/folders when the user switches instance in the picker.
+      document.addEventListener('change', function (e) {
+        if (e.target && e.target.id === 'qa-instance' && qaItem) {
+          var isFilm = qaItem.type === 'film';
+          qaSelectedSlug = e.target.value;
+          loadProfilesFolders(isFilm, qaSelectedSlug);
+        }
+      });
+
       function doAdd(isFilm) {
-        if (!qaItem || qaItem.inLibrary) return;
+        if (!qaItem) return;
         var prefix = isFilm ? 'qa-film' : 'qa-serie';
         var btn = document.getElementById(prefix + '-confirm');
         var result = document.getElementById('qa-result');
@@ -1833,9 +1922,12 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + (window._i18n['qa.adding'] || 'Adding…');
 
+        // Phase E — POST goes to the slug picked in #qa-instance (or the
+        // single candidate / default fallback when the picker is hidden).
+        var targetSlug = qaSelectedSlug || (isFilm ? DEFAULT_RADARR_SLUG : DEFAULT_SONARR_SLUG);
         var url, payload;
         if (isFilm) {
-          url = '/medias/' + DEFAULT_RADARR_SLUG + '/films/add';
+          url = '/medias/' + targetSlug + '/films/add';
           payload = {
             tmdbId: qaItem.id, title: qaItem.title, year: qaItem.year || 0,
             qualityProfileId: parseInt(qualVal), rootFolderPath: folderVal,
@@ -1844,7 +1936,7 @@
             searchForMovie: document.getElementById('qa-film-search').checked
           };
         } else {
-          url = '/medias/' + DEFAULT_SONARR_SLUG + '/series/add';
+          url = '/medias/' + targetSlug + '/series/add';
           payload = {
             tvdbId: qaItem.id, title: qaItem.title,
             qualityProfileId: parseInt(qualVal), rootFolderPath: folderVal,

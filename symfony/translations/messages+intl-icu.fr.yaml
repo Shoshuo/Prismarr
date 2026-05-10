@@ -152,6 +152,7 @@ quickadd:
     season_folder: Dossiers par saison
     search_missing: Rechercher les manquants
     search_auto: Rechercher automatiquement
+    target_instance: Instance cible
   availability:
     announced: Annoncé
     inCinemas: En salles

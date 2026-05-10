@@ -153,6 +153,7 @@ quickadd:
     season_folder: Season folders
     search_missing: Search for missing
     search_auto: Auto-search
+    target_instance: Target instance
   availability:
     announced: Announced
     inCinemas: In theatres
