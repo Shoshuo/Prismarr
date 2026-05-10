@@ -146,10 +146,17 @@ a request UI (Seerr).
 
 ### Unified media management
 - Movies (Radarr) and Series (Sonarr) with five view modes
-- Global `Ctrl+K` search across the local library and TMDb / TheTVDB
-- Quick-add modal reachable from any page
-- Unified calendar (movie + episode releases) with month / week / day views
-  and an iCal export
+- **Multiple Radarr / Sonarr instances side by side** (e.g. Radarr 1080p
+  + Radarr 4K + Radarr Anime). Each instance is first-class in the UI:
+  per-instance pages, per-instance health badge, per-instance Ctrl+K
+  search results. Add, rename, reorder and toggle instances from
+  `/admin/settings` without leaving Prismarr
+- Global `Ctrl+K` search across every enabled instance + TMDb / TheTVDB
+- Quick-add modal with a per-instance target picker — when a film is
+  already on Radarr 1080p you can still push it to Radarr 4K from one click
+- Unified calendar (movie + episode releases) merged across every
+  instance and deduped by `tmdbId` / `tvdbId`, with month / week / day
+  views and an iCal export
 
 ### Dashboard
 - Hero spotlight with a random pick from your library

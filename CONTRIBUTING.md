@@ -58,8 +58,35 @@ the process - "we'll fix it later" becomes a user-reported bug in v1.x.
   - Helpers `bindDoc(event, key, handler)` for global listeners
   - `window._prismarr*Timer` + `turbo:before-render` cleanup for polling
 - [ ] User-facing error messages go through the translator (`trans()`), in plain language, no technical jargon.
+- [ ] Any dynamic value spliced into an `innerHTML` template runs through `window.escHtml()` (escapes `& < > " '`).
 - [ ] Dark **and** light theme both checked.
 - [ ] Responsive verified on at least one mobile viewport.
+
+### 5.1 Multi-instance Radarr / Sonarr
+
+Since v1.1.0, `RadarrClient` and `SonarrClient` are autowired *unbound* —
+they only point at a real instance once `bindInstance($i)` (mutating, used
+by `MultiInstanceBinderSubscriber` for slug-aware routes) or
+`withInstance($i)` (immutable clone, used in dashboard / calendar / search
+where the same request iterates over every instance) has been called.
+
+- [ ] Inside a slug-aware route (`/medias/{slug}/…`), the autowired client
+      is already bound — call its methods directly. The subscriber 404s
+      unknown slugs before the controller runs.
+- [ ] Outside a slug-aware route, **never** call the autowired client
+      directly: it points at whichever instance was last bound and is
+      effectively undefined. Iterate `ServiceInstanceProvider::getEnabled()`
+      and call `withInstance($i)->method()` per loop iteration.
+- [ ] Items present on multiple instances are deduped by `tmdbId` (movies)
+      or `tvdbId` then `tmdbId` (series) — same key Phase D uses
+      everywhere (dashboard, calendar, search, qBit resolver).
+- [ ] If the data needs to know which instance it came from (badge,
+      "open in Radarr" link, owner status) carry the slug alongside the
+      record — the slug is the primary key the frontend uses to round-trip.
+- [ ] iCal `UID`s and any persistent identifier surfaced to the user must
+      be rooted on `tmdbId` / `tvdbId`, not on the per-instance internal
+      Radarr/Sonarr `id`, so the same item stays stable across instance
+      swaps.
 
 ## 📚 6. Docs & Git
 
