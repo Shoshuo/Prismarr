@@ -3,11 +3,13 @@
 namespace App\Controller;
 
 use App\Entity\Media\WatchlistItem;
+use App\Entity\ServiceInstance;
 use App\Repository\Media\WatchlistItemRepository;
 use App\Service\ConfigService;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TmdbClient;
+use App\Service\ServiceInstanceProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -30,6 +32,7 @@ class TmdbController extends AbstractController
         private readonly ConfigService             $config,
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
+        private readonly ServiceInstanceProvider   $instances,
     ) {}
 
     #[Route('/decouverte', name: 'tmdb_index')]
@@ -887,51 +890,76 @@ class TmdbController extends AbstractController
     /**
      * Build an index {movie:[tmdbIds], tv:[tvdbIds/tmdbIds]} to flag
      * "already in library" on TMDb cards.
+     *
+     * Phase D — fan out across every enabled Radarr/Sonarr instance so a
+     * movie present only on Radarr 4K still gets the in-library badge.
+     * The first instance to surface a given tmdbId/tvdbId wins; the slug
+     * is stamped onto the entry so the caller can deep-link to the right
+     * instance via /medias/<slug>/films?open=<id>. A future Phase E may
+     * surface the full list of owning instances for a picker UI; the
+     * current single-winner model preserves the existing call-site API.
      */
     private function buildLibraryIndex(): array
     {
         $movieIds = [];
         $tvIds    = [];
 
-        try {
-            foreach ($this->radarr->getMovies() as $m) {
-                if (!empty($m['tmdbId'])) {
-                    // Status: downloaded / missing / announced / inCinemas / unmonitored
-                    $hasFile   = !empty($m['hasFile']);
-                    $monitored = !empty($m['monitored']);
-                    $status    = $m['status'] ?? 'released';
-
-                    if (!$monitored) {
-                        $libStatus = 'unmonitored';
-                    } elseif ($hasFile) {
-                        $libStatus = 'downloaded';
-                    } elseif ($status === 'announced') {
-                        $libStatus = 'announced';
-                    } elseif ($status === 'inCinemas') {
-                        $libStatus = 'inCinemas';
-                    } else {
-                        $libStatus = 'missing';
-                    }
-
-                    $movieIds[(int) $m['tmdbId']] = [
-                        'id'     => (int) $m['id'],
-                        'status' => $libStatus,
-                    ];
-                }
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+            try {
+                $movies = $this->radarr->withInstance($inst)->getMovies();
+            } catch (\Throwable $e) {
+                $this->logger->warning('TMDb buildLibraryIndex radarr failed', [
+                    'instance'  => $inst->getSlug(),
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ]);
+                continue;
             }
-        } catch (\Throwable $e) {
-            $this->logger->warning('TMDb buildLibraryIndex failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
-            // Radarr down → carry on without the badge
+            foreach ($movies as $m) {
+                if (empty($m['tmdbId'])) continue;
+                $tmdbId = (int) $m['tmdbId'];
+                if (isset($movieIds[$tmdbId])) continue; // first instance wins
+                // Status: downloaded / missing / announced / inCinemas / unmonitored
+                $hasFile   = !empty($m['hasFile']);
+                $monitored = !empty($m['monitored']);
+                $status    = $m['status'] ?? 'released';
+                if (!$monitored) {
+                    $libStatus = 'unmonitored';
+                } elseif ($hasFile) {
+                    $libStatus = 'downloaded';
+                } elseif ($status === 'announced') {
+                    $libStatus = 'announced';
+                } elseif ($status === 'inCinemas') {
+                    $libStatus = 'inCinemas';
+                } else {
+                    $libStatus = 'missing';
+                }
+                $movieIds[$tmdbId] = [
+                    'id'     => (int) $m['id'],
+                    'status' => $libStatus,
+                    'slug'   => $inst->getSlug(),
+                ];
+            }
         }
 
-        try {
-            foreach ($this->sonarr->getRawAllSeries() as $s) {
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+            try {
+                $allSeries = $this->sonarr->withInstance($inst)->getRawAllSeries();
+            } catch (\Throwable $e) {
+                $this->logger->warning('TMDb buildLibraryIndex sonarr failed', [
+                    'instance'  => $inst->getSlug(),
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ]);
+                continue;
+            }
+            foreach ($allSeries as $s) {
                 $tvdbId = !empty($s['tvdbId']) ? (int) $s['tvdbId'] : null;
                 $tmdbId = !empty($s['tmdbId']) ? (int) $s['tmdbId'] : null;
-                $monitored = !empty($s['monitored']);
-                $stats     = $s['statistics'] ?? [];
-                $fileCount = (int) ($stats['episodeFileCount'] ?? 0);
-                $totalEps  = (int) ($stats['episodeCount'] ?? 0);
+                $monitored    = !empty($s['monitored']);
+                $stats        = $s['statistics'] ?? [];
+                $fileCount    = (int) ($stats['episodeFileCount'] ?? 0);
+                $totalEps     = (int) ($stats['episodeCount'] ?? 0);
                 $seriesStatus = $s['status'] ?? '';
 
                 if (!$monitored) {
@@ -949,19 +977,23 @@ class TmdbController extends AbstractController
                 $info = [
                     'id'     => (int) $s['id'],
                     'status' => $libStatus,
+                    'slug'   => $inst->getSlug(),
                 ];
 
-                if ($tvdbId) $tvIds['tvdb_' . $tvdbId] = $info;
-                if ($tmdbId) $tvIds['tmdb_' . $tmdbId] = $info;
+                if ($tvdbId && !isset($tvIds['tvdb_' . $tvdbId])) {
+                    $tvIds['tvdb_' . $tvdbId] = $info;
+                }
+                if ($tmdbId && !isset($tvIds['tmdb_' . $tmdbId])) {
+                    $tvIds['tmdb_' . $tmdbId] = $info;
+                }
 
                 if ($tvdbId && !$tmdbId) {
                     $resolved = $this->tmdb->findTmdbIdByTvdbId($tvdbId);
-                    if ($resolved) $tvIds['tmdb_' . $resolved] = $info;
+                    if ($resolved && !isset($tvIds['tmdb_' . $resolved])) {
+                        $tvIds['tmdb_' . $resolved] = $info;
+                    }
                 }
             }
-        } catch (\Throwable $e) {
-            $this->logger->warning('TMDb buildLibraryIndex failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
-            // Sonarr down → same
         }
 
         return ['movie' => $movieIds, 'tv' => $tvIds];
