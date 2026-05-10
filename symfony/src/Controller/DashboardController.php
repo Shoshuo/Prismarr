@@ -66,14 +66,48 @@ class DashboardController extends AbstractController
         return $this->instances->getDefault($type)?->getSlug() ?? $type . '-1';
     }
 
+    /**
+     * Aggregate Radarr movies across every enabled instance, tagging each
+     * row with `_instanceSlug` so the consumers (recent additions, hero
+     * spotlight) can deep-link to the right instance instead of always
+     * pointing at the default. Same fan-out / per-request memoization
+     * pattern as before — `safeFetch` swallows per-instance failures so
+     * one ailing Radarr 4K doesn't blank out the whole dashboard.
+     */
     private function movies(): array
     {
-        return $this->moviesCache ??= $this->safeFetch('library.movies', fn() => $this->radarr->getMovies()) ?? [];
+        if ($this->moviesCache !== null) return $this->moviesCache;
+        $out = [];
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+            $rows = $this->safeFetch(
+                'library.movies.' . $inst->getSlug(),
+                fn() => $this->radarr->withInstance($inst)->getMovies(),
+            ) ?? [];
+            foreach ($rows as $row) {
+                $row['_instanceSlug'] = $inst->getSlug();
+                $row['_instanceName'] = $inst->getName();
+                $out[] = $row;
+            }
+        }
+        return $this->moviesCache = $out;
     }
 
     private function series(): array
     {
-        return $this->seriesCache ??= $this->safeFetch('library.series', fn() => $this->sonarr->getSeries()) ?? [];
+        if ($this->seriesCache !== null) return $this->seriesCache;
+        $out = [];
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+            $rows = $this->safeFetch(
+                'library.series.' . $inst->getSlug(),
+                fn() => $this->sonarr->withInstance($inst)->getSeries(),
+            ) ?? [];
+            foreach ($rows as $row) {
+                $row['_instanceSlug'] = $inst->getSlug();
+                $row['_instanceName'] = $inst->getName();
+                $out[] = $row;
+            }
+        }
+        return $this->seriesCache = $out;
     }
 
     #[Route('/tableau-de-bord', name: 'app_dashboard')]
@@ -146,46 +180,62 @@ class DashboardController extends AbstractController
         // Compare by calendar day (midnight) so events earlier today —
         // a morning episode, a midnight digital release — are still
         // classified as "today" rather than silently filtered out as past.
-        $today    = new \DateTimeImmutable('today');
-        $movies   = $this->safeFetch('upcoming.radarr', fn() => $this->radarr->getCalendar(self::UPCOMING_DAYS, 0)) ?? [];
-        $episodes = $this->safeFetch('upcoming.sonarr', fn() => $this->sonarr->getCalendar(self::UPCOMING_DAYS, 0)) ?? [];
+        $today = new \DateTimeImmutable('today');
 
+        // Phase D — fan out across every enabled Radarr/Sonarr instance and
+        // dedupe identical entries. Two Radarr instances both tracking the
+        // same movie would otherwise double the upcoming card; we collapse
+        // by (type, tmdbId/year/title) and keep the earliest date.
         $items = [];
-        foreach ($movies as $m) {
-            $next = $this->pickNextReleaseDate($m, $today);
-            if ($next === null) {
-                continue;
-            }
+        $movieKey = fn(array $m): string => 'movie:' . ($m['tmdbId'] ?? ($m['title'] ?? '?') . ':' . ($m['year'] ?? '?'));
+        $episodeKey = fn(array $e): string => 'episode:' . ($e['seriesId'] ?? '?') . ':S' . ($e['season'] ?? 0) . 'E' . ($e['episode'] ?? 0);
+        $seen = [];
 
-            $items[] = [
-                'type'     => 'movie',
-                'id'       => $m['id'] ?? null,
-                'title'    => $m['title'] ?? '—',
-                'subtitle' => $m['year'] ? ((string) $m['year']) : null,
-                'badge'    => $next['badge'],
-                'poster'   => $m['poster'] ?? null,
-                'date'     => $next['at'],
-            ];
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+            $movies = $this->safeFetch(
+                'upcoming.radarr.' . $inst->getSlug(),
+                fn() => $this->radarr->withInstance($inst)->getCalendar(self::UPCOMING_DAYS, 0),
+            ) ?? [];
+            foreach ($movies as $m) {
+                $next = $this->pickNextReleaseDate($m, $today);
+                if ($next === null) continue;
+                $key = $movieKey($m);
+                if (isset($seen[$key])) continue; // first instance to surface the movie wins
+                $seen[$key] = true;
+                $items[] = [
+                    'type'     => 'movie',
+                    'id'       => $m['id'] ?? null,
+                    'title'    => $m['title'] ?? '—',
+                    'subtitle' => $m['year'] ? ((string) $m['year']) : null,
+                    'badge'    => $next['badge'],
+                    'poster'   => $m['poster'] ?? null,
+                    'date'     => $next['at'],
+                ];
+            }
         }
-        foreach ($episodes as $e) {
-            $airDate = $e['airDate'] ?? null;
-            if (!$airDate instanceof \DateTimeImmutable) {
-                continue;
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+            $episodes = $this->safeFetch(
+                'upcoming.sonarr.' . $inst->getSlug(),
+                fn() => $this->sonarr->withInstance($inst)->getCalendar(self::UPCOMING_DAYS, 0),
+            ) ?? [];
+            foreach ($episodes as $e) {
+                $airDate = $e['airDate'] ?? null;
+                if (!$airDate instanceof \DateTimeImmutable) continue;
+                if ($airDate->setTime(0, 0) < $today) continue;
+                $key = $episodeKey($e);
+                if (isset($seen[$key])) continue;
+                $seen[$key] = true;
+                $sxe = sprintf('S%02dE%02d', $e['season'] ?? 0, $e['episode'] ?? 0);
+                $items[] = [
+                    'type'     => 'episode',
+                    'id'       => $e['seriesId'] ?? null,
+                    'title'    => $e['seriesTitle'] ?? '—',
+                    'subtitle' => $sxe . ($e['title'] && $e['title'] !== '—' ? ' — ' . $e['title'] : ''),
+                    'badge'    => $e['network'] ?? null,
+                    'poster'   => $e['poster'] ?? null,
+                    'date'     => $airDate,
+                ];
             }
-            if ($airDate->setTime(0, 0) < $today) {
-                continue;
-            }
-
-            $sxe = sprintf('S%02dE%02d', $e['season'] ?? 0, $e['episode'] ?? 0);
-            $items[] = [
-                'type'     => 'episode',
-                'id'       => $e['seriesId'] ?? null,
-                'title'    => $e['seriesTitle'] ?? '—',
-                'subtitle' => $sxe . ($e['title'] && $e['title'] !== '—' ? ' — ' . $e['title'] : ''),
-                'badge'    => $e['network'] ?? null,
-                'poster'   => $e['poster'] ?? null,
-                'date'     => $airDate,
-            ];
         }
 
         usort($items, fn($a, $b) => $a['date'] <=> $b['date']);
@@ -366,6 +416,10 @@ class DashboardController extends AbstractController
         $now = new \DateTimeImmutable();
         foreach ($movies as $m) {
             $downloaded = ($m['hasFile'] ?? false) === true;
+            // _instanceSlug is set by movies() per row — link points at the
+            // exact instance the movie lives in (Radarr default OR 4K OR
+            // anime) so clicking the tile lands the user on the right page.
+            $slug = $m['_instanceSlug'] ?? $this->defaultSlug(ServiceInstance::TYPE_RADARR);
             $items[] = [
                 'type'         => 'movie',
                 'title'        => $m['title'] ?? '—',
@@ -374,10 +428,11 @@ class DashboardController extends AbstractController
                 'badge'        => $downloaded ? $this->translator->trans('dashboard.lib_badge.downloaded') : null,
                 'is_downloaded'=> $downloaded,
                 'addedAt'      => $m['addedAt'] ?? null,
-                'href'         => $this->generateUrl('app_media_films', ['slug' => $this->defaultSlug(ServiceInstance::TYPE_RADARR)]) . '?open=' . ($m['id'] ?? ''),
+                'href'         => $this->generateUrl('app_media_films', ['slug' => $slug]) . '?open=' . ($m['id'] ?? ''),
             ];
         }
         foreach ($series as $s) {
+            $slug = $s['_instanceSlug'] ?? $this->defaultSlug(ServiceInstance::TYPE_SONARR);
             $items[] = [
                 'type'     => 'series',
                 'title'    => $s['title'] ?? '—',
@@ -385,7 +440,7 @@ class DashboardController extends AbstractController
                 'poster'   => $s['poster'] ?? null,
                 'badge'    => $s['network'] ?? null,
                 'addedAt'  => $s['addedAt'] ?? null,
-                'href'     => $this->generateUrl('app_media_series', ['slug' => $this->defaultSlug(ServiceInstance::TYPE_SONARR)]) . '?open=' . ($s['id'] ?? ''),
+                'href'     => $this->generateUrl('app_media_series', ['slug' => $slug]) . '?open=' . ($s['id'] ?? ''),
             ];
         }
 
@@ -436,6 +491,10 @@ class DashboardController extends AbstractController
 
         if ($withFanart !== []) {
             $m = $withFanart[array_rand($withFanart)];
+            // Pick the slug of the instance the spotlight movie actually lives
+            // in (multi-instance) so the CTA opens the right page. _instanceSlug
+            // is injected by movies(); fall back on default for safety.
+            $slug = $m['_instanceSlug'] ?? $this->defaultSlug(ServiceInstance::TYPE_RADARR);
             return [
                 'source'    => 'library',
                 'url'       => $m['fanart'],
@@ -450,7 +509,7 @@ class DashboardController extends AbstractController
                     ? $this->translator->trans('dashboard.hero_badge.in_library')
                     : $this->translator->trans('dashboard.hero_badge.monitored'),
                 'cta'       => $this->translator->trans('dashboard.hero_badge.cta_view'),
-                'detailUrl' => $m['id'] ? $this->generateUrl('app_media_films', ['slug' => $this->defaultSlug(ServiceInstance::TYPE_RADARR)]) . '?open=' . $m['id'] : null,
+                'detailUrl' => $m['id'] ? $this->generateUrl('app_media_films', ['slug' => $slug]) . '?open=' . $m['id'] : null,
             ];
         }
 
