@@ -335,11 +335,19 @@ services:
 
 ### Testing pre-release builds
 
-`shoshuo/prismarr:beta` tracks the next release. It is the working state of
-`main`, so expect rough edges. Back up your `prismarr_data` volume before
-switching: the multi-instance migration rewrites how Radarr/Sonarr config is
-stored, and rolling back to `:latest` afterwards needs that backup. Report
-issues with a `[beta]` prefix in the title.
+`shoshuo/prismarr:beta` is the unreleased work-in-progress build of `main`.
+
+> **No stability guarantee.** `:beta` can be broken, regress features, or lose
+> data. It is not held to the quality bar of `:latest` and there is no promise
+> it works as well, or at all. Do not run it on an instance you care about.
+
+If you still want to help test it:
+
+- Back up your `prismarr_data` volume before switching, and again before each
+  `:beta` pull. A pre-release database migration may not be safely reversible,
+  so going back to `:latest` can require restoring that backup.
+- Report problems on the issue tracker with a `[beta]` prefix in the title,
+  including the version shown on **Settings → Updates** and `docker logs prismarr`.
 
 ---
 
