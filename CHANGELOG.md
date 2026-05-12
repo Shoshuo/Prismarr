@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`TorrentResolverService` matches `originalTitle` + every `alternateTitles[].title`** — French installs (Aventures croisées ↔ Swapped) resolve correctly. Accent folding moved to `intl Transliterator` to dodge an Alpine/musl iconv bug.
 - **Topbar health badge surfaces every instance** — one row per enabled instance instead of one aggregate per service.
 - **Queue card on the series page is collapsible** — mirrors the existing calendar card.
+- **`AppVersion` reports the build's own version** — reads `PRISMARR_VERSION` (stamped by the release/beta workflows), falls back to the `1.1.0-dev` constant for local builds. `:latest`, `:beta` and `make dev` each show the right string; `version_compare` ranks `1.1.0-beta.N` below `1.1.0` so beta testers get nudged to the stable.
 
 ### Fixed
 - **10 sub-pages of `/admin/settings/{radarr,sonarr}/...` had buttons silently doing nothing in multi-instance** — hardcoded legacy URLs migrated to slug-aware routes, all sub-pages also moved to Turbo-safe JS.
@@ -56,13 +57,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 32 new unit tests on the v1.1.0 plumbing — `ServiceInstanceProvider` (22), `MultiInstanceBinderSubscriber` (7), `ServiceHealthCache` instance-keyed entries (3). Plus ~17 on `TorrentResolverService` + `SonarrClient::manualImportFromQueueItems`.
 - 4 new `TmdbControllerTest` cases pinning Phase D+E — `/decouverte/resolve` exposes `instances` + `candidates`, series match by `tvdbId`, recommendations dedup across instances. Smoke tests seed default `radarr-1` / `sonarr-1` instances.
 - 5 new dataProvider cases on `ServiceInstanceProvider::create` pinning the URL-scheme rejection.
-- Suite is **336 tests / 767 assertions**, up from 273 / 565 at the end of v1.0.6.
+- 3 new `AppVersionTest` cases — `PRISMARR_VERSION` overrides the constant, `dev`/empty falls back, a beta build is ranked below the matching stable.
+- Suite is **339 tests / 772 assertions**, up from 273 / 565 at the end of v1.0.6.
 
 ### Migrations
 - `migrations/Version20260503000000.php` (Big Bang) — creates `service_instance`, seeds the legacy `radarr_url` / `radarr_api_key` / `sonarr_url` / `sonarr_api_key` settings into a default instance per service (`slug = radarr-1` / `sonarr-1`), then drops the four settings rows. Reversible.
 
 ### Internal
 - `docker-compose.example.yml` surfaces the `TZ`, `PHP_MEMORY_LIMIT` and `PHP_MAX_EXECUTION_TIME` knobs already supported by the image so users don't need to dig through docs to discover them.
+- New `beta.yml` workflow — manual dispatch builds the current `main` as `shoshuo/prismarr:beta` (multi-arch). Pushes only the `:beta` tag, never `:latest`, never a GitHub release. README has a "Testing pre-release builds" note for opt-in testers.
 
 ## [1.0.6] - 2026-05-03
 

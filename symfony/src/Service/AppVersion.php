@@ -4,20 +4,27 @@ namespace App\Service;
 
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * Version + release-notes provider for the /admin/settings → Updates page.
  *
- * The current version is a constant bumped by hand on each release.
- * Release notes are fetched from the GitHub Releases API (public, no auth)
- * and cached for an hour. If the network is unavailable, the page falls
- * back to displaying just the current version.
+ * The running version is whatever the build stamped into the `PRISMARR_VERSION`
+ * env var (the release workflow passes the git tag, the beta workflow passes
+ * `1.1.0-beta.N`). When that env is empty or the placeholder `dev` — i.e. a
+ * local `make dev` build — it falls back to the {@see VERSION} constant. So the
+ * constant only matters for local development; published images always report
+ * the channel they came from.
+ *
+ * Release notes are fetched from the GitHub Releases API (public, no auth) and
+ * cached for an hour. If the network is unavailable, the page falls back to
+ * displaying just the current version.
  */
 class AppVersion implements ResetInterface
 {
-    /** Bumped on every release. Source of truth for the running build. */
-    public const VERSION = '1.0.6';
+    /** Local-dev fallback when PRISMARR_VERSION is unset or `dev`. */
+    public const VERSION = '1.1.0-dev';
 
     private const GITHUB_API_URL = 'https://api.github.com/repos/Shoshuo/Prismarr/releases?per_page=15';
     // v2: schema bump (added `body_html` rendered from Markdown). Old v1 cache
@@ -25,13 +32,22 @@ class AppVersion implements ResetInterface
     private const CACHE_KEY      = 'app_version.releases.v2';
     private const CACHE_TTL      = 3600; // 1 hour
 
+    /** Resolved once in the constructor: PRISMARR_VERSION, or the constant. */
+    private readonly string $version;
+
     /** @var array<int, array{tag:string,name:string,body:string,body_html:string,published_at:string,html_url:string}>|null */
     private ?array $releasesInProcess = null;
 
     public function __construct(
         private readonly CacheItemPoolInterface $cacheApp,
         private readonly LoggerInterface        $logger,
-    ) {}
+        #[Autowire(env: 'default::PRISMARR_VERSION')]
+        string $runtimeVersion = '',
+    ) {
+        $this->version = ($runtimeVersion !== '' && $runtimeVersion !== 'dev')
+            ? $runtimeVersion
+            : self::VERSION;
+    }
 
     public function reset(): void
     {
@@ -40,7 +56,7 @@ class AppVersion implements ResetInterface
 
     public function current(): string
     {
-        return self::VERSION;
+        return $this->version;
     }
 
     /**
@@ -62,7 +78,9 @@ class AppVersion implements ResetInterface
         if ($latest === null) {
             return false;
         }
-        return version_compare($latest, self::VERSION, '>');
+        // version_compare understands pre-release suffixes: a `1.1.0-beta.3`
+        // build sees `1.1.0` as newer (nudge to the stable) but not `1.0.x`.
+        return version_compare($latest, $this->version, '>');
     }
 
     /**
@@ -110,7 +128,7 @@ class AppVersion implements ResetInterface
             CURLOPT_NOSIGNAL       => 1,
             CURLOPT_HTTPHEADER     => [
                 'Accept: application/vnd.github+json',
-                'User-Agent: Prismarr/' . self::VERSION,
+                'User-Agent: Prismarr/' . $this->version,
             ],
         ]);
 

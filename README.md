@@ -333,6 +333,14 @@ services:
     image: shoshuo/prismarr:1.0.0
 ```
 
+### Testing pre-release builds
+
+`shoshuo/prismarr:beta` tracks the next release. It is the working state of
+`main`, so expect rough edges. Back up your `prismarr_data` volume before
+switching: the multi-instance migration rewrites how Radarr/Sonarr config is
+stored, and rolling back to `:latest` afterwards needs that backup. Report
+issues with a `[beta]` prefix in the title.
+
 ---
 
 ## Troubleshooting

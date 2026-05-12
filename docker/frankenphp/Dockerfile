@@ -1,10 +1,11 @@
 FROM dunglas/frankenphp:1.3.6-php8.4-alpine
 
 # ── Build-time version injection ────────────────────────────────────────
-# The release workflow passes `--build-arg PRISMARR_VERSION=$TAG` so the
-# init.sh boot banner displays the actual version instead of "1.0.0-dev".
-# Issue #11 — kept in sync with App\Service\AppVersion::VERSION which the
-# UI uses; both are bumped together at each release.
+# The release workflow passes `--build-arg PRISMARR_VERSION=$TAG`, the beta
+# workflow passes `1.1.0-beta.N`. This env is the single source of truth at
+# runtime: App\Service\AppVersion reads it for the UI, init.sh for the boot
+# banner. Left at `dev` for local builds, AppVersion then falls back to its
+# constant. (Issue #11.)
 ARG PRISMARR_VERSION=dev
 ENV PRISMARR_VERSION=${PRISMARR_VERSION}
 

@@ -18,6 +18,34 @@ class AppVersionTest extends TestCase
         $this->assertSame(AppVersion::VERSION, $svc->current());
     }
 
+    public function testRuntimeVersionFromEnvOverridesConstant(): void
+    {
+        $svc = new AppVersion($this->emptyCache(), new NullLogger(), '1.1.0-beta.3');
+        $this->assertSame('1.1.0-beta.3', $svc->current());
+    }
+
+    public function testRuntimeVersionFallsBackOnEmptyOrDevPlaceholder(): void
+    {
+        $this->assertSame(AppVersion::VERSION, (new AppVersion($this->emptyCache(), new NullLogger(), ''))->current());
+        $this->assertSame(AppVersion::VERSION, (new AppVersion($this->emptyCache(), new NullLogger(), 'dev'))->current());
+    }
+
+    public function testBetaBuildIsNudgedToStableButNotToOlderLine(): void
+    {
+        // A 1.1.0 beta sees the 1.1.0 stable as an update…
+        $beta = $this->withCachedReleases([
+            ['tag' => '1.1.0', 'name' => '', 'body' => '', 'published_at' => '', 'html_url' => ''],
+            ['tag' => '1.0.6', 'name' => '', 'body' => '', 'published_at' => '', 'html_url' => ''],
+        ], '1.1.0-beta.2');
+        $this->assertTrue($beta->isUpdateAvailable());
+
+        // …but not a 1.0.x patch released after the beta line started.
+        $beta2 = $this->withCachedReleases([
+            ['tag' => '1.0.6', 'name' => '', 'body' => '', 'published_at' => '', 'html_url' => ''],
+        ], '1.1.0-beta.2');
+        $this->assertFalse($beta2->isUpdateAvailable());
+    }
+
     public function testReleasesReadsFromCacheWhenHit(): void
     {
         $cached = [
@@ -131,7 +159,7 @@ class AppVersionTest extends TestCase
     /**
      * @param list<array{tag:string,name:string,body:string,published_at:string,html_url:string}> $cached
      */
-    private function withCachedReleases(array $cached): AppVersion
+    private function withCachedReleases(array $cached, string $runtimeVersion = ''): AppVersion
     {
         $item = $this->createMock(CacheItemInterface::class);
         $item->method('isHit')->willReturn(true);
@@ -140,7 +168,7 @@ class AppVersionTest extends TestCase
         $pool = $this->createMock(CacheItemPoolInterface::class);
         $pool->method('getItem')->willReturn($item);
 
-        return new AppVersion($pool, new NullLogger());
+        return new AppVersion($pool, new NullLogger(), $runtimeVersion);
     }
 
     private function emptyCache(): CacheItemPoolInterface
