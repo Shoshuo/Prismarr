@@ -1,7 +1,14 @@
 name: Release
 
-# Triggered by pushing a tag like v1.0.0. Builds a multi-arch image
-# (amd64 + arm64) and pushes it to Docker Hub under shoshuo/prismarr.
+# Triggered by pushing a stable version tag like v1.0.0. Builds a multi-arch
+# image (amd64 + arm64) and pushes it to Docker Hub under shoshuo/prismarr,
+# including the `latest` tag, and creates a GitHub release.
+#
+# Pre-release tags (anything with a hyphen, e.g. v1.1.0-beta.1 or v1.1.0-rc.2)
+# are deliberately ignored — pre-release builds go through the separate
+# `beta.yml` workflow which only ever touches the `:beta` Docker tag. The
+# `latest` Docker tag is also gated below as a second safety net, so even if
+# this trigger were ever loosened, a hyphenated tag still can't clobber it.
 #
 # Required repository secrets:
 #   - DOCKERHUB_USERNAME : Docker Hub login
@@ -14,6 +21,7 @@ on:
   push:
     tags:
       - "v*.*.*"
+      - "!v*-*"  # ignore pre-release tags (v1.1.0-beta.1, v1.1.0-rc.2, …)
 
 jobs:
   release:
@@ -55,7 +63,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
           labels: |
             org.opencontainers.image.title=Prismarr
             org.opencontainers.image.description=Self-hosted media stack dashboard — Radarr, Sonarr, Prowlarr, Jellyseerr, qBittorrent, TMDb in one Symfony UI.

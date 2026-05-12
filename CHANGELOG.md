@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Internal
 - `docker-compose.example.yml` surfaces the `TZ`, `PHP_MEMORY_LIMIT` and `PHP_MAX_EXECUTION_TIME` knobs already supported by the image so users don't need to dig through docs to discover them.
 - New `beta.yml` workflow — manual dispatch builds the current `main` as `shoshuo/prismarr:beta` (multi-arch). Pushes only the `:beta` tag, never `:latest`, never a GitHub release. README has a "Testing pre-release builds" note for opt-in testers.
+- `release.yml` ignores pre-release tags (`v*-*`) and gates the `:latest` Docker tag behind a no-hyphen check — a `v1.1.0-beta.1` git tag can no longer trigger a release or clobber `:latest`.
 
 ## [1.0.6] - 2026-05-03
 
