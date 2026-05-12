@@ -337,9 +337,17 @@ services:
 
 `shoshuo/prismarr:beta` is the unreleased work-in-progress build of `main`.
 
-> **No stability guarantee.** `:beta` can be broken, regress features, or lose
-> data. It is not held to the quality bar of `:latest` and there is no promise
-> it works as well, or at all. Do not run it on an instance you care about.
+> ### /!\ No stability guarantee /!\
+>
+> **`:beta` can be broken, regress features, or lose data.** It is not held to
+> the quality bar of `:latest`, and there is no promise it works as well, or at
+> all. **Do not run it on an instance you care about.**
+
+You only ever get `:beta` if you explicitly set `image: shoshuo/prismarr:beta`
+in your compose file. The `:beta` tag is built separately and never touches
+`:latest`, so users on `:latest` (including with Watchtower or other auto-pull
+setups) stay on stable. If you *do* opt into `:beta`, auto-pull will keep
+fetching fresh pre-release builds, which is usually what a tester wants.
 
 If you still want to help test it:
 
