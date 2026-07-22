@@ -75,6 +75,7 @@
 {% block javascripts %}
 <script>
 (function(){
+var BASE = window.BASE_PATH;
 var _I18N = {
   select_movie_hint: {{ 'media.arr_admin.rename.select_movie_hint'|trans|json_encode|raw }},
   no_rename_needed: {{ 'media.arr_admin.rename.no_rename_needed'|trans|json_encode|raw }},
@@ -109,7 +110,7 @@ if (movieSelect) {
     document.getElementById('proposals-loading').classList.remove('d-none');
     document.getElementById('btn-rename-all').classList.add('d-none');
 
-    fetch('/medias/' + INSTANCE_SLUG + '/radarr/renommer/' + id + '/propositions', {
+    fetch(BASE + '/medias/' + INSTANCE_SLUG + '/radarr/renommer/' + id + '/propositions', {
       headers: {'X-Requested-With': 'XMLHttpRequest'}
     }).then(function(r){ return r.json(); }).then(function(proposals){
       document.getElementById('proposals-loading').classList.add('d-none');
@@ -149,7 +150,7 @@ if (btnRenameAll) {
     progress.classList.remove('d-none');
     msg.textContent = _I18N.progress_starting;
 
-    fetch('/medias/' + INSTANCE_SLUG + '/radarr/renommer/' + currentMovieId + '/executer', {
+    fetch(BASE + '/medias/' + INSTANCE_SLUG + '/radarr/renommer/' + currentMovieId + '/executer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}'

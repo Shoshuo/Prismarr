@@ -76,6 +76,7 @@
 {% block javascripts %}
 <script>
 (function(){
+var BASE = window.BASE_PATH;
 var I18N = {
   errorPathRequired: {{ 'media.arr_admin.root_folders.error_path_required'|trans|json_encode|raw }},
   errorAdd: {{ 'media.arr_admin.root_folders.error_add_radarr'|trans|json_encode|raw }},
@@ -112,7 +113,7 @@ document.querySelectorAll('.btn-rf-delete').forEach(function(btn) {
   btn.addEventListener('click', function() {
     var msg = I18N.confirmDeleteTpl.replace('__PATH__', btn.dataset.path);
     if (!confirm(msg)) return;
-    fetch('/medias/' + INSTANCE_SLUG + '/radarr/dossiers-racine/' + btn.dataset.id + '/supprimer', {
+    fetch(BASE + '/medias/' + INSTANCE_SLUG + '/radarr/dossiers-racine/' + btn.dataset.id + '/supprimer', {
       method: 'POST', headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'}, body: '{}',
     }).then(function(r) { return r.json(); }).then(function(data) {
       if (data.ok) location.reload();

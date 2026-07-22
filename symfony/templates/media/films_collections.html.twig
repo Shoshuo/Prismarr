@@ -178,6 +178,7 @@
 {% block javascripts %}
 <script>
 (function () {
+  var BASE = window.BASE_PATH;
 
   var COL_I18N = {
     film_count_tpl: {{ 'media.films_collections.modal.film_count'|trans({count: '__COUNT__'})|json_encode|raw }},
@@ -285,7 +286,7 @@
 
     // Load config for selects
     if (hasNonAdded && !colConfigCache) {
-      fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/config', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/config', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(function(r) { return r.json(); })
         .then(function(cfg) {
           colConfigCache = cfg;
@@ -310,7 +311,7 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></span>';
 
-        fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/add', {
+        fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/add', {
           method: 'POST',
           headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
           body: JSON.stringify({
@@ -356,7 +357,7 @@
     var newMonitored = btn.dataset.monitored !== '1';
     btn.disabled = true;
 
-    fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/collections/' + id + '/monitor', {
+    fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/collections/' + id + '/monitor', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
       body: JSON.stringify({ monitored: newMonitored }),
@@ -379,7 +380,7 @@
       var btn = this;
       btn.disabled = true;
 
-      fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/collections/' + id + '/monitor', {
+      fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/collections/' + id + '/monitor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         body: JSON.stringify({ monitored: newMonitored }),

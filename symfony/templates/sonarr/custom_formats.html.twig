@@ -166,6 +166,7 @@
 {% block javascripts %}
 <script>
 (function(){
+  var BASE = window.BASE_PATH;
   var I18N = {
     modal_new: {{ 'media.arr_admin.custom_formats.modal_new'|trans|json_encode|raw }},
     modal_edit_tpl: {{ 'media.arr_admin.custom_formats.modal_edit_tpl'|trans({name: '__NAME__'})|json_encode|raw }},
@@ -476,7 +477,7 @@
     try {
       var url = SAVE_URL;
       if (editingItem) {
-        url = '/medias/' + INSTANCE_SLUG + '/sonarr/formats/' + editingItem.id + '/modifier';
+        url = BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/formats/' + editingItem.id + '/modifier';
       }
       var r = await fetch(url, {
         method: 'POST',
@@ -504,7 +505,7 @@
     var btn = e.target.closest('.btn-cf-delete');
     if (!btn) return;
     if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', btn.dataset.name))) return;
-    fetch('/medias/' + INSTANCE_SLUG + '/sonarr/formats/' + btn.dataset.id + '/supprimer', {
+    fetch(BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/formats/' + btn.dataset.id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}',

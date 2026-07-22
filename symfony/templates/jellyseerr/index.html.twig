@@ -379,6 +379,7 @@
 {% block javascripts %}
 <script>
 (function(){
+    var BASE = window.BASE_PATH;
     var _I18N = {
         movie: {{ 'jellyseerr.common.movie'|trans|json_encode|raw }},
         tv: {{ 'jellyseerr.common.tv'|trans|json_encode|raw }},
@@ -481,7 +482,7 @@
             this.disabled = true;
             var self = this;
 
-            fetch('/jellyseerr/request/' + id + '/' + action, {
+            fetch(BASE + '/jellyseerr/request/' + id + '/' + action, {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
@@ -525,7 +526,7 @@
         var body = document.getElementById('js-modal-body');
         body.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-purple"></div></div>';
 
-        fetch('/jellyseerr/request/' + id, { credentials: 'same-origin', headers: {'Accept':'application/json'} })
+        fetch(BASE + '/jellyseerr/request/' + id, { credentials: 'same-origin', headers: {'Accept':'application/json'} })
             .then(function(r){ return r.json(); })
             .then(function(req){
                 currentReq = req;
@@ -666,7 +667,7 @@
                         if (act === 'delete' && !confirm(_I18N.confirmDelete)) return;
                         this.disabled = true;
 
-                        fetch('/jellyseerr/request/' + rid + '/' + act, { method:'POST', credentials:'same-origin', headers:{'X-Requested-With':'XMLHttpRequest'} })
+                        fetch(BASE + '/jellyseerr/request/' + rid + '/' + act, { method:'POST', credentials:'same-origin', headers:{'X-Requested-With':'XMLHttpRequest'} })
                             .then(function(r){ return r.json(); })
                             .then(function(d){
                                 if (d.ok) {
@@ -699,15 +700,15 @@
         // Load request if not cached
         var reqPromise = (currentReq && String(currentReq.id) === String(id))
             ? Promise.resolve(currentReq)
-            : fetch('/jellyseerr/request/' + id, { credentials:'same-origin', headers:{'Accept':'application/json'} }).then(function(r){ return r.json(); });
+            : fetch(BASE + '/jellyseerr/request/' + id, { credentials:'same-origin', headers:{'Accept':'application/json'} }).then(function(r){ return r.json(); });
 
         reqPromise.then(function(req){
             var tmdb = req._tmdb || {};
             var serviceType = req.type === 'movie' ? 'radarr' : 'sonarr';
             titleEl.textContent = tpl(_I18N.editRequestTitleTpl, {TITLE: tmdb.title || tpl(_I18N.editRequestFallbackTpl, {ID: req.id})});
 
-            var svcP = fetch('/jellyseerr/service/' + serviceType, { credentials:'same-origin', headers:{'Accept':'application/json'} }).then(function(r){ return r.json(); }).catch(function(){ return {}; });
-            var usersP = fetch('/jellyseerr/users', { credentials:'same-origin', headers:{'Accept':'application/json'} }).then(function(r){ return r.json(); }).catch(function(){ return []; });
+            var svcP = fetch(BASE + '/jellyseerr/service/' + serviceType, { credentials:'same-origin', headers:{'Accept':'application/json'} }).then(function(r){ return r.json(); }).catch(function(){ return {}; });
+            var usersP = fetch(BASE + '/jellyseerr/users', { credentials:'same-origin', headers:{'Accept':'application/json'} }).then(function(r){ return r.json(); }).catch(function(){ return []; });
 
             Promise.all([svcP, usersP]).then(function(results){
                 var svc = results[0];
@@ -855,7 +856,7 @@
                     saveBtn.disabled = true;
                     saveBtn.innerHTML = '<div class="spinner-border spinner-border-sm" style="width:16px;height:16px;"></div> ' + _I18N.savingShort;
 
-                    fetch('/jellyseerr/request/' + req.id + '/edit', {
+                    fetch(BASE + '/jellyseerr/request/' + req.id + '/edit', {
                         method: 'POST',
                         credentials: 'same-origin',
                         headers: {'Content-Type':'application/json', 'X-Requested-With':'XMLHttpRequest'},

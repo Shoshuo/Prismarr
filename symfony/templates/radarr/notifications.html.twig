@@ -105,7 +105,7 @@
   modal_title_edit: 'media.arr_admin.notifications.modal_title_edit'|trans,
   schema_url: instance_path('radarr_notifications_schema'),
   save_url_add: instance_path('radarr_notification_add'),
-  save_url_edit: '/medias/' ~ current_slug('radarr') ~ '/radarr/notifications/__ID__/modifier',
+  save_url_edit: app.request.getBasePath() ~ '/medias/' ~ current_slug('radarr') ~ '/radarr/notifications/__ID__/modifier',
   test_url: instance_path('radarr_notification_test_payload'),
   mode: 'notification'
 } %}
@@ -114,6 +114,7 @@
 {% block javascripts %}
 <script>
 (function(){
+  var BASE = window.BASE_PATH;
   var I18N = {
     error_test: {{ 'media.arr_admin.notifications.error_test'|trans|json_encode|raw }},
     error_network: {{ 'media.arr_admin.notifications.error_network'|trans|json_encode|raw }},
@@ -139,7 +140,7 @@
       var origHTML = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = SVG_SPIN;
-      fetch('/medias/' + INSTANCE_SLUG + '/radarr/notifications/' + btn.dataset.id + '/tester', {
+      fetch(BASE + '/medias/' + INSTANCE_SLUG + '/radarr/notifications/' + btn.dataset.id + '/tester', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}',
@@ -159,7 +160,7 @@
   document.querySelectorAll('.btn-notif-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', btn.dataset.name))) return;
-      fetch('/medias/' + INSTANCE_SLUG + '/radarr/notifications/' + btn.dataset.id + '/supprimer', {
+      fetch(BASE + '/medias/' + INSTANCE_SLUG + '/radarr/notifications/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}',

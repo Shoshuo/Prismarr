@@ -93,13 +93,14 @@
   modal_title_edit: 'media.arr_admin.import_lists.modal_title_edit'|trans,
   schema_url: instance_path('sonarr_import_list_schema'),
   save_url_add: instance_path('sonarr_import_list_add'),
-  save_url_edit: '/medias/' ~ current_slug('sonarr') ~ '/sonarr/listes-import/__ID__/modifier'
+  save_url_edit: app.request.getBasePath() ~ '/medias/' ~ current_slug('sonarr') ~ '/sonarr/listes-import/__ID__/modifier'
 } %}
 {% endblock %}
 
 {% block javascripts %}
 <script>
 (function() {
+  var BASE = window.BASE_PATH;
   var I18N = {
     error_delete: {{ 'media.arr_admin.import_lists.error_delete'|trans|json_encode|raw }},
     confirm_delete_tpl: {{ 'media.arr_admin.import_lists.confirm_delete_tpl'|trans({name: '__NAME__'})|json_encode|raw }}
@@ -117,7 +118,7 @@
   document.querySelectorAll('.btn-il-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', btn.dataset.name))) return;
-      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/listes-import/' + btn.dataset.id + '/supprimer', {
+      fetch(BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/listes-import/' + btn.dataset.id + '/supprimer', {
         method: 'POST', headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'}, body: '{}',
       }).then(function(r) { return r.json(); }).then(function(data) {
         if (data.ok) location.reload();

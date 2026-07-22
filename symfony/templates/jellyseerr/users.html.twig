@@ -194,6 +194,7 @@
 {% block javascripts %}
 <script>
 (function(){
+    var BASE = window.BASE_PATH;
     var _I18N = {
         confirmDeleteTpl: {{ 'jellyseerr.common.confirm_delete_user_tpl'|trans|json_encode|raw }},
         cannotDelete: {{ 'jellyseerr.users.cannot_delete_account'|trans|json_encode|raw }},
@@ -307,7 +308,7 @@
 
             var self = this;
             self.disabled = true;
-            fetch('/jellyseerr/utilisateurs/' + id + '/delete', {
+            fetch(BASE + '/jellyseerr/utilisateurs/' + id + '/delete', {
                 method:'POST', credentials:'same-origin', headers:{'X-Requested-With':'XMLHttpRequest'}
             })
             .then(function(r){ return r.json(); })
@@ -336,7 +337,7 @@
         var body = document.getElementById('js-create-body');
         body.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-purple"></div></div>';
 
-        fetch('/jellyseerr/service/settings-main', { credentials:'same-origin', headers:{'Accept':'application/json'} })
+        fetch(BASE + '/jellyseerr/service/settings-main', { credentials:'same-origin', headers:{'Accept':'application/json'} })
             .then(function(r){ return r.json(); })
             .then(function(settings){
                 var localLogin = settings.localLogin || false;
@@ -446,7 +447,7 @@
         createSubmit.disabled = true;
         createSubmit.innerHTML = '<div class="spinner-border spinner-border-sm"></div>';
 
-        fetch('/jellyseerr/utilisateurs/create', {
+        fetch(BASE + '/jellyseerr/utilisateurs/create', {
             method:'POST', credentials:'same-origin',
             headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
             body: JSON.stringify(payload)
@@ -466,7 +467,7 @@
         body.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-purple"></div></div>';
         submitBtn.disabled = true;
 
-        fetch('/jellyseerr/service/jellyfin-users', { credentials:'same-origin', headers:{'Accept':'application/json'} })
+        fetch(BASE + '/jellyseerr/service/jellyfin-users', { credentials:'same-origin', headers:{'Accept':'application/json'} })
             .then(function(r){ return r.json(); })
             .then(function(data){
                 var users = data.users || [];
@@ -522,7 +523,7 @@
         importSubmit.disabled = true;
         importSubmit.innerHTML = '<div class="spinner-border spinner-border-sm"></div>';
 
-        fetch('/jellyseerr/utilisateurs/import-jellyfin', {
+        fetch(BASE + '/jellyseerr/utilisateurs/import-jellyfin', {
             method:'POST', credentials:'same-origin',
             headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
             body: JSON.stringify({jellyfinUserIds: ids})
@@ -545,7 +546,7 @@
         var body = document.getElementById('js-profile-body');
         body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-purple"></div></div>';
 
-        fetch('/jellyseerr/utilisateurs/' + id, { credentials:'same-origin', headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'} })
+        fetch(BASE + '/jellyseerr/utilisateurs/' + id, { credentials:'same-origin', headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'} })
             .then(function(r){ return r.json(); })
             .then(function(u){
                 var name = u.displayName || u.jellyfinUsername || u.email || '?';
@@ -696,7 +697,7 @@
                 if (u.id === 1) {
                     html += '<div class="text-secondary text-center small py-1">' + _I18N.profileOwnerLocked + '</div>';
                 } else {
-                    html += '<a href="/jellyseerr/utilisateurs/' + u.id + '" class="btn btn-primary w-100">';
+                    html += '<a href="' + BASE + '/jellyseerr/utilisateurs/' + u.id + '" class="btn btn-primary w-100">';
                     html += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>';
                     html += _I18N.profileManageUser + '</a>';
                 }

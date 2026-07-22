@@ -480,6 +480,7 @@
   </div>
 
   <script>
+    var BASE = window.BASE_PATH;
     document.getElementById('theme-toggle').addEventListener('click', function() {
       var current = document.documentElement.getAttribute('data-bs-theme');
       var next = current === 'dark' ? 'light' : 'dark';
@@ -537,7 +538,7 @@
           if (input) fd.append(f, input.value || '');
         });
 
-        fetch('/setup/test/' + svc, {
+        fetch(BASE + '/setup/test/' + svc, {
           method: 'POST',
           body: fd,
           credentials: 'same-origin',

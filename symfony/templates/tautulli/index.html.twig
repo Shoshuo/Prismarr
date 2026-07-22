@@ -187,6 +187,7 @@
 <script src="{{ asset('static/chart/chart.umd.min.js') }}"></script>
 <script>
 (function () {
+  var BASE = window.BASE_PATH;
   var HISTORY_PAGE = 25;
   var state = { range: 30, metric: 'plays', userId: '' };
   var playsMode = 'media';
@@ -218,16 +219,16 @@
 
   function refreshNow() {
     if (document.hidden) return;
-    loadFragment('/tautulli/api/now-playing', frag('[data-tautulli-now]'));
+    loadFragment(BASE + '/tautulli/api/now-playing', frag('[data-tautulli-now]'));
   }
   function refreshStats() {
-    loadFragment('/tautulli/api/stats?' + qs(), frag('[data-tautulli-stats]'));
+    loadFragment(BASE + '/tautulli/api/stats?' + qs(), frag('[data-tautulli-stats]'));
   }
   function refreshLibraries() {
-    loadFragment('/tautulli/api/libraries', frag('[data-tautulli-libraries]'));
+    loadFragment(BASE + '/tautulli/api/libraries', frag('[data-tautulli-libraries]'));
   }
   function refreshUsers() {
-    loadFragment('/tautulli/api/users', frag('[data-tautulli-users]')).then(function () {
+    loadFragment(BASE + '/tautulli/api/users', frag('[data-tautulli-users]')).then(function () {
       var box = frag('[data-tautulli-users]');
       if (!box) return;
       box.querySelectorAll('[data-tautulli-secs]').forEach(function (el) {
@@ -238,7 +239,7 @@
 
   function loadHistory(append) {
     if (!append) historyStart = 0;
-    var url = '/tautulli/api/history?length=' + HISTORY_PAGE + '&start=' + historyStart + (state.userId ? '&user=' + encodeURIComponent(state.userId) : '');
+    var url = BASE + '/tautulli/api/history?length=' + HISTORY_PAGE + '&start=' + historyStart + (state.userId ? '&user=' + encodeURIComponent(state.userId) : '');
     fetch(url, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.text() : ''; })
       .then(function (html) {
@@ -304,29 +305,29 @@
   }
 
   function refreshPlays() {
-    drawStackedBar({ id: 'tautulli-plays', url: '/tautulli/api/plays?' + qs('mode=' + playsMode), wrap: '#tautulli-plays-wrap', empty: '[data-tautulli-plays-empty]' });
+    drawStackedBar({ id: 'tautulli-plays', url: BASE + '/tautulli/api/plays?' + qs('mode=' + playsMode), wrap: '#tautulli-plays-wrap', empty: '[data-tautulli-plays-empty]' });
   }
   function refreshActivityHour() {
-    drawStackedBar({ id: 'tautulli-activity-hour', url: '/tautulli/api/activity-hour?' + qs(), wrap: '#tautulli-activity-hour-wrap', empty: '[data-tautulli-activity-hour-empty]' });
+    drawStackedBar({ id: 'tautulli-activity-hour', url: BASE + '/tautulli/api/activity-hour?' + qs(), wrap: '#tautulli-activity-hour-wrap', empty: '[data-tautulli-activity-hour-empty]' });
   }
   function refreshActivityDow() {
-    drawStackedBar({ id: 'tautulli-activity-dow', url: '/tautulli/api/activity-dow?' + qs(), wrap: '#tautulli-activity-dow-wrap', empty: '[data-tautulli-activity-dow-empty]' });
+    drawStackedBar({ id: 'tautulli-activity-dow', url: BASE + '/tautulli/api/activity-dow?' + qs(), wrap: '#tautulli-activity-dow-wrap', empty: '[data-tautulli-activity-dow-empty]' });
   }
   function refreshClients() {
-    drawStackedBar({ id: 'tautulli-clients-stream-type', url: '/tautulli/api/clients-stream-type?' + qs(), wrap: '#tautulli-clients-wrap', empty: '[data-tautulli-clients-empty]' });
+    drawStackedBar({ id: 'tautulli-clients-stream-type', url: BASE + '/tautulli/api/clients-stream-type?' + qs(), wrap: '#tautulli-clients-wrap', empty: '[data-tautulli-clients-empty]' });
   }
   function refreshSourceRes() {
-    drawStackedBar({ id: 'tautulli-source-res', url: '/tautulli/api/plays-source-res?' + qs(), wrap: '#tautulli-source-res-wrap', empty: '[data-tautulli-source-res-empty]' });
+    drawStackedBar({ id: 'tautulli-source-res', url: BASE + '/tautulli/api/plays-source-res?' + qs(), wrap: '#tautulli-source-res-wrap', empty: '[data-tautulli-source-res-empty]' });
   }
   function refreshStreamRes() {
-    drawStackedBar({ id: 'tautulli-stream-res', url: '/tautulli/api/plays-stream-res?' + qs(), wrap: '#tautulli-stream-res-wrap', empty: '[data-tautulli-stream-res-empty]' });
+    drawStackedBar({ id: 'tautulli-stream-res', url: BASE + '/tautulli/api/plays-stream-res?' + qs(), wrap: '#tautulli-stream-res-wrap', empty: '[data-tautulli-stream-res-empty]' });
   }
   function refreshUsersStream() {
-    drawStackedBar({ id: 'tautulli-users-stream-type', url: '/tautulli/api/users-stream-type?' + qs(), wrap: '#tautulli-users-stream-wrap', empty: '[data-tautulli-users-stream-empty]' });
+    drawStackedBar({ id: 'tautulli-users-stream-type', url: BASE + '/tautulli/api/users-stream-type?' + qs(), wrap: '#tautulli-users-stream-wrap', empty: '[data-tautulli-users-stream-empty]' });
   }
   function refreshConcurrent() {
     // Concurrent is always a count — never reformat as duration.
-    drawStackedBar({ id: 'tautulli-concurrent', url: '/tautulli/api/concurrent?' + qs(), wrap: '#tautulli-concurrent-wrap', empty: '[data-tautulli-concurrent-empty]', metricAware: false });
+    drawStackedBar({ id: 'tautulli-concurrent', url: BASE + '/tautulli/api/concurrent?' + qs(), wrap: '#tautulli-concurrent-wrap', empty: '[data-tautulli-concurrent-empty]', metricAware: false });
   }
   function refreshCharts() {
     refreshPlays(); refreshActivityHour(); refreshActivityDow(); refreshClients();
@@ -366,7 +367,7 @@
   var userSel = frag('[data-tautulli-user]');
   if (userSel) {
     userSel.addEventListener('change', function () { state.userId = userSel.value || ''; refreshAll(); });
-    fetch('/tautulli/api/user-names', { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+    fetch(BASE + '/tautulli/api/user-names', { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (list) {
         (list || []).forEach(function (u) {

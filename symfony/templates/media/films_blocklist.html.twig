@@ -128,6 +128,7 @@
 {% block javascripts %}
 <script>
 (function () {
+  var BASE = window.BASE_PATH;
   var BL_I18N = {
     confirm_delete: {{ 'media.films_blocklist.confirm_delete'|trans|json_encode|raw }},
     confirm_bulk_delete_tpl: {{ 'media.films_blocklist.confirm_bulk_delete'|trans({count: '__COUNT__'})|json_encode|raw }},
@@ -170,7 +171,7 @@
       var row = this.closest('tr');
       if (!confirm(BL_I18N.confirm_delete)) return;
       btn.disabled = true;
-      postJson('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/blocklist/' + id + '/delete')
+      postJson(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/blocklist/' + id + '/delete')
       .then(function (data) {
         if (data.ok) row.remove();
         else { alert(BL_I18N.error); btn.disabled = false; }
@@ -186,7 +187,7 @@
     if (!confirm(BL_I18N.confirm_bulk_delete_tpl.replace('__COUNT__', checked.length))) return;
     var ids = Array.from(checked).map(function (c) { return parseInt(c.value); });
     bulkBtn.disabled = true;
-    postJson('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/blocklist/bulk-delete', { ids: ids })
+    postJson(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/blocklist/bulk-delete', { ids: ids })
     .then(function (data) {
       if (data.ok) {
         ids.forEach(function (id) {

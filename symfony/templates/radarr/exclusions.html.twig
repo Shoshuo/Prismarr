@@ -119,6 +119,7 @@
 {% block javascripts %}
 <script>
 (function(){
+var BASE = window.BASE_PATH;
 var _I18N = {
   bulk_confirm_tpl: {{ 'media.arr_admin.exclusions.bulk_confirm_tpl'|trans({count: '__COUNT__'})|json_encode|raw }},
   delete_confirm: {{ 'media.arr_admin.exclusions.delete_confirm'|trans|json_encode|raw }},
@@ -173,7 +174,7 @@ if (bulkBtn) {
 document.querySelectorAll('.btn-excl-delete').forEach(function(btn) {
   btn.addEventListener('click', function() {
     if (!confirm(_I18N.delete_confirm)) return;
-    fetch('/medias/' + INSTANCE_SLUG + '/radarr/exclusions/' + btn.dataset.id + '/supprimer', {
+    fetch(BASE + '/medias/' + INSTANCE_SLUG + '/radarr/exclusions/' + btn.dataset.id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}',

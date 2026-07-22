@@ -119,6 +119,7 @@
 {% block javascripts %}
 <script>
 (function() {
+  var BASE = window.BASE_PATH;
   var _I18N = {
     btn_scan: {{ 'media.arr_admin.library_import.btn_scan'|trans|json_encode|raw }},
     btn_scanning: {{ 'media.arr_admin.library_import.btn_scanning'|trans|json_encode|raw }},
@@ -184,7 +185,7 @@
     importableSeries = [];
     importAllBtn.disabled = true;
 
-    fetch('/medias/' + INSTANCE_SLUG + '/sonarr/import-bibliotheque/scan', {
+    fetch(BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/import-bibliotheque/scan', {
       method: 'POST',
       headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
       body: JSON.stringify({folder: folder})
@@ -216,7 +217,7 @@
         tbody.appendChild(tr);
 
         // Auto lookup
-        fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/lookup?term=' + encodeURIComponent(f.name), {
+        fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/lookup?term=' + encodeURIComponent(f.name), {
           headers: {'X-Requested-With':'XMLHttpRequest'}
         }).then(function(r) { return r.json(); }).then(function(series) {
           var serieCell = tr.querySelector('.serie-cell');
@@ -331,7 +332,7 @@
       var statusCell = tr.querySelector('.status-cell');
       statusCell.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></span>';
 
-      fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/add', {
+      fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/add', {
         method: 'POST',
         headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
         body: JSON.stringify({

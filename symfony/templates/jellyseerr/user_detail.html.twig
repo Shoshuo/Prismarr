@@ -523,6 +523,7 @@
 {% block javascripts %}
 <script>
 (function(){
+    var BASE = window.BASE_PATH;
     var _I18N = {
         saved: {{ 'jellyseerr.common.saved'|trans|json_encode|raw }},
         error: {{ 'jellyseerr.common.error'|trans|json_encode|raw }},
@@ -645,7 +646,7 @@
         var discoverLangs = [];
         document.querySelectorAll('.js-lang-cb:checked').forEach(function(cb){ discoverLangs.push(cb.value); });
         var discoverLangVal = discoverLangs.join('|');
-        postJSON('/jellyseerr/utilisateurs/' + userId + '/settings', {
+        postJSON(BASE + '/jellyseerr/utilisateurs/' + userId + '/settings', {
             username: document.getElementById('js-set-username').value.trim() || null,
             email: document.getElementById('js-set-email').value.trim(),
             locale: langVal === '' ? '' : langVal,
@@ -668,7 +669,7 @@
         var statusEl = document.getElementById('js-password-status');
         if (pw.length < 8) { feedback(statusEl, false, _I18N.passwordMinLength); return; }
         if (pw !== confirm) { feedback(statusEl, false, _I18N.passwordMismatch); return; }
-        postJSON('/jellyseerr/utilisateurs/' + userId + '/password', {password: pw}, this, statusEl);
+        postJSON(BASE + '/jellyseerr/utilisateurs/' + userId + '/password', {password: pw}, this, statusEl);
     });
 
     // ── Permissions — same behavior as native Seerr ──
@@ -767,7 +768,7 @@
         fourKBits.forEach(function(bit) {
             if (originalPerms & bit) newPerms |= bit;
         });
-        postJSON('/jellyseerr/utilisateurs/' + userId + '/permissions', {permissions: newPerms}, this, document.getElementById('js-perms-status'));
+        postJSON(BASE + '/jellyseerr/utilisateurs/' + userId + '/permissions', {permissions: newPerms}, this, document.getElementById('js-perms-status'));
     });
 
     // ── Notification channel tabs ──
@@ -855,7 +856,7 @@
         el = document.getElementById('js-notif-pushover-user');
         if (el) payload.pushoverUserKey = el.value.trim() || null;
 
-        postJSON('/jellyseerr/utilisateurs/' + userId + '/notifications', payload, this, document.getElementById('js-notifs-status'));
+        postJSON(BASE + '/jellyseerr/utilisateurs/' + userId + '/notifications', payload, this, document.getElementById('js-notifs-status'));
     });
 
     // ── Delete user ──
@@ -863,12 +864,12 @@
     if (deleteBtn) deleteBtn.addEventListener('click', function(){
         if (!confirm(_I18N.confirmDelete)) return;
         this.disabled = true;
-        fetch('/jellyseerr/utilisateurs/' + userId + '/delete', {
+        fetch(BASE + '/jellyseerr/utilisateurs/' + userId + '/delete', {
             method:'POST', credentials:'same-origin', headers:{'X-Requested-With':'XMLHttpRequest'}
         })
         .then(function(r){ return r.json(); })
         .then(function(d){
-            if (d.ok) { window.location.href = '/jellyseerr/utilisateurs'; }
+            if (d.ok) { window.location.href = BASE + '/jellyseerr/utilisateurs'; }
             else { alert(d.error || _I18N.error); deleteBtn.disabled = false; }
         });
     });

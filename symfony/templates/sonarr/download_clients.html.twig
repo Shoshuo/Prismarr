@@ -109,7 +109,7 @@
   modal_title_edit: 'media.arr_admin.download_clients.modal_title_edit'|trans,
   schema_url: instance_path('sonarr_download_client_schema'),
   save_url_add: instance_path('sonarr_download_client_add'),
-  save_url_edit: '/medias/' ~ current_slug('sonarr') ~ '/sonarr/clients-telechargement/__ID__/modifier',
+  save_url_edit: app.request.getBasePath() ~ '/medias/' ~ current_slug('sonarr') ~ '/sonarr/clients-telechargement/__ID__/modifier',
   test_url: instance_path('sonarr_download_client_test')
 } %}
 {% endblock %}
@@ -117,6 +117,7 @@
 {% block javascripts %}
 <script>
 (function() {
+  var BASE = window.BASE_PATH;
   var I18N = {
     fallback_name: {{ 'media.arr_admin.download_clients.fallback_name'|trans|json_encode|raw }},
     test_success_title: {{ 'media.arr_admin.download_clients.test_success_title'|trans|json_encode|raw }},
@@ -183,7 +184,7 @@
   document.querySelectorAll('.btn-dc-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (!confirm(I18N.confirm_delete_tpl.replace('__NAME__', btn.dataset.name))) return;
-      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/clients-telechargement/' + btn.dataset.id + '/supprimer', {
+      fetch(BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/clients-telechargement/' + btn.dataset.id + '/supprimer', {
         method: 'POST', headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'}, body: '{}',
       }).then(function(r) { return r.json(); }).then(function(data) {
         if (data.ok) location.reload();

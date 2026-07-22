@@ -125,6 +125,7 @@
 {% block javascripts %}
 <script>
 (function(){
+var BASE = window.BASE_PATH;
 var I18N = {
   starting: {{ 'media.arr_admin.backups.backup_starting'|trans|json_encode|raw }},
   statusTpl: {{ 'media.arr_admin.backups.backup_status_tpl'|trans({status: '__STATUS__'})|json_encode|raw }},
@@ -183,7 +184,7 @@ document.querySelectorAll('.btn-backup-delete').forEach(function(btn) {
   btn.onclick = function() {
     if (!confirm(I18N.confirmDelete)) return;
     var id = btn.dataset.id;
-    fetch('/medias/' + INSTANCE_SLUG + '/sonarr/sauvegardes/' + id + '/supprimer', {
+    fetch(BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/sauvegardes/' + id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}'
@@ -216,7 +217,7 @@ if (btnConfirmRestore) {
     alertEl.classList.remove('d-none');
     msg.textContent = I18N.restoreInProgress;
 
-    fetch('/medias/' + INSTANCE_SLUG + '/sonarr/sauvegardes/' + pendingRestoreId + '/restaurer', {
+    fetch(BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/sauvegardes/' + pendingRestoreId + '/restaurer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}'

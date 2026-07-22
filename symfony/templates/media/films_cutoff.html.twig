@@ -111,6 +111,7 @@
 {% block javascripts %}
 <script>
 (function () {
+  var BASE = window.BASE_PATH;
   var I18N = {
     launched: {{ 'media.films_cutoff.launched'|trans|json_encode|raw }},
     error: {{ 'media.films_cutoff.error'|trans|json_encode|raw }}
@@ -120,7 +121,7 @@
       var id = this.dataset.id;
       btn.disabled = true;
       btn.textContent = '…';
-      fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + id + '/search', {
+      fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + id + '/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         body: '{}',

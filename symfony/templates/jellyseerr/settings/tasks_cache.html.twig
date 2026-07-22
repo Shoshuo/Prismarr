@@ -282,6 +282,7 @@
 {% block javascripts %}
 <script>
 (function(){
+    var BASE = window.BASE_PATH;
     // ── Run job ──
     document.querySelectorAll('.js-run-job').forEach(function(btn){
         btn.addEventListener('click', function(){
@@ -293,7 +294,7 @@
             var cancelBtn = btn.parentElement.querySelector('.js-cancel-job');
             if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.style.opacity = '1'; }
 
-            fetch('/jellyseerr/job/' + jobId + '/run', {
+            fetch(BASE + '/jellyseerr/job/' + jobId + '/run', {
                 method: 'POST', credentials: 'same-origin',
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
@@ -318,7 +319,7 @@
     document.querySelectorAll('.js-cancel-job').forEach(function(btn){
         btn.addEventListener('click', function(){
             var jobId = btn.dataset.jobId;
-            fetch('/jellyseerr/job/' + jobId + '/cancel', {
+            fetch(BASE + '/jellyseerr/job/' + jobId + '/cancel', {
                 method: 'POST', credentials: 'same-origin',
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
@@ -343,7 +344,7 @@
             btn.disabled = true;
             btn.innerHTML = '<div class="spinner-border spinner-border-sm" style="width:12px;height:12px;"></div>';
 
-            fetch('/jellyseerr/cache/' + cacheId + '/flush', {
+            fetch(BASE + '/jellyseerr/cache/' + cacheId + '/flush', {
                 method: 'POST', credentials: 'same-origin',
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
@@ -370,7 +371,7 @@
         if (!confirm('Vider tout le cache Seerr ?')) return;
         flushAll.disabled = true;
         flushAll.innerHTML = '<div class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></div> Vidage…';
-        fetch('/jellyseerr/cache/flush', {
+        fetch(BASE + '/jellyseerr/cache/flush', {
             method: 'POST', credentials: 'same-origin',
             headers: {'X-Requested-With': 'XMLHttpRequest'}
         })
@@ -521,7 +522,7 @@
         if (!schedule || schedule === '—') return;
 
         cronSave.disabled = true;
-        fetch('/jellyseerr/job/' + jobId + '/schedule', {
+        fetch(BASE + '/jellyseerr/job/' + jobId + '/schedule', {
             method: 'POST', credentials: 'same-origin',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify({schedule: schedule})

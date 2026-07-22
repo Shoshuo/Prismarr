@@ -192,6 +192,7 @@
 {% block javascripts %}
 <script>
 (function(){
+  var BASE = window.BASE_PATH;
   var I18N = {
     modal_new: {{ 'media.arr_admin.delay_profiles.modal_new'|trans|json_encode|raw }},
     modal_edit_tpl: {{ 'media.arr_admin.delay_profiles.modal_edit_tpl'|trans({id: '__ID__'})|json_encode|raw }},
@@ -282,7 +283,7 @@
     if (editingItem) {
       payload.id = editingItem.id;
       payload.order = editingItem.order;
-      url = '/medias/' + INSTANCE_SLUG + '/radarr/profils-delai/' + editingItem.id + '/modifier';
+      url = BASE + '/medias/' + INSTANCE_SLUG + '/radarr/profils-delai/' + editingItem.id + '/modifier';
     } else {
       url = {{ instance_path('radarr_delay_profile_add')|json_encode|raw }};
     }
@@ -309,7 +310,7 @@
   document.querySelectorAll('.btn-delay-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (!confirm(I18N.confirm_delete)) return;
-      fetch('/medias/' + INSTANCE_SLUG + '/radarr/profils-delai/' + btn.dataset.id + '/supprimer', {
+      fetch(BASE + '/medias/' + INSTANCE_SLUG + '/radarr/profils-delai/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}'

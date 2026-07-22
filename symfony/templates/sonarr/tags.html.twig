@@ -88,6 +88,7 @@
 {% block javascripts %}
 <script>
 (function(){
+var BASE = window.BASE_PATH;
 var TAGS_I18N = {
   created_tpl: {{ 'media.arr_admin.tags.created_tpl'|trans({label: '__LABEL__'})|json_encode|raw }},
   created_error: {{ 'media.arr_admin.tags.created_error'|trans|json_encode|raw }},
@@ -128,7 +129,7 @@ document.querySelectorAll('.btn-tag-rename').forEach(function(btn) {
     var currentLabel = btn.dataset.label;
     var newLabel = prompt(TAGS_I18N.rename_prompt, currentLabel);
     if (!newLabel || newLabel.trim() === '' || newLabel === currentLabel) return;
-    var r = await fetch('/medias/' + INSTANCE_SLUG + '/sonarr/tags/' + btn.dataset.id + '/renommer', {
+    var r = await fetch(BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/tags/' + btn.dataset.id + '/renommer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: JSON.stringify({label: newLabel.trim()}),
@@ -146,7 +147,7 @@ document.querySelectorAll('.btn-tag-rename').forEach(function(btn) {
 document.querySelectorAll('.btn-tag-delete').forEach(function(btn) {
   btn.addEventListener('click', async function() {
     if (!confirm(TAGS_I18N.delete_confirm_tpl.replace('__LABEL__', btn.dataset.label))) return;
-    var r = await fetch('/medias/' + INSTANCE_SLUG + '/sonarr/tags/' + btn.dataset.id + '/supprimer', {
+    var r = await fetch(BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/tags/' + btn.dataset.id + '/supprimer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
       body: '{}',

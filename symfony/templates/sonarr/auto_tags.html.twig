@@ -171,6 +171,7 @@
 {% block javascripts %}
 <script>
 (function(){
+  var BASE = window.BASE_PATH;
   var _I18N = {
     modal_title_new: {{ 'media.arr_admin.auto_tags.modal_title_new'|trans|json_encode|raw }},
     modal_title_edit: {{ 'media.arr_admin.auto_tags.modal_title_edit_tpl'|trans({name: '__NAME__'})|json_encode|raw }},
@@ -387,7 +388,7 @@
     var url;
     if (editingItem) {
       payload.id = editingItem.id;
-      url = '/medias/' + INSTANCE_SLUG + '/sonarr/auto-tags/' + editingItem.id + '/modifier';
+      url = BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/auto-tags/' + editingItem.id + '/modifier';
     } else {
       url = {{ instance_path('sonarr_auto_tag_add')|json_encode|raw }};
     }
@@ -413,7 +414,7 @@
   document.querySelectorAll('.btn-at-delete').forEach(function(btn) {
     btn.addEventListener('click', function() {
       if (!confirm(_I18N.delete_confirm_tpl.replace('__NAME__', btn.dataset.name))) return;
-      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/auto-tags/' + btn.dataset.id + '/supprimer', {
+      fetch(BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/auto-tags/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}'
