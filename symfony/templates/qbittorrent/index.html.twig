@@ -1212,10 +1212,17 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     });
 
     var refreshCtrl = null;
+    var refreshSeq = 0;
     function refreshData() {
         // Annule le fetch précédent s'il est encore en vol (évite empilement)
         if (refreshCtrl) refreshCtrl.abort();
         refreshCtrl = new AbortController();
+        // abort() n'a aucun effet si la réponse précédente est déjà arrivée
+        // (fréquent en local, où le round-trip peut être plus rapide que le
+        // délai clic → exécution JS) : sans ce numéro de séquence, une réponse
+        // de sondage périodique pour l'ancienne page peut s'appliquer APRÈS
+        // celle du clic sur une autre page, et y revenir juste après l'affichage.
+        var seq = ++refreshSeq;
         var q = new URLSearchParams({
             page: pagState.page,
             perPage: pagState.perPage,
@@ -1229,6 +1236,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         fetch(BASE + '/api/torrents?' + q, { signal: refreshCtrl.signal, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(function(r) { return r.json(); })
         .then(function(data) {
+            if (seq !== refreshSeq) return; // une requête plus récente a déjà été émise
             if (data.error) return;
             updateStats(data.stats);
             updateList(data.torrents);
