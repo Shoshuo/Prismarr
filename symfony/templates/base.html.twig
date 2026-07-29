@@ -932,6 +932,24 @@
             </li>
             {% endif %}
 
+            {% if service_visible_in_sidebar('transmission') %}
+            <li class="nav-item">
+              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_transmission_' ? 'active' }}"
+                 href="{{ path('app_transmission_index') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                       fill="none" stroke="#d7302f" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round" class="icon">
+                    <path d="M12 3c3.5 4.2 6 7.4 6 10.5a6 6 0 1 1 -12 0c0 -3.1 2.5 -6.3 6 -10.5z"/>
+                  </svg>
+                </span>
+                <span class="nav-link-title d-flex align-items-center">{{ 'sidebar.nav.transmission'|trans }}
+                  <span id="sidebar-transmission-badge" class="sidebar-dl-badge" style="display:none;">0</span>
+                </span>
+              </a>
+            </li>
+            {% endif %}
+
             {% if service_visible_in_sidebar('sabnzbd') %}
             <li class="nav-item">
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_usenet_' and app.request.attributes.get('client') == 'sabnzbd' ? 'active' }}"
@@ -2395,6 +2413,179 @@
           if (window._prismarrQbtPollTimer) { clearTimeout(window._prismarrQbtPollTimer); window._prismarrQbtPollTimer = null; }
         } else {
           pollQbt();
+        }
+      });
+    }
+  })();
+  </script>
+  {% endif %}
+
+  {# ══════════════════════════════════════════════════════════════════════════
+     Global Transmission poll — DL completion / error toasts + sidebar badge
+     Active only on media pages (avoids hitting Transmission everywhere). Also
+     skipped when Transmission is disabled (#15) — otherwise the poll endpoint
+     would chase a route-guard redirect every few seconds and turn `r.json()`
+     into a JS SyntaxError that the circuit breaker then backs off for two
+     minutes.
+     ══════════════════════════════════════════════════════════════════════════ #}
+  {% set route = app.request.attributes.get('_route') ?? '' %}
+  {% if service_configured('transmission') and (
+        route starts with 'app_transmission_'
+     or route starts with 'app_media'
+     or route starts with 'radarr_'
+     or route starts with 'sonarr_'
+     or route starts with 'prowlarr_'
+     or route starts with 'jellyseerr_'
+     or route starts with 'tmdb_') %}
+  <script>
+  (function () {
+    var TRANSMISSION_POLL_URL = '{{ path('app_transmission_api_poll_summary') }}';
+    {# User preference drives the polling cadence — 0 disables Transmission polling entirely. #}
+    var TRANSMISSION_POLL_INTERVAL_SECONDS = {{ display_pref('transmission_refresh_seconds') }};
+    if (TRANSMISSION_POLL_INTERVAL_SECONDS <= 0) return;  // poll disabled via /admin/settings
+    var TRANSMISSION_POLL_INTERVAL = TRANSMISSION_POLL_INTERVAL_SECONDS * 1000;
+    var STATE_KEY = 'prismarr_transmission_last_state';
+    var NOTIFIED_KEY = 'prismarr_transmission_notified';  // hashes already notified (cross-tab dedup)
+    var NOTIFIED_TTL = 60 * 60 * 1000; // 1h — beyond that we re-allow the notification (e.g. torrent re-DL)
+
+    // Cross-tab channel to sync notifications across multiple open tabs
+    var bchan = null;
+    try { if (typeof BroadcastChannel !== 'undefined') bchan = new BroadcastChannel('prismarr-transmission-toasts'); } catch (e) {}
+    if (bchan && !window._prismarrTransmissionBchanBound) {
+      window._prismarrTransmissionBchanBound = true;
+      bchan.onmessage = function (e) {
+        // Another tab already notified this hash → mark locally to skip
+        if (e.data && e.data.type === 'notified' && e.data.hash) markNotified(e.data.hash);
+      };
+    }
+
+    function loadNotified() { try { return JSON.parse(localStorage.getItem(NOTIFIED_KEY) || '{}'); } catch (e) { return {}; } }
+    function markNotified(hash) {
+      var n = loadNotified();
+      n[hash] = Date.now();
+      // Purge entries that are too old to avoid bloat
+      var cutoff = Date.now() - NOTIFIED_TTL;
+      Object.keys(n).forEach(function (k) { if (n[k] < cutoff) delete n[k]; });
+      try { localStorage.setItem(NOTIFIED_KEY, JSON.stringify(n)); } catch (e) {}
+      if (bchan) try { bchan.postMessage({ type: 'notified', hash: hash }); } catch (e) {}
+    }
+    function alreadyNotified(hash) {
+      var n = loadNotified();
+      return n[hash] && (Date.now() - n[hash]) < NOTIFIED_TTL;
+    }
+
+    function loadPrev() { try { return JSON.parse(localStorage.getItem(STATE_KEY) || '{}'); } catch (e) { return {}; } }
+    function savePrev(map) { try { localStorage.setItem(STATE_KEY, JSON.stringify(map)); } catch (e) {} }
+
+    // window.prismarrBytes is defined in the head script at the top of
+    // base.html.twig so child templates' javascripts block can rely on it
+    // during initial render. Local fmtGo wrapper kept for the Transmission
+    // poll block below.
+    function fmtGo(bytes) { return window.prismarrBytes(bytes); }
+
+    function updateBadge(active) {
+      var label = active > 99 ? '99+' : String(active);
+      ['sidebar-transmission-badge'].forEach(function (id) {
+        var badge = document.getElementById(id);
+        if (!badge) return;
+        if (active > 0) {
+          badge.textContent = label;
+          badge.style.display = '';
+        } else {
+          badge.style.display = 'none';
+        }
+      });
+    }
+
+    // Circuit breaker: when Transmission is unreachable we back off
+    // exponentially from 15s up to 2min between polls instead of hammering
+    // the NAS every 15s. A single successful poll resets the backoff to the
+    // base interval.
+    var TRANSMISSION_POLL_INTERVAL_MAX = 120000; // 2 min
+    window._prismarrTransmissionFailCount = 0;
+
+    function transmissionNextDelay() {
+      if (window._prismarrTransmissionFailCount === 0) return TRANSMISSION_POLL_INTERVAL;
+      var scaled = TRANSMISSION_POLL_INTERVAL * Math.pow(2, window._prismarrTransmissionFailCount - 1);
+      return Math.min(scaled, TRANSMISSION_POLL_INTERVAL_MAX);
+    }
+
+    function schedulePoll() {
+      if (window._prismarrTransmissionPollTimer) clearTimeout(window._prismarrTransmissionPollTimer);
+      window._prismarrTransmissionPollTimer = setTimeout(pollTransmission, transmissionNextDelay());
+    }
+
+    function pollTransmission() {
+      fetch(TRANSMISSION_POLL_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (d) {
+          if (!d || d.error) {
+            // Server says Transmission is unreachable — count it as a failure.
+            window._prismarrTransmissionFailCount++;
+            schedulePoll();
+            return;
+          }
+
+          // Success: reset backoff and resume base interval.
+          window._prismarrTransmissionFailCount = 0;
+          updateBadge(d.active || 0);
+
+          // Detect transitions (vs previous snapshot)
+          var prev = loadPrev();
+          var next = {};
+          var justCompleted = [];
+          var justErrored = [];
+          (d.items || []).forEach(function (it) {
+            next[it.hash] = it.state;
+            var was = prev[it.hash];
+            if (was === 'downloading' && (it.state === 'completed' || it.state === 'seeding')) {
+              justCompleted.push(it);
+            }
+            if (was && was !== 'error' && it.state === 'error') {
+              justErrored.push(it);
+            }
+          });
+
+          if (window._prismarrToast) {
+            justCompleted.forEach(function (it) {
+              if (alreadyNotified(it.hash)) return;
+              var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
+              window._prismarrToast(truncated + ' — ' + fmtGo(it.size), 'success', 6000);
+              markNotified(it.hash);
+            });
+            justErrored.forEach(function (it) {
+              if (alreadyNotified(it.hash)) return;
+              var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
+              window._prismarrToast('Erreur sur : ' + truncated, 'danger', 8000);
+              markNotified(it.hash);
+            });
+          }
+
+          savePrev(next);
+          schedulePoll();
+        })
+        .catch(function () {
+          // Network error / fetch rejected → back off.
+          window._prismarrTransmissionFailCount++;
+          schedulePoll();
+        });
+    }
+
+    // Turbo-safe singleton pattern: a single global poll even with re-exec
+    if (window._prismarrTransmissionPollTimer) clearTimeout(window._prismarrTransmissionPollTimer);
+    pollTransmission();
+
+    // Pause when tab is hidden, resume when it returns
+    if (!window._prismarrTransmissionVisibilityBound) {
+      window._prismarrTransmissionVisibilityBound = true;
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+          if (window._prismarrTransmissionPollTimer) { clearTimeout(window._prismarrTransmissionPollTimer); window._prismarrTransmissionPollTimer = null; }
+        } else {
+          pollTransmission();
         }
       });
     }

@@ -58,6 +58,50 @@
     </div>
 
     <div class="wizard-section">
+      <div class="wizard-section-title">{{ 'setup.step.downloads.transmission.section'|trans }}</div>
+      <div class="wizard-section-subtitle">{{ 'setup.step.downloads.transmission.subtitle'|trans }}</div>
+      <div class="row g-3">
+        <div class="col-md-12">
+          <label class="form-label" for="transmission_url">{{ 'setup.step.managers.fields.url'|trans }}</label>
+          <input type="text" id="transmission_url" name="transmission_url" class="form-control"
+                 placeholder="http://host.docker.internal:9091" value="{{ values.transmission_url }}"/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="transmission_user">{{ 'setup.step.downloads.transmission.user'|trans }}</label>
+          <input type="text" id="transmission_user" name="transmission_user" class="form-control"
+                 placeholder="admin" value="{{ values.transmission_user }}"
+                 autocomplete="off"/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="transmission_password">{{ 'setup.step.downloads.transmission.password'|trans }}</label>
+          <div class="secret-wrapper">
+            <input type="password" id="transmission_password" name="transmission_password" class="form-control"
+                   placeholder="••••••••" value="{{ values.transmission_password }}"
+                   autocomplete="new-password"/>
+            <button type="button" class="secret-toggle" aria-label="{{ 'setup.step.admin.toggle_visibility'|trans }}" data-toggle-for="transmission_password">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>
+                <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="col-md-12">
+          <small class="text-secondary" style="font-size: .78rem; line-height: 1.4;">
+            {{ 'setup.step.downloads.transmission.reverse_proxy_hint'|trans }}
+          </small>
+        </div>
+      </div>
+      <div class="test-row">
+        <button type="button" class="btn btn-sm btn-outline-primary"
+                data-test-service="transmission"
+                data-test-csrf="{{ csrf_token('setup_test_transmission') }}"
+                data-test-fields="transmission_url,transmission_user,transmission_password">{{ 'setup.test.button'|trans }}</button>
+        <span class="test-result" data-test-result-for="transmission" aria-live="polite"></span>
+      </div>
+    </div>
+
+    <div class="wizard-section">
       <div class="wizard-section-title">{{ 'setup.step.downloads.sabnzbd.section'|trans }} <span class="text-muted" style="font-weight:400;font-size:.75rem;">{{ 'setup.step.downloads.usenet_optional'|trans }}</span></div>
       <div class="wizard-section-subtitle">{{ 'setup.step.downloads.sabnzbd.subtitle'|trans }}</div>
       <div class="row g-3">

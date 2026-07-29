@@ -1,8 +1,8 @@
 # Service logos
 
 The service logo SVGs in this directory (radarr, sonarr, prowlarr,
-jellyseerr, qbittorrent, sabnzbd, nzbget, gluetun, tmdb) come from the
-**Dashboard Icons** collection:
+jellyseerr, qbittorrent, transmission, sabnzbd, nzbget, gluetun, tmdb) come
+from the **Dashboard Icons** collection:
 
 - Source: https://github.com/homarr-labs/dashboard-icons
 - License: Apache License 2.0

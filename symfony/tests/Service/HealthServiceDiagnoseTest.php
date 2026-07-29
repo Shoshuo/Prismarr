@@ -64,6 +64,30 @@ class HealthServiceDiagnoseTest extends TestCase
         self::assertSame('network', $this->makeService()->diagnoseFromResponse($resp, 'nzbget')['category']);
     }
 
+    /**
+     * Transmission's session-id handshake is the one case in this codebase
+     * where a non-2xx status means "reachable": the probe is deliberately
+     * sent WITHOUT a session id, so a healthy daemon always answers 409
+     * with the real token in a response header — that is 'ok', not a failure.
+     */
+    public function testTransmission409HandshakeIsOk(): void
+    {
+        $resp = ['http' => 409, 'body' => '{"result":"Conflict"}', 'err' => ''];
+        self::assertSame('ok', $this->makeService()->diagnoseFromResponse($resp, 'transmission')['category']);
+    }
+
+    public function testTransmission401BadRpcCredentialsIsAuth(): void
+    {
+        $resp = ['http' => 401, 'body' => '', 'err' => ''];
+        self::assertSame('auth', $this->makeService()->diagnoseFromResponse($resp, 'transmission')['category']);
+    }
+
+    public function testTransmission200SuccessIsOk(): void
+    {
+        $resp = ['http' => 200, 'body' => '{"result":"success","arguments":{"version":"4.0.5"}}', 'err' => ''];
+        self::assertSame('ok', $this->makeService()->diagnoseFromResponse($resp, 'transmission')['category']);
+    }
+
     public function testPassiveDiagnoseShortCircuitsWhenBreakerDown(): void
     {
         // #20 perf: a passive diagnosis (no overrides) must honour the circuit

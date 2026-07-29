@@ -64,6 +64,7 @@ sidebar:
   nav:
     dashboard: Tableau de bord
     qbittorrent: qBittorrent
+    transmission: Transmission
     discovery: Découverte
     calendar: Calendrier
     radarr: Radarr
@@ -288,6 +289,12 @@ setup:
         user: Utilisateur
         password: Mot de passe
         reverse_proxy_hint: 'Laissez l''utilisateur et le mot de passe vides si qBittorrent est derrière un reverse proxy qui injecte lui-même l''authentification (qui, traefik forward auth, …).'
+      transmission:
+        section: '⬇️ Transmission'
+        subtitle: Authentification via l'interface RPC de Transmission.
+        user: Utilisateur
+        password: Mot de passe
+        reverse_proxy_hint: 'Laissez l''utilisateur et le mot de passe vides si Transmission est derrière un reverse proxy qui injecte lui-même l''authentification, ou si l''authentification RPC est désactivée.'
       usenet_optional: 'Usenet — optionnel'
       sabnzbd:
         section: 'SABnzbd'
@@ -649,6 +656,7 @@ admin:
       prowlarr: Agrégateur d'indexeurs
       jellyseerr: Plateforme de requêtes
       qbittorrent: Client torrent
+      transmission: Client torrent
       sabnzbd: Téléchargeur Usenet
       nzbget: Téléchargeur Usenet
       gluetun: 'VPN / port forwarding'
@@ -773,6 +781,15 @@ admin:
       label: Couleur principale
     qbit_refresh:
       label: Rafraîchissement qBittorrent
+      help: Fréquence du polling automatique sur la page Téléchargements.
+      options:
+        '1': '1 seconde (temps réel)'
+        '2': '2 secondes (défaut)'
+        '5': '5 secondes'
+        '10': '10 secondes (économe)'
+        '0': Désactivé
+    transmission_refresh:
+      label: Rafraîchissement Transmission
       help: Fréquence du polling automatique sur la page Téléchargements.
       options:
         '1': '1 seconde (temps réel)'
@@ -3682,6 +3699,241 @@ qbittorrent:
     no_valid_hash: Aucun hash valide
     no_valid_file: Aucun fichier valide
     torrent_not_found: Torrent introuvable
+
+transmission:
+  page_title: Téléchargements
+  stats:
+    total: Total
+    downloading: En cours
+    seeding: Partage
+    stalled: En attente
+    paused: Pause
+    errored: Erreurs
+    total_downloaded: Téléchargé total
+    total_uploaded: Uploadé total
+    session: Session
+    free_space: Dispo
+    peak_dl: 'Pic ↓'
+    peak_up: 'Pic ↑'
+  session:
+    label: Session
+    ratio: Ratio
+  filters:
+    search_placeholder: 'Rechercher...'
+    all: Tous
+    active: '⚡ Actifs'
+    active_title: 'Torrents avec vitesse > 0'
+    downloading: En cours
+    seeding: Partage
+    stalled: En attente
+    paused: Pause
+    completed: Terminés
+    error: Erreurs
+    category_label: 'Catégorie :'
+    category_all: Toutes
+    sort_label: 'Tri :'
+    select_all: Tout sélectionner
+  count_tpl: '{count, plural, one {# torrent} other {# torrents}}'
+  sort:
+    added_desc: 'Ajout (récent → ancien)'
+    added_asc: 'Ajout (ancien → récent)'
+    name_asc: 'Nom (A → Z)'
+    name_desc: 'Nom (Z → A)'
+    size_desc: 'Taille (↓)'
+    size_asc: 'Taille (↑)'
+    progress_desc: 'Progression (↓)'
+    dlspeed_desc: 'Vitesse DL (↓)'
+    upspeed_desc: 'Vitesse UP (↓)'
+    ratio_desc: 'Ratio (↓)'
+    seeds_desc: 'Seeds (↓)'
+  view:
+    aria_label: "Mode d'affichage"
+    list: Liste
+    list_title: Vue liste
+    table: Tableau
+    table_title: Vue tableau
+    compact: Compact
+    compact_title: Vue compacte
+  table:
+    name: Nom
+    size: Taille
+    progress: '%'
+    dl_speed: DL/s
+    up_speed: UP/s
+    seeds: Seeds
+    ratio: Ratio
+    added: Ajouté
+    actions: Actions
+  pagination:
+    per_page: 'Par page :'
+    info_tpl: '__FROM__–__TO__ / __TOTAL__'
+  toolbar:
+    add: Ajouter
+    add_title: Ajouter un torrent
+    pause_all_title: Tout mettre en pause
+    resume_all_title: Tout reprendre
+  state:
+    downloading: Téléchargement
+    seeding: Partage
+    paused: Pause
+    queued: File
+    checking: Vérification
+    error: Erreur
+    completed: Terminé
+    stalled: En attente
+    moving: Déplacement
+    unknown: État inconnu
+  row:
+    title_seeds_leechers: 'Seeds / Leechers'
+    title_ratio: Ratio
+    title_added_tpl: 'Ajouté le __DATE__'
+    title_radarr: Voir dans Radarr
+    title_sonarr: Voir dans Sonarr
+    pause_title: Pause
+    resume_title: Reprendre
+    delete_title: Supprimer
+  bulk:
+    selected_tpl: '{count, plural, one {# sélectionné} other {# sélectionnés}}'
+    resume: Reprendre
+    pause: Pause
+    delete: Supprimer
+    recheck: Vérifier
+    cancel: Annuler
+  empty:
+    no_match: 'Aucun torrent ne correspond à ces critères.'
+  modal_detail:
+    loading: 'Chargement...'
+    tab_general: Général
+    tab_files: Fichiers
+    tab_trackers: Trackers
+    tab_peers: Peers
+    files:
+      col_name: Nom
+      col_size: Taille
+      col_progress: Progression
+      col_priority: Priorité
+      empty: Aucun fichier
+      prio_low: Basse
+      prio_normal: Normal
+      prio_high: Haute
+    trackers:
+      col_url: URL
+      col_status: Statut
+      col_seeds: Seeds
+      col_leechs: Leechs
+      empty: Aucun tracker
+      status_announcing: Annonce
+      status_queued: En file
+      status_active: Actif
+      status_idle: Inactif
+    peers:
+      col_ip: IP
+      col_client: Client
+      col_progress: '%'
+      col_dl: DL
+      col_up: UP
+      empty: Aucun peer connecté
+    props:
+      downloaded: Téléchargé
+      uploaded: Envoyé
+      ratio: Ratio
+      dl_speed: Vitesse DL
+      up_speed: Vitesse UP
+      eta: Temps restant
+      seeds: Seeds
+      peers: Peers
+      total_size: Taille totale
+      added: Ajouté
+      completed: Complété
+      save_path: Dossier de sauvegarde
+    actions:
+      pause: Pause
+      resume: Reprendre
+      recheck: Vérifier
+      reannounce: Réannoncer
+      delete: Supprimer
+    error_load: Erreur de chargement
+  modal_add:
+    title: Ajouter un torrent
+    urls_label: 'Lien magnet ou URL .torrent'
+    urls_placeholder: 'magnet:?xt=urn:btih:... ou https://...'
+    urls_hint: 'Un lien par ligne pour ajouter plusieurs torrents.'
+    files_label: 'Ou fichiers .torrent'
+    drop_text: 'Glissez vos fichiers <strong>.torrent</strong> ici'
+    drop_browse: 'ou cliquez pour parcourir'
+    file_remove_title: Retirer
+    start_label: Démarrage
+    start_now: Démarrer immédiatement
+    start_paused: Ajouter en pause
+    cancel: Annuler
+    submit: Ajouter
+  modal_delete:
+    title: Supprimer
+    msg_single: 'Supprimer ce torrent ?'
+    msg_named_tpl: 'Supprimer "__NAME__" ?'
+    msg_bulk_tpl: '{count, plural, one {Supprimer # torrent ?} other {Supprimer # torrents ?}}'
+    delete_files: 'Supprimer aussi les fichiers'
+    cancel: Annuler
+    confirm: Supprimer
+  toast:
+    action_sent: 'Action envoyée'
+    network_error: 'Erreur réseau'
+    failed_tpl: 'Échec : __ERROR__'
+    error_generic: erreur
+    paused: 'Torrent mis en pause'
+    resumed: 'Torrent repris'
+    recheck_started: 'Vérification lancée'
+    reannounce_sent: 'Réannonce envoyée'
+    bulk_resumed_tpl: '{count, plural, one {# torrent repris} other {# torrents repris}}'
+    bulk_paused_tpl: '{count, plural, one {# torrent en pause} other {# torrents en pause}}'
+    bulk_recheck_tpl: '{count, plural, one {Vérification de # torrent} other {Vérification de # torrents}}'
+    bulk_deleted_tpl: '{count, plural, one {# torrent supprimé} other {# torrents supprimés}}'
+    bulk_deleted_with_files_suffix: ' + fichiers'
+    pause_all: 'Tous les torrents en pause'
+    resume_all: 'Tous les torrents repris'
+    add_files_ok_tpl: '{count, plural, one {# fichier ajouté} other {# fichiers ajoutés}}'
+    add_files_ko: 'Échec upload fichier'
+    add_url_ok: 'Torrent(s) ajouté(s)'
+    add_url_ko: 'Échec ajout URL'
+    add_required: 'Ajoute un magnet/URL ou un fichier .torrent'
+    file_ignored_tpl: 'Ignoré (pas .torrent) : __NAME__'
+    cat_resolve_search: 'Recherche...'
+    cat_resolve_no_match_tpl: 'Aucun match trouvé pour "__NAME__"'
+    cat_resolve_error: 'Erreur de résolution'
+  date:
+    just_now: "à l'instant"
+    minutes_ago_tpl: 'il y a __N__min'
+    hours_ago_tpl: 'il y a __N__h'
+    days_ago_tpl: 'il y a __N__j'
+    months_ago_tpl: 'il y a __N__ mois'
+    years_ago_tpl: '{count, plural, one {il y a # an} other {il y a # ans}}'
+  units:
+    gb: Go
+    mb: Mo
+    kb: Ko
+    bytes: o
+    mb_per_s: Mo/s
+    kb_per_s: Ko/s
+    bytes_per_s: o/s
+    eta_tpl: '__H__h__M__m'
+    duration_days_tpl: '__D__j __H__h'
+    duration_hours_tpl: '__H__h __M__m'
+    duration_minutes_tpl: '__M__m'
+    uptime_hours_tpl: '__H__h __M__m'
+    uptime_minutes_tpl: '__M__ min'
+    uptime_seconds_tpl: '__S__s'
+  upload:
+    invalid_url: 'Seuls les liens http(s) et magnet: sont acceptés'
+    forbidden_host: 'Cette URL pointe vers un hôte interdit (métadonnées cloud)'
+    no_file: 'Aucun fichier reçu'
+    invalid_format: 'Seuls les fichiers .torrent sont acceptés'
+    too_large: 'Fichier trop volumineux (>10 Mo)'
+    unreadable: 'Fichier illisible'
+  api:
+    no_valid_hash: Aucun hash valide
+    no_valid_file: Aucun fichier valide
+    torrent_not_found: Torrent introuvable
+    empty_location: 'L''emplacement ne peut pas être vide'
 
 usenet:
   page_title: 'Téléchargements Usenet'

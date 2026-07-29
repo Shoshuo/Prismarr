@@ -25,6 +25,7 @@ class ConfigExtension extends AbstractExtension
         'prowlarr'    => 'prowlarr_api_key',
         'jellyseerr'  => 'jellyseerr_api_key',
         'qbittorrent' => 'qbittorrent_url',
+        'transmission' => 'transmission_url',
         'sabnzbd'     => 'sabnzbd_url',
         'nzbget'      => 'nzbget_url',
         'gluetun'     => 'gluetun_url',
