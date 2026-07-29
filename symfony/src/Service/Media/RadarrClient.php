@@ -211,7 +211,11 @@ class RadarrClient implements ResetInterface
 
     public function getMovies(): array
     {
-        $data = $this->get('/api/v3/movie');
+        // Full library in one payload — on a large/busy Radarr this can exceed
+        // the default 8s get() budget (issue #41). Give it room; the
+        // MediaLibraryCache means only the cold fetch pays this cost, and the
+        // library route already allows set_time_limit(120).
+        $data = $this->get('/api/v3/movie', [], 30);
         if ($data === null) return [];
 
         return $this->normalizeMovies($data);
@@ -1580,7 +1584,7 @@ class RadarrClient implements ResetInterface
 
     // ── HTTP ──────────────────────────────────────────────────────────────────
 
-    private function get(string $path, array $params = []): ?array
+    private function get(string $path, array $params = [], int $timeout = 8): ?array
     {
         if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
@@ -1602,7 +1606,7 @@ class RadarrClient implements ResetInterface
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
-            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_TIMEOUT        => $timeout,
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_NOSIGNAL       => 1,
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Accept: application/json'],

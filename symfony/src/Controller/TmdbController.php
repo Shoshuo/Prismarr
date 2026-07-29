@@ -505,12 +505,14 @@ class TmdbController extends AbstractController
             }
         }
 
-        // Alternative titles (FR + EN priority)
+        // Alternative titles — keep the ones relevant to the user's region
+        // (locale-led) rather than a fixed FR-first whitelist.
         $altTitles = [];
+        $altRegions = TmdbClient::regionPriority($this->translator->getLocale());
         $altSource = $isMovie ? ($d['alternative_titles']['titles'] ?? []) : ($d['alternative_titles']['results'] ?? []);
         foreach ($altSource as $at) {
             $cc = $at['iso_3166_1'] ?? '';
-            if (!in_array($cc, ['FR', 'US', 'GB', 'CA', 'BE'], true)) continue;
+            if (!in_array($cc, $altRegions, true)) continue;
             $altTitles[] = ['country' => $cc, 'title' => $at['title'] ?? ''];
             if (count($altTitles) >= 6) break;
         }
@@ -659,7 +661,7 @@ class TmdbController extends AbstractController
 
     private function pickProviders(array $byCountry): array
     {
-        foreach (['FR', 'BE', 'LU', 'US', 'GB'] as $cc) {
+        foreach (TmdbClient::regionPriority($this->translator->getLocale(), array_keys($byCountry)) as $cc) {
             if (empty($byCountry[$cc])) continue;
             $p = $byCountry[$cc];
             $pack = [
@@ -685,7 +687,7 @@ class TmdbController extends AbstractController
 
     private function pickMovieCertification(array $results): ?string
     {
-        foreach (['FR', 'US'] as $cc) {
+        foreach (TmdbClient::regionPriority($this->translator->getLocale()) as $cc) {
             foreach ($results as $r) {
                 if (($r['iso_3166_1'] ?? '') !== $cc) continue;
                 foreach ($r['release_dates'] ?? [] as $rd) {
@@ -698,7 +700,7 @@ class TmdbController extends AbstractController
 
     private function pickTvCertification(array $results): ?string
     {
-        foreach (['FR', 'US'] as $cc) {
+        foreach (TmdbClient::regionPriority($this->translator->getLocale()) as $cc) {
             foreach ($results as $r) {
                 if (($r['iso_3166_1'] ?? '') !== $cc) continue;
                 if (!empty($r['rating'])) return "[$cc] " . $r['rating'];

@@ -40,6 +40,7 @@ common:
     required: required
     coming_soon: Coming soon
   labels:
+    new_badge: New
     email: Email
     username: Username
     password: Password
@@ -65,6 +66,8 @@ sidebar:
   nav:
     dashboard: Dashboard
     qbittorrent: qBittorrent
+    deluge: Deluge
+    transmission: Transmission
     discovery: Discover
     calendar: Calendar
     radarr: Radarr
@@ -100,6 +103,7 @@ topbar:
     loading_online: Loading…
     in_library_badge: In library
     not_added_badge: Not added
+    add: Add
     group_local: In your library
     group_online: On TMDb / TheTVDB
     more_local: See more in your library
@@ -289,6 +293,17 @@ setup:
         user: Username
         password: Password
         reverse_proxy_hint: 'Leave the username and password empty if qBittorrent sits behind a reverse proxy that injects authentication itself (qui, traefik forward auth, …).'
+      deluge:
+        section: Deluge
+        subtitle: 'Torrent client (Web UI) — used for the Deluge tab.'
+        password: Web UI password
+        reverse_proxy_hint: 'Leave the password empty if Deluge sits behind an authenticating reverse proxy that injects the session for you.'
+      transmission:
+        section: '⬇️ Transmission'
+        subtitle: Authentication through the Transmission RPC interface.
+        user: Username
+        password: Password
+        reverse_proxy_hint: 'Leave the username and password empty if Transmission sits behind a reverse proxy that injects authentication itself, or if RPC authentication is disabled.'
       usenet_optional: 'Usenet — optional'
       sabnzbd:
         section: 'SABnzbd'
@@ -354,6 +369,8 @@ home:
 
 dashboard:
   title: Dashboard
+  widget_error:
+    unreachable: This section failed to load
   greeting:
     morning: Good morning
     afternoon: Good afternoon
@@ -413,6 +430,7 @@ dashboard:
     title: Current Plex activity
     settings_cta: 'Settings →'
     streams: Streams
+    viewers: Current viewers
     mbps: Mbps
     unknown_title: Unknown
     empty: No active Plex streams
@@ -453,6 +471,57 @@ dashboard:
       cast: 'Cast:'
       studio: 'Studio:'
       tech: Stream
+  server:
+    title: Server
+    settings_cta: Settings
+    unreachable: Unraid is unreachable
+    array: Array
+    parity: Parity
+    disks: Disks
+    system: System
+    docker: Docker
+    ups: UPS
+    cpu: CPU
+    ram: RAM
+    uptime: Up since
+    running: running
+    battery: Battery
+    load: Load
+    parity_checking: Checking
+    elapsed: Elapsed
+    eta: ETA
+    errors: errors
+    last_check: Last check
+  network:
+    title: Network
+    settings_cta: Settings
+    unreachable: UniFi console unreachable — check the URL and API key in settings.
+    down: Download
+    up: Upload
+    clients: Clients
+    wired: wired
+    wireless: wireless
+    guest: guest
+    wan: WAN
+    uptime: Uptime
+    usage_24h: Usage — last 24 h
+    infrastructure: Infrastructure
+    online: online
+    offline: offline
+  houndarr:
+    title: Houndarr
+    settings_cta: Settings
+    tracked: Tracked
+    eligible: Eligible
+    gated: Cooldown
+    unreleased: Unreleased
+    searches_7d: Searches (7d)
+    updated: Updated
+    unreachable: Houndarr is unreachable
+    auth_error: Houndarr rejected the API key — check Settings
+    wanted: Wanted
+    cutoff_unmet: Cutoff unmet
+    arr_note: Wanted counts from Radarr/Sonarr
   type:
     film: Movie
     series: TV Show
@@ -473,12 +542,33 @@ dashboard:
     discover: 'View in Discover'
     close: 'Close'
     runtime: '{min} min'
-    seasons: '{count} seasons'
+    seasons: '{count, plural, one {# season} other {# seasons}}'
     error: "Couldn't load the preview"
+    providers: 'Available on'
+    trailer: 'Trailer'
+    watchlist: 'Watchlist'
+    watchlist_added: 'On watchlist'
+    watchlist_add_toast: 'Added to your watchlist'
+    watchlist_remove_toast: 'Removed from your watchlist'
     status:
       downloaded: 'Downloaded'
       monitored: 'Monitored'
       missing: 'Missing'
+    date:
+      cinema: 'In theaters'
+      digital: 'Digital'
+      physical: 'Physical'
+      first_aired: 'First aired'
+      next_episode: 'Next episode'
+      ended: 'Ended'
+    airstatus:
+      continuing: 'Continuing'
+      ended: 'Ended'
+  layout:
+    edit: Edit layout
+    save: Save layout
+    cancel: Cancel
+    hide: Hide
 
 tautulli:
   title: Plex Activity
@@ -536,6 +626,75 @@ tautulli:
     empty: No libraries
     items: '{count, plural, one {# item} other {# items}}'
     episodes: '{count, plural, one {# episode} other {# episodes}}'
+
+unifi:
+  title: Network
+  subtitle: 'Live network operations'
+  updated: 'Updated {seconds}s ago'
+  unreachable: 'UniFi console unreachable — check the URL and API key in settings.'
+  empty: 'No data for this section'
+  retry: Retry
+  tiles:
+    wan: Internet
+    cpu: Gateway CPU
+    memory: Gateway memory
+    clients: Clients
+    throughput: Throughput
+    latency: latency
+    drops: drops
+    wired: wired
+    wireless: wireless
+    guest: guest
+  history:
+    traffic: 'WAN traffic — last 7 days'
+    speedtests: 'Speedtest history — last 30 days'
+    speedtests_sparse: 'Only {count} runs in the window — enable scheduled speedtests on the console for a trend.'
+    # down/up/latency and peak arrive pre-formatted from SpeedtestChart — no units here.
+    latest: 'Latest: ↓{down} ↑{up} · {latency}'
+    latency_range: 'Latency {min} / {avg} / {max} ms'
+    peak: 'peak {peak}'
+  infra:
+    title: Infrastructure
+    device: Device
+    hidden_ssid: hidden
+    untagged: untagged
+    kind_gateway: gateway
+    kind_switch: switch
+    kind_ap: access point
+    kind_other: device
+    summary: '{devices} devices · {online} online · {upgradable} upgradable'
+    radios: 'Access points'
+    neighbors: 'Neighbor networks'
+    neighbors_unavailable: 'Neighbor scan not available on this console'
+    networks: Networks
+    network_name: Network
+    vlan: VLAN
+    subnet: Subnet
+    channel: Channel
+    power: TX power
+    utilization: Utilization
+    retry_pct: Retry
+    signal: Signal
+    vendor: Vendor
+    temperature: Temp
+    uptime: Uptime
+    upgradable: 'Update available'
+  clients:
+    wireless: 'Wireless clients'
+    device: Device
+    ssid: SSID
+    band: Band
+    access_point: 'Access point'
+    avg_signal: 'Avg signal'
+    talkers: 'Live talkers'
+    top: 'Top clients (total)'
+    reservations: 'DHCP reservations'
+    reservations_summary: '{total} reservations · {mismatched} mismatched'
+    reserved_ip: 'Reserved IP'
+    live_ip: 'Current IP'
+    status_ok: Match
+    status_mismatch: Mismatch
+    status_offline: Offline
 
 profile:
   title: My profile
@@ -650,10 +809,15 @@ admin:
       prowlarr: Indexer aggregator
       jellyseerr: Request platform
       qbittorrent: Torrent client
+      deluge: Torrent client (Web UI)
+      transmission: Torrent client
       sabnzbd: Usenet downloader
       nzbget: Usenet downloader
       gluetun: 'VPN / port forwarding'
       tautulli: 'Plex activity (via Tautulli)'
+      unraid: 'Unraid server monitoring — array, disks, system, Docker, UPS (Unraid 7+, read-only API key)'
+      unifi: 'UniFi network monitoring — WAN throughput, clients, devices (Network 9.0+, read-only API key from Control Plane → Integrations)'
+      houndarr: 'Automated *arr backlog search (read-only widget)'
     sidebar_toggle: Menu
     sidebar_toggle_title: Show in sidebar
     status:
@@ -740,6 +904,10 @@ admin:
     sidebar:
       title: Sidebar visibility
       description: Pick which services and features show up in the left sidebar.
+    dashboard_layout:
+      title: Dashboard layout
+      description: Drag to reorder the dashboard sections, and choose which ones to show.
+      reset_hint: 'Use "Reset display preferences" below to restore the default layout.'
     switch:
       on: Enabled
       off: Disabled
@@ -772,9 +940,43 @@ admin:
         '12h': '12h (2:30 PM)'
     theme_color:
       label: Primary colour
+      help: Accent for buttons, links and highlights. “Auto” keeps the accent that comes with your theme.
+    theme:
+      label: Theme
+      help: Full colour scheme (background, surfaces, text) for the interface. Each theme ships its own accent — override it with Primary colour above.
+      preset:
+        midnight: Midnight
+        nord: Nord
+        catppuccin_latte: Catppuccin Latte
+        catppuccin_frappe: Catppuccin Frappé
+        catppuccin_macchiato: Catppuccin Macchiato
+        catppuccin_mocha: Catppuccin Mocha
+        dracula: Dracula
+        gruvbox_dark: Gruvbox Dark
+        kanagawa_dark: Kanagawa Dark
+        teal_city: Teal City
+        camouflage: Camouflage
+        tucan: Tucan
+        shades_of_purple: Shades of Purple
+        neon_pink: Neon Pink
+        solarized_light: Solarized Light
+        peachy: Peachy
+        zebra: Zebra
     qbit_refresh:
       label: qBittorrent refresh
       help: Auto-polling frequency on the Downloads page.
+      options:
+        '1': '1 second (real-time)'
+        '2': '2 seconds (default)'
+        '5': '5 seconds'
+        '10': '10 seconds (low load)'
+        '0': Disabled
+    deluge_refresh:
+      label: Deluge refresh interval
+      help: How often the Deluge page and sidebar badge poll for changes. 0 disables polling.
+    transmission_refresh:
+      label: Transmission refresh
+      help: How often the sidebar badge and completion toasts poll Transmission. 0 disables polling.
       options:
         '1': '1 second (real-time)'
         '2': '2 seconds (default)'
@@ -822,6 +1024,11 @@ admin:
     clear: Clear
     tmdb:
       api_key: v3 API key
+    unraid:
+      skip_tls_verify: 'Skip TLS certificate verification (self-signed certificate)'
+    unifi:
+      site: Site name
+      skip_tls_verify: Skip TLS certificate verification (self-signed console certificate)
   internal:
     calendar:
       label: Calendar
@@ -919,12 +1126,16 @@ admin:
 
 decouverte:
   title: Discover
+  countdown_prefix: 'D-'
+  badge_type_film: Movie
+  badge_type_series: TV
   search_placeholder: 'Search a movie or TV show on TMDb…'
   actions:
     filters: Filters
     watchlist: Watchlist
     explorer: Explorer
   filters:
+    drawer_title: Filters
     type: Type
     movies: Movies
     series: TV shows
@@ -1179,7 +1390,7 @@ media:
     no_file: No file
     no_missing_episodes: No missing monitored episode.
     network_error: Network or upstream error. Check the service is reachable.
-    warning_format: '{source}: {message}'
+    warning_format: '{message}'
   label:
     season_prefix: 'Season {number}'
 
@@ -1242,6 +1453,8 @@ media:
     filters:
       search_placeholder: "Search…"
       apply: Apply
+      open: Filters
+      drawer_title: Filters
       status:
         all: All
         monitored: Monitored
@@ -1770,6 +1983,8 @@ media:
     filters:
       search_placeholder: "Search…"
       apply: Apply
+      open: Filters
+      drawer_title: Filters
       status:
         all: All
         monitored: Monitored
@@ -3683,6 +3898,37 @@ qbittorrent:
     no_valid_hash: No valid hash
     no_valid_file: No valid file
     torrent_not_found: Torrent not found
+
+deluge:
+  title: Deluge
+  filters:
+    labels: Labels
+  table:
+    uploaded: Uploaded
+    completed: Completed
+  api:
+    empty_location: Destination path is required
+
+transmission:
+  page_title: Transmission
+  modal_detail:
+    trackers:
+      status_announcing: Announcing
+      status_queued: Queued
+      status_active: Active
+      status_idle: Idle
+  upload:
+    invalid_url: 'Only http(s) and magnet: links are accepted'
+    forbidden_host: 'This URL points to a forbidden host (cloud metadata)'
+    no_file: 'No file received'
+    invalid_format: 'Only .torrent files are accepted'
+    too_large: 'File too large (>10 MB)'
+    unreadable: 'Unreadable file'
+  api:
+    no_valid_hash: No valid hash
+    no_valid_file: No valid file
+    torrent_not_found: Torrent not found
+    empty_location: 'Location cannot be empty'
 
 usenet:
   page_title: 'Usenet downloads'

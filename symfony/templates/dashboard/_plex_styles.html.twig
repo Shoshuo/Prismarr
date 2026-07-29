@@ -16,9 +16,22 @@
   .plex-session-title.plex-clickable:hover { color: var(--tblr-primary); }
   .plex-session-main { flex: 1 1 auto; min-width: 0; }
   .plex-session-title { font-size: .88rem; font-weight: 600; }
-  .plex-session-year { font-weight: 400; color: var(--tblr-secondary); }
+  /* The year span could overhang the session card edge by ~13px on narrow
+     cards (responsive audit 2026-06-29): cap it to the title's width so it
+     truncates with the title instead of overflowing. */
+  .plex-session-year {
+    font-weight: 400; color: var(--tblr-secondary);
+    display: inline-block; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    vertical-align: bottom;
+  }
   .plex-session-meta { font-size: .75rem; color: var(--tblr-secondary); margin-top: .1rem; }
   .plex-badges { display: flex; flex-wrap: wrap; gap: .3rem; margin: .4rem 0 .35rem; }
   .plex-decisions { font-size: .68rem; margin-bottom: .35rem; }
   .progress.plex-progress { height: 5px; background: var(--tblr-bg-surface-secondary); }
+  /* Mobile/tablet readability floor (responsive audit 2026-06-29) — see
+     base.html.twig; floors sub-11px text at 11px below the lg breakpoint. */
+  @media (max-width: 991.98px) {
+    .plex-decisions { font-size: .6875rem; }
+  }
 </style>

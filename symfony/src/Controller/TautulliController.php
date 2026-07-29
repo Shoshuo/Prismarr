@@ -130,6 +130,25 @@ class TautulliController extends AbstractController
     }
 
     /**
+     * GET /tautulli/api/quicklook/{ratingKey} — resolves a Plex rating key to
+     * the TMDb {type, id} the app-global quick-look modal opens with. Returns
+     * nulls (not an error status) when the item has no tmdb guid — the client
+     * then falls back to the legacy Plex metadata modal, so music and home
+     * videos keep a working click. Fails open like every endpoint here.
+     */
+    #[Route('/api/quicklook/{ratingKey}', name: 'api_quicklook', methods: ['GET'], requirements: ['ratingKey' => '\d+'])]
+    public function apiQuickLook(string $ratingKey): JsonResponse
+    {
+        try {
+            $resolved = $this->tautulli->resolveTmdbId($ratingKey);
+        } catch (\Throwable) {
+            $resolved = null;
+        }
+
+        return $this->json($resolved ?? ['type' => null, 'id' => null]);
+    }
+
+    /**
      * GET /tautulli — the full Plex activity page. Server-renders the cheap
      * "Now Playing" section; heavier sections hydrate client-side. Guarded by
      * ServiceRouteGuardSubscriber when Tautulli is unconfigured.

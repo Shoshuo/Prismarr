@@ -1,3 +1,6 @@
+# Brainstorming companion scratch (superpowers visual companion)
+.superpowers/
+
 # Symfony
 symfony/vendor/
 symfony/var/
@@ -37,3 +40,8 @@ CLAUDE.md
 AGENTS.md
 REDDIT_POST.md
 REDDIT_POSTS.md
+# Superpowers brainstorming specs + implementation plans (internal scaffolding)
+docs/superpowers/
+
+# Local screenshots dropped in the repo root (not part of the project)
+/*.png

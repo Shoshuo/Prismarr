@@ -1,0 +1,31 @@
+{# UniFi network monitoring — admin-only, self-gates on unifi config.
+   The fragment endpoint re-checks ROLE_ADMIN server-side; this gate just
+   avoids rendering a card shell non-admins would see spin forever. #}
+<div data-section-key="network">
+{% if is_granted('ROLE_ADMIN') and services_configured.unifi %}
+<div class="row row-cards mb-3">
+  <div class="col-12" data-dash-widget="network" data-dash-url="{{ path('app_dashboard_widget_network') }}" data-dash-poll="30000">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="card-title">
+          <span class="card-title-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18l.01 0"/><path d="M9.172 15.172a4 4 0 0 1 5.656 0"/><path d="M6.343 12.343a8 8 0 0 1 11.314 0"/><path d="M3.515 9.515c4.686 -4.687 12.284 -4.687 17 0"/></svg>
+          </span>
+          {{ 'dashboard.network.title'|trans }}
+        </h3>
+        <div class="card-actions">
+          {# The widget is the glance; /unifi is the detail. Same admin gate as
+             the card itself, so this link is only ever rendered to someone who
+             can follow it. #}
+          <a href="{{ path('app_unifi_index') }}" class="dash-action-btn">{{ 'common.action.view_all'|trans }}</a>
+          <a href="{{ path('admin_settings_index') }}" class="dash-action-btn">{{ 'dashboard.network.settings_cta'|trans }}</a>
+        </div>
+      </div>
+      <div class="card-body" data-dash-body>
+        <div class="text-center text-secondary py-3"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+</div>

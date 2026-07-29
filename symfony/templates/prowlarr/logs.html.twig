@@ -42,7 +42,11 @@
     </div>
     <div class="card-body p-0">
         {% if records is empty %}
-            <div class="text-muted text-center py-5">{{ 'prowlarr.logs.empty'|trans }}</div>
+            {% import '_icons.html.twig' as ico %}
+            <div class="empty py-5">
+                <div class="empty-icon">{{ ico.icon('file', '', 36) }}</div>
+                <p class="empty-title mb-0">{{ 'prowlarr.logs.empty'|trans }}</p>
+            </div>
         {% else %}
         <div class="table-responsive">
             <table class="table table-vcenter table-sm mb-0">

@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Controller\AdminSettingsController;
+use App\Service\ThemeService;
 use Symfony\Contracts\Service\ResetInterface;
 
 /**
@@ -36,6 +37,7 @@ class DisplayPreferencesService implements ResetInterface
 
     public function __construct(
         private readonly ConfigService $config,
+        private readonly ThemeService $theme,
     ) {}
 
     public function reset(): void
@@ -64,6 +66,8 @@ class DisplayPreferencesService implements ResetInterface
     public function getTimeFormat(): string         { return $this->get('display_time_format'); }
     public function getThemeColor(): string         { return $this->get('display_theme_color'); }
     public function getQbitRefreshSeconds(): int    { return (int) $this->get('display_qbit_refresh'); }
+    public function getDelugeRefreshSeconds(): int  { return (int) $this->get('display_deluge_refresh'); }
+    public function getTransmissionRefreshSeconds(): int { return (int) $this->get('display_transmission_refresh'); }
     public function getUiDensity(): string          { return $this->get('display_ui_density'); }
 
     /**
@@ -85,7 +89,13 @@ class DisplayPreferencesService implements ResetInterface
         $spec = AdminSettingsController::DISPLAY_OPTIONS['display_theme_color'];
         $chosen = $this->getThemeColor();
 
-        return $spec['options'][$chosen] ?? $spec['options'][$spec['default']];
+        // 'theme_default' (and any unknown value, which resolves to the
+        // default = theme_default) follows the active theme's primary.
+        if ($chosen === 'theme_default' || !isset($spec['options'][$chosen])) {
+            return $this->theme->resolve()['primary_hex'];
+        }
+
+        return $spec['options'][$chosen];
     }
 
     /**
@@ -95,9 +105,12 @@ class DisplayPreferencesService implements ResetInterface
     public function getThemeColorRgb(): string
     {
         $chosen = $this->getThemeColor();
-        $default = AdminSettingsController::DISPLAY_OPTIONS['display_theme_color']['default'];
 
-        return self::THEME_RGB[$chosen] ?? self::THEME_RGB[$default];
+        if ($chosen === 'theme_default' || !isset(self::THEME_RGB[$chosen])) {
+            return $this->theme->resolve()['primary_rgb'];
+        }
+
+        return self::THEME_RGB[$chosen];
     }
 
     /**
@@ -167,6 +180,8 @@ class DisplayPreferencesService implements ResetInterface
      *   theme_color_hex: string,
      *   theme_color_rgb: string,
      *   qbit_refresh_seconds: int,
+     *   deluge_refresh_seconds: int,
+     *   transmission_refresh_seconds: int,
      *   ui_density: string,
      *   page_size: int,
      *   language: string,
@@ -185,6 +200,8 @@ class DisplayPreferencesService implements ResetInterface
             'theme_color_hex'      => $this->getThemeColorHex(),
             'theme_color_rgb'      => $this->getThemeColorRgb(),
             'qbit_refresh_seconds' => $this->getQbitRefreshSeconds(),
+            'deluge_refresh_seconds' => $this->getDelugeRefreshSeconds(),
+            'transmission_refresh_seconds' => $this->getTransmissionRefreshSeconds(),
             'ui_density'           => $this->getUiDensity(),
             'page_size'            => $this->getPageSize(),
             'language'             => $this->getLanguage(),

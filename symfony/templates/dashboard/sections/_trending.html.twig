@@ -1,0 +1,19 @@
+{# TMDb trending poster row (async-hydrated) — self-gates on tmdb config. #}
+<div data-section-key="trending">
+{% if services_configured.tmdb %}
+<div class="row-section" data-dash-widget="recommendations" data-dash-url="{{ path('app_dashboard_widget_recommendations') }}">
+  <div class="row-section-head">
+    <h2 class="row-section-title">
+      <span class="row-section-title-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>
+      </span>
+      {{ 'dashboard.trending.title'|trans }}
+    </h2>
+    <a href="{{ path('tmdb_index') }}" class="row-section-link">{{ 'dashboard.trending.discover_cta'|trans }}</a>
+  </div>
+  <div class="poster-row" data-dash-body>
+    {% for i in 1..7 %}<div class="poster-tile dash-skel" aria-hidden="true"><div class="poster-tile-wrap"></div><div class="poster-tile-info"><div class="dash-skel-line"></div></div></div>{% endfor %}
+  </div>
+</div>
+{% endif %}
+</div>

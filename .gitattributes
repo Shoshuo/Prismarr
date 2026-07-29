@@ -1,0 +1,7 @@
+# Container control files are read inside a Linux image. A CRLF here makes
+# s6-rc-compile reject the service ("type must be oneshot, longrun, or bundle")
+# and breaks shell shebang parsing, so a `docker build` from a Windows checkout
+# (core.autocrlf=true) produces an unbootable image. Pin them to LF regardless
+# of the contributor's git settings.
+docker/** text eol=lf
+*.sh text eol=lf

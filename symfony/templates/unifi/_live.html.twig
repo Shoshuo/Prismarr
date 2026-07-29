@@ -1,0 +1,284 @@
+{# 10s cadence. One stat/sta payload feeds the wireless, talkers, top-clients and
+   reservation panels — that sharing is why they're one region. Every panel owns
+   its own empty state.
+
+   rate()/dur() are reused from the shipped dashboard widget
+   (dashboard/_network.html.twig) rather than duplicated here — same ×8
+   bytes→bits conversion, same output text, so the widget keeps rendering
+   identically after this work. Only the cumulative-bytes formatter for
+   topClients is new, since the widget has no such field. #}
+{% import 'dashboard/_network.html.twig' as net %}
+
+{% macro bytes(total) %}
+  {%- if total is null -%}—
+  {%- elseif total >= 1099511627776 -%}{{ (total / 1099511627776)|round(2) }} TiB
+  {%- elseif total >= 1073741824 -%}{{ (total / 1073741824)|round(1) }} GiB
+  {%- elseif total >= 1048576 -%}{{ (total / 1048576)|round }} MiB
+  {%- else -%}{{ (total / 1024)|round }} KiB
+  {%- endif -%}
+{% endmacro %}
+
+{% import _self as f %}
+
+{% if live is null %}
+  <div class="card">
+    <div class="card-body">
+      <div class="empty">
+        <p class="empty-title">{{ 'unifi.unreachable'|trans }}</p>
+        <div class="empty-action">
+          <button type="button" class="btn btn-primary" data-dash-retry>{{ 'unifi.retry'|trans }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% else %}
+
+{# ── Tile row ── #}
+<div class="row row-deck row-cards mb-3">
+
+  <div class="col-6 col-lg-3 col-xxl">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="text-secondary small">{{ 'unifi.tiles.wan'|trans }}</div>
+        <div class="h1 mb-0 d-flex align-items-center">
+          {% if live.wan is null %}—{% else %}
+            <span class="status-dot {{ live.wan.status == 'ok' ? 'status-dot-animated bg-green' : 'bg-red' }} me-2"></span>
+            <span class="font-monospace fs-3">{{ live.wan.ip ?? '—' }}</span>
+          {% endif %}
+        </div>
+        {% if live.wan is not null %}
+          {# isp_name gives the reference dashboard's "AT&T Internet · 3 ms" line
+             for free — it's in a payload already being parsed. #}
+          <div class="text-secondary small text-truncate">
+            {{ live.wan.ispName ?? '' }}
+            {%- if live.wan.latencyMs is not null %} · {{ live.wan.latencyMs }} ms {{ 'unifi.tiles.latency'|trans }}{% endif -%}
+            {%- if live.wan.drops %} · {{ live.wan.drops }} {{ 'unifi.tiles.drops'|trans }}{% endif -%}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3 col-xxl">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="text-secondary small">{{ 'unifi.tiles.cpu'|trans }}</div>
+        <div class="h1 mb-1">{{ (live.gateway is null or live.gateway.cpuPercent is null) ? '—' : live.gateway.cpuPercent|round ~ '%' }}</div>
+        {% if live.gateway is not null and live.gateway.cpuPercent is not null %}
+          <div class="progress progress-sm">
+            <div class="progress-bar {{ live.gateway.cpuPercent >= 80 ? 'bg-red' : 'bg-primary' }}"
+                 style="width: {{ min(live.gateway.cpuPercent, 100) }}%"></div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3 col-xxl">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="text-secondary small">{{ 'unifi.tiles.memory'|trans }}</div>
+        <div class="h1 mb-1">{{ (live.gateway is null or live.gateway.memPercent is null) ? '—' : live.gateway.memPercent|round ~ '%' }}</div>
+        {% if live.gateway is not null and live.gateway.memPercent is not null %}
+          <div class="progress progress-sm">
+            <div class="progress-bar {{ live.gateway.memPercent >= 90 ? 'bg-red' : 'bg-primary' }}"
+                 style="width: {{ min(live.gateway.memPercent, 100) }}%"></div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3 col-xxl">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="text-secondary small">{{ 'unifi.tiles.clients'|trans }}</div>
+        <div class="h1 mb-0">{{ live.clients is null ? '—' : live.clients.total }}</div>
+        {% if live.clients is not null %}
+          <div class="text-secondary small">
+            {{ live.clients.wired ?? 0 }} {{ 'unifi.tiles.wired'|trans }} ·
+            {{ live.clients.wireless ?? 0 }} {{ 'unifi.tiles.wireless'|trans }}
+            {%- if live.clients.guest %} · {{ live.clients.guest }} {{ 'unifi.tiles.guest'|trans }}{% endif -%}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4 col-xxl">
+    <div class="card card-sm">
+      <div class="card-body">
+        <div class="text-secondary small">{{ 'unifi.tiles.throughput'|trans }}</div>
+        <div class="h1 mb-0">
+          ↓ {% if live.wan is not null and live.wan.downBps is not null %}{{ net.rate(live.wan.downBps) }}{% else %}—{% endif %}
+          <span class="text-secondary">/</span>
+          ↑ {% if live.wan is not null and live.wan.upBps is not null %}{{ net.rate(live.wan.upBps) }}{% else %}—{% endif %}
+        </div>
+        <div class="text-secondary small">
+          {{ 'unifi.infra.uptime'|trans }}
+          {% if live.wan is not null and live.wan.uptimeSeconds is not null %}{{ net.dur(live.wan.uptimeSeconds) }}{% else %}—{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="row row-deck row-cards">
+
+  {# ── Wireless: SSID x band x AP ── #}
+  <div class="col-12 col-xl-6">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">{{ 'unifi.clients.wireless'|trans }}</h3></div>
+      {% if live.wireless %}
+        <div class="table-responsive">
+          <table class="table table-sm table-vcenter card-table">
+            <thead>
+              <tr>
+                <th>{{ 'unifi.clients.ssid'|trans }}</th>
+                <th>{{ 'unifi.clients.band'|trans }}</th>
+                <th>{{ 'unifi.clients.access_point'|trans }}</th>
+                <th>{{ 'unifi.tiles.clients'|trans }}</th>
+                <th>{{ 'unifi.clients.avg_signal'|trans }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for w in live.wireless %}
+                <tr>
+                  <td class="text-truncate">{{ w.ssid }}</td>
+                  <td>{{ w.band ?? '—' }}</td>
+                  <td class="text-truncate">{{ w.ap ?? '—' }}</td>
+                  <td>{{ w.clients }}</td>
+                  <td>
+                    {% if w.avgSignalDbm is null %}—{% else %}
+                      <span class="badge {{ w.avgSignalDbm >= -60 ? 'bg-green-lt' : (w.avgSignalDbm >= -72 ? 'bg-yellow-lt' : 'bg-red-lt') }}">
+                        {{ w.avgSignalDbm }} dBm
+                      </span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body"><div class="empty"><p class="empty-title">{{ 'unifi.empty'|trans }}</p></div></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Live talkers ── #}
+  <div class="col-12 col-xl-6">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">{{ 'unifi.clients.talkers'|trans }}</h3></div>
+      {% if live.talkers %}
+        {# The list is already sorted descending by the reader, so the first row
+           is the peak and every bar is relative to it. Guarded against a zero
+           peak below — mapTalkers only emits rows with bps > 0, but the guard
+           costs nothing and keeps this panel safe if that invariant ever moves. #}
+        {% set peak = live.talkers|first.bps %}
+        <div class="table-responsive">
+          <table class="table table-sm table-vcenter card-table">
+            <tbody>
+              {% for t in live.talkers %}
+                <tr>
+                  <td class="text-truncate">{{ t.name }}</td>
+                  <td style="width:45%">
+                    <div class="progress progress-sm">
+                      <div class="progress-bar bg-primary"
+                           style="width: {{ peak > 0 ? (t.bps / peak * 100)|round : 0 }}%"></div>
+                    </div>
+                  </td>
+                  <td class="text-end text-nowrap">{{ net.rate(t.bps) }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body"><div class="empty"><p class="empty-title">{{ 'unifi.empty'|trans }}</p></div></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Top clients by total bytes ── #}
+  <div class="col-12 col-xl-6">
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">{{ 'unifi.clients.top'|trans }}</h3></div>
+      {% if live.topClients %}
+        {# Same guard as the talkers panel: peak is the first (largest) row,
+           and the division is guarded against a zero peak. #}
+        {% set peakTotal = live.topClients|first.bytes %}
+        <div class="table-responsive">
+          <table class="table table-sm table-vcenter card-table">
+            <tbody>
+              {% for c in live.topClients %}
+                <tr>
+                  <td class="text-truncate">{{ c.name }}</td>
+                  <td style="width:45%">
+                    <div class="progress progress-sm">
+                      <div class="progress-bar bg-azure"
+                           style="width: {{ peakTotal > 0 ? (c.bytes / peakTotal * 100)|round : 0 }}%"></div>
+                    </div>
+                  </td>
+                  <td class="text-end text-nowrap">{{ f.bytes(c.bytes) }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body"><div class="empty"><p class="empty-title">{{ 'unifi.empty'|trans }}</p></div></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── DHCP reservations ── #}
+  <div class="col-12 col-xl-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">{{ 'unifi.clients.reservations'|trans }}</h3>
+        {% if live.reservations is not null %}
+          <div class="card-subtitle ms-auto text-secondary small">
+            {{ 'unifi.clients.reservations_summary'|trans({
+                 total: live.reservations.total,
+                 mismatched: live.reservations.mismatched
+               }) }}
+          </div>
+        {% endif %}
+      </div>
+      {% if live.reservations is not null and live.reservations.rows %}
+        <div class="table-responsive">
+          <table class="table table-sm table-vcenter card-table">
+            <thead>
+              <tr>
+                <th>{{ 'unifi.clients.device'|trans }}</th>
+                <th>{{ 'unifi.clients.reserved_ip'|trans }}</th>
+                <th>{{ 'unifi.clients.live_ip'|trans }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in live.reservations.rows %}
+                <tr>
+                  <td class="text-truncate">{{ r.name }}</td>
+                  <td class="font-monospace">{{ r.reservedIp ?? '—' }}</td>
+                  <td class="font-monospace">{{ r.liveIp ?? '—' }}</td>
+                  <td>
+                    <span class="badge {{ r.status == 'mismatch' ? 'bg-red-lt' : (r.status == 'offline' ? 'bg-secondary-lt' : 'bg-green-lt') }}">
+                      {{ ('unifi.clients.status_' ~ r.status)|trans }}
+                    </span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body"><div class="empty"><p class="empty-title">{{ 'unifi.empty'|trans }}</p></div></div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endif %}

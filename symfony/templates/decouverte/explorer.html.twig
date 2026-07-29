@@ -136,6 +136,24 @@
     .explorer-layout { flex-direction: column !important; }
     .explorer-sidebar { width: 100% !important; }
   }
+
+  /* ── Touch devices: the watchlist star is hover-only and unreachable on
+     touch (responsive audit 2026-06-29) — keep it always visible with a
+     bigger hit area. Desktop hover behaviour unchanged. */
+  @media (hover: none) {
+    .ex-card .wl-star { opacity: 1; width: 32px; height: 32px; }
+    .ex-card .wl-star svg { width: 16px; height: 16px; }
+  }
+
+  /* ── Mobile/tablet readability floor (responsive audit 2026-06-29) ──
+     Floor sub-11px text at 11px (.6875rem) below the lg breakpoint;
+     desktop (≥992px) keeps the original sizes. */
+  @media (max-width: 991.98px) {
+    .ex-card .overlay .sub,
+    .ex-card .badge-type,
+    .ex-card .badge-lib,
+    .ex-card .badge-vote { font-size: .6875rem; }
+  }
 </style>
 
 <div class="container-xl">
@@ -251,48 +269,6 @@
   </div>
 </div>
 
-<!-- Explorer detail modal -->
-<div class="modal modal-blur fade" id="ex-detail-modal" tabindex="-1" style="z-index:1060;">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content" style="background:var(--tblr-bg-surface); overflow:hidden;">
-      <div class="modal-body p-0">
-        <div id="ex-detail-loading" class="text-center py-5 text-secondary">
-          <div class="spinner-border spinner-border-sm me-2"></div> {{ 'decouverte.explorer.loading'|trans }}
-        </div>
-        <div id="ex-detail-content" style="display:none;"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<style>
-  .exd-header { position: relative; min-height: 180px; overflow: hidden; }
-  .exd-bg { position: absolute; inset: 0; background-size: cover; background-position: center; filter: blur(2px); transform: scale(1.05); }
-  .exd-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 20%, rgba(0,0,0,.85)); }
-  .exd-info { position: relative; z-index: 1; padding: 1.25rem; display: flex; gap: 1rem; align-items: flex-end; }
-  .exd-poster { width: 100px; border-radius: .4rem; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
-  .exd-meta { color: #fff; }
-  .exd-meta h3 { margin: 0 0 .2rem; font-size: 1.15rem; }
-  .exd-meta .sub { font-size: .8rem; color: rgba(255,255,255,.7); }
-  .exd-close {
-    position: absolute; top: .6rem; right: .6rem; z-index: 5;
-    width: 30px; height: 30px; border-radius: 50%;
-    background: rgba(0,0,0,.5); border: none; color: #fff;
-    display: flex; align-items: center; justify-content: center; cursor: pointer;
-  }
-  .exd-close:hover { background: rgba(0,0,0,.7); }
-  .exd-body { padding: 1rem 1.25rem; }
-  .exd-body .synopsis { color: var(--tblr-body-color); line-height: 1.6; margin-bottom: .75rem; font-size: .85rem; }
-  .exd-providers { display: flex; gap: .35rem; flex-wrap: wrap; margin-bottom: .75rem; }
-  .exd-providers img { width: 28px; height: 28px; border-radius: .25rem; }
-  .exd-cast { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
-  .exd-cast-item { text-align: center; width: 50px; }
-  .exd-cast-item img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
-  .exd-cast-item .name { font-size: .55rem; color: var(--tblr-muted); line-height: 1.1; margin-top: .15rem; }
-  .exd-trailer { border-radius: .4rem; overflow: hidden; margin-bottom: .75rem; }
-  .exd-actions { display: flex; gap: .4rem; flex-wrap: wrap; }
-</style>
-
 <script>
 (function() {
   function escHtml(s) { if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -352,7 +328,7 @@
     var vote = item.vote ? '<span class="badge-vote ' + vc + '">' + {{ ico.icon('star-filled', '', 14)|json_encode|raw }} + ' ' + escHtml(item.vote) + '</span>' : '';
     var wlClass = (window._prismarrWatchlist && window._prismarrWatchlist[item.type + '_' + item.id]) ? ' in-wl' : '';
     var wlStar = '<button type="button" class="wl-star' + wlClass + '" data-tmdb-id="' + escHtml(item.id) + '" data-tmdb-type="' + escHtml(item.type) + '" data-title="' + escHtml(item.title) + '" data-poster="' + escHtml(item.poster) + '" data-vote="' + escHtml(item.vote) + '" data-year="' + escHtml(item.year) + '"><svg viewBox="0 0 24 24" fill="' + (wlClass ? '#f59e0b' : 'none') + '" stroke="#f59e0b" stroke-width="2"><path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.6-6.2 4.6 2.4-7.4-6.2-4.5h7.6z"/></svg></button>';
-    return '<div class="ex-card" data-tmdb-id="' + escHtml(item.id) + '" data-type="' + escHtml(item.type) + '">'
+    return '<div class="ex-card" tabindex="0" role="button" data-kb-activate aria-label="' + escHtml(item.title || item.name || '') + '" data-tmdb-id="' + escHtml(item.id) + '" data-type="' + escHtml(item.type) + '">'
       + poster
       + '<span class="badge-type ' + escHtml(item.type) + '">' + (item.type === 'movie' ? EX_I18N.type_film : EX_I18N.type_series) + '</span>'
       + lib + wlStar + vote
@@ -387,163 +363,25 @@
     loadMoreWrap.style.display = 'none';
   }
 
-  // ── Detail modal ──
-  var detailModal = document.getElementById('ex-detail-modal');
-  var detailLoading = document.getElementById('ex-detail-loading');
-  var detailContent = document.getElementById('ex-detail-content');
-  var detailBackdrop = null;
-
-  function isOnExplorerPage() {
-    return document.getElementById('ex-detail-modal') !== null;
-  }
-
-  function openModal() {
-    if (!isOnExplorerPage()) return;
-    detailLoading.style.display = '';
-    detailContent.style.display = 'none';
-    detailContent.innerHTML = '';
-    detailModal.classList.add('show');
-    detailModal.style.display = 'block';
-    document.body.classList.add('modal-open');
-    if (!document.querySelector('.modal-backdrop.exd-backdrop')) {
-      detailBackdrop = document.createElement('div');
-      detailBackdrop.className = 'modal-backdrop fade show exd-backdrop';
-      document.body.appendChild(detailBackdrop);
-      detailBackdrop.addEventListener('click', closeModal);
-    }
-  }
-
-  function closeModal() {
-    if (!isOnExplorerPage()) return;
-    detailModal.classList.remove('show');
-    detailModal.style.display = 'none';
-    var bd = document.querySelector('.exd-backdrop');
-    if (bd) bd.remove();
-    if (!document.querySelector('.modal.show')) {
-      document.body.classList.remove('modal-open');
-    }
-    detailContent.querySelectorAll('iframe').forEach(function(f) { f.src = ''; });
-  }
-
-  detailModal.addEventListener('click', function(e) {
-    if (e.target === detailModal) closeModal();
-  });
-  document.addEventListener('keydown', function(e) {
-    if (!isOnExplorerPage()) return;
-    if (e.key === 'Escape' && detailModal.classList.contains('show')) closeModal();
-  });
-
-  function renderDetailModal(d) {
-    detailLoading.style.display = 'none';
-    detailContent.style.display = '';
-
-    var genres = (d.genres || []).join(', ');
-    var cast = (d.cast || []).slice(0, 6).map(function(c) {
-      var img = c.profile ? '<img src="' + escHtml(c.profile) + '">' : '<div style="width:42px;height:42px;border-radius:50%;background:var(--tblr-bg-surface-secondary);display:flex;align-items:center;justify-content:center;font-size:.7rem;">?</div>';
-      return '<div class="exd-cast-item">' + img + '<div class="name">' + escHtml(c.name) + '</div></div>';
-    }).join('');
-
-    var providers = '';
-    if (d.providers && d.providers.flatrate && d.providers.flatrate.length) {
-      providers = '<div class="exd-providers">' + d.providers.flatrate.map(function(p) {
-        return p.logo ? '<img src="' + escHtml(p.logo) + '" title="' + escHtml(p.name) + '">' : '';
-      }).join('') + '</div>';
-    }
-
-    var trailer = '';
-    if (d.trailer && d.trailer.key) {
-      trailer = '<div class="exd-trailer"><div class="ratio ratio-16x9"><iframe src="https://www.youtube.com/embed/' + escHtml(d.trailer.key) + '?rel=0&cc_lang_pref=fr&hl=fr" allowfullscreen></iframe></div></div>';
-    }
-
-    // Watchlist
-    var wlKey = d.type + '_' + d.id;
-    var isInWl = window._prismarrWatchlist && window._prismarrWatchlist[wlKey];
-
-    var html = '<div class="exd-header">'
-      + (d.backdrop ? '<div class="exd-bg" style="background-image:url(\'' + escHtml(d.backdrop) + '\')"></div>' : '')
-      + '<button class="exd-close" id="exd-close-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>'
-      + '<div class="exd-info">'
-      + (d.poster ? '<img class="exd-poster" src="' + escHtml(d.poster) + '">' : '')
-      + '<div class="exd-meta"><h3>' + escHtml(d.title) + '</h3>'
-      + '<div class="sub">' + escHtml(d.year) + (d.runtime ? ' · ' + escHtml(d.runtime) + ' min' : '') + (genres ? ' · ' + escHtml(genres) : '') + '</div>'
-      + (d.vote ? '<div class="sub">' + {{ ico.icon('star-filled', '', 14)|json_encode|raw }} + ' ' + escHtml(d.vote) + ' / 10</div>' : '')
-      + '</div></div></div>'
-      + '<div class="exd-body">';
-
-    if (d.overview) html += '<p class="synopsis">' + escHtml(d.overview) + '</p>';
-    html += providers;
-    if (cast) html += '<div class="exd-cast">' + cast + '</div>';
-    html += trailer;
-
-    html += '<div class="exd-actions">';
-    if (!d.in_library) {
-      html += '<button class="btn btn-primary btn-sm exd-add-btn" data-tmdb-id="' + escHtml(d.id) + '" data-type="' + escHtml(d.type) + '" data-title="' + escHtml(d.title) + '">' + (d.type === 'movie' ? EX_I18N.add_to_radarr : EX_I18N.add_to_sonarr) + '</button>';
-    } else {
-      var libUrl = (d.type === 'movie' ? '/medias/' + DEFAULT_RADARR_SLUG + '/films' : '/medias/' + DEFAULT_SONARR_SLUG + '/series') + (d.lib_id ? '?open=' + encodeURIComponent(d.lib_id) : '');
-      html += '<a href="' + escHtml(libUrl) + '" class="btn btn-success btn-sm">' + (d.type === 'movie' ? EX_I18N.view_movies : EX_I18N.view_series) + '</a>';
-    }
-    html += '<button class="btn btn-sm ' + (isInWl ? 'btn-warning' : 'btn-outline-warning') + ' exd-wl-btn" data-tmdb-id="' + escHtml(d.id) + '" data-type="' + escHtml(d.type) + '" data-title="' + escHtml(d.title) + '" data-poster-path="' + escHtml(d.poster_path) + '" data-vote="' + escHtml(d.vote) + '" data-year="' + escHtml(d.year) + '">'
-      + '<svg width="13" height="13" viewBox="0 0 24 24" fill="' + (isInWl ? '#fff' : 'none') + '" stroke="currentColor" stroke-width="2" class="me-1"><path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.6-6.2 4.6 2.4-7.4-6.2-4.5h7.6z"/></svg>'
-      + (isInWl ? EX_I18N.watchlist + ' ✓' : EX_I18N.watchlist) + '</button>';
-    html += '<a href="https://www.themoviedb.org/' + encodeURIComponent(d.type) + '/' + encodeURIComponent(d.id) + '" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">TMDb</a>';
-    if (d.imdb_id) html += '<a href="https://www.imdb.com/title/' + encodeURIComponent(d.imdb_id) + '" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">IMDb</a>';
-    html += '</div></div>';
-
-    detailContent.innerHTML = html;
-    document.getElementById('exd-close-btn').addEventListener('click', closeModal);
-  }
-
-  function openDetail(type, id) {
-    openModal();
-    fetch('/decouverte/detail/' + type + '/' + id, { credentials: 'same-origin' })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (d.error) { detailLoading.innerHTML = '<div class="alert alert-danger m-3">' + escHtml(d.error) + '</div>'; return; }
-        renderDetailModal(d);
-      })
-      .catch(function() { detailLoading.innerHTML = '<div class="alert alert-danger m-3">' + EX_I18N.network_error + '</div>'; });
-  }
-
-  // Click on card → local detail modal
+  // ── Card click → global quick-look modal ──
+  // The Explorer page now reuses the app-wide quick-look (_quicklook.html.twig)
+  // instead of its own modal: same rich detail (cast/providers/trailer),
+  // Add/Manage and watchlist, with far less code to maintain. Cards carry the
+  // TMDb id + type, which map straight to the quicklook/tmdb endpoint.
   document.addEventListener('click', function(e) {
-    if (!isOnExplorerPage()) return;
     if (e.target.closest('.wl-star')) return;
     var card = e.target.closest('.ex-card[data-tmdb-id]');
-    if (!card) return;
-    openDetail(card.dataset.type, card.dataset.tmdbId);
-  });
-
-  // Watchlist toggle from the modal
-  document.addEventListener('click', function(e) {
-    var btn = e.target.closest('.exd-wl-btn');
-    if (!btn) return;
-    e.stopImmediatePropagation();
-    var key = btn.dataset.type + '_' + btn.dataset.tmdbId;
-    fetch('/decouverte/watchlist/toggle', {
-      method: 'POST', credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tmdb_id: parseInt(btn.dataset.tmdbId), type: btn.dataset.type,
-        title: btn.dataset.title, poster_path: btn.dataset.posterPath || null,
-        vote: btn.dataset.vote ? parseFloat(btn.dataset.vote) : null,
-        year: btn.dataset.year ? parseInt(btn.dataset.year) : null
+    if (!card || !window.prismarrQl) return;
+    var type = card.dataset.type === 'movie' ? 'movie' : 'tv';
+    window.prismarrQl.open();
+    fetch('/tableau-de-bord/quicklook/tmdb/' + type + '/' + card.dataset.tmdbId, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+      .then(function(r) { return r.ok ? r.text() : ''; })
+      .then(function(html) {
+        var b = window.prismarrQl.body();
+        if (!b) return;
+        b.innerHTML = (html || '').trim() || '<div class="ql-error"></div>';
       })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      var added = d.action === 'added';
-      if (added) window._prismarrWatchlist[key] = true; else delete window._prismarrWatchlist[key];
-      btn.className = 'btn btn-sm ' + (added ? 'btn-warning' : 'btn-outline-warning') + ' exd-wl-btn';
-      btn.querySelector('svg').setAttribute('fill', added ? '#fff' : 'none');
-      var txt = btn.childNodes[btn.childNodes.length - 1];
-      txt.textContent = added ? EX_I18N.watchlist + ' ✓' : EX_I18N.watchlist;
-      // Sync stars in the grid
-      document.querySelectorAll('.wl-star[data-tmdb-id="' + btn.dataset.tmdbId + '"]').forEach(function(s) {
-        s.classList.toggle('in-wl', added);
-        s.querySelector('svg').setAttribute('fill', added ? '#f59e0b' : 'none');
-      });
-      if (window._prismarrToast) window._prismarrToast(added ? EX_I18N.wl_added : EX_I18N.wl_removed, added ? 'success' : 'info');
-    });
+      .catch(function() { window.prismarrQl.close(); });
   });
 
   // ── Type switch ──
@@ -774,42 +612,6 @@
         document.getElementById('ex-person-count').textContent = (n === 1 ? EX_I18N.titles_one : EX_I18N.titles_many).replace('42', n);
       });
   });
-  // ── Add to Radarr/Sonarr from the modal ──
-  document.addEventListener('click', function(e) {
-    var btn = e.target.closest('.exd-add-btn');
-    if (!btn) return;
-    e.stopPropagation();
-    var origText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>' + EX_I18N.resolving;
-    fetch('/decouverte/resolve/' + btn.dataset.type + '/' + btn.dataset.tmdbId, { credentials: 'same-origin' })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.error) {
-          btn.className = 'btn btn-danger btn-sm exd-add-btn';
-          btn.innerHTML = escHtml(data.error);
-          btn.disabled = false;
-          setTimeout(function() { btn.className = 'btn btn-primary btn-sm exd-add-btn'; btn.innerHTML = origText; }, 3000);
-          return;
-        }
-        closeModal();
-        setTimeout(function() {
-          var trigger = document.createElement('button');
-          trigger.setAttribute('data-quick-add', JSON.stringify(data));
-          trigger.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
-          document.body.appendChild(trigger);
-          trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-          setTimeout(function() { trigger.remove(); }, 100);
-        }, 300);
-      })
-      .catch(function() {
-        btn.className = 'btn btn-danger btn-sm exd-add-btn';
-        btn.innerHTML = EX_I18N.network_error;
-        btn.disabled = false;
-        setTimeout(function() { btn.className = 'btn btn-primary btn-sm exd-add-btn'; btn.innerHTML = origText; }, 3000);
-      });
-  });
-
   // ── Watchlist ──
   window._prismarrWatchlist = window._prismarrWatchlist || {};
   fetch('/decouverte/watchlist/status', { credentials: 'same-origin' })

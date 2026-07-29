@@ -91,6 +91,12 @@ COPY symfony/ .
 RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction \
     && php bin/console importmap:install --no-interaction \
     && php bin/console asset-map:compile --no-interaction \
+    # Warm the prod cache (compiled container, routes, twig, serializer) at
+    # build time — without this the first request after every container
+    # (re)start pays the 1-3 s compile. Env vars stay runtime-resolved
+    # placeholders in the compiled container, so the boot-generated
+    # APP_SECRET / user DATABASE_URL don't invalidate the warmed cache.
+    && php bin/console cache:warmup --no-interaction \
     && apk del --purge .build-deps
 
 # Permissions

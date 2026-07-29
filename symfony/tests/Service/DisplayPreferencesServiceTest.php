@@ -20,7 +20,7 @@ class DisplayPreferencesServiceTest extends TestCase
         $config->method('get')
             ->willReturnCallback(fn(string $key) => $stored[$key] ?? null);
 
-        return new DisplayPreferencesService($config);
+        return new DisplayPreferencesService($config, new \App\Service\ThemeService($config));
     }
 
     public function testImplementsResetInterface(): void
@@ -40,7 +40,7 @@ class DisplayPreferencesServiceTest extends TestCase
         $this->assertSame(date_default_timezone_get(), $prefs->getTimezone());
         $this->assertSame('fr', $prefs->getDateFormat());
         $this->assertSame('24h', $prefs->getTimeFormat());
-        $this->assertSame('indigo', $prefs->getThemeColor());
+        $this->assertSame('theme_default', $prefs->getThemeColor());
         $this->assertSame('#6366f1', $prefs->getThemeColorHex());
         $this->assertSame(2, $prefs->getQbitRefreshSeconds());
         $this->assertSame('comfortable', $prefs->getUiDensity());
@@ -96,7 +96,7 @@ class DisplayPreferencesServiceTest extends TestCase
         $config = $this->createMock(ConfigService::class);
         $config->method('get')->willReturnOnConsecutiveCalls('films', 'series');
 
-        $prefs = new DisplayPreferencesService($config);
+        $prefs = new DisplayPreferencesService($config, new \App\Service\ThemeService($config));
         $this->assertSame('films', $prefs->getHomePage());
 
         // Without reset the cached 'films' would be returned.

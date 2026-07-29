@@ -24,6 +24,7 @@ class AdminSettingsControllerTest extends TestCase
         HealthService $health,
         ?ServiceInstanceProvider $instances = null,
         array $services = [],
+        ?\App\Service\DashboardLayoutService $layout = null,
     ): AdminSettingsController {
         $appVersion = $this->createMock(\App\Service\AppVersion::class);
         $appVersion->method('current')->willReturn('test');
@@ -39,6 +40,7 @@ class AdminSettingsControllerTest extends TestCase
             $this->createMock(LoggerInterface::class),
             $this->createMock(\Symfony\Component\Cache\Adapter\AdapterInterface::class),
             $appVersion,
+            $layout ?? new \App\Service\DashboardLayoutService($config),
             projectDir: sys_get_temp_dir(),
             environment: 'test',
         );
@@ -662,5 +664,68 @@ class AdminSettingsControllerTest extends TestCase
 
         $response = $this->controller($settings, $config, $health, $instances)->import($request);
         $this->assertSame(302, $response->getStatusCode(), 'v1 imports must still redirect cleanly');
+    }
+
+    public function testDashboardLayoutEndpointPersistsOrderAndHidden(): void
+    {
+        $saved = [];
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->method('setMany')->willReturnCallback(function (array $p) use (&$saved) { $saved = $p; });
+        $config = $this->createMock(ConfigService::class);
+        $config->expects(self::once())->method('invalidate');
+        $health = $this->createMock(HealthService::class);
+        $controller = $this->controller($settings, $config, $health);
+
+        $request = Request::create('/admin/settings/dashboard-layout', 'POST', [
+            '_csrf_token' => 'x',
+            'order'       => 'recent,plex',
+            'hidden'      => 'health,trending',
+        ]);
+        $request->setSession(new \Symfony\Component\HttpFoundation\Session\Session(
+            new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage()
+        ));
+
+        $response = $controller->dashboardLayout($request);
+
+        self::assertInstanceOf(JsonResponse::class, $response);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame(['ok' => true], json_decode($response->getContent(), true));
+        self::assertSame('recent,plex', $saved['dashboard_section_order']);
+        self::assertSame('1', $saved['dashboard_hide_health']);
+        self::assertSame('1', $saved['dashboard_hide_trending']);
+        self::assertNull($saved['dashboard_hide_plex']);
+    }
+
+    public function testSavePersistsDashboardOrderAndHiddenFlags(): void
+    {
+        $saved = [];
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->method('setMany')->willReturnCallback(function (array $p) use (&$saved) { $saved = $p; });
+        $config = $this->createMock(ConfigService::class);
+        $health = $this->createMock(HealthService::class);
+
+        $controller = $this->controller($settings, $config, $health);
+
+        $request = Request::create('/admin/settings', 'POST', [
+            '_csrf_token'             => 'x',
+            'dashboard_section_order' => 'recent,plex,upcoming,bogus',
+            // health checkbox omitted => hidden; others present => visible
+            'dashboard_visible_upcoming'  => '1',
+            'dashboard_visible_requests'  => '1',
+            'dashboard_visible_plex'      => '1',
+            'dashboard_visible_watchlist' => '1',
+            'dashboard_visible_trending'  => '1',
+            'dashboard_visible_recent'    => '1',
+        ]);
+        $request->setSession(new \Symfony\Component\HttpFoundation\Session\Session(
+            new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage()
+        ));
+
+        $controller->index($request);
+
+        // Unknown 'bogus' dropped; order preserved; missing keys NOT appended on save.
+        self::assertSame('recent,plex,upcoming', $saved['dashboard_section_order']);
+        self::assertSame('1', $saved['dashboard_hide_health']);   // unchecked => hidden
+        self::assertNull($saved['dashboard_hide_plex']);          // checked => visible
     }
 }

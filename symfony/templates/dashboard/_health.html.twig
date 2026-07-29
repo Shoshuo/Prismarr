@@ -2,22 +2,13 @@
    DashboardController::widgetHealth into the card's [data-dash-body]. Only
    configured services get a chip (issue #9); none → a neutral message.
    v1.1.0 — services_health is a list: radarr/sonarr expand to one chip per
-   enabled instance (chip.name), colour keyed by chip.id (the service type). #}
+   enabled instance (chip.name), color pre-set in HealthService::chips(). #}
 {% if services_health is empty %}
   <div class="text-center text-secondary py-3">
     {{ 'dashboard.health.none_configured'|trans }}
   </div>
 {% else %}
   <div class="service-grid">
-    {% set service_colors = {
-      radarr:      '#FFC230',
-      sonarr:      '#00CCFF',
-      prowlarr:    '#E88D1A',
-      jellyseerr:  '#a259ff',
-      qbittorrent: '#2f67ba',
-      tmdb:        '#01B4E4',
-      tautulli:    '#e5a00d',
-    } %}
     {% set status_dot = {
       up:        'is-up',
       slow:      'is-slow',
@@ -29,7 +20,7 @@
       <div class="service-chip">
         <span class="service-chip-dot {{ status_dot[chip.status]|default('is-unk') }}"></span>
         <div class="flex-fill">
-          <div class="service-chip-name" style="color: {{ service_colors[chip.id]|default('#888') }};">{{ chip.name }}</div>
+          <div class="service-chip-name" style="color: {{ chip.color|default('#888') }};">{{ chip.name }}</div>
           <div class="service-chip-state">
             {{ ('dashboard.health.status_' ~ chip.status)|trans }}{% if chip.latencyMs is not null %} · {{ chip.latencyMs }} ms{% endif %}
           </div>

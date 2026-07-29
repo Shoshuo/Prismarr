@@ -1,0 +1,12 @@
+{# Shared filter-pill row. Params:
+     pills : list of { filter: string(data-filter value), label: string(translated),
+                       hue?: string(raw colour or Tabler var; omit → theme primary),
+                       count?: string|int(optional badge),
+                       title?: string(optional native tooltip) }
+     active     : the currently-active filter value
+     fill       : bool (default false) — add .flex-fill so pills split the row evenly
+     btn_class  : extra classes on each pill (default '')
+   The page's own JS handles clicks (delegated on .filter-pill, read data-filter). #}
+{% for p in pills %}
+  <button type="button" class="filter-pill{{ fill|default(false) ? ' flex-fill' }}{{ p.filter == active ? ' active' }}{{ btn_class is defined and btn_class ? ' ' ~ btn_class }}" data-filter="{{ p.filter }}"{% if p.title is defined and p.title %} title="{{ p.title }}"{% endif %}{% if p.hue is defined and p.hue %} style="--pill-hue:{{ p.hue }}"{% endif %}>{{ p.label }}{% if p.count is defined and p.count is not null %} <span class="badge">{{ p.count }}</span>{% endif %}</button>
+{% endfor %}

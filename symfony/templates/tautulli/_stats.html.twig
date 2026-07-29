@@ -2,7 +2,10 @@
 {% import '_icons.html.twig' as ico %}
 {% set metric = metric|default('plays') %}
 {% if stats.topMovies is empty and stats.topShows is empty and stats.topUsers is empty and stats.topPlatforms is empty and stats.popularMovies is empty and stats.popularShows is empty and stats.mostConcurrent is empty %}
-  <div class="text-center text-secondary py-4">{{ 'tautulli.stats.empty'|trans }}</div>
+  <div class="empty py-4">
+    <div class="empty-icon">{{ ico.icon('activity', '', 32) }}</div>
+    <p class="empty-subtitle text-secondary mb-0">{{ 'tautulli.stats.empty'|trans }}</p>
+  </div>
 {% else %}
 <div class="row row-cards">
   {# Most-watched movies + shows: clickable poster tiles #}

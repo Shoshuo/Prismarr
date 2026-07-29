@@ -1,0 +1,78 @@
+name: GHCR
+
+# Build the FrankenPHP image and publish it to the GitHub Container Registry
+# (ghcr.io/<owner>/prismarr) for self-hosted testing — e.g. on Unraid. Uses
+# the built-in GITHUB_TOKEN, so no external registry credentials are needed
+# (unlike the Docker Hub release/beta workflows).
+#
+# amd64 only: Unraid is x86_64 and a single-arch build keeps this fast. Add
+# linux/arm64 back to `platforms` (with setup-qemu-action) if you need it.
+#
+# After the first successful run the package is created PRIVATE — make it
+# public once at:
+#   https://github.com/users/<owner>/packages/container/prismarr/settings
+# so Unraid can pull ghcr.io/<owner>/prismarr:latest without a login.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  publish:
+    name: Build and push to GHCR (amd64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Resolve lowercase image name
+        id: image
+        # GHCR requires the namespace to be lowercase.
+        run: echo "name=ghcr.io/$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/prismarr" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve tags + version
+        id: meta
+        # A manual dispatch from a NON-main branch publishes only the :beta tag
+        # for self-hosted testing (e.g. Unraid), leaving the stable :latest
+        # untouched. Pushes to main (or a dispatch on main) keep publishing
+        # :latest + the commit-sha tag as before.
+        run: |
+          IMG="${{ steps.image.outputs.name }}"
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "tags=${IMG}:latest,${IMG}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+            echo "version=1.1.0-tautulli" >> "$GITHUB_OUTPUT"
+          else
+            echo "tags=${IMG}:beta" >> "$GITHUB_OUTPUT"
+            echo "version=beta-${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/frankenphp/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            PRISMARR_VERSION=${{ steps.meta.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false

@@ -448,6 +448,52 @@
   .service-chip-dot.is-down { background: #ef4444; }
   .service-chip-name { font-size: .82rem; font-weight: 500; line-height: 1; }
   .service-chip-state { font-size: .68rem; color: var(--tblr-secondary); margin-top: .15rem; }
+  /* ── Unraid server widget ──────────────────────────────────────── */
+  .server-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: .6rem;
+  }
+  .server-tile {
+    padding: .7rem .8rem; border-radius: 8px;
+    background: var(--tblr-bg-surface-secondary);
+    border: 1px solid var(--tblr-border-color);
+    min-width: 0;
+  }
+  .server-tile--wide { grid-column: 1 / -1; }
+  .server-tile-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .45rem; }
+  .server-tile-label { font-size: .82rem; font-weight: 600; }
+  .server-tile-sub { font-size: .68rem; color: var(--tblr-secondary); margin-top: .3rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .server-state-badge {
+    font-size: .62rem; font-weight: 700; padding: .12rem .45rem; border-radius: 999px;
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  .server-state-badge.is-ok { background: rgba(34,197,94,.15); color: #22c55e; }
+  .server-state-badge.is-idle { background: rgba(148,163,184,.18); color: var(--tblr-secondary); }
+  .server-state-badge.is-ko { background: rgba(239,68,68,.15); color: #ef4444; }
+  .server-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--tblr-border-color); overflow: hidden; }
+  .server-bar-fill { height: 100%; border-radius: 3px; background: var(--tblr-primary); transition: width .3s ease; }
+  .server-bar-fill.is-hot { background: #ef4444; }
+  .server-gauge-row { display: flex; align-items: center; gap: .5rem; margin-top: .35rem; }
+  .server-gauge-label { font-size: .66rem; color: var(--tblr-secondary); min-width: 2.2rem; white-space: nowrap; flex-shrink: 0; }
+  .server-gauge-value { font-size: .68rem; font-weight: 600; width: 2.4rem; text-align: right; flex-shrink: 0; }
+  .server-chips { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .35rem; }
+  .server-chip-muted {
+    font-size: .62rem; padding: .1rem .4rem; border-radius: 4px;
+    background: var(--tblr-bg-surface); border: 1px solid var(--tblr-border-color);
+    color: var(--tblr-secondary);
+  }
+  .server-chip-ok {
+    font-size: .62rem; padding: .1rem .4rem; border-radius: 4px;
+    background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.35);
+    color: #22c55e;
+  }
+  .server-disk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .5rem; }
+  .server-disk { min-width: 0; }
+  .server-disk-name { font-size: .68rem; font-weight: 600; display: flex; justify-content: space-between; gap: .3rem; margin-bottom: .25rem; }
+  .server-disk-temp { color: var(--tblr-secondary); font-weight: 500; }
+  .server-disk-temp.is-hot { color: #ef4444; font-weight: 700; }
+  .server-disk-sub { font-size: .62rem; color: var(--tblr-secondary); margin-top: .2rem; }
   /* Async widget hydration skeletons (#27) */
   .dash-skel { pointer-events: none; }
   .dash-skel .poster-tile-wrap { aspect-ratio: 2/3; }
@@ -461,43 +507,92 @@
   .dash-skel-line { height: .7rem; width: 80%; margin-top: .45rem; border-radius: .25rem; }
   @keyframes dash-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 
-  /* ── Quick-look modal ───────────────────────────────────────────── */
-  .ql-modal-content { background: var(--tblr-bg-surface); overflow: hidden; border-radius: 14px; }
-  .ql-loading { padding: 4rem; text-align: center; }
-  .ql-backdrop {
-    position: relative; min-height: 180px;
-    background-size: cover; background-position: center 25%;
-    background-color: var(--tblr-bg-surface-secondary);
+  /* ── Houndarr stat strip ───────────────────────────────────────── */
+  .houndarr-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: .75rem; }
+  .houndarr-stat { background: var(--tblr-bg-surface-secondary, rgba(128,128,128,.06)); border-radius: .5rem; padding: .6rem .75rem; text-align: center; }
+  .houndarr-stat-value { font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
+  .houndarr-stat--eligible .houndarr-stat-value { color: var(--tblr-primary); }
+  .houndarr-stat-label { font-size: .72rem; color: var(--tblr-secondary); text-transform: uppercase; letter-spacing: .04em; }
+  .houndarr-updated { margin-top: .5rem; font-size: .72rem; color: var(--tblr-secondary); text-align: right; }
+  .houndarr-bar { display: flex; height: .5rem; border-radius: .25rem; overflow: hidden; margin-top: .75rem; background: var(--tblr-bg-surface-secondary, rgba(128,128,128,.06)); }
+  .houndarr-bar-seg { height: 100%; }
+  .houndarr-legend { display: flex; flex-wrap: wrap; gap: .35rem 1rem; margin-top: .4rem; font-size: .72rem; color: var(--tblr-secondary); }
+  .houndarr-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: .3rem; }
+  .houndarr-insts { margin-top: .75rem; }
+  .houndarr-inst { display: flex; align-items: center; gap: .5rem; font-size: .8rem; padding: .35rem 0; border-top: 1px solid var(--tblr-border-color-translucent, rgba(128,128,128,.15)); }
+  .houndarr-inst-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+  .houndarr-inst-name { font-weight: 600; }
+  .houndarr-inst-counts { margin-left: auto; display: flex; gap: .75rem; color: var(--tblr-secondary); text-align: right; }
+  .houndarr-note { margin-top: .35rem; font-size: .7rem; color: var(--tblr-secondary); }
+
+  /* ── UniFi network widget ──────────────────────────────────────── */
+  .net-rate { font-size: 1.35rem; font-weight: 700; line-height: 1.2; margin-top: .1rem; }
+  .net-chart { display: block; width: 100%; height: 120px; margin-top: .35rem; }
+  .net-chart-fill { fill: rgba(var(--tblr-primary-rgb, 99,102,241), .22); stroke: none; }
+  .net-chart-down { fill: none; stroke: var(--tblr-primary); stroke-width: 1.5; }
+  /* Upload is a fixed sky blue (not the theme primary): green-primary themes
+     otherwise render both series in near-identical greens (live-verified). */
+  .net-chart-up { fill: none; stroke: #38bdf8; stroke-width: 1.5; }
+  .net-chart-axis { display: flex; justify-content: space-between; font-size: .62rem; color: var(--tblr-secondary); margin-top: .2rem; }
+  .net-legend { display: flex; gap: 1rem; font-size: .66rem; color: var(--tblr-secondary); margin-top: .3rem; }
+  .net-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: .3rem; }
+  .server-chip-ko {
+    font-size: .62rem; padding: .1rem .4rem; border-radius: 4px;
+    background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.35);
+    color: #ef4444;
   }
-  .ql-backdrop-fade {
-    position: absolute; inset: 0;
-    background: linear-gradient(to top, var(--tblr-bg-surface) 2%, rgba(0,0,0,.15) 60%, rgba(0,0,0,.35) 100%);
+
+  /* ── Edit-mode layout toolbar ──────────────────────────────────── */
+  .dash-layout-toolbar { display: flex; gap: .5rem; justify-content: flex-end; margin-bottom: 1rem; }
+  .dashboard-scope.is-editing [data-section-key] { position: relative; outline: 2px dashed rgba(var(--tblr-primary-rgb), .5); outline-offset: 4px; border-radius: 12px; cursor: grab; }
+  .dashboard-scope.is-editing [data-section-key].dragging { opacity: .5; }
+  .section-edit-overlay { position: absolute; top: .5rem; right: .5rem; z-index: 5; display: flex; gap: .35rem; }
+  .section-edit-overlay button { background: rgba(0,0,0,.7); color: #fff; border: 0; border-radius: 6px; padding: .25rem .5rem; font-size: .72rem; cursor: pointer; }
+  .dashboard-scope:not(.is-editing) .section-edit-overlay { display: none; }
+
+  /* ── Mobile/tablet readability floor (responsive audit 2026-06-29) ────
+     Floor sub-11px dashboard text at 11px (.6875rem) below the lg
+     breakpoint. Same selectors as above so specificity matches; desktop
+     (≥992px) keeps the original sizes. */
+  @media (max-width: 991.98px) {
+    .mini-cal-dow,
+    .mini-cal-more,
+    .mini-cal-item-type,
+    .mini-cal-item-meta,
+    .dash-date-time,
+    .dash-badge-inline,
+    .poster-tile-sub,
+    .poster-tile-badge,
+    .service-chip-state,
+    .server-tile-sub,
+    .server-state-badge,
+    .server-gauge-label,
+    .server-gauge-value,
+    .server-chip-muted,
+    .server-chip-ok,
+    .server-chip-ko,
+    .server-disk-name,
+    .server-disk-sub,
+    .net-chart-axis,
+    .net-legend { font-size: .6875rem; }
   }
-  .ql-close { position: absolute; top: .75rem; right: .75rem; z-index: 2; filter: drop-shadow(0 0 2px rgba(0,0,0,.8)); }
-  .ql-body { display: flex; gap: 1.25rem; padding: 0 1.5rem 1.5rem; margin-top: -60px; position: relative; z-index: 1; }
-  @media (max-width: 576px) { .ql-body { flex-direction: column; align-items: center; text-align: center; } }
-  .ql-poster { width: 120px; aspect-ratio: 2/3; object-fit: cover; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.45); flex-shrink: 0; }
-  .ql-poster-empty { display: flex; align-items: center; justify-content: center; background: var(--tblr-bg-surface-secondary); color: var(--tblr-secondary); }
-  .ql-main { flex: 1; min-width: 0; padding-top: 64px; }
-  @media (max-width: 576px) { .ql-main { padding-top: .5rem; } }
-  .ql-title { font-size: 1.4rem; font-weight: 700; margin: 0 0 .5rem; color: var(--tblr-body-color); }
-  .ql-year { font-weight: 400; color: var(--tblr-secondary); }
-  .ql-meta { display: flex; flex-wrap: wrap; gap: .5rem .7rem; align-items: center; margin-bottom: .85rem; font-size: .8rem; color: var(--tblr-secondary); }
-  .ql-meta .ql-rating { color: #f59e0b; font-weight: 600; }
-  .ql-chip { padding: .12rem .5rem; background: rgba(148,163,184,.18); border-radius: 4px; font-size: .7rem; }
-  .ql-badge { padding: .15rem .55rem; border-radius: 999px; font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-  .ql-badge.is-downloaded { background: rgba(34,197,94,.18); color: #22c55e; }
-  .ql-badge.is-monitored { background: rgba(99,102,241,.18); color: #6366f1; }
-  .ql-badge.is-missing { background: rgba(245,158,11,.18); color: #f59e0b; }
-  .ql-overview { font-size: .88rem; line-height: 1.55; color: var(--tblr-body-color); margin-bottom: 1rem; }
-  .ql-action {
-    display: inline-flex; align-items: center; gap: .4rem;
-    padding: .5rem 1rem; border-radius: 8px;
-    background: var(--tblr-primary); color: #fff; font-weight: 600; font-size: .85rem;
-    text-decoration: none !important;
+
+  /* ── Tap targets (responsive audit 2026-06-29) ────────────────────────
+     The small header/section arrow links measure ~26px tall; on touch
+     devices give them a ≥44px hit area. Coarse-pointer only, desktop
+     rendering unchanged. */
+  @media (pointer: coarse) {
+    .dash-action-btn,
+    .row-section-link { min-height: 44px; padding-top: .3rem; padding-bottom: .3rem; }
   }
-  .ql-action:hover { filter: brightness(1.08); color: #fff; }
-  .ql-error { padding: 3rem 1.5rem; text-align: center; color: var(--tblr-secondary); }
+
+  /* Tablet 2-column dashboard was tried (responsive audit 2026-06-29) but
+     reverted after live verification: dashboard section order is
+     admin-configurable, so a half-width section (health / houndarr / network)
+     with no adjacent half-width neighbour left a large empty column beside it
+     — e.g. Services health next to an empty cell — which looked worse than
+     the single-column stack. Sections stay full-width at every breakpoint. */
+
 </style>
 {% include 'dashboard/_plex_styles.html.twig' %}
 {% endblock %}
@@ -513,6 +608,17 @@
 
 <div class="page-body dashboard-scope">
   <div class="container-xl">
+
+    {% if is_granted('ROLE_ADMIN') %}
+    <div class="dash-layout-toolbar"
+         data-layout-url="{{ path('admin_settings_dashboard_layout') }}"
+         data-layout-csrf="{{ csrf_token('admin_dashboard_layout') }}"
+         data-hide-label="{{ 'dashboard.layout.hide'|trans }}">
+      <button type="button" class="dash-action-btn" data-layout-edit>{{ 'dashboard.layout.edit'|trans }}</button>
+      <button type="button" class="dash-action-btn" data-layout-save hidden>{{ 'dashboard.layout.save'|trans }}</button>
+      <button type="button" class="dash-action-btn" data-layout-cancel hidden>{{ 'dashboard.layout.cancel'|trans }}</button>
+    </div>
+    {% endif %}
 
     {# ── Hero: welcome + spotlight/stats (async-hydrated, #27) ─────────
        Greeting + clock paint instantly; the spotlight and library stats load
@@ -541,197 +647,19 @@
       </div>
     </div>
 
-    {# ── Prochaines sorties (mini-calendrier, async-hydraté #27) ──────
-       Issue #9 — masqué quand ni Radarr ni Sonarr ne sont configurés. Le
-       corps (mini-cal ou message vide) est chargé via
-       app_dashboard_widget_upcoming après le first paint. #}
-    {% if services_configured.radarr or services_configured.sonarr %}
-    <div class="row row-cards mb-3" data-dash-widget="upcoming" data-dash-url="{{ path('app_dashboard_widget_upcoming') }}">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">
-              <span class="card-title-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              </span>
-              {{ 'dashboard.upcoming.title'|trans }}
-            </h3>
-            <div class="card-actions">
-              <a href="{{ path('app_calendrier') }}" class="dash-action-btn">{{ 'dashboard.upcoming.calendar_cta'|trans }}</a>
-            </div>
-          </div>
-          <div data-dash-body>
-            <div class="card-body text-center text-secondary py-4"><span class="spinner-border spinner-border-sm"></span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    {# ── Requests + Services health ─────────────────────────────────── #}
-    {# Seerr requests masqué quand le service n'est pas configuré.
-       La grid se réduit alors à la seule carte "Services health". #}
-    <div class="row row-cards mb-3">
-      {% if services_configured.jellyseerr %}
-      <div class="col-12 col-lg-6" data-dash-widget="requests" data-dash-url="{{ path('app_dashboard_widget_requests') }}">
-        <div class="card h-100">
-          <div class="card-header">
-            <h3 class="card-title">
-              <span class="card-title-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M9 12l3 3l3 -3"/><path d="M21 14v4a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-4"/></svg>
-              </span>
-              {{ 'dashboard.requests.title'|trans }}
-            </h3>
-            <div class="card-actions">
-              <a href="{{ path('jellyseerr_index') }}" class="dash-action-btn">{{ 'dashboard.requests.manage_cta'|trans }}</a>
-            </div>
-          </div>
-          <div class="list-group list-group-flush dash-list" data-dash-body>
-            <div class="card-body text-center text-secondary py-4"><span class="spinner-border spinner-border-sm"></span></div>
-          </div>
-        </div>
-      </div>
+    {# ── Reorderable content sections (order + visibility resolved
+       server-side by DashboardLayoutService). Each partial self-gates on
+       service configuration; we only skip user-hidden ones here. ───────── #}
+    {% for section in dashboard_layout %}
+      {% if section.visible %}
+        {% include 'dashboard/sections/_' ~ section.key ~ '.html.twig' %}
       {% endif %}
-
-      {# Services health card spans the full width when the requests card is
-         hidden (no Seerr), otherwise sits next to it on the right. #}
-      <div class="col-12 {% if services_configured.jellyseerr %}col-lg-6{% endif %}" data-dash-widget="health" data-dash-url="{{ path('app_dashboard_widget_health') }}">
-        <div class="card h-100">
-          <div class="card-header">
-            <h3 class="card-title">
-              <span class="card-title-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 -9l4 18l3 -9h4"/></svg>
-              </span>
-              {{ 'dashboard.health.title'|trans }}
-            </h3>
-            <div class="card-actions">
-              <a href="{{ path('admin_settings_index') }}" class="dash-action-btn">{{ 'dashboard.health.settings_cta'|trans }}</a>
-            </div>
-          </div>
-          <div class="card-body" data-dash-body>
-            <div class="text-center text-secondary py-3"><span class="spinner-border spinner-border-sm"></span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {# ── Current Plex activity (Tautulli, async-hydrated) ────────────
-       Hidden entirely when Tautulli isn't configured/enabled (issue #9
-       pattern). The body loads from app_dashboard_widget_plex after first
-       paint and refreshes every 10s (see the javascripts block); an empty
-       fragment hides the whole card client-side. #}
-    {% if services_configured.tautulli %}
-    <div class="row row-cards mb-3">
-      <div class="col-12" id="plex-activity" data-dash-widget="plex" data-dash-url="{{ path('app_dashboard_widget_plex') }}">
-        <div class="card h-100">
-          <div class="card-header">
-            <h3 class="card-title">
-              <span class="card-title-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8l4 -16l3 8h4"/></svg>
-              </span>
-              {{ 'dashboard.plex.title'|trans }}
-            </h3>
-            <div class="card-actions">
-              <a href="{{ path('admin_settings_index') }}" class="dash-action-btn">{{ 'dashboard.plex.settings_cta'|trans }}</a>
-            </div>
-          </div>
-          <div class="card-body" data-dash-body>
-            <div class="text-center text-secondary py-4"><span class="spinner-border spinner-border-sm"></span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    {# ── Ma watchlist (perso, DB locale) ────────────────────────────── #}
-    {% if watchlist is not empty %}
-    <div class="row-section">
-      <div class="row-section-head">
-        <h2 class="row-section-title">
-          <span class="row-section-title-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></svg>
-          </span>
-          {{ 'dashboard.watchlist.title'|trans }}
-        </h2>
-        <a href="{{ path('tmdb_watchlist') }}" class="row-section-link">{{ 'dashboard.watchlist.view_all'|trans }}</a>
-      </div>
-      <div class="poster-row">
-        {% for w in watchlist %}
-          <a href="{{ path('tmdb_index') }}?detail={{ w.mediaType }}/{{ w.tmdbId }}" class="poster-tile"
-             data-ql-trigger
-             data-ql-source="tmdb"
-             data-ql-type="{{ w.mediaType == 'tv' ? 'tv' : 'movie' }}"
-             data-ql-id="{{ w.tmdbId }}">
-            <div class="poster-tile-wrap">
-              {% if w.poster %}
-                <img src="https://image.tmdb.org/t/p/w342{{ w.poster }}" alt="{{ w.title }}" loading="lazy" class="poster-tile-img">
-              {% else %}
-                <div class="poster-tile-placeholder">{{ w.mediaType == 'tv' ? ico.icon('device-tv', '', 28) : ico.icon('movie', '', 28) }}</div>
-              {% endif %}
-              {% if w.vote and w.vote > 0 %}
-                <span class="poster-tile-badge">{{ ico.icon('star-filled', '', 12) }} {{ w.vote|round(1) }}</span>
-              {% endif %}
-            </div>
-            <div class="poster-tile-info">
-              <div class="poster-tile-title text-truncate">{{ w.title }}</div>
-              <div class="poster-tile-sub">
-                {{ w.mediaType == 'tv' ? 'dashboard.type.series'|trans : 'dashboard.type.film'|trans }}
-                {%- if w.year %} · {{ w.year }}{% endif -%}
-              </div>
-            </div>
-          </a>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    {# ── TMDb trending (async-hydrated, #27) ─────────────────────────
-       Issue #9 — still hidden entirely when TMDb isn't configured. The
-       tiles load from app_dashboard_widget_recommendations after first paint;
-       an empty fragment hides the section. #}
-    {% if services_configured.tmdb %}
-    <div class="row-section" data-dash-widget="recommendations" data-dash-url="{{ path('app_dashboard_widget_recommendations') }}">
-      <div class="row-section-head">
-        <h2 class="row-section-title">
-          <span class="row-section-title-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>
-          </span>
-          {{ 'dashboard.trending.title'|trans }}
-        </h2>
-        <a href="{{ path('tmdb_index') }}" class="row-section-link">{{ 'dashboard.trending.discover_cta'|trans }}</a>
-      </div>
-      <div class="poster-row" data-dash-body>
-        {% for i in 1..7 %}<div class="poster-tile dash-skel" aria-hidden="true"><div class="poster-tile-wrap"></div><div class="poster-tile-info"><div class="dash-skel-line"></div></div></div>{% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    {# ── Recent library additions (async-hydrated, #27) ──────────────
-       The section shell + skeleton paint instantly; the poster tiles are
-       fetched from app_dashboard_widget_recent after first paint and
-       injected into [data-dash-body]. An empty fragment hides the section.
-       Issue #9 — still skipped entirely when neither service is configured. #}
-    {% if services_configured.radarr or services_configured.sonarr %}
-    <div class="row-section" data-dash-widget="recent" data-dash-url="{{ path('app_dashboard_widget_recent') }}">
-      <div class="row-section-head">
-        <h2 class="row-section-title">
-          <span class="row-section-title-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2l4 -4"/></svg>
-          </span>
-          {{ 'dashboard.recent.title'|trans }}
-        </h2>
-      </div>
-      <div class="poster-row" data-dash-body>
-        {% for i in 1..7 %}<div class="poster-tile dash-skel" aria-hidden="true"><div class="poster-tile-wrap"></div><div class="poster-tile-info"><div class="dash-skel-line"></div></div></div>{% endfor %}
-      </div>
-    </div>
-    {% endif %}
+    {% endfor %}
 
   </div>
 </div>
 
 {% include 'dashboard/_plex_info_modal.html.twig' with {} only %}
-{% include 'dashboard/_quicklook_modal.html.twig' with {} only %}
 {% endblock %}
 
 {% block javascripts %}
@@ -755,55 +683,117 @@
       }
     }
 
+    // Failure ≠ empty: an empty 200 body means "section not applicable" and
+    // hides the node (contract above), but a non-OK response or network error
+    // must stay visible — a monitoring dashboard may never answer "is
+    // everything OK?" by removing the evidence. Render a retryable state
+    // in the card body instead.
+    function applyFailure(node) {
+      var body = node.querySelector('[data-dash-body]') || node;
+      body.innerHTML =
+        '<div class="text-center text-secondary py-3" data-dash-error>' +
+          '<div class="mb-2">{{ 'dashboard.widget_error.unreachable'|trans|e('js') }}</div>' +
+          '<button type="button" class="btn btn-sm btn-outline-secondary" data-dash-retry>{{ 'common.action.retry'|trans|e('js') }}</button>' +
+        '</div>';
+    }
+
+    function hydrateNode(node) {
+      if (node.dataset.dashLoaded === '1') return;
+      node.dataset.dashLoaded = '1';
+      fetch(node.dataset.dashUrl, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+        .then(function (r) {
+          if (!r.ok) { applyFailure(node); return; }
+          return r.text().then(function (html) { applyFragment(node, html); });
+        })
+        .catch(function () { applyFailure(node); });
+    }
+
     function hydrateDashWidgets() {
       var nodes = document.querySelectorAll('[data-dash-widget][data-dash-url]');
-      for (var i = 0; i < nodes.length; i++) {
-        (function (node) {
-          if (node.dataset.dashLoaded === '1') return;
-          node.dataset.dashLoaded = '1';
-          fetch(node.dataset.dashUrl, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
-            .then(function (r) { return r.ok ? r.text() : ''; })
-            .then(function (html) { applyFragment(node, html); })
-            .catch(function () { node.style.display = 'none'; });
-        })(nodes[i]);
-      }
+      for (var i = 0; i < nodes.length; i++) { hydrateNode(nodes[i]); }
     }
     document.addEventListener('turbo:load', hydrateDashWidgets);
     if (document.readyState !== 'loading') { hydrateDashWidgets(); }
 
-    // Keep the services-health widget live instead of frozen at first paint:
-    // re-fetch just that fragment on an interval. It's cheap — isHealthy() is
-    // 10s-cached server-side. Turbo-safe singleton (window._dashHealthTimer) so
-    // navigating away and back doesn't stack timers; skipped while the tab is
-    // hidden so a background dashboard isn't polling.
-    function refreshHealth() {
-      if (document.hidden) return;
-      var node = document.querySelector('[data-dash-widget="health"][data-dash-url]');
-      if (!node) return;
-      fetch(node.dataset.dashUrl, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
-        .then(function (r) { return r.ok ? r.text() : ''; })
-        .then(function (html) { if ((html || '').trim()) applyFragment(node, html); })
-        .catch(function () {});
+    // Retry: delegated + bound once per session (window guard) — this block
+    // re-executes on every Turbo visit, so a bare addEventListener would stack.
+    if (!window._dashRetryBound) {
+      window._dashRetryBound = true;
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-dash-retry]');
+        if (!btn) return;
+        var node = btn.closest('[data-dash-widget]');
+        if (!node) return;
+        node.dataset.dashLoaded = '';
+        var body = node.querySelector('[data-dash-body]') || node;
+        body.innerHTML = '<div class="text-center text-secondary py-3"><span class="spinner-border spinner-border-sm"></span></div>';
+        hydrateNode(node);
+      });
     }
-    if (window._dashHealthTimer) { clearInterval(window._dashHealthTimer); }
-    window._dashHealthTimer = setInterval(refreshHealth, 30000);
 
-    // Same live-refresh pattern for the Plex activity widget, but on a tighter
-    // 10s cadence (stream progress/state move fast). Cheap server-side:
-    // TautulliClient is 10s-circuit-breaker-cached and the call is read-only.
-    // Skipped while the tab is hidden; re-fetched fragment fails open so a
-    // down Tautulli can't break the loop.
-    function refreshPlex() {
+    // Live-widget polling — one coalescing scheduler for every widget that
+    // declares a data-dash-poll cadence (plex 10s, health/server/network 30s,
+    // houndarr 60s). Previously each ran its own setInterval + its own fragment
+    // request, which at the 30s alignment fired up to four HTTP requests at
+    // once. Instead we tick once at the GCD of the cadences and batch every
+    // widget due on that tick into a single /widgets?w=… request, applying each
+    // returned fragment to its node. Preserves the per-widget behaviour exactly:
+    // hidden-tab guarded, fails open (a widget missing from the JSON map keeps
+    // its last value), Turbo-safe singleton timer (window._dashLiveTimer), and
+    // the plex post-apply hook that re-asserts the active tab after a swap.
+    var DASH_WIDGETS_URL = '{{ path('app_dashboard_widgets') }}';
+    var dashPostApply = {
+      plex: function (node) { applyPlexTab(node.querySelector('[data-dash-body]') || node); }
+    };
+    function dashGcd(a, b) { return b ? dashGcd(b, a % b) : a; }
+    function dashLiveNodes() {
+      return document.querySelectorAll('[data-dash-widget][data-dash-poll][data-dash-url]');
+    }
+    // First poll for each widget is scheduled one full interval out (matching
+    // the old setInterval), and re-armed to now+interval whenever it fires.
+    var dashNextDue = {};
+    var dashBaseTick = 0;
+    (function planDashCadences() {
+      var nodes = dashLiveNodes();
+      var now = Date.now();
+      for (var i = 0; i < nodes.length; i++) {
+        var name = nodes[i].dataset.dashWidget;
+        var ms = parseInt(nodes[i].dataset.dashPoll, 10) || 30000;
+        if (!(name in dashNextDue)) { dashNextDue[name] = now + ms; }
+        dashBaseTick = dashBaseTick ? dashGcd(dashBaseTick, ms) : ms;
+      }
+      if (!dashBaseTick) { dashBaseTick = 30000; }
+    })();
+    function dashTick() {
       if (document.hidden) return;
-      var node = document.querySelector('[data-dash-widget="plex"][data-dash-url]');
-      if (!node) return;
-      fetch(node.dataset.dashUrl, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
-        .then(function (r) { return r.ok ? r.text() : ''; })
-        .then(function (html) { if ((html || '').trim()) { applyFragment(node, html); applyPlexTab(node.querySelector('[data-dash-body]') || node); } })
+      var nodes = dashLiveNodes();
+      if (!nodes.length) return;
+      var now = Date.now();
+      var byName = {};
+      var due = [];
+      for (var i = 0; i < nodes.length; i++) {
+        var name = nodes[i].dataset.dashWidget;
+        var ms = parseInt(nodes[i].dataset.dashPoll, 10) || 30000;
+        byName[name] = nodes[i];
+        if (now >= (dashNextDue[name] || 0)) { due.push(name); dashNextDue[name] = now + ms; }
+      }
+      if (!due.length) return;
+      fetch(DASH_WIDGETS_URL + '?w=' + encodeURIComponent(due.join(',')),
+            { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (map) {
+          if (!map) return;
+          Object.keys(map).forEach(function (name) {
+            var node = byName[name];
+            if (!node || !(map[name] || '').trim()) return;
+            applyFragment(node, map[name]);
+            if (dashPostApply[name]) { dashPostApply[name](node); }
+          });
+        })
         .catch(function () {});
     }
-    if (window._dashPlexTimer) { clearInterval(window._dashPlexTimer); }
-    window._dashPlexTimer = setInterval(refreshPlex, 10000);
+    if (window._dashLiveTimer) { clearInterval(window._dashLiveTimer); }
+    window._dashLiveTimer = setInterval(dashTick, dashBaseTick);
 
     // Plex widget tabs: client-side pane toggle, remembers the active tab so the
     // 10s fragment refresh doesn't snap the user back to "Now playing".
@@ -831,95 +821,86 @@
     }
 
     document.addEventListener('turbo:before-render', function () {
-      if (window._dashHealthTimer) { clearInterval(window._dashHealthTimer); window._dashHealthTimer = null; }
-      if (window._dashPlexTimer) { clearInterval(window._dashPlexTimer); window._dashPlexTimer = null; }
+      if (window._dashLiveTimer) { clearInterval(window._dashLiveTimer); window._dashLiveTimer = null; }
     });
 
-    // ── Quick-look modal: delegated open + fetch + manual show/hide.
-    // Tiles carry [data-ql-trigger] + data-ql-source/type/slug/id and keep
-    // their href as a no-JS fallback. We intercept the click, open the shell,
-    // fetch the matching fragment, and swap it into [data-ql-body].
-    // Re-query the modal on every use: it lives in the content block, so Turbo
-    // replaces the node on each render. Caching it once would leave the
-    // document-level delegated listeners pointing at a detached node after a
-    // navigation, and the quick-look would silently stop opening.
-    function qlEl() { return document.getElementById('ql-modal'); }
-    function qlBody() { var m = qlEl(); return m ? m.querySelector('[data-ql-body]') : null; }
-
-    function qlOpen() {
-      var m = qlEl();
-      if (!m) return;
-      m.classList.add('show');
-      m.style.display = 'block';
-      m.removeAttribute('aria-hidden');
-      m.setAttribute('aria-modal', 'true');
-      document.body.classList.add('modal-open');
-      if (!document.querySelector('.modal-backdrop.ql-backdrop-el')) {
-        var bd = document.createElement('div');
-        bd.className = 'modal-backdrop fade show ql-backdrop-el';
-        document.body.appendChild(bd);
-      }
-    }
-    function qlClose() {
-      var m = qlEl();
-      if (!m) return;
-      m.classList.remove('show');
-      m.style.display = 'none';
-      m.setAttribute('aria-hidden', 'true');
-      m.removeAttribute('aria-modal');
-      var bd = document.querySelector('.modal-backdrop.ql-backdrop-el');
-      if (bd) bd.remove();
-      if (!document.querySelector('.modal.show')) { document.body.classList.remove('modal-open'); }
-      var b = qlBody();
-      if (b) { b.innerHTML = '<div class="ql-loading"><span class="spinner-border"></span></div>'; }
-    }
-
-    function qlUrl(t) {
-      var src = t.getAttribute('data-ql-source');
-      var type = t.getAttribute('data-ql-type');
-      var id = t.getAttribute('data-ql-id');
-      if (!type || !id) return null;
-      if (src === 'tmdb') { return '/tableau-de-bord/quicklook/tmdb/' + type + '/' + id; }
-      var slug = t.getAttribute('data-ql-slug');
-      if (!slug) return null;
-      return '/tableau-de-bord/quicklook/' + type + '/' + slug + '/' + id;
-    }
-
-    if (!window._qlDelegated) {
-      window._qlDelegated = true;
-      document.addEventListener('click', function (e) {
-        var trigger = e.target.closest('[data-ql-trigger]');
-        if (trigger) {
-          var url = qlUrl(trigger);
-          if (!url) return; // missing data → let the href navigate (fallback)
-          e.preventDefault();
-          qlOpen();
-          fetch(url, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
-            .then(function (r) { return r.ok ? r.text() : ''; })
-            .then(function (html) {
-              var b = qlBody();
-              if (!b) return;
-              if ((html || '').trim()) { b.innerHTML = html; }
-              else { window.location.href = trigger.getAttribute('href'); } // empty → fall back to navigation
-            })
-            .catch(function () { window.location.href = trigger.getAttribute('href'); });
-          return;
-        }
-        // Close on backdrop click or [data-ql-dismiss] (the × in the body).
-        if (e.target.closest('[data-ql-dismiss]') || e.target === qlEl()) {
-          qlClose();
-        }
-      });
-      document.addEventListener('keydown', function (e) {
-        var m = qlEl();
-        if (e.key === 'Escape' && m && m.classList.contains('show')) { qlClose(); }
-      });
-      // Tidy up if Turbo navigates away with the modal open.
-      document.addEventListener('turbo:before-render', function () {
-        var m = qlEl();
-        if (m && m.classList.contains('show')) { qlClose(); }
-      });
-    }
   })();
+</script>
+<script>
+(function () {
+  function initLayoutEdit() {
+    var toolbar = document.querySelector('.dash-layout-toolbar');
+    var scope = document.querySelector('.dashboard-scope');
+    if (!toolbar || !scope) return;
+    if (toolbar.dataset.layoutBound) return;
+    toolbar.dataset.layoutBound = '1';
+    var editBtn = toolbar.querySelector('[data-layout-edit]');
+    var saveBtn = toolbar.querySelector('[data-layout-save]');
+    var cancelBtn = toolbar.querySelector('[data-layout-cancel]');
+    var container = scope.querySelector('.container-xl');
+    var hidden = {};       // key -> true while hidden in this edit session
+    var dragged = null;
+
+    function sections() { return Array.prototype.slice.call(container.querySelectorAll('[data-section-key]')); }
+
+    function addOverlays() {
+      sections().forEach(function (sec) {
+        // Skip gated-out/empty section wrappers (e.g. an empty watchlist or an
+        // unconfigured service): the partial still emits a zero-height
+        // [data-section-key] div, and it must not get a drag handle or an
+        // orphaned Hide button that floats onto the next section.
+        if (sec.offsetHeight === 0) return;
+        if (sec.querySelector('.section-edit-overlay')) return;
+        var ov = document.createElement('div');
+        ov.className = 'section-edit-overlay';
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = toolbar.dataset.hideLabel || '✕';
+        btn.addEventListener('click', function () { hidden[sec.dataset.sectionKey] = true; sec.style.display = 'none'; });
+        ov.appendChild(btn);
+        sec.appendChild(ov);
+        sec.setAttribute('draggable', 'true');
+      });
+    }
+
+    container.addEventListener('dragstart', function (e) {
+      if (!scope.classList.contains('is-editing')) return;
+      var sec = e.target.closest('[data-section-key]'); if (!sec) return;
+      dragged = sec; sec.classList.add('dragging');
+    });
+    container.addEventListener('dragend', function () { if (dragged) dragged.classList.remove('dragging'); dragged = null; });
+    container.addEventListener('dragover', function (e) {
+      if (!dragged) return; e.preventDefault();
+      var after = null;
+      sections().forEach(function (sec) {
+        if (sec === dragged || sec.style.display === 'none' || sec.offsetHeight === 0) return;
+        var box = sec.getBoundingClientRect();
+        if (e.clientY < box.top + box.height / 2 && after === null) after = sec;
+      });
+      if (after) container.insertBefore(dragged, after); else container.appendChild(dragged);
+    });
+
+    editBtn.addEventListener('click', function () {
+      hidden = {}; scope.classList.add('is-editing'); addOverlays();
+      editBtn.hidden = true; saveBtn.hidden = false; cancelBtn.hidden = false;
+    });
+    cancelBtn.addEventListener('click', function () { window.location.reload(); });
+    saveBtn.addEventListener('click', function () {
+      var order = sections().filter(function (s) { return !hidden[s.dataset.sectionKey]; })
+                            .map(function (s) { return s.dataset.sectionKey; });
+      var body = new URLSearchParams();
+      body.set('_csrf_token', toolbar.dataset.layoutCsrf);
+      body.set('order', order.join(','));
+      body.set('hidden', Object.keys(hidden).join(','));
+      fetch(toolbar.dataset.layoutUrl, { method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'fetch' }, body: body })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function () { window.location.reload(); })
+        .catch(function () { window.location.reload(); });
+    });
+  }
+  document.addEventListener('turbo:load', initLayoutEdit);
+  if (document.readyState !== 'loading') initLayoutEdit();
+})();
 </script>
 {% endblock %}

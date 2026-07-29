@@ -1,0 +1,25 @@
+{# Current Plex activity (Tautulli) — self-gates on tautulli config. #}
+<div data-section-key="plex">
+{% if services_configured.tautulli %}
+<div class="row row-cards mb-3">
+  <div class="col-12" id="plex-activity" data-dash-widget="plex" data-dash-url="{{ path('app_dashboard_widget_plex') }}" data-dash-poll="10000">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="card-title">
+          <span class="card-title-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8l4 -16l3 8h4"/></svg>
+          </span>
+          {{ 'dashboard.plex.title'|trans }}
+        </h3>
+        <div class="card-actions">
+          <a href="{{ path('admin_settings_index') }}" class="dash-action-btn">{{ 'dashboard.plex.settings_cta'|trans }}</a>
+        </div>
+      </div>
+      <div class="card-body" data-dash-body>
+        <div class="text-center text-secondary py-4"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+</div>

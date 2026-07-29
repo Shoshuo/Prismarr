@@ -25,10 +25,13 @@ class ConfigExtension extends AbstractExtension
         'prowlarr'    => 'prowlarr_api_key',
         'jellyseerr'  => 'jellyseerr_api_key',
         'qbittorrent' => 'qbittorrent_url',
+        'deluge'      => 'deluge_url',
+        'transmission' => 'transmission_url',
         'sabnzbd'     => 'sabnzbd_url',
         'nzbget'      => 'nzbget_url',
         'gluetun'     => 'gluetun_url',
         'tautulli'    => 'tautulli_url',
+        'unifi'       => 'unifi_url',
     ];
 
     /** Services backed by service_instance instead of a flat setting. */

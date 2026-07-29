@@ -2,10 +2,12 @@
 
 namespace App\Controller;
 
+use App\Dashboard\DashboardSections;
 use App\Entity\ServiceInstance;
 use App\Repository\SettingRepository;
 use App\Repository\UserRepository;
 use App\Service\ConfigService;
+use App\Service\DashboardLayoutService;
 use App\Service\HealthService;
 use App\Service\Media\JellyseerrClient;
 use App\Service\Media\ProwlarrClient;
@@ -69,6 +71,15 @@ class AdminSettingsController extends AbstractController
             ['key' => 'qbittorrent_user',     'type' => 'text',     'label' => 'admin.field.username',  'clearable' => true],
             ['key' => 'qbittorrent_password', 'type' => 'password', 'label' => 'admin.field.password',  'clearable' => true],
         ],
+        'deluge' => [
+            ['key' => 'deluge_url',      'type' => 'text',     'label' => 'admin.field.url',      'placeholder' => 'http://host.docker.internal:8112'],
+            ['key' => 'deluge_password', 'type' => 'password', 'label' => 'admin.field.password', 'clearable' => true],
+        ],
+        'transmission' => [
+            ['key' => 'transmission_url',      'type' => 'text',     'label' => 'admin.field.url',             'placeholder' => 'http://host.docker.internal:9091'],
+            ['key' => 'transmission_user',     'type' => 'text',     'label' => 'admin.field.username',  'clearable' => true],
+            ['key' => 'transmission_password', 'type' => 'password', 'label' => 'admin.field.password',  'clearable' => true],
+        ],
         'sabnzbd' => [
             ['key' => 'sabnzbd_url',     'type' => 'text',     'label' => 'admin.field.url',     'placeholder' => 'http://host.docker.internal:8080'],
             ['key' => 'sabnzbd_api_key', 'type' => 'password', 'label' => 'admin.field.api_key'],
@@ -85,6 +96,23 @@ class AdminSettingsController extends AbstractController
         'tautulli' => [
             ['key' => 'tautulli_url',     'type' => 'text',     'label' => 'admin.field.url',     'placeholder' => 'http://host.docker.internal:8181'],
             ['key' => 'tautulli_api_key', 'type' => 'password', 'label' => 'admin.field.api_key'],
+        ],
+        'unraid' => [
+            ['key' => 'unraid_url',             'type' => 'text',     'label' => 'admin.field.url', 'placeholder' => 'https://tower.local'],
+            ['key' => 'unraid_api_key',         'type' => 'password', 'label' => 'admin.field.api_key'],
+            ['key' => 'unraid_skip_tls_verify', 'type' => 'checkbox', 'label' => 'admin.field.unraid.skip_tls_verify'],
+        ],
+        'unifi' => [
+            ['key' => 'unifi_url',             'type' => 'text',     'label' => 'admin.field.url', 'placeholder' => 'https://192.168.1.1'],
+            ['key' => 'unifi_api_key',         'type' => 'password', 'label' => 'admin.field.api_key'],
+            ['key' => 'unifi_site',            'type' => 'text',     'label' => 'admin.field.unifi.site', 'placeholder' => 'default', 'clearable' => true],
+            ['key' => 'unifi_skip_tls_verify', 'type' => 'checkbox', 'label' => 'admin.field.unifi.skip_tls_verify'],
+        ],
+        'houndarr' => [
+            ['key' => 'houndarr_url',     'type' => 'text',     'label' => 'admin.field.url',     'placeholder' => 'http://host.docker.internal:8877'],
+            // Houndarr has ONE key per install, shown once at creation —
+            // regenerating it there silently breaks the widget until re-saved here.
+            ['key' => 'houndarr_api_key', 'type' => 'password', 'label' => 'admin.field.api_key', 'placeholder' => 'hndarr_…'],
         ],
     ];
 
@@ -128,10 +156,15 @@ class AdminSettingsController extends AbstractController
         'prowlarr'    => 'Prowlarr',
         'jellyseerr'  => 'Seerr',
         'qbittorrent' => 'qBittorrent',
+        'deluge'      => 'Deluge',
+        'transmission' => 'Transmission',
         'sabnzbd'     => 'SABnzbd',
         'nzbget'      => 'NZBGet',
         'gluetun'     => 'Gluetun',
         'tautulli'    => 'Tautulli',
+        'unraid'      => 'Unraid',
+        'unifi'       => 'UniFi',
+        'houndarr'    => 'Houndarr',
     ];
 
     /**
@@ -208,8 +241,9 @@ class AdminSettingsController extends AbstractController
         'display_theme_color' => [
             'label'   => 'admin.display.theme_color.label',
             'type'    => 'color',
-            'default' => 'indigo',
+            'default' => 'theme_default',
             'options' => [
+                'theme_default' => 'auto',
                 'indigo' => '#6366f1',
                 'red'    => '#ef4444',
                 'green'  => '#22c55e',
@@ -217,6 +251,32 @@ class AdminSettingsController extends AbstractController
                 'pink'   => '#ec4899',
                 'blue'   => '#3b82f6',
             ],
+            'help' => 'admin.display.theme_color.help',
+        ],
+        'display_theme' => [
+            'label'   => 'admin.display.theme.label',
+            'type'    => 'select',
+            'default' => 'midnight',
+            'options' => [
+                'midnight'             => 'admin.display.theme.preset.midnight',
+                'nord'                 => 'admin.display.theme.preset.nord',
+                'catppuccin_latte'     => 'admin.display.theme.preset.catppuccin_latte',
+                'catppuccin_frappe'    => 'admin.display.theme.preset.catppuccin_frappe',
+                'catppuccin_macchiato' => 'admin.display.theme.preset.catppuccin_macchiato',
+                'catppuccin_mocha'     => 'admin.display.theme.preset.catppuccin_mocha',
+                'dracula'              => 'admin.display.theme.preset.dracula',
+                'gruvbox_dark'         => 'admin.display.theme.preset.gruvbox_dark',
+                'kanagawa_dark'        => 'admin.display.theme.preset.kanagawa_dark',
+                'teal_city'            => 'admin.display.theme.preset.teal_city',
+                'camouflage'           => 'admin.display.theme.preset.camouflage',
+                'tucan'                => 'admin.display.theme.preset.tucan',
+                'shades_of_purple'     => 'admin.display.theme.preset.shades_of_purple',
+                'neon_pink'            => 'admin.display.theme.preset.neon_pink',
+                'solarized_light'      => 'admin.display.theme.preset.solarized_light',
+                'peachy'               => 'admin.display.theme.preset.peachy',
+                'zebra'                => 'admin.display.theme.preset.zebra',
+            ],
+            'help' => 'admin.display.theme.help',
         ],
         'display_qbit_refresh' => [
             'label'   => 'admin.display.qbit_refresh.label',
@@ -230,6 +290,32 @@ class AdminSettingsController extends AbstractController
                 '0'  => 'admin.display.qbit_refresh.options.0',
             ],
             'help' => 'admin.display.qbit_refresh.help',
+        ],
+        'display_deluge_refresh' => [
+            'label'   => 'admin.display.deluge_refresh.label',
+            'type'    => 'select',
+            'default' => '2',
+            'options' => [
+                '1'  => 'admin.display.qbit_refresh.options.1',
+                '2'  => 'admin.display.qbit_refresh.options.2',
+                '5'  => 'admin.display.qbit_refresh.options.5',
+                '10' => 'admin.display.qbit_refresh.options.10',
+                '0'  => 'admin.display.qbit_refresh.options.0',
+            ],
+            'help' => 'admin.display.deluge_refresh.help',
+        ],
+        'display_transmission_refresh' => [
+            'label'   => 'admin.display.transmission_refresh.label',
+            'type'    => 'select',
+            'default' => '2',
+            'options' => [
+                '1'  => 'admin.display.transmission_refresh.options.1',
+                '2'  => 'admin.display.transmission_refresh.options.2',
+                '5'  => 'admin.display.transmission_refresh.options.5',
+                '10' => 'admin.display.transmission_refresh.options.10',
+                '0'  => 'admin.display.transmission_refresh.options.0',
+            ],
+            'help' => 'admin.display.transmission_refresh.help',
         ],
         'display_ui_density' => [
             'label'   => 'admin.display.ui_density.label',
@@ -296,6 +382,7 @@ class AdminSettingsController extends AbstractController
         #[Autowire(service: 'cache.app')]
         private readonly AdapterInterface $appCache,
         private readonly \App\Service\AppVersion $appVersion,
+        private readonly DashboardLayoutService $dashboardLayout,
         #[Autowire('%kernel.project_dir%')]
         private readonly string $projectDir = '',
         #[Autowire('%kernel.environment%')]
@@ -343,6 +430,7 @@ class AdminSettingsController extends AbstractController
             'app_latest'         => $this->appVersion->latest(),
             'app_update_available' => $this->appVersion->isUpdateAvailable(),
             'app_releases'       => $this->appVersion->releases(),
+            'dashboard_layout'   => $this->loadDashboardLayout(),
             // v1.1.0 — instance lists for the multi-instance card UI.
             'instances_by_type'  => [
                 ServiceInstance::TYPE_RADARR => $this->instances->getAll(ServiceInstance::TYPE_RADARR),
@@ -476,9 +564,14 @@ class AdminSettingsController extends AbstractController
             'radarr', 'sonarr', 'prowlarr', 'jellyseerr' => [$service . '_url', $service . '_api_key'],
             'tmdb'                                       => ['tmdb_api_key'],
             'qbittorrent'                                => ['qbittorrent_url', 'qbittorrent_user', 'qbittorrent_password'],
+            'deluge'                                     => ['deluge_url', 'deluge_password'],
+            'transmission'                               => ['transmission_url', 'transmission_user', 'transmission_password'],
             'sabnzbd'                                    => ['sabnzbd_url', 'sabnzbd_api_key'],
             'nzbget'                                     => ['nzbget_url', 'nzbget_user', 'nzbget_password'],
             'tautulli'                                   => ['tautulli_url', 'tautulli_api_key'],
+            'unraid'                                     => ['unraid_url', 'unraid_api_key', 'unraid_skip_tls_verify'],
+            'unifi'                                      => ['unifi_url', 'unifi_api_key', 'unifi_site', 'unifi_skip_tls_verify'],
+            'houndarr'                                   => ['houndarr_url', 'houndarr_api_key'],
             default                                      => [],
         };
         $overrides = [];
@@ -527,11 +620,52 @@ class AdminSettingsController extends AbstractController
     public function healthInvalidate(string $service): JsonResponse
     {
         $service = strtolower($service);
-        $allowed = ['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli'];
+        $allowed = ['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'unraid', 'unifi', 'houndarr'];
         if (!in_array($service, $allowed, true)) {
             return new JsonResponse(['ok' => false], 400);
         }
         $this->health->invalidate($service);
+        return new JsonResponse(['ok' => true]);
+    }
+
+    /**
+     * Persist the dashboard layout from the on-dashboard edit mode. Accepts
+     * `order` (comma-joined section keys) and `hidden` (comma-joined keys to
+     * hide). Mirrors the settings-form save semantics; returns JSON for the
+     * fetch() caller. Admin-only via the class-level IsGranted.
+     */
+    #[Route('/dashboard-layout', name: 'dashboard_layout', methods: ['POST'])]
+    public function dashboardLayout(Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('admin_dashboard_layout', (string) $request->request->get('_csrf_token'))) {
+            return new JsonResponse(['ok' => false, 'error' => 'csrf'], 400);
+        }
+
+        $orderKeys = [];
+        foreach (explode(',', (string) $request->request->get('order', '')) as $raw) {
+            $k = trim($raw);
+            if ($k !== '' && DashboardSections::isValid($k) && !in_array($k, $orderKeys, true)) {
+                $orderKeys[] = $k;
+            }
+        }
+
+        $hidden = [];
+        foreach (explode(',', (string) $request->request->get('hidden', '')) as $raw) {
+            $k = trim($raw);
+            if ($k !== '' && DashboardSections::isValid($k)) {
+                $hidden[$k] = true;
+            }
+        }
+
+        $payload = ['dashboard_section_order' => $orderKeys === [] ? null : implode(',', $orderKeys)];
+        foreach (DashboardSections::keys() as $key) {
+            $payload['dashboard_hide_' . $key] = isset($hidden[$key]) ? '1' : null;
+        }
+
+        $this->settings->setMany($payload);
+        $this->config->invalidate();
+        $this->dashboardLayout->reset();
+
         return new JsonResponse(['ok' => true]);
     }
 
@@ -859,8 +993,25 @@ class AdminSettingsController extends AbstractController
     }
 
     /**
-     * @return array<string, bool>  id => visible (true by default)
+     * Ordered section rows for the settings list: [{key, label, visible}].
+     * Order + visibility come from DashboardLayoutService (single source of
+     * truth shared with the dashboard).
+     *
+     * @return list<array{key: string, label: string, visible: bool}>
      */
+    private function loadDashboardLayout(): array
+    {
+        $out = [];
+        foreach ($this->dashboardLayout->resolve() as $row) {
+            $out[] = [
+                'key'     => $row['key'],
+                'label'   => DashboardSections::META[$row['key']]['label'],
+                'visible' => $row['visible'],
+            ];
+        }
+        return $out;
+    }
+
     private function loadSidebarVisibility(): array
     {
         $out = [];
@@ -974,6 +1125,27 @@ class AdminSettingsController extends AbstractController
             $payload['sidebar_hide_' . $id] = $visible ? null : '1';
         }
 
+        // Dashboard layout — ordered keys come from a hidden input maintained
+        // by the drag UI; visibility uses the same unchecked-box-means-hidden
+        // semantics as the sidebar above. Unknown/duplicate keys are dropped;
+        // missing keys are NOT appended here (DashboardLayoutService fills
+        // them in at read time, so the stored value stays a clean subset).
+        $rawOrder = trim((string) $request->request->get('dashboard_section_order', ''));
+        if ($rawOrder !== '') {
+            $orderKeys = [];
+            foreach (explode(',', $rawOrder) as $raw) {
+                $k = trim($raw);
+                if ($k !== '' && DashboardSections::isValid($k) && !in_array($k, $orderKeys, true)) {
+                    $orderKeys[] = $k;
+                }
+            }
+            $payload['dashboard_section_order'] = $orderKeys === [] ? null : implode(',', $orderKeys);
+        }
+        foreach (DashboardSections::keys() as $key) {
+            $visible = $request->request->has('dashboard_visible_' . $key);
+            $payload['dashboard_hide_' . $key] = $visible ? null : '1';
+        }
+
         // Per-service kill switch (issue #15) — same unchecked-box semantics.
         // Enabled → drop the row (falls back to the credential check on read);
         // disabled → store an explicit '0'.
@@ -1033,6 +1205,10 @@ class AdminSettingsController extends AbstractController
         $payload = [];
         foreach (array_keys(self::DISPLAY_OPTIONS) as $key) {
             $payload[$key] = null;
+        }
+        $payload['dashboard_section_order'] = null;
+        foreach (DashboardSections::keys() as $key) {
+            $payload['dashboard_hide_' . $key] = null;
         }
         $this->settings->setMany($payload);
         $this->config->invalidate();

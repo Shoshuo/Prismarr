@@ -1,6 +1,10 @@
 {# Live stream cards for the activity page. `plex` is the getActivity() envelope. #}
+{% import '_icons.html.twig' as ico %}
 {% if plex.error or not plex.connected or plex.sessions is empty %}
-  <div class="text-center text-secondary py-4">{{ 'dashboard.plex.empty'|trans }}</div>
+  <div class="empty py-4">
+    <div class="empty-icon">{{ ico.icon('device-tv', '', 32) }}</div>
+    <p class="empty-subtitle text-secondary mb-0">{{ 'dashboard.plex.empty'|trans }}</p>
+  </div>
 {% else %}
   {% include 'dashboard/_plex_summary.html.twig' with {plex: plex} only %}
   <div class="plex-sessions">

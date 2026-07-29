@@ -31,20 +31,40 @@
     <div class="col-lg-6">
         <div class="card">
             <div class="card-header"><h3 class="card-title">{{ 'prowlarr.system.info_card'|trans }}</h3></div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-vcenter card-table table-sm">
-                        <tbody>
-                            <tr><td class="text-secondary small" style="width:40%;">{{ 'prowlarr.system.info_version'|trans }}</td><td class="fw-medium">{{ status.version ?? '—' }}</td></tr>
-                            <tr><td class="text-secondary small">{{ 'prowlarr.system.info_branch'|trans }}</td><td>{{ status.branch ?? '—' }}</td></tr>
-                            <tr><td class="text-secondary small">{{ 'prowlarr.system.info_os'|trans }}</td><td>{{ status.osName ?? '—' }} {{ status.osVersion ?? '' }}</td></tr>
-                            <tr><td class="text-secondary small">{{ 'prowlarr.system.info_runtime'|trans }}</td><td>{{ status.runtimeName ?? '—' }} {{ status.runtimeVersion ?? '' }}</td></tr>
-                            <tr><td class="text-secondary small">{{ 'prowlarr.system.info_started'|trans }}</td><td>{{ status.startTime ? status.startTime|date('d/m/Y H:i') : '—' }}</td></tr>
-                            <tr><td class="text-secondary small">{{ 'prowlarr.system.info_appdata'|trans }}</td><td class="small" style="word-break:break-all;">{{ status.appData ?? '—' }}</td></tr>
-                            <tr><td class="text-secondary small">{{ 'prowlarr.system.info_migration'|trans }}</td><td>{{ status.migrationVersion ?? '—' }}</td></tr>
-                            <tr><td class="text-secondary small">{{ 'prowlarr.system.info_authentication'|trans }}</td><td>{{ status.authentication ?? '—' }}</td></tr>
-                        </tbody>
-                    </table>
+            <div class="card-body">
+                <div class="datagrid">
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">{{ 'prowlarr.system.info_version'|trans }}</div>
+                        <div class="datagrid-content fw-medium">{{ status.version ?? '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">{{ 'prowlarr.system.info_branch'|trans }}</div>
+                        <div class="datagrid-content">{{ status.branch ?? '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">{{ 'prowlarr.system.info_os'|trans }}</div>
+                        <div class="datagrid-content">{{ status.osName ?? '—' }} {{ status.osVersion ?? '' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">{{ 'prowlarr.system.info_runtime'|trans }}</div>
+                        <div class="datagrid-content">{{ status.runtimeName ?? '—' }} {{ status.runtimeVersion ?? '' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">{{ 'prowlarr.system.info_started'|trans }}</div>
+                        <div class="datagrid-content">{{ status.startTime ? status.startTime|date('d/m/Y H:i') : '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">{{ 'prowlarr.system.info_appdata'|trans }}</div>
+                        <div class="datagrid-content" style="word-break:break-all;">{{ status.appData ?? '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">{{ 'prowlarr.system.info_migration'|trans }}</div>
+                        <div class="datagrid-content">{{ status.migrationVersion ?? '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">{{ 'prowlarr.system.info_authentication'|trans }}</div>
+                        <div class="datagrid-content">{{ status.authentication ?? '—' }}</div>
+                    </div>
                 </div>
             </div>
         </div>

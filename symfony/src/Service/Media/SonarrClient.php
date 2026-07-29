@@ -198,7 +198,11 @@ class SonarrClient implements ResetInterface
 
     public function getSeries(): array
     {
-        $data = $this->get('/api/v3/series');
+        // Full library in one payload — on a large/busy Sonarr this can take
+        // well over the default 4s get() budget (issue #41). Give it room;
+        // the MediaLibraryCache means only the cold fetch pays this cost, and
+        // the library route already allows set_time_limit(120).
+        $data = $this->get('/api/v3/series', [], 30);
         if ($data === null) return [];
 
         return $this->normalizeSeriesList($data);
@@ -219,7 +223,8 @@ class SonarrClient implements ResetInterface
     /** Returns raw series without normalization (for lightweight cache) */
     public function getRawAllSeries(): array
     {
-        return $this->get('/api/v3/series') ?? [];
+        // Same heavy full-library fetch as getSeries() — needs the wider budget.
+        return $this->get('/api/v3/series', [], 30) ?? [];
     }
 
     public function getSerie(int $id): ?array

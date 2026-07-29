@@ -1,5 +1,17 @@
 {
-	frankenphp
+	# Worker mode is opt-in and OFF by default. The s6 run script exports
+	# PRISMARR_WORKER_DIRECTIVE=`worker /var/www/html/public/index.php [num]`
+	# only when PRISMARR_WORKER=1; otherwise this placeholder expands to
+	# nothing and the block is empty — i.e. classic single-request mode,
+	# byte-for-byte the old `frankenphp` behaviour. In worker mode the global
+	# `worker` directive keeps the Symfony kernel resident and `php_server`
+	# below automatically routes matching requests through it. Symfony 8's
+	# default runtime (symfony/runtime FrankenPhpWorkerRunner) enters the
+	# worker loop when FrankenPHP sets FRANKENPHP_WORKER, so no APP_RUNTIME or
+	# extra composer package is required.
+	frankenphp {
+		{$PRISMARR_WORKER_DIRECTIVE}
+	}
 	order mercure after encode
 
 	# No HTTPS (local or behind a reverse proxy)
@@ -42,6 +54,18 @@
 
 	# Compression
 	encode zstd gzip
+
+	# Browser caching for static assets.
+	# /assets/* are AssetMapper-compiled files with a content digest in the
+	# filename — safe to cache forever (a new build = a new URL).
+	# /static/* (vendored Tabler/Chart.js) and /img/* are NOT fingerprinted:
+	# one day keeps them out of the request log without pinning a stale UI
+	# past an image upgrade (Caddy's ETag revalidates them after expiry).
+	@hashed_assets path /assets/*
+	header @hashed_assets Cache-Control "public, max-age=31536000, immutable"
+
+	@static_assets path /static/* /img/* /favicon.ico
+	header @static_assets Cache-Control "public, max-age=86400"
 
 	# Mercure hub (real-time SSE).
 	# Bolt DB stored in var/data (volume) so www-data can write to it.

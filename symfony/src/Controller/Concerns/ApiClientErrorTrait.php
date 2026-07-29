@@ -2,11 +2,13 @@
 
 namespace App\Controller\Concerns;
 
+use App\Service\Media\DelugeClient;
 use App\Service\Media\JellyseerrClient;
 use App\Service\Media\ProwlarrClient;
 use App\Service\Media\QBittorrentClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
+use App\Service\Media\TransmissionClient;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
@@ -34,7 +36,7 @@ trait ApiClientErrorTrait
      * Returns a generic fallback if the client did not record a structured error
      * (e.g. exception thrown before any HTTP call).
      */
-    private function buildClientErrorFlash(string $service, RadarrClient|SonarrClient|ProwlarrClient|JellyseerrClient|QBittorrentClient $client, ?string $fallback = null): string
+    private function buildClientErrorFlash(string $service, RadarrClient|SonarrClient|ProwlarrClient|JellyseerrClient|QBittorrentClient|DelugeClient|TransmissionClient $client, ?string $fallback = null): string
     {
         $err = $client->getLastError();
         if ($err === null) {
@@ -58,7 +60,7 @@ trait ApiClientErrorTrait
      * Output shape:
      *   { ok: false, error: string, http_code: int, service: string, path: string, method: string }
      */
-    private function jsonClientError(string $service, RadarrClient|SonarrClient|ProwlarrClient|JellyseerrClient|QBittorrentClient $client, ?string $fallback = null, int $statusCode = 500): JsonResponse
+    private function jsonClientError(string $service, RadarrClient|SonarrClient|ProwlarrClient|JellyseerrClient|QBittorrentClient|DelugeClient|TransmissionClient $client, ?string $fallback = null, int $statusCode = 500): JsonResponse
     {
         $err = $client->getLastError();
         if ($err === null) {

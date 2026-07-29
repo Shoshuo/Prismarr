@@ -3,8 +3,9 @@
    Returns the empty-state message when there are no pending requests. #}
 {% import '_icons.html.twig' as ico %}
 {% if jellyseerr_requests is empty %}
-  <div class="card-body text-center text-secondary py-4">
-    {{ 'dashboard.requests.empty'|trans }}
+  <div class="empty py-4">
+    <div class="empty-icon">{{ ico.icon('hourglass', '', 32) }}</div>
+    <p class="empty-subtitle text-secondary mb-0">{{ 'dashboard.requests.empty'|trans }}</p>
   </div>
 {% else %}
   {% for req in jellyseerr_requests %}

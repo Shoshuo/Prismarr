@@ -3,23 +3,23 @@
 {% block title %}{{ 'setup.stepper.finish'|trans }} - Prismarr{% endblock %}
 
 {% block wizard_body %}
-  <div class="wizard-eyebrow">{{ 'setup.step.finish.eyebrow'|trans }}</div>
-  <h2 class="wizard-title">{{ 'setup.step.finish.title'|trans }}</h2>
-  <p class="wizard-subtitle">{{ 'setup.step.finish.subtitle'|trans }}</p>
+  <div class="subheader mb-1">{{ 'setup.step.finish.eyebrow'|trans }}</div>
+  <h2 class="mb-1">{{ 'setup.step.finish.title'|trans }}</h2>
+  <p class="text-secondary mb-4">{{ 'setup.step.finish.subtitle'|trans }}</p>
 
-  <div class="wizard-section">
+  <div class="list-group list-group-flush mt-3">
     {% for service in services %}
-      <div class="service-row">
+      <div class="list-group-item d-flex align-items-center justify-content-between px-0">
         <div>
-          <div class="service-row-name">{{ service.name }}</div>
+          <div class="fw-medium">{{ service.name }}</div>
           {% if service.configured and service.detail %}
-            <div class="service-row-sub">{{ service.detail }}</div>
+            <div class="text-secondary small">{{ service.detail }}</div>
           {% endif %}
         </div>
         {% if service.configured %}
-          <span class="service-badge ok">{{ 'setup.step.finish.badge_configured'|trans }}</span>
+          <span class="badge bg-green-lt">{{ 'setup.step.finish.badge_configured'|trans }}</span>
         {% else %}
-          <span class="service-badge skipped">{{ 'setup.step.finish.badge_skipped'|trans }}</span>
+          <span class="badge bg-secondary-lt">{{ 'setup.step.finish.badge_skipped'|trans }}</span>
         {% endif %}
       </div>
     {% endfor %}
@@ -28,9 +28,9 @@
   <form action="{{ path('app_setup_finish') }}" method="post" class="mt-4">
     <input type="hidden" name="_csrf_token" value="{{ csrf_token('setup_finish') }}"/>
 
-    <div class="wizard-actions">
-      <a href="{{ path('app_setup_downloads') }}" class="btn-wizard-back">{{ 'setup.step.common.back'|trans }}</a>
-      <button type="submit" class="btn-wizard-next">
+    <div class="d-flex align-items-center justify-content-between gap-3 mt-4 pt-4 border-top">
+      <a href="{{ path('app_setup_downloads') }}" class="btn btn-outline-secondary">{{ 'setup.step.common.back'|trans }}</a>
+      <button type="submit" class="btn btn-primary btn-wizard-accent">
         {{ 'setup.step.finish.cta'|trans }}
       </button>
     </div>

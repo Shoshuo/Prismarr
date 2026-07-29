@@ -13,6 +13,7 @@
    fetch() — see admin-instances.js — to bypass the nested-form CSRF
    issue and to keep the user on the same page (no full reload).
 #}
+{% import '_icons.html.twig' as ico %}
 
 <div class="service-card service-card--wide" data-service-card="{{ service_id }}">
   <div class="service-card-head">
@@ -36,23 +37,18 @@
 
   {% set enabled_count = instances|filter(i => i.enabled)|length %}
   {% if instances is empty %}
-    <div class="instance-empty-state"
-         style="padding: 2rem 1rem; text-align: center; border: 1px dashed var(--tblr-border-color); border-radius: 8px; margin-top: .5rem;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
-           fill="none" stroke="currentColor" stroke-width="1.5"
-           stroke-linecap="round" stroke-linejoin="round"
-           style="color: var(--tblr-secondary); margin-bottom: .5rem;">
-        <path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2"/>
-        <path d="M12 10v6M9 13h6"/>
-      </svg>
-      <p style="font-weight: 500; margin: 0 0 .25rem;">{{ 'admin.instances.empty.title'|trans({ '%service%': service_label }) }}</p>
-      <p style="color: var(--tblr-secondary); font-size: .875rem; margin: 0 0 1rem;">{{ 'admin.instances.empty.subtitle'|trans({ '%service%': service_label }) }}</p>
-      <button type="button"
-              class="btn btn-primary"
-              data-bs-toggle="modal"
-              data-bs-target="#instance-add-modal-{{ service_id }}">
-        {{ 'admin.instances.add'|trans({ '%service%': service_label }) }}
-      </button>
+    <div class="empty empty-bordered py-4 mt-2">
+      <div class="empty-icon">{{ ico.icon('folder-plus', '', 36) }}</div>
+      <p class="empty-title">{{ 'admin.instances.empty.title'|trans({ '%service%': service_label }) }}</p>
+      <p class="empty-subtitle text-secondary">{{ 'admin.instances.empty.subtitle'|trans({ '%service%': service_label }) }}</p>
+      <div class="empty-action">
+        <button type="button"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#instance-add-modal-{{ service_id }}">
+          {{ 'admin.instances.add'|trans({ '%service%': service_label }) }}
+        </button>
+      </div>
     </div>
   {% else %}
     <div class="instance-list" style="margin-top: .5rem;">

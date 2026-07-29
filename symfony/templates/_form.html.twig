@@ -1,0 +1,34 @@
+{#
+  Shared form macros.
+
+  secret_input — the single "password field with reveal toggle" pattern
+  (stock Tabler input-group). The click handler is a page-level binding on
+  [data-toggle-for] (setup/_layout.html.twig for the wizard,
+  admin/settings.html.twig for the admin page): it flips the target input
+  between type=password and type=text.
+
+  opts:
+    value        prefill (default '')
+    placeholder  optional placeholder
+    autocomplete autocomplete attribute (default 'off')
+    required     bool (default false)
+    minlength    optional int
+#}
+{% macro secret_input(id, name, opts = {}) %}
+  {% import '_icons.html.twig' as ico %}
+  <div class="input-group input-group-flat">
+    <input type="password" id="{{ id }}" name="{{ name }}" class="form-control"
+           value="{{ opts.value ?? '' }}"
+           {%- if opts.placeholder ?? false %} placeholder="{{ opts.placeholder }}"{% endif %}
+           autocomplete="{{ opts.autocomplete ?? 'off' }}" spellcheck="false"
+           {%- if opts.required ?? false %} required{% endif %}
+           {%- if opts.minlength ?? false %} minlength="{{ opts.minlength }}"{% endif %}/>
+    <span class="input-group-text">
+      <button type="button" class="btn btn-link link-secondary p-0 border-0"
+              aria-label="{{ 'setup.step.admin.toggle_visibility'|trans }}"
+              data-toggle-for="{{ id }}">
+        {{ ico.icon('eye', '', 16) }}
+      </button>
+    </span>
+  </div>
+{% endmacro %}

@@ -22,8 +22,76 @@
         {% if ql.metaLine %}<span>{{ ql.metaLine }}</span>{% endif %}
         {% for g in ql.genres %}<span class="ql-chip">{{ g }}</span>{% endfor %}
       </div>
+      {% if ql.airStatus|default(null) or ql.releaseDates|default([])|length %}
+      <div class="ql-dates">
+        {% if ql.airStatus|default(null) %}
+          <span class="ql-airstatus is-{{ ql.airStatus }}">{{ ('dashboard.quicklook.airstatus.' ~ ql.airStatus)|trans }}</span>
+        {% endif %}
+        {% for d in ql.releaseDates|default([]) %}
+          <span class="ql-date{% if d.upcoming %} is-upcoming{% endif %}">
+            <span class="ql-date-label">{{ d.label }}</span>
+            <span class="ql-date-val">{{ d.date|date('M j, Y') }}</span>
+          </span>
+        {% endfor %}
+      </div>
+      {% endif %}
       {% if ql.overview %}<p class="ql-overview">{{ ql.overview }}</p>{% endif %}
-      <a href="{{ ql.actionUrl }}" class="ql-action">{{ ql.actionLabel }} →</a>
+
+      {% if ql.providers|default([])|length %}
+      <div class="ql-providers" aria-label="{{ 'dashboard.quicklook.providers'|trans }}">
+        {% for p in ql.providers %}
+          {% if p.logo %}<img src="{{ p.logo }}" alt="{{ p.name }}" title="{{ p.name }}" class="ql-provider">{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if ql.cast|default([])|length %}
+      <div class="ql-cast">
+        {% for c in ql.cast %}
+          <div class="ql-cast-item">
+            {% if c.profile %}<img src="{{ c.profile }}" alt="{{ c.name }}" class="ql-cast-photo">
+            {% else %}<div class="ql-cast-photo ql-cast-photo-empty">?</div>{% endif %}
+            <span class="ql-cast-name">{{ c.name }}</span>
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if ql.trailerKey|default(null) %}
+      <div class="ql-trailer">
+        <div class="ratio ratio-16x9">
+          <iframe src="https://www.youtube.com/embed/{{ ql.trailerKey }}?rel=0" title="{{ 'dashboard.quicklook.trailer'|trans }}" allowfullscreen loading="lazy"></iframe>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="ql-actions">
+        {% if ql.inLibrary|default(false) or not ql.tmdbId|default(null) %}
+          <a href="{{ ql.actionUrl }}" class="ql-action">{{ ql.actionLabel }} →</a>
+        {% else %}
+          <button type="button" class="ql-action ql-add"
+                  data-ql-add data-ql-add-type="{{ ql.tmdbType }}" data-ql-add-id="{{ ql.tmdbId }}">
+            {{ 'decouverte.explorer.add_to'|trans({service: ql.tmdbType == 'movie' ? 'Radarr' : 'Sonarr'}) }} →
+          </button>
+        {% endif %}
+        {% if ql.tmdbId|default(null) %}
+          <button type="button" class="ql-action-secondary ql-wl" data-ql-wl
+                  data-wl-type="{{ ql.tmdbType }}" data-wl-id="{{ ql.tmdbId }}"
+                  data-wl-title="{{ ql.title }}" data-wl-poster-path="{{ ql.posterPath }}"
+                  data-wl-vote="{{ ql.rating }}" data-wl-year="{{ ql.year }}"
+                  data-wl-add="{{ 'dashboard.quicklook.watchlist'|trans }}"
+                  data-wl-on="{{ 'dashboard.quicklook.watchlist_added'|trans }}"
+                  data-wl-toast-add="{{ 'dashboard.quicklook.watchlist_add_toast'|trans }}"
+                  data-wl-toast-rm="{{ 'dashboard.quicklook.watchlist_remove_toast'|trans }}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.6-6.2 4.6 2.4-7.4-6.2-4.5h7.6z"/></svg>
+            <span data-wl-label>{{ 'dashboard.quicklook.watchlist'|trans }}</span>
+          </button>
+          <a href="https://www.themoviedb.org/{{ ql.tmdbType }}/{{ ql.tmdbId }}" target="_blank" rel="noopener" class="ql-action-secondary">TMDb</a>
+        {% endif %}
+        {% if ql.imdbId|default(null) %}
+          <a href="https://www.imdb.com/title/{{ ql.imdbId }}" target="_blank" rel="noopener" class="ql-action-secondary">IMDb</a>
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>

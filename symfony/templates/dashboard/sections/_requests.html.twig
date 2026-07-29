@@ -1,0 +1,25 @@
+{# Jellyseerr requests — self-gates on jellyseerr config. Full-width card. #}
+<div data-section-key="requests">
+{% if services_configured.jellyseerr %}
+<div class="row row-cards mb-3">
+  <div class="col-12" data-dash-widget="requests" data-dash-url="{{ path('app_dashboard_widget_requests') }}">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="card-title">
+          <span class="card-title-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M9 12l3 3l3 -3"/><path d="M21 14v4a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-4"/></svg>
+          </span>
+          {{ 'dashboard.requests.title'|trans }}
+        </h3>
+        <div class="card-actions">
+          <a href="{{ path('jellyseerr_index') }}" class="dash-action-btn">{{ 'dashboard.requests.manage_cta'|trans }}</a>
+        </div>
+      </div>
+      <div class="list-group list-group-flush dash-list" data-dash-body>
+        <div class="card-body text-center text-secondary py-4"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+</div>

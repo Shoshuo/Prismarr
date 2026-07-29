@@ -311,6 +311,11 @@ class SetupController extends AbstractController
             'qbittorrent_url' => 'http://host.docker.internal:8080',
             'qbittorrent_user' => 'admin',
             'qbittorrent_password' => '',
+            'deluge_url' => '',
+            'deluge_password' => '',
+            'transmission_url' => '',
+            'transmission_user' => '',
+            'transmission_password' => '',
             'gluetun_url' => '',
             'gluetun_api_key' => '',
             // Usenet download clients (optional, like qBittorrent above).
@@ -374,7 +379,7 @@ class SetupController extends AbstractController
     #[Route(
         '/test/{service}',
         name: 'app_setup_test',
-        requirements: ['service' => 'tmdb|radarr|sonarr|prowlarr|jellyseerr|qbittorrent|sabnzbd|nzbget'],
+        requirements: ['service' => 'tmdb|radarr|sonarr|prowlarr|jellyseerr|qbittorrent|deluge|transmission|sabnzbd|nzbget'],
         methods: ['POST'],
     )]
     #[IsGranted('ROLE_USER')]
@@ -437,6 +442,8 @@ class SetupController extends AbstractController
             'prowlarr'    => ['prowlarr_url', 'prowlarr_api_key'],
             'jellyseerr'  => ['jellyseerr_url', 'jellyseerr_api_key'],
             'qbittorrent' => ['qbittorrent_url', 'qbittorrent_user', 'qbittorrent_password'],
+            'deluge'      => ['deluge_url', 'deluge_password'],
+            'transmission' => ['transmission_url', 'transmission_user', 'transmission_password'],
             'sabnzbd'     => ['sabnzbd_url', 'sabnzbd_api_key'],
             'nzbget'      => ['nzbget_url', 'nzbget_user', 'nzbget_password'],
         ];
@@ -647,6 +654,8 @@ class SetupController extends AbstractController
             $this->summaryRow('Prowlarr',    'prowlarr_url'),
             $this->summaryRow('Seerr',       'jellyseerr_url'),
             $this->summaryRow('qBittorrent', 'qbittorrent_url'),
+            $this->summaryRow('Deluge',      'deluge_url'),
+            $this->summaryRow('Transmission', 'transmission_url'),
             $this->summaryRow('SABnzbd',     'sabnzbd_url'),
             $this->summaryRow('NZBGet',      'nzbget_url'),
             $this->summaryRow('Gluetun',     'gluetun_url'),

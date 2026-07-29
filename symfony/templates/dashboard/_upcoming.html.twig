@@ -3,8 +3,9 @@
    [data-dash-body]. Returns the empty-state message when there's nothing. #}
 {% import '_icons.html.twig' as ico %}
 {% if upcoming is empty %}
-  <div class="card-body text-center text-secondary py-4">
-    {{ 'dashboard.upcoming.empty'|trans }}
+  <div class="empty py-4">
+    <div class="empty-icon">{{ ico.icon('calendar', '', 32) }}</div>
+    <p class="empty-subtitle text-secondary mb-0">{{ 'dashboard.upcoming.empty'|trans }}</p>
   </div>
 {% else %}
   <div class="mini-cal">

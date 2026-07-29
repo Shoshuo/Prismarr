@@ -13,8 +13,6 @@
    trimmed to Usenet semantics (no seeding / ratio / trackers / peers). */
 .usenet-stat-card { position:relative; overflow:hidden; height:100%; }
 .usenet-stat-card .card-body { min-height:80px; display:flex; flex-direction:column; justify-content:center; }
-.usenet-stat-card .stat-val { font-size:1.4rem; font-weight:700; line-height:1; letter-spacing:-.5px; }
-.usenet-stat-card .stat-lbl { font-size:.7rem; text-transform:uppercase; letter-spacing:.4px; color:var(--tblr-text-secondary); font-weight:600; }
 
 /* ── List / row base ─────────────────────────────────────────────────────── */
 .usenet-list { display:flex; flex-direction:column; gap:.3rem; }
@@ -139,12 +137,6 @@ body[data-bs-theme="dark"] .usenet-tmini { background:rgba(255,255,255,.08); }
 
 /* ── Filters / view switcher / bulk bar ──────────────────────────────────── */
 
-.usenet-view-switcher { display:inline-flex; background:rgba(0,0,0,.04); border-radius:6px; padding:2px; gap:1px; }
-body[data-bs-theme="dark"] .usenet-view-switcher { background:rgba(255,255,255,.05); }
-.usenet-view-btn { border:none; background:transparent; padding:3px 9px; border-radius:4px; font-size:.72rem; font-weight:500; color:var(--tblr-text-secondary); display:inline-flex; align-items:center; gap:4px; cursor:pointer; }
-.usenet-view-btn:hover { background:rgba(var(--tblr-primary-rgb),.1); color:var(--tblr-primary); }
-.usenet-view-btn.active { background:var(--tblr-primary); color:#fff; }
-.usenet-view-btn svg { width:13px; height:13px; }
 
 .usenet-bulk-bar { position:fixed; bottom:0; left:15rem; right:0; z-index:1050; background:var(--tblr-bg-surface); border-top:2px solid var(--tblr-primary); padding:.7rem 1.25rem; display:none; align-items:center; gap:.6rem; box-shadow:0 -6px 18px rgba(0,0,0,.12); }
 .usenet-bulk-bar.show { display:flex; }
@@ -185,39 +177,14 @@ body[data-bs-theme="dark"] .usenet-view-switcher { background:rgba(255,255,255,.
      data-base="{{ path('app_usenet_index', {client: client}) }}"
      data-refresh="{{ display_pref('qbit_refresh_seconds') }}">
 
-  {# ─── Stats strip ──────────────────────────────────────────────── #}
-  <div class="row row-cards g-2 mb-3">
-    <div class="col-6 col-sm-4 col-lg">
-      <div class="card usenet-stat-card"><div class="card-body text-center">
-        <div class="stat-val text-blue" data-stat="active">—</div>
-        <div class="stat-lbl mt-1">{{ 'usenet.stats.active'|trans }}</div>
-      </div></div>
-    </div>
-    <div class="col-6 col-sm-4 col-lg">
-      <div class="card usenet-stat-card"><div class="card-body text-center">
-        <div class="stat-val text-secondary" data-stat="queued">—</div>
-        <div class="stat-lbl mt-1">{{ 'usenet.stats.queued'|trans }}</div>
-      </div></div>
-    </div>
-    <div class="col-6 col-sm-4 col-lg">
-      <div class="card usenet-stat-card"><div class="card-body text-center">
-        <div class="stat-val text-green" data-stat="speed">—</div>
-        <div class="stat-lbl mt-1">{{ 'usenet.stats.speed'|trans }}</div>
-      </div></div>
-    </div>
-    <div class="col-6 col-sm-4 col-lg">
-      <div class="card usenet-stat-card"><div class="card-body text-center">
-        <div class="stat-val text-cyan" data-stat="eta">—</div>
-        <div class="stat-lbl mt-1">{{ 'usenet.stats.eta'|trans }}</div>
-      </div></div>
-    </div>
-    <div class="col-6 col-sm-4 col-lg">
-      <div class="card usenet-stat-card"><div class="card-body text-center">
-        <div class="stat-val text-orange" data-stat="free_space">—</div>
-        <div class="stat-lbl mt-1">{{ 'usenet.stats.free_space'|trans }}</div>
-      </div></div>
-    </div>
-  </div>
+  {# ─── Stats strip (shared partial — JS fills [data-stat]) ──────────── #}
+  {% include '_stat_tiles.html.twig' with { layout:'grid', cols:'col-6 col-sm-4 col-lg', tiles:[
+    { value:'—', data_stat:'active',     label:'usenet.stats.active'|trans,     hue:'blue' },
+    { value:'—', data_stat:'queued',     label:'usenet.stats.queued'|trans,     hue:'secondary' },
+    { value:'—', data_stat:'speed',      label:'usenet.stats.speed'|trans,      hue:'green' },
+    { value:'—', data_stat:'eta',        label:'usenet.stats.eta'|trans,        hue:'cyan' },
+    { value:'—', data_stat:'free_space', label:'usenet.stats.free_space'|trans, hue:'orange' }
+  ] } only %}
 
   {# ─── Toolbar ──────────────────────────────────────────────────── #}
   <div class="card mb-3"><div class="card-body py-2">
@@ -257,6 +224,9 @@ body[data-bs-theme="dark"] .usenet-view-switcher { background:rgba(255,255,255,.
         <span class="input-group-text" title="{{ 'usenet.toolbar.speed_limit'|trans }}">{{ ico.icon('bolt', '', 14) }}</span>
         <input type="number" min="0" step="1" class="form-control" data-usenet-speed
                placeholder="{{ 'usenet.toolbar.speed_limit_placeholder'|trans }}" aria-label="{{ 'usenet.toolbar.speed_limit'|trans }}">
+        {# Visible unit so a filled value never reads as a naked number
+           (the unit used to live only in the placeholder). #}
+        <span class="input-group-text">MB/s</span>
       </div>
       <div class="ms-auto d-flex align-items-center gap-2 flex-shrink-0">
         <span class="text-muted" style="font-size:.78rem;white-space:nowrap;font-weight:500;">{{ 'usenet.filters.sort_label'|trans }}</span>
@@ -270,20 +240,18 @@ body[data-bs-theme="dark"] .usenet-view-switcher { background:rgba(255,255,255,.
           <option value="eta|0">{{ 'usenet.sort.eta_asc'|trans }}</option>
         </select>
       </div>
-      <div class="usenet-view-switcher" role="group" aria-label="{{ 'usenet.view.aria_label'|trans }}">
-        <button type="button" class="usenet-view-btn active" data-view="list" title="{{ 'usenet.view.list_title'|trans }}">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-          {{ 'usenet.view.list'|trans }}
-        </button>
-        <button type="button" class="usenet-view-btn" data-view="table" title="{{ 'usenet.view.table_title'|trans }}">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v14H3zM3 10h18M3 15h18M10 5v14"/></svg>
-          {{ 'usenet.view.table'|trans }}
-        </button>
-        <button type="button" class="usenet-view-btn" data-view="compact" title="{{ 'usenet.view.compact_title'|trans }}">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-          {{ 'usenet.view.compact'|trans }}
-        </button>
-      </div>
+      {% set vs_icon_list = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>' %}
+      {% set vs_icon_table = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v14H3zM3 10h18M3 15h18M10 5v14"/></svg>' %}
+      {% set vs_icon_compact = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>' %}
+      {% include '_view_switcher.html.twig' with {
+          active: 'list',
+          aria_label: 'usenet.view.aria_label'|trans,
+          modes: [
+              { view: 'list', label: 'usenet.view.list'|trans, title: 'usenet.view.list_title'|trans, icon: vs_icon_list },
+              { view: 'table', label: 'usenet.view.table'|trans, title: 'usenet.view.table_title'|trans, icon: vs_icon_table },
+              { view: 'compact', label: 'usenet.view.compact'|trans, title: 'usenet.view.compact_title'|trans, icon: vs_icon_compact }
+          ]
+      } only %}
     </div>
   </div></div>
 
@@ -706,10 +674,10 @@ body[data-bs-theme="dark"] .usenet-view-switcher { background:rgba(255,255,255,.
   function setView(v) {
     view = v;
     localStorage.setItem(VKEY, v);
-    root.querySelectorAll('.usenet-view-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.view === v); });
+    root.querySelectorAll('.view-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.view === v); });
     renderQueue();
   }
-  root.querySelectorAll('.usenet-view-btn').forEach(function (b) {
+  root.querySelectorAll('.view-btn').forEach(function (b) {
     b.addEventListener('click', function () { setView(b.dataset.view); });
   });
   setView(view);

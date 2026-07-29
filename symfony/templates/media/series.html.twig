@@ -26,6 +26,8 @@
     transition: transform .15s, box-shadow .15s;
 }
 .media-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.3); z-index: 2; }
+/* Tabler .ribbon scaled for the compact poster card (the "New" flag). */
+.media-card .ribbon { font-size: .56rem; font-weight: 700; padding: .05rem .4rem; z-index: 3; letter-spacing: .03em; }
 .media-card .hover-info {
     position: absolute; inset: 0;
     background: rgba(0,0,0,.75);
@@ -97,16 +99,6 @@
 .ep-bar-fill { height: 100%; border-radius: 2px; }
 .queue-progress { height: 4px; border-radius: 2px; background: var(--tblr-bg-surface-secondary); overflow: hidden; margin-top: .25rem; }
 .queue-progress-bar { height: 100%; border-radius: 2px; background: var(--tblr-primary); transition: width .3s; }
-/* Issue #19 — status filter buttons: outlined variants with a tinted active state */
-.filter-btn { font-weight: 500; }
-.filter-btn.active { color: #fff !important; }
-.filter-btn[data-filter="all"].active,
-.filter-btn[data-filter="ended"].active,
-.filter-btn[data-filter="unmonitored"].active { background-color: var(--tblr-secondary) !important; border-color: var(--tblr-secondary) !important; }
-.filter-btn[data-filter="monitored"].active { background-color: var(--tblr-info) !important; border-color: var(--tblr-info) !important; }
-.filter-btn[data-filter="continuing"].active { background-color: var(--tblr-success) !important; border-color: var(--tblr-success) !important; }
-.filter-btn[data-filter="anime"].active { background-color: var(--tblr-purple) !important; border-color: var(--tblr-purple) !important; }
-.filter-btn[data-filter="missing"].active { background-color: var(--tblr-danger) !important; border-color: var(--tblr-danger) !important; }
 /* Mode sélection */
 .select-mode .media-card { cursor: pointer; }
 .select-mode .media-card .select-cb { display: flex !important; }
@@ -234,6 +226,36 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
    la page. Donne l'impression que ça réagit instantanément même sur un full
    reload de 200-500ms. */
 .library-loading { opacity: 0.5; transition: opacity 120ms ease-out; pointer-events: none; }
+
+/* ── Mobile/tablet readability floor (responsive audit 2026-06-29) ──
+   Floor sub-11px text at 11px (.6875rem) below the lg breakpoint. Kept last
+   in this block so it wins the cascade at equal specificity; desktop
+   (≥992px) keeps the original sizes. Note: the hover-info overlay stays
+   hover-only here — every action it carries is also reachable by tapping
+   the card (detail modal), so touch loses nothing. */
+@media (max-width: 991.98px) {
+  .media-card .card-sub,
+  .media-card .type-badge,
+  .media-card .hover-info .h-year,
+  .media-card .hover-info .h-overview,
+  .media-card .hover-info .h-badges .badge,
+  .media-grid.view-table .media-card .no-poster,
+  .media-grid.view-extended .media-card .no-poster,
+  .media-grid.view-compact .media-card .card-title-text,
+  .media-grid.view-compact .media-card .card-sub,
+  .shelf-scroll .shelf-card .shelf-title { font-size: .6875rem; }
+}
+/* ── Mobile filter drawer (responsive offcanvas) ──
+   At ≥992px Bootstrap renders .offcanvas-lg static/inline (transparent bg,
+   flex body with no padding, header hidden). Restore the desktop card chrome
+   so the ≥992px toolbar is visually + behaviourally unchanged. */
+@media (min-width: 992px) {
+  .series-toolbar-filters.offcanvas-lg { background-color: var(--tblr-bg-surface, var(--tblr-card-bg)) !important; border: var(--tblr-border-width, 1px) solid var(--tblr-border-color) !important; }
+  .series-toolbar-filters.offcanvas-lg .offcanvas-body { display: block !important; padding: .5rem 1rem !important; overflow: visible !important; }
+}
+@media (max-width: 991.98px) {
+  .series-toolbar-filters.offcanvas-lg { border: 0; border-radius: 0; height: auto !important; }
+}
 </style>
 {% endblock %}
 
@@ -262,15 +284,13 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
 
 <div id="sonarr-warnings-banner"></div>
 
-{# ── Stats (compact strip — #7) ── #}
-<div class="card card-sm mb-3">
-  <div class="card-body py-2 d-flex flex-wrap align-items-baseline justify-content-around gap-2 gap-sm-3">
-    <div><span class="h3 mb-0">{{ stats.total }}</span> <span class="text-muted small">{{ 'media.series.stats.total'|trans }}</span></div>
-    <div><span class="h3 mb-0 text-success">{{ stats.continuing }}</span> <span class="text-muted small">{{ 'media.series.stats.continuing'|trans }}</span></div>
-    <div><span class="h3 mb-0 text-secondary">{{ stats.ended }}</span> <span class="text-muted small">{{ 'media.series.stats.ended'|trans }}</span></div>
-    <div><span class="h3 mb-0">{{ stats.totalGb }} <span class="text-muted fs-5">{{ 'media.series.stats.gb_suffix'|trans }}</span></span> <span class="text-muted small">{{ 'media.series.stats.total_size'|trans }}</span></div>
-  </div>
-</div>
+{# ── Stats (compact strip — #7, shared partial) ── #}
+{% include '_stat_tiles.html.twig' with { layout:'strip', tiles:[
+  { value: stats.total,      label: 'media.series.stats.total'|trans },
+  { value: stats.continuing, label: 'media.series.stats.continuing'|trans, hue:'success' },
+  { value: stats.ended,      label: 'media.series.stats.ended'|trans,      hue:'secondary' },
+  { value: stats.totalGb,    label: 'media.series.stats.total_size'|trans, unit: 'media.series.stats.gb_suffix'|trans }
+] } only %}
 
 {# ── Download queue (auto-refresh) ── #}
 <div class="card mb-3" id="queue-card" style="{{ queue is empty ? 'display:none;' : '' }}">
@@ -337,23 +357,34 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
    (search + 7 status buttons / dropdowns) and view modes + actions right.
    Conditional row 3 inside the filters card surfaces bulk-filtered actions
    and a "reset filters" link when something is narrowed. #}
+{% set filter_count = (query.status != 'all' ? 1 : 0) + (query.q != '' ? 1 : 0) + (query.genre != '' ? 1 : 0) + (query.network != '' ? 1 : 0) + (query.sort != 'title-asc' ? 1 : 0) %}
 <div class="row g-2 mb-3 align-items-stretch series-toolbar">
   <div class="col-12 col-xl-9">
-    <div class="card h-100 series-toolbar-filters">
-      <div class="card-body py-2">
-        <form method="get" id="series-filter-form" action="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="d-flex flex-column gap-2">
+    <div class="card h-100 series-toolbar-filters offcanvas-lg offcanvas-start" tabindex="-1" id="series-filters-drawer" aria-labelledby="series-filters-drawer-label">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="series-filters-drawer-label">{{ 'media.series.filters.drawer_title'|trans }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#series-filters-drawer" aria-label="Close"></button>
+      </div>
+      <div class="card-body offcanvas-body py-2">
+        <form method="get" id="series-filter-form" action="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="d-flex flex-column gap-2" data-libfilter-type="series" data-libfilter-slug="{{ current_instance.slug }}">
           <input type="hidden" name="status" id="series-filter-status" value="{{ query.status }}">
           {# Row 1: search input (fixed width) + 7 status buttons sharing the remaining width via flex-fill. #}
           <div class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap">
             <input type="text" name="q" id="search-input" class="form-control form-control-sm" placeholder="{{ 'media.series.filters.search_placeholder'|trans }}" style="max-width:220px" value="{{ query.q }}" autocomplete="off">
             <div class="d-flex gap-1 flex-wrap flex-md-nowrap series-status-group flex-fill">
-              <button type="button" class="btn btn-sm btn-outline-secondary filter-btn flex-fill{% if query.status == 'all' %} active{% endif %}" data-filter="all">{{ 'media.series.filters.status.all'|trans }}</button>
-              <button type="button" class="btn btn-sm btn-outline-success filter-btn flex-fill{% if query.status == 'continuing' %} active{% endif %}" data-filter="continuing">{{ 'media.series.filters.status.continuing'|trans }}</button>
-              <button type="button" class="btn btn-sm btn-outline-secondary filter-btn flex-fill{% if query.status == 'ended' %} active{% endif %}" data-filter="ended">{{ 'media.series.filters.status.ended'|trans }}</button>
-              <button type="button" class="btn btn-sm btn-outline-purple filter-btn flex-fill{% if query.status == 'anime' %} active{% endif %}" data-filter="anime">{{ 'media.series.filters.status.anime'|trans }}</button>
-              <button type="button" class="btn btn-sm btn-outline-secondary filter-btn flex-fill{% if query.status == 'unmonitored' %} active{% endif %}" data-filter="unmonitored">{{ 'media.series.filters.status.unmonitored'|trans }}</button>
-              <button type="button" class="btn btn-sm btn-outline-info filter-btn flex-fill{% if query.status == 'monitored' %} active{% endif %}" data-filter="monitored">{{ 'media.series.filters.status.monitored'|trans }}</button>
-              <button type="button" class="btn btn-sm btn-outline-danger filter-btn flex-fill{% if query.status == 'missing' %} active{% endif %}" data-filter="missing">{{ 'media.series.filters.status.missing'|trans }}</button>
+              {% include '_filter_pills.html.twig' with {
+                active: query.status,
+                fill: true,
+                pills: [
+                  { filter: 'all',         label: 'media.series.filters.status.all'|trans,         hue: 'var(--tblr-secondary)' },
+                  { filter: 'continuing',  label: 'media.series.filters.status.continuing'|trans,  hue: 'var(--tblr-success)' },
+                  { filter: 'ended',       label: 'media.series.filters.status.ended'|trans,       hue: 'var(--tblr-secondary)' },
+                  { filter: 'anime',       label: 'media.series.filters.status.anime'|trans,       hue: 'var(--tblr-purple)' },
+                  { filter: 'unmonitored', label: 'media.series.filters.status.unmonitored'|trans, hue: 'var(--tblr-secondary)' },
+                  { filter: 'monitored',   label: 'media.series.filters.status.monitored'|trans,   hue: 'var(--tblr-info)' },
+                  { filter: 'missing',     label: 'media.series.filters.status.missing'|trans,     hue: 'var(--tblr-danger)' }
+                ]
+              } only %}
             </div>
           </div>
           {# Row 2: 3 dropdowns (genre, network, sort) sharing the available width via flex-fill. #}
@@ -394,9 +425,13 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               {{ 'media.series.actions.search_filtered'|trans }}
             </button>
-            <a href="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="btn btn-sm btn-ghost-secondary ms-auto">{{ 'media.series.pagination.reset_filters'|trans }}</a>
+            <a href="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="btn btn-sm btn-ghost-secondary ms-auto js-libfilter-reset">{{ 'media.series.pagination.reset_filters'|trans }}</a>
           </div>
         {% endif %}
+        <div class="series-drawer-footer d-lg-none d-flex gap-2 justify-content-end mt-2 pt-2 border-top">
+          <a href="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="btn btn-ghost-secondary js-libfilter-reset">{{ 'media.series.pagination.reset_filters'|trans }}</a>
+          <button type="button" class="btn btn-primary" id="series-filters-apply">{{ 'media.series.filters.apply'|trans }}</button>
+        </div>
       </div>
     </div>
   </div>
@@ -404,6 +439,11 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     <div class="card h-100 series-toolbar-actions">
       <div class="card-body py-2">
         <div class="d-flex flex-column gap-2 align-items-stretch">
+          <button type="button" class="btn btn-sm btn-outline-secondary d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#series-filters-drawer">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            {{ 'media.series.filters.open'|trans }}
+            {% if filter_count > 0 %}<span class="badge bg-primary ms-1" id="series-filters-count">{{ filter_count }}</span>{% endif %}
+          </button>
           <div class="d-flex gap-1" id="view-mode-btns">
             <button type="button" class="btn btn-sm btn-secondary view-btn flex-fill active" data-view="grid" title="{{ 'media.series.view.grid'|trans }}">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -510,6 +550,8 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
 <div class="media-grid" id="series-grid">
 {% for s in series %}
   <div class="media-card"
+       tabindex="0" role="button" data-kb-activate
+       aria-label="{{ s.title }}{% if s.year %} ({{ s.year }}){% endif %}"
        data-bs-toggle="modal" data-bs-target="#modal-serie"
        data-title="{{ s.title|lower }}"
        data-status="{{ s.status }}"
@@ -541,6 +583,11 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
       <img src="{{ s.poster }}" alt="{{ s.title }}" loading="lazy">
     {% else %}
       <div class="no-poster">{{ s.title }}</div>
+    {% endif %}
+
+    {# "New" ribbon on freshly-added series (Tabler .ribbon), sparse signal. #}
+    {% if s.addedAt and date(s.addedAt) > date('-7 days') %}
+      <span class="ribbon ribbon-top ribbon-start bg-green">{{ 'common.labels.new_badge'|trans }}</span>
     {% endif %}
 
     {# Selection checkbox #}
@@ -1251,13 +1298,20 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   var grid    = document.getElementById('series-grid');
   var visibleCards = function() { return Array.from(grid.querySelectorAll('.media-card')).filter(function(c) { return getComputedStyle(c).display !== 'none'; }); };
   var search  = document.getElementById('search-input');
-  var btnAll  = document.querySelectorAll('#series-filter-form .filter-btn');
+  var btnAll  = document.querySelectorAll('#series-filter-form .filter-pill');
   var shelfView = document.getElementById('series-shelf-view');
   var filterForm   = document.getElementById('series-filter-form');
   var statusInput  = document.getElementById('series-filter-status');
   var shelfBuilt = false;
 
+  // Below lg the filters live in an offcanvas drawer: auto-submit-on-change is
+  // suppressed (it would navigate and destroy the open drawer). The Apply
+  // button flips _applyingFilters and calls submitFiltersForm() once.
+  var _filtersMobile = window.matchMedia('(max-width: 991.98px)');
+  var _applyingFilters = false;
+
   function submitFiltersForm() {
+    if (_filtersMobile.matches && !_applyingFilters) return;
     if (!filterForm) return;
     if (typeof filterForm.requestSubmit === 'function') {
       filterForm.requestSubmit();
@@ -1278,6 +1332,13 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   ['filter-genre', 'filter-network', 'sort-select'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('change', submitFiltersForm);
+  });
+
+  // Drawer Apply (mobile only): defer the single navigation to here.
+  var _seriesApplyBtn = document.getElementById('series-filters-apply');
+  if (_seriesApplyBtn) _seriesApplyBtn.addEventListener('click', function() {
+    _applyingFilters = true;
+    submitFiltersForm();
   });
 
   // Debounced text search: submit after 300ms of inactivity so typing
@@ -2209,7 +2270,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     var badges = '';
     if (status === 'continuing') badges += '<span class="badge" style="background:rgba(34,197,94,.15);color:#4ade80;">' + esc(SERIES_I18N.continuing) + '</span>';
     else if (status === 'ended') badges += '<span class="badge" style="background:rgba(107,114,128,.15);color:#9ca3af;">' + esc(SERIES_I18N.ended) + '</span>';
-    if (currentMonitored) badges += '<span class="badge" style="background:rgba(var(--tblr-primary-rgb),.15);color:#818cf8;">' + esc(SERIES_I18N.followed) + '</span>';
+    if (currentMonitored) badges += '<span class="badge" style="background:rgba(var(--tblr-primary-rgb),.15);color:var(--tblr-primary);">' + esc(SERIES_I18N.followed) + '</span>';
     else badges += '<span class="badge" style="background:rgba(107,114,128,.15);color:#9ca3af;">' + esc(SERIES_I18N.unfollowed) + '</span>';
     if (type === 'anime') badges += '<span class="badge bg-purple-lt">' + esc(SERIES_I18N.anime) + '</span>';
     if (card.dataset.size && parseFloat(card.dataset.size) > 0) badges += '<span class="badge bg-secondary-lt">' + card.dataset.size + ' ' + esc(SERIES_I18N.gb_suffix) + '</span>';

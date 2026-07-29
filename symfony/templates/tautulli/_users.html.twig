@@ -1,6 +1,10 @@
 {# Per-user overview. `users` = list of {friendlyName, lastSeen, lastPlayed, plays, durationSeconds}. #}
+{% import '_icons.html.twig' as ico %}
 {% if users is empty %}
-  <div class="text-center text-secondary py-4">{{ 'tautulli.users.empty'|trans }}</div>
+  <div class="empty py-4">
+    <div class="empty-icon">{{ ico.icon('user', '', 32) }}</div>
+    <p class="empty-subtitle text-secondary mb-0">{{ 'tautulli.users.empty'|trans }}</p>
+  </div>
 {% else %}
 <div class="table-responsive">
   <table class="table table-vcenter card-table">

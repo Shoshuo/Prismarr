@@ -1,0 +1,166 @@
+{# Async-hydrated fragment — Unraid server overview (admin-only), rendered by
+   DashboardController::widgetServer into the card's [data-dash-body].
+   `server` = UnraidClient::overview(): null → unreachable state; each group
+   renders only when the API returned it (partial schema/scope tolerated).
+   Layout: top row Array · System · Parity · UPS, then full-width Disks,
+   then full-width Docker container chip row. #}
+{% macro dur(s) %}{% apply spaceless %}
+  {% set h = (s / 3600)|round(0, 'floor') %}
+  {% set m = ((s - h * 3600) / 60)|round(0, 'floor') %}
+  {% if h > 0 %}{{ h }}h {{ m }}m{% else %}{{ m }}m{% endif %}
+{% endapply %}{% endmacro %}
+{% if server is null %}
+  <div class="text-center text-secondary py-3">{{ 'dashboard.server.unreachable'|trans }}</div>
+{% else %}
+<div class="server-grid">
+
+  {% if server.array is not null %}
+    <div class="server-tile">
+      <div class="server-tile-head">
+        <span class="server-tile-label">{{ 'dashboard.server.array'|trans }}</span>
+        {# STARTED = green; STOPPED = neutral grey (a deliberately-stopped array
+           isn't an error); anything else (unmountable, etc.) = red. #}
+        {% set state_up = server.array.state|default('')|upper %}
+        {% set state_class = state_up starts with 'STARTED' ? 'is-ok' : (state_up starts with 'STOPPED' ? 'is-idle' : 'is-ko') %}
+        <span class="server-state-badge {{ state_class }}">{{ server.array.state|default('—') }}</span>
+      </div>
+      {% if server.array.capacity.total %}
+        {% set pct = (server.array.capacity.used / server.array.capacity.total * 100)|round %}
+        <div class="server-bar" title="{{ pct }}%">
+          <div class="server-bar-fill {{ pct >= 90 ? 'is-hot' : '' }}" style="width: {{ pct }}%"></div>
+        </div>
+        <div class="server-tile-sub">
+          {{ (server.array.capacity.used / 1073741824)|round(1) }} TB / {{ (server.array.capacity.total / 1073741824)|round(1) }} TB · {{ pct }}%
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if server.system is not null %}
+    <div class="server-tile">
+      <div class="server-tile-head">
+        <span class="server-tile-label">{{ 'dashboard.server.system'|trans }}</span>
+        {% if server.system.cpuBrand %}<span class="server-tile-sub">{{ server.system.cpuBrand }}</span>{% endif %}
+      </div>
+      {% if server.system.cpuPercent is not null %}
+        <div class="server-gauge-row">
+          <span class="server-gauge-label">{{ 'dashboard.server.cpu'|trans }}</span>
+          <div class="server-bar"><div class="server-bar-fill {{ server.system.cpuPercent >= 90 ? 'is-hot' : '' }}" style="width: {{ server.system.cpuPercent|round }}%"></div></div>
+          <span class="server-gauge-value">{{ server.system.cpuPercent|round }}%</span>
+        </div>
+      {% endif %}
+      {% if server.system.memPercent is not null %}
+        <div class="server-gauge-row">
+          <span class="server-gauge-label">{{ 'dashboard.server.ram'|trans }}</span>
+          <div class="server-bar"><div class="server-bar-fill {{ server.system.memPercent >= 90 ? 'is-hot' : '' }}" style="width: {{ server.system.memPercent|round }}%"></div></div>
+          <span class="server-gauge-value">{{ server.system.memPercent|round }}%</span>
+        </div>
+      {% endif %}
+      {% if server.system.uptimeEpoch %}
+        {# Boot time parsed to epoch by UnraidClient so the locale-aware
+           relative_date filter applies ("17 days ago" / "il y a 17 jours"). #}
+        <div class="server-tile-sub">{{ 'dashboard.server.uptime'|trans }} · {{ server.system.uptimeEpoch|relative_date }}</div>
+      {% elseif server.system.uptime %}
+        {# Unparseable boot timestamp — fall back to the raw string. #}
+        <div class="server-tile-sub">{{ 'dashboard.server.uptime'|trans }} · {{ server.system.uptime }}</div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if server.array is not null or server.parity is not null %}
+    <div class="server-tile">
+      <div class="server-tile-head">
+        <span class="server-tile-label">{{ 'dashboard.server.parity'|trans }}</span>
+        {% if server.parity is not null and server.parity.running %}
+          <span class="server-state-badge is-ok">{{ 'dashboard.server.parity_checking'|trans }}</span>
+        {% endif %}
+      </div>
+      {% if server.parity is not null and server.parity.running %}
+        {% if server.parity.progress is not null %}
+          <div class="server-bar" title="{{ server.parity.progress }}%"><div class="server-bar-fill" style="width: {{ server.parity.progress }}%"></div></div>
+          <div class="server-tile-sub">
+            {{ server.parity.progress }}%
+            {% if server.parity.elapsed is not null %} · {{ 'dashboard.server.elapsed'|trans }} {{ _self.dur(server.parity.elapsed) }}{% endif %}
+            {% if server.parity.etaSeconds is not null %} · {{ 'dashboard.server.eta'|trans }} {{ _self.dur(server.parity.etaSeconds) }}{% endif %}
+          </div>
+        {% elseif server.parity.elapsed is not null %}
+          <div class="server-tile-sub">{{ 'dashboard.server.elapsed'|trans }} {{ _self.dur(server.parity.elapsed) }}</div>
+        {% endif %}
+        {% if server.parity.errors is not null %}
+          <div class="server-tile-sub">{{ server.parity.errors }} {{ 'dashboard.server.errors'|trans }}</div>
+        {% endif %}
+      {% elseif server.parity is not null and server.parity.last is not null %}
+        <div class="server-tile-sub">
+          {{ 'dashboard.server.last_check'|trans }}{% if server.parity.last.dateEpoch is not null %} · {{ server.parity.last.dateEpoch|relative_date }}{% endif %}
+        </div>
+        <div class="server-tile-sub">
+          {% if server.parity.last.duration is not null %}{{ _self.dur(server.parity.last.duration) }} · {% endif %}{{ server.parity.last.errors ?? 0 }} {{ 'dashboard.server.errors'|trans }}
+        </div>
+      {% endif %}
+      {% if server.array is not null and server.array.parities is not empty %}
+        <div class="server-tile-sub">
+          {% for p in server.array.parities %}{{ p.status|default('—') }}{% if p.temp is not null %} · {{ p.temp }}°C{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if server.ups is not null %}
+    <div class="server-tile">
+      <div class="server-tile-head">
+        <span class="server-tile-label">{{ 'dashboard.server.ups'|trans }}</span>
+        {% if server.ups.name %}<span class="server-tile-sub">{{ server.ups.name }}</span>{% endif %}
+      </div>
+      {% if server.ups.battery is not null %}
+        <div class="server-gauge-row">
+          <span class="server-gauge-label">{{ 'dashboard.server.battery'|trans }}</span>
+          <div class="server-bar"><div class="server-bar-fill {{ server.ups.battery <= 25 ? 'is-hot' : '' }}" style="width: {{ server.ups.battery }}%"></div></div>
+          <span class="server-gauge-value">{{ server.ups.battery }}%</span>
+        </div>
+      {% endif %}
+      <div class="server-tile-sub">
+        {% if server.ups.load is not null %}{{ 'dashboard.server.load'|trans }} {{ server.ups.load|round }}%{% endif %}
+        {% if server.ups.runtime is not null %} · {{ server.ups.runtime }} min{% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if server.array is not null and server.array.disks is not empty %}
+    <div class="server-tile server-tile--wide">
+      <div class="server-tile-head">
+        <span class="server-tile-label">{{ 'dashboard.server.disks'|trans }}</span>
+      </div>
+      <div class="server-disk-grid">
+        {% for disk in server.array.disks|merge(server.array.caches) %}
+          <div class="server-disk">
+            <div class="server-disk-name">
+              {{ disk.name|default('—') }}
+              {% if disk.temp is not null %}<span class="server-disk-temp {{ disk.temp > 45 ? 'is-hot' : '' }}">{{ disk.temp }}°C</span>{% endif %}
+            </div>
+            {% if disk.size %}
+              {% set dpct = (disk.used / disk.size * 100)|round %}
+              <div class="server-bar"><div class="server-bar-fill {{ dpct >= 90 ? 'is-hot' : '' }}" style="width: {{ dpct }}%"></div></div>
+              <div class="server-disk-sub">{{ dpct }}%</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if server.docker is not null %}
+    <div class="server-tile server-tile--wide">
+      <div class="server-tile-head">
+        <span class="server-tile-label">{{ 'dashboard.server.docker'|trans }}</span>
+        <span class="server-tile-sub">{{ server.docker.running }}/{{ server.docker.total }} {{ 'dashboard.server.running'|trans }}</span>
+      </div>
+      <div class="server-chips">
+        {% for c in server.docker.containers|default([]) %}
+          <span class="{{ c.running ? 'server-chip-ok' : 'server-chip-muted' }}">{{ c.name }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endif %}

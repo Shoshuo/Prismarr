@@ -1,0 +1,68 @@
+{# Async-hydrated fragment — Houndarr widget totals, rendered by
+   DashboardController::widgetHoundarr into the card's [data-dash-body].
+   `houndarr` = HoundarrClient::widget(): null → unreachable; error 'auth' →
+   key rejected; otherwise the five allow-listed totals. #}
+{% if houndarr is null %}
+  <div class="text-center text-secondary py-3">{{ 'dashboard.houndarr.unreachable'|trans }}</div>
+{% elseif houndarr.error == 'auth' %}
+  <div class="text-center text-secondary py-3">{{ 'dashboard.houndarr.auth_error'|trans }}</div>
+{% else %}
+  <div class="houndarr-stats">
+    <div class="houndarr-stat">
+      <div class="houndarr-stat-value">{{ houndarr.totals.tracked }}</div>
+      <div class="houndarr-stat-label">{{ 'dashboard.houndarr.tracked'|trans }}</div>
+    </div>
+    <div class="houndarr-stat houndarr-stat--eligible">
+      <div class="houndarr-stat-value">{{ houndarr.totals.eligible }}</div>
+      <div class="houndarr-stat-label">{{ 'dashboard.houndarr.eligible'|trans }}</div>
+    </div>
+    <div class="houndarr-stat">
+      <div class="houndarr-stat-value">{{ houndarr.totals.gated }}</div>
+      <div class="houndarr-stat-label">{{ 'dashboard.houndarr.gated'|trans }}</div>
+    </div>
+    <div class="houndarr-stat">
+      <div class="houndarr-stat-value">{{ houndarr.totals.unreleased }}</div>
+      <div class="houndarr-stat-label">{{ 'dashboard.houndarr.unreleased'|trans }}</div>
+    </div>
+    <div class="houndarr-stat">
+      <div class="houndarr-stat-value">{{ houndarr.totals.searches7d }}</div>
+      <div class="houndarr-stat-label">{{ 'dashboard.houndarr.searches_7d'|trans }}</div>
+    </div>
+  </div>
+  {# Library-health bar — same eligible/gated/unreleased split as the stat
+     tiles, stacked as proportions of tracked (mirrors Houndarr's own bar).
+     No new upstream calls: pure re-render of the widget() totals. #}
+  {% if houndarr.totals.tracked > 0 %}
+    {% set tracked = houndarr.totals.tracked %}
+    <div class="houndarr-bar">
+      <div class="houndarr-bar-seg" style="width: {{ (houndarr.totals.eligible / tracked * 100)|round(1) }}%; background: var(--tblr-green);"></div>
+      <div class="houndarr-bar-seg" style="width: {{ (houndarr.totals.gated / tracked * 100)|round(1) }}%; background: var(--tblr-blue);"></div>
+      <div class="houndarr-bar-seg" style="width: {{ (houndarr.totals.unreleased / tracked * 100)|round(1) }}%; background: var(--tblr-secondary); opacity: .35;"></div>
+    </div>
+    <div class="houndarr-legend">
+      <span><span class="houndarr-legend-dot" style="background: var(--tblr-green);"></span>{{ 'dashboard.houndarr.eligible'|trans }} {{ houndarr.totals.eligible }}</span>
+      <span><span class="houndarr-legend-dot" style="background: var(--tblr-blue);"></span>{{ 'dashboard.houndarr.gated'|trans }} {{ houndarr.totals.gated }}</span>
+      <span><span class="houndarr-legend-dot" style="background: var(--tblr-secondary); opacity: .5;"></span>{{ 'dashboard.houndarr.unreleased'|trans }} {{ houndarr.totals.unreleased }}</span>
+    </div>
+  {% endif %}
+  {# Per-instance Radarr/Sonarr wanted counts — *arr-side numbers (see the
+     micro-note), null count → '—' when an instance was unreachable. #}
+  {% if instances|default([]) is not empty %}
+    <div class="houndarr-insts">
+      {% for inst in instances %}
+        <div class="houndarr-inst">
+          <span class="houndarr-inst-dot" style="background: {{ inst.type == 'radarr' ? '#FFC230' : '#00CCFF' }};"></span>
+          <span class="houndarr-inst-name">{{ inst.name }}</span>
+          <span class="houndarr-inst-counts">
+            <span>{{ 'dashboard.houndarr.wanted'|trans }}: {{ inst.wanted ?? '—' }}</span>
+            <span>{{ 'dashboard.houndarr.cutoff_unmet'|trans }}: {{ inst.cutoffUnmet ?? '—' }}</span>
+          </span>
+        </div>
+      {% endfor %}
+      <div class="houndarr-note">{{ 'dashboard.houndarr.arr_note'|trans }}</div>
+    </div>
+  {% endif %}
+  {% if houndarr.generatedAtEpoch %}
+    <div class="houndarr-updated">{{ 'dashboard.houndarr.updated'|trans }} {{ houndarr.generatedAtEpoch|prismarr_time }}</div>
+  {% endif %}
+{% endif %}

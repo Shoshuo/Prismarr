@@ -1,4 +1,5 @@
 {% import '_icons.html.twig' as ico %}
+{% import '_form.html.twig' as forms %}
 {# v1.1.0 Phase B1 — modales (add/edit) for the multi-instance card.
    MUST be rendered OUTSIDE the admin_settings_index main form because
    HTML doesn't allow nested forms (CSRF gets confused otherwise).
@@ -36,19 +37,7 @@
         </div>
         <div class="mb-3">
           <label class="form-label" for="instance-add-key-{{ service_id }}">{{ 'admin.field.api_key'|trans }}</label>
-          <div class="secret-wrapper">
-            <input type="password" id="instance-add-key-{{ service_id }}" name="api_key" class="form-control"
-                   autocomplete="new-password" spellcheck="false"/>
-            <button type="button" class="secret-toggle" data-toggle-for="instance-add-key-{{ service_id }}"
-                    aria-label="{{ 'setup.step.admin.toggle_visibility'|trans }}">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                   fill="none" stroke="currentColor" stroke-width="2"
-                   stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>
-                <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/>
-              </svg>
-            </button>
-          </div>
+          {{ forms.secret_input('instance-add-key-' ~ service_id, 'api_key', { autocomplete: 'new-password' }) }}
         </div>
         <details>
           <summary style="cursor: pointer; font-size: .85rem; color: var(--tblr-secondary);">
@@ -94,20 +83,7 @@
           </div>
           <div class="mb-3">
             <label class="form-label" for="instance-edit-key-{{ instance.id }}">{{ 'admin.field.api_key'|trans }}</label>
-            <div class="secret-wrapper">
-              <input type="password" id="instance-edit-key-{{ instance.id }}" name="api_key" class="form-control"
-                     value="{{ instance.apiKey ?? '' }}"
-                     autocomplete="new-password" spellcheck="false"/>
-              <button type="button" class="secret-toggle" data-toggle-for="instance-edit-key-{{ instance.id }}"
-                      aria-label="{{ 'setup.step.admin.toggle_visibility'|trans }}">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="2"
-                     stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>
-                  <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/>
-                </svg>
-              </button>
-            </div>
+            {{ forms.secret_input('instance-edit-key-' ~ instance.id, 'api_key', { value: instance.apiKey ?? '', autocomplete: 'new-password' }) }}
           </div>
           <details>
             <summary style="cursor: pointer; font-size: .85rem; color: var(--tblr-secondary);">

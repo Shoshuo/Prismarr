@@ -1,11 +1,18 @@
-{# Shared Plex info modal: shell + hidden data-API trigger + the delegated
-   open/keydown handler. Included by the dashboard and the Tautulli page.
+{# Shared Plex item click handling. Included by the dashboard and the Tautulli
+   page. A click on [data-plex-rating-key] first resolves the item's TMDb id
+   (/tautulli/api/quicklook/{ratingKey}); on a hit it opens the app-global
+   quick-look modal by clicking the hidden [data-ql-trigger] ghost below —
+   the delegated handler in _quicklook.html.twig does the rest (open, fetch,
+   watchlist decoration). Items with no tmdb guid (music, home videos) fall
+   back to the legacy Plex metadata modal kept underneath, so every click
+   keeps working.
    Tabler doesn't expose window.bootstrap, so we click a hidden data-bs-toggle
    trigger (same pattern as the usenet/qBit detail modals).
    Include exactly ONCE per rendered document (the dashboard and the Tautulli
    page are separate pages, so this holds); the window._plexModalDelegated guard
    only de-dupes the JS listener, not the modal DOM itself. #}
 <button type="button" class="d-none" data-plex-modal-trigger data-bs-toggle="modal" data-bs-target="#plex-info-modal"></button>
+<a class="d-none" href="#" data-ql-trigger data-plex-ql-ghost data-ql-source="tmdb" data-ql-type="" data-ql-id=""></a>
 <div class="modal modal-blur fade" id="plex-info-modal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content" data-plex-modal-body>
@@ -31,17 +38,36 @@
       .then(function (html) { body.innerHTML = html || '<div class="modal-body text-center text-secondary py-5">—</div>'; })
       .catch(function () { body.innerHTML = '<div class="modal-body text-center text-secondary py-5">—</div>'; });
   }
+  function openPlexItem(t) {
+    var ratingKey = t.getAttribute('data-plex-rating-key');
+    var legacy = function () {
+      openPlexModal(ratingKey, t.getAttribute('data-plex-player'), t.getAttribute('data-plex-device'));
+    };
+    fetch('/tautulli/api/quicklook/' + encodeURIComponent(ratingKey), { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var ghost = document.querySelector('[data-plex-ql-ghost]');
+        if (!d || !d.id || (d.type !== 'movie' && d.type !== 'tv') || !ghost) { legacy(); return; }
+        ghost.setAttribute('data-ql-type', d.type);
+        ghost.setAttribute('data-ql-id', String(d.id));
+        // Real deep-link href: the global handler navigates here if the
+        // quick-look fragment fetch itself fails (same as watchlist tiles).
+        ghost.setAttribute('href', '/decouverte?detail=' + d.type + '/' + d.id);
+        ghost.click();
+      })
+      .catch(legacy);
+  }
   document.addEventListener('click', function (e) {
     var t = e.target.closest('[data-plex-rating-key]');
     if (!t) return;
-    openPlexModal(t.getAttribute('data-plex-rating-key'), t.getAttribute('data-plex-player'), t.getAttribute('data-plex-device'));
+    openPlexItem(t);
   });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     var t = e.target.closest('[data-plex-rating-key]');
     if (!t) return;
     e.preventDefault();
-    openPlexModal(t.getAttribute('data-plex-rating-key'), t.getAttribute('data-plex-player'), t.getAttribute('data-plex-device'));
+    openPlexItem(t);
   });
 })();
 </script>

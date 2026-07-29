@@ -49,9 +49,10 @@
     </div>
     <div class="card-body p-0">
         {% if backups is empty %}
-            <div class="text-muted text-center py-5">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2 d-block mx-auto text-secondary"><path d="M12 5v14m-7-7l7 7l7-7"/></svg>
-                {{ 'prowlarr.backups.empty'|trans }}
+            {% import '_icons.html.twig' as ico %}
+            <div class="empty py-5">
+                <div class="empty-icon">{{ ico.icon('download', '', 36) }}</div>
+                <p class="empty-title mb-0">{{ 'prowlarr.backups.empty'|trans }}</p>
             </div>
         {% else %}
             <div class="table-responsive">

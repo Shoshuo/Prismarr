@@ -1,0 +1,125 @@
+{# Async-hydrated fragment — UniFi network overview (admin-only), rendered by
+   DashboardController::widgetNetwork into the card's [data-dash-body].
+   `net` = UnifiClient::overview(): null → unreachable state; each block
+   renders only when the API returned it (missing subsystem tolerated).
+   `chart` = NetworkUsageChart::build(): null → graph block hidden.
+   Layout: stat tiles (Down · Up · Clients · WAN), then the full-width 24h
+   SVG usage chart, then the infrastructure device chips + gateway gauges.
+   Reuses the Unraid widget's .server-* tile/bar/chip classes. #}
+{% macro rate(bps) %}{% apply spaceless %}
+  {% set bits = bps * 8 %}
+  {% if bits >= 1000000000 %}{{ (bits / 1000000000)|round(2) }} Gbit/s
+  {% elseif bits >= 1000000 %}{{ (bits / 1000000)|round(1) }} Mbit/s
+  {% else %}{{ (bits / 1000)|round }} kbit/s{% endif %}
+{% endapply %}{% endmacro %}
+{% macro dur(s) %}{% apply spaceless %}
+  {% set d = (s / 86400)|round(0, 'floor') %}
+  {% set h = ((s - d * 86400) / 3600)|round(0, 'floor') %}
+  {% set m = ((s - d * 86400 - h * 3600) / 60)|round(0, 'floor') %}
+  {% if d > 0 %}{{ d }}d {{ h }}h{% elseif h > 0 %}{{ h }}h {{ m }}m{% else %}{{ m }}m{% endif %}
+{% endapply %}{% endmacro %}
+{% if net is null %}
+  <div class="text-center text-secondary py-3">{{ 'dashboard.network.unreachable'|trans }}</div>
+{% else %}
+<div class="server-grid">
+
+  {% if net.wan is not null %}
+    <div class="server-tile">
+      <div class="server-tile-head">
+        <span class="server-tile-label">{{ 'dashboard.network.down'|trans }}</span>
+      </div>
+      <div class="net-rate">{% if net.wan.downBps is not null %}{{ _self.rate(net.wan.downBps) }}{% else %}—{% endif %}</div>
+    </div>
+    <div class="server-tile">
+      <div class="server-tile-head">
+        <span class="server-tile-label">{{ 'dashboard.network.up'|trans }}</span>
+      </div>
+      <div class="net-rate">{% if net.wan.upBps is not null %}{{ _self.rate(net.wan.upBps) }}{% else %}—{% endif %}</div>
+    </div>
+  {% endif %}
+
+  {% if net.clients is not null %}
+    <div class="server-tile">
+      <div class="server-tile-head">
+        <span class="server-tile-label">{{ 'dashboard.network.clients'|trans }}</span>
+      </div>
+      <div class="net-rate">{{ net.clients.total }}</div>
+      <div class="server-tile-sub">
+        {%- if net.clients.wired is not null %}{{ net.clients.wired }} {{ 'dashboard.network.wired'|trans }}{% endif -%}
+        {%- if net.clients.wireless is not null %}{% if net.clients.wired is not null %} · {% endif %}{{ net.clients.wireless }} {{ 'dashboard.network.wireless'|trans }}{% endif -%}
+        {%- if net.clients.guest %} · {{ net.clients.guest }} {{ 'dashboard.network.guest'|trans }}{% endif -%}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if net.wan is not null %}
+    <div class="server-tile">
+      <div class="server-tile-head">
+        <span class="server-tile-label">{{ 'dashboard.network.wan'|trans }}</span>
+        {# 'ok' = green; 'warning' = grey; anything else ('error', unknown) = red. #}
+        {% set wstatus = net.wan.status|default('')|lower %}
+        <span class="server-state-badge {{ wstatus == 'ok' ? 'is-ok' : (wstatus == 'warning' ? 'is-idle' : 'is-ko') }}">{{ net.wan.status|default('—') }}</span>
+      </div>
+      {% if net.wan.ip %}<div class="server-tile-sub">{{ net.wan.ip }}</div>{% endif %}
+      <div class="server-tile-sub">
+        {%- if net.wan.uptimeSeconds is not null %}{{ 'dashboard.network.uptime'|trans }} {{ _self.dur(net.wan.uptimeSeconds) }}{% endif -%}
+        {%- if net.wan.latencyMs is not null %}{% if net.wan.uptimeSeconds is not null %} · {% endif %}{{ net.wan.latencyMs }} ms{% endif -%}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if chart is not null %}
+    <div class="server-tile server-tile--wide">
+      <div class="server-tile-head">
+        <span class="server-tile-label">{{ 'dashboard.network.usage_24h'|trans }}</span>
+        <span class="server-tile-sub">↓ {{ chart.downTotal }} · ↑ {{ chart.upTotal }}</span>
+      </div>
+      <svg class="net-chart" viewBox="0 0 600 120" preserveAspectRatio="none" role="img" aria-label="{{ 'dashboard.network.usage_24h'|trans }}">
+        <polygon class="net-chart-fill" points="{{ chart.downArea }}"/>
+        <polyline class="net-chart-down" points="{{ chart.downLine }}"/>
+        <polyline class="net-chart-up" points="{{ chart.upLine }}"/>
+        {% for p in chart.points %}
+          <rect x="{{ p.x }}" y="0" width="{{ p.w }}" height="120" fill="transparent"><title>{{ p.label }}</title></rect>
+        {% endfor %}
+      </svg>
+      <div class="net-chart-axis"><span>{{ chart.startLabel }}</span><span>{{ chart.endLabel }}</span></div>
+      <div class="net-legend">
+        <span><span class="net-legend-dot" style="background: var(--tblr-primary);"></span>{{ 'dashboard.network.down'|trans }}</span>
+        <span><span class="net-legend-dot" style="background: #38bdf8;"></span>{{ 'dashboard.network.up'|trans }}</span>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if net.devices is not null and net.devices is not empty %}
+    {% set online = net.devices|filter(d => d.online)|length %}
+    <div class="server-tile server-tile--wide">
+      <div class="server-tile-head">
+        <span class="server-tile-label">{{ 'dashboard.network.infrastructure'|trans }}</span>
+        <span class="server-tile-sub">{{ online }}/{{ net.devices|length }} {{ 'dashboard.network.online'|trans }}</span>
+      </div>
+      <div class="server-chips">
+        {% for d in net.devices %}
+          <span class="{{ d.online ? 'server-chip-ok' : 'server-chip-ko' }}"{% if d.model %} title="{{ d.model }}{% if not d.online %} · {{ 'dashboard.network.offline'|trans }}{% endif %}"{% endif %}>{{ d.name ?? d.model ?? '—' }}</span>
+        {% endfor %}
+      </div>
+      {% if net.gateway is not null %}
+        {% if net.gateway.cpuPercent is not null %}
+          <div class="server-gauge-row">
+            <span class="server-gauge-label">CPU</span>
+            <div class="server-bar"><div class="server-bar-fill {{ net.gateway.cpuPercent >= 90 ? 'is-hot' : '' }}" style="width: {{ net.gateway.cpuPercent|round }}%"></div></div>
+            <span class="server-gauge-value">{{ net.gateway.cpuPercent|round }}%</span>
+          </div>
+        {% endif %}
+        {% if net.gateway.memPercent is not null %}
+          <div class="server-gauge-row">
+            <span class="server-gauge-label">RAM</span>
+            <div class="server-bar"><div class="server-bar-fill {{ net.gateway.memPercent >= 90 ? 'is-hot' : '' }}" style="width: {{ net.gateway.memPercent|round }}%"></div></div>
+            <span class="server-gauge-value">{{ net.gateway.memPercent|round }}%</span>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  {% endif %}
+
+</div>
+{% endif %}

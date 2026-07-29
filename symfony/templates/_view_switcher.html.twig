@@ -1,0 +1,14 @@
+{# Shared segmented view-switcher for the download-client list pages
+   (deluge/qbittorrent/usenet). Params:
+     modes      : list of { view: string, label: string, icon: string(raw SVG), title: string(optional) }
+     active     : the currently-active view key
+     aria_label : group aria-label (already translated)
+   The page's own JS wires the clicks (delegated on .view-btn) and persists
+   the choice; this partial only renders consistent markup. #}
+<div class="view-switcher" role="group" aria-label="{{ aria_label }}">
+  {% for m in modes %}
+    <button type="button" class="view-btn{{ m.view == active ? ' active' }}" data-view="{{ m.view }}"{% if m.title is defined and m.title %} title="{{ m.title }}"{% endif %}>
+      {{ m.icon|raw }}{% if m.label is defined and m.label %}<span>{{ m.label }}</span>{% endif %}
+    </button>
+  {% endfor %}
+</div>

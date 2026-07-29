@@ -12,8 +12,8 @@
 .cal-toolbar { display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; margin-bottom:1rem; padding:.6rem .85rem; background:var(--tblr-bg-surface); border:1px solid var(--tblr-border-color); border-radius:.75rem; }
 .cal-toolbar-label { font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--tblr-secondary); }
 .cal-filter-pill { display:inline-flex; align-items:center; gap:.35rem; padding:.25rem .6rem; border:1px solid var(--tblr-border-color); background:none; border-radius:2rem; font-size:.72rem; color:var(--tblr-body-color); cursor:pointer; transition:all .15s; white-space:nowrap; }
-.cal-filter-pill:hover { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.15); }
-.cal-filter-pill.active { background:rgba(var(--tblr-primary-rgb),.15); border-color:var(--tblr-primary); color:#a5b4fc; font-weight:600; }
+.cal-filter-pill:hover { background:rgba(var(--tblr-primary-rgb),.06); border-color:rgba(var(--tblr-primary-rgb),.2); }
+.cal-filter-pill.active { background:rgba(var(--tblr-primary-rgb),.15); border-color:var(--tblr-primary); color:var(--tblr-primary); font-weight:600; }
 .cal-filter-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
 .cal-filter-count { font-size:.6rem; color:var(--tblr-secondary); }
 .cal-toolbar-sep { width:1px; height:1.5rem; background:var(--tblr-border-color); margin:0 .25rem; }
@@ -147,7 +147,7 @@
 @media (max-width: 768px) {
   .cal-grid { grid-template-columns:repeat(7, minmax(92px, 1fr)); min-width:680px; }
 }
-.cal-grid-dow { background:rgba(var(--tblr-primary-rgb),.08); padding:.5rem .35rem; text-align:center; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#818cf8; }
+.cal-grid-dow { background:rgba(var(--tblr-primary-rgb),.08); padding:.5rem .35rem; text-align:center; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--tblr-primary); }
 .cal-grid-dow.is-weekend { color:#f59e0b; }
 .cal-cell { background:var(--tblr-bg-surface); min-height:110px; padding:.3rem .35rem; position:relative; transition:background .15s; }
 .cal-cell:hover { background:rgba(255,255,255,.02); }
@@ -161,7 +161,7 @@
 .cal-cell.is-past .cal-block:hover { opacity:.85; filter:grayscale(0); }
 .cal-cell.is-selected { box-shadow:inset 0 0 0 2px var(--tblr-primary); }
 .cal-cell.is-weekend { background:rgba(255,255,255,.01); }
-.cal-cell-num { font-size:.75rem; font-weight:700; color:rgba(255,255,255,.45); padding:.15rem .3rem; display:inline-block; border-radius:.25rem; cursor:pointer; }
+.cal-cell-num { font-size:.75rem; font-weight:700; color:var(--tblr-secondary-color); padding:.15rem .3rem; display:inline-block; border-radius:.25rem; cursor:pointer; }
 .cal-cell.is-today .cal-cell-num { background:var(--tblr-primary); color:#fff; border-radius:50%; width:1.5rem; height:1.5rem; display:inline-flex; align-items:center; justify-content:center; padding:0; }
 .cal-cell-events { display:flex; flex-direction:column; gap:2px; margin-top:3px; }
 
@@ -176,15 +176,32 @@
 .cal-block-physical { background:rgba(21,128,61,.7); border-left-color:#22c55e; color:#bbf7d0; }
 .cal-block-unknown { background:rgba(107,114,128,.6); border-left-color:#9ca3af; color:#e5e7eb; }
 
-/* Épisodes — couleurs par série */
-.cal-block-episode { background:rgba(14,165,233,.7); border-left-color:#38bdf8; color:#e0f2fe; }
-.cal-block-ep-v1 { background:rgba(139,92,246,.7); border-left-color:#a78bfa; color:#ede9fe; }
-.cal-block-ep-v2 { background:rgba(219,39,119,.65); border-left-color:#ec4899; color:#fce7f3; }
-.cal-block-ep-v3 { background:rgba(22,163,74,.7); border-left-color:#4ade80; color:#dcfce7; }
-.cal-block-ep-v4 { background:rgba(234,88,12,.7); border-left-color:#fb923c; color:#ffedd5; }
-.cal-block-ep-v5 { background:rgba(6,182,212,.7); border-left-color:#22d3ee; color:#cffafe; }
+/* Épisodes — nuances par série, MAIS toutes dans la famille bleu/cyan pour
+   rester fidèles à la pastille unique « épisode » (#38bdf8) de la légende.
+   Les anciennes teintes violet/rose/vert/orange entraient en conflit avec
+   cinéma (rouge), digital (violet) et physique (vert) de la même légende. */
+.cal-block-episode { background:rgba(14,165,233,.7);  border-left-color:#38bdf8; color:#e0f2fe; }
+.cal-block-ep-v1 { background:rgba(37,99,235,.68);  border-left-color:#60a5fa; color:#dbeafe; }
+.cal-block-ep-v2 { background:rgba(2,132,199,.7);   border-left-color:#38bdf8; color:#e0f2fe; }
+.cal-block-ep-v3 { background:rgba(6,182,212,.68);  border-left-color:#22d3ee; color:#cffafe; }
+.cal-block-ep-v4 { background:rgba(15,118,178,.72); border-left-color:#7dd3fc; color:#e0f2fe; }
+.cal-block-ep-v5 { background:rgba(30,64,175,.68);  border-left-color:#93c5fd; color:#dbeafe; }
 
-.cal-block-more { font-size:.58rem; color:#818cf8; font-weight:700; padding:1px 5px; cursor:pointer; }
+/* Light mode: the .6–.75 translucent fills composite over the white cell
+   surface and wash out, dropping the pastel text below contrast. Bump the
+   fills near-opaque so the existing light text stays legible. */
+[data-bs-theme="light"] .cal-block-cinema   { background:rgba(185,28,28,.92); }
+[data-bs-theme="light"] .cal-block-digital  { background:rgba(126,34,206,.92); }
+[data-bs-theme="light"] .cal-block-physical { background:rgba(21,128,61,.92); }
+[data-bs-theme="light"] .cal-block-unknown  { background:rgba(75,85,99,.92); }
+[data-bs-theme="light"] .cal-block-episode  { background:rgba(14,165,233,.92); }
+[data-bs-theme="light"] .cal-block-ep-v1    { background:rgba(37,99,235,.92); }
+[data-bs-theme="light"] .cal-block-ep-v2    { background:rgba(2,132,199,.92); }
+[data-bs-theme="light"] .cal-block-ep-v3    { background:rgba(6,182,212,.92); }
+[data-bs-theme="light"] .cal-block-ep-v4    { background:rgba(15,118,178,.94); }
+[data-bs-theme="light"] .cal-block-ep-v5    { background:rgba(30,64,175,.92); }
+
+.cal-block-more { font-size:.58rem; color:var(--tblr-primary); font-weight:700; padding:1px 5px; cursor:pointer; }
 .cal-block-more:hover { text-decoration:underline; }
 
 /* ── Bloc infos dans grille (2 lignes) ── */
@@ -211,7 +228,7 @@
 .cal-day-popup-title { font-size:.9rem; font-weight:700; margin-bottom:.6rem; display:flex; align-items:center; justify-content:space-between; }
 .cal-day-popup-close { background:none; border:none; color:var(--tblr-secondary); cursor:pointer; padding:2px; }
 .cal-day-popup-close:hover { color:#fff; }
-.cal-day-popup-event { display:flex; align-items:center; gap:.5rem; padding:.45rem .5rem; border-radius:.4rem; margin-bottom:.35rem; border-left:3px solid transparent; transition:background .1s; }
+.cal-day-popup-event { display:flex; align-items:center; gap:.5rem; padding:.45rem .5rem; border-radius:.4rem; margin-bottom:.35rem; border-left:3px solid transparent; transition:background .1s; cursor:pointer; }
 .cal-day-popup-event:hover { background:rgba(255,255,255,.04); }
 .cal-day-popup-event.rel-cinema { border-left-color:#dc2626; }
 .cal-day-popup-event.rel-digital { border-left-color:#a855f7; }
@@ -242,6 +259,27 @@
 .cal-bottom-stats { display:flex; gap:1.5rem; margin-top:.75rem; font-size:.75rem; color:var(--tblr-secondary); }
 .cal-bottom-stat { display:flex; align-items:center; gap:.35rem; }
 .cal-bottom-dot { width:8px; height:8px; border-radius:2px; }
+
+/* ── Readability floor (responsive audit 2026-06-29, extended to all
+   breakpoints 2026-07-10) ── Floor sub-11px calendar text at 11px
+   (.6875rem). The month-view event blocks were the app's smallest text
+   (8.8-9.9px) and equally unreadable on desktop. Blocks/tooltips already
+   truncate with ellipsis, so the bigger glyphs clip instead of overflowing;
+   line2 keeps its hierarchy via weight and opacity. */
+.cal-toolbar-label,
+.cal-filter-count,
+.cal-week-dow,
+.cal-day-row-type,
+.cal-block,
+.cal-block-more,
+.cal-block-line2,
+.cal-tooltip-type,
+.cal-tooltip-meta,
+.cal-tooltip-badge,
+.cal-day-popup-ev-sub,
+.cal-day-popup-ev-meta,
+.cal-mini-dow,
+.cal-mini-day { font-size: .6875rem; }
 </style>
 {% endblock %}
 
@@ -584,7 +622,7 @@
             }
             // data-ev-idx pour tooltip hover
             var evIdx = allEvents.indexOf(ev);
-            h += '<div class="' + blockCls + '" data-ev-idx="' + evIdx + '">' + title + line2 + '</div>';
+            h += '<div class="' + blockCls + '" tabindex="0" role="button" data-kb-activate aria-label="' + (window.escHtml ? window.escHtml(title) : title) + '" data-ev-idx="' + evIdx + '">' + title + line2 + '</div>';
         });
         if (evs.length > max) h += '<div class="cal-block-more" data-date-detail="' + ds + '">' + CAL_I18N.day_overflow.replace('__N__', evs.length-max) + '</div>';
         h += '</div></div>';
@@ -662,7 +700,7 @@
                     } else if (ev.type === 'episode' && ev.title) {
                         line2 = '<div class="cal-block-line2">' + ev.title + '</div>';
                     }
-                    h += '<div class="' + blockCls + '" data-ev-idx="' + evIdx + '">' + evTitle(ev) + line2 + '</div>';
+                    h += '<div class="' + blockCls + '" tabindex="0" role="button" data-kb-activate aria-label="' + (window.escHtml ? window.escHtml(evTitle(ev)) : evTitle(ev)) + '" data-ev-idx="' + evIdx + '">' + evTitle(ev) + line2 + '</div>';
                 });
             }
             h += '</div></div>';
@@ -727,7 +765,7 @@
                     sub = sxe + (ev.title ? ' · ' + ev.title : '') + (ev.network ? ' · ' + ev.network : '');
                 }
 
-                h += '<div class="cal-day-row" data-ev-idx="' + evIdx + '">';
+                h += '<div class="cal-day-row" tabindex="0" role="button" data-kb-activate aria-label="' + (window.escHtml ? window.escHtml(title) : title) + '" data-ev-idx="' + evIdx + '">';
                 h += poster;
                 h += '<div class="cal-day-row-body">';
                 h += '<span class="' + typeCls + '" style="' + typeBg + '">' + typeLbl + '</span>';
@@ -898,31 +936,36 @@
         if (block) { clearTimeout(tooltipTimer); hideTooltip(); }
     });
 
-    // Click on an event → opens the entry on Movies/Series via `?open=`
-    // (the poster-card tile reuses this contract elsewhere in the app).
+    // Click on an event → open the rich quick-look modal IN PLACE (same
+    // app-global modal the dashboard/search/Explorer use) rather than ejecting
+    // the user to the Movies/Series page. Each event carries _instanceSlug from
+    // the controller so we build the authoritative library quick-look URL; the
+    // old `/medias/…?open=` route is passed as a graceful fallback (used if the
+    // modal isn't present or the fragment fetch fails). Events live in
+    // #main-grid (month/week/day) and inside the day-detail popup.
     document.addEventListener('click', function(e) {
         var block = e.target.closest('[data-ev-idx]');
         if (!block) return;
-        if (!block.closest('#main-grid')) return;       // ignore tooltips / popup etc.
+        if (!block.closest('#main-grid') && !block.closest('#cal-day-popup')) return; // ignore tooltip
         var idx = parseInt(block.dataset.evIdx);
         if (isNaN(idx) || !allEvents[idx]) return;
         var ev = allEvents[idx];
-        var target = null;
-        // Phase D — each event carries _instanceSlug from the controller so
-        // the click navigates to the page of the instance that owns it.
-        // Default fallback if for some reason the slug is missing (older
-        // cached JSON or edge case with empty libraries).
+        var url = null, fallback = null;
         if (ev.type === 'film' && ev.id) {
             var radarrSlug = ev._instanceSlug || DEFAULT_RADARR_SLUG;
-            target = '/medias/' + radarrSlug + '/films?open=' + ev.id;
+            url = '/tableau-de-bord/quicklook/movie/' + radarrSlug + '/' + ev.id;
+            fallback = '/medias/' + radarrSlug + '/films?open=' + ev.id;
         } else if (ev.type === 'episode' && ev.seriesId) {
             var sonarrSlug = ev._instanceSlug || DEFAULT_SONARR_SLUG;
-            target = '/medias/' + sonarrSlug + '/series?open=' + ev.seriesId;
+            url = '/tableau-de-bord/quicklook/series/' + sonarrSlug + '/' + ev.seriesId;
+            fallback = '/medias/' + sonarrSlug + '/series?open=' + ev.seriesId;
         }
-        if (target) {
+        if (url) {
             e.preventDefault();
             hideTooltip();
-            window.location.href = target;
+            closeDayPopup();
+            if (window.prismarrQl && window.prismarrQl.openUrl) { window.prismarrQl.openUrl(url, fallback); }
+            else { window.location.href = fallback; }
         }
     });
 
@@ -1007,6 +1050,7 @@
         h += '</div>';
 
         evs.forEach(function(ev) {
+            var evIdx = allEvents.indexOf(ev);
             var poster = ev.poster ? '<img src="' + ev.poster + '" class="cal-day-popup-poster" loading="lazy">' : '<div class="cal-day-popup-poster-ph"></div>';
             var title = evTitle(ev);
             var relCls = 'rel-' + (ev.releaseType || 'unknown');
@@ -1027,7 +1071,7 @@
             var sub = ev.type === 'episode' && ev.title ? '<div class="cal-day-popup-ev-sub" style="color:rgba(255,255,255,.6);">' + ev.title + '</div>' : '';
             var meta = metas.length ? '<div class="cal-day-popup-ev-meta">' + metas.join(' · ') + '</div>' : '';
 
-            h += '<div class="cal-day-popup-event ' + relCls + '">' + poster + '<div class="overflow-hidden flex-grow-1">'
+            h += '<div class="cal-day-popup-event ' + relCls + '" tabindex="0" role="button" data-kb-activate aria-label="' + (window.escHtml ? window.escHtml(title) : title) + '" data-ev-idx="' + evIdx + '">' + poster + '<div class="overflow-hidden flex-grow-1">'
               + '<div class="d-flex align-items-center gap-1 mb-1">' + relLabel + ' ' + statusBadge + '</div>'
               + '<div class="cal-day-popup-ev-title">' + title + '</div>'
               + sub + meta

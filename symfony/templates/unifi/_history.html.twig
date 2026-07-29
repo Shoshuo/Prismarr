@@ -1,0 +1,105 @@
+{# 7-day WAN traffic + 30-day speedtest history. Both charts are server-rendered
+   inline SVG built by the controller; this file only lays them out. Each card
+   degrades on its own — a missing speedtest archive must not blank the traffic
+   chart.
+
+   NOTE on styling: the shipped widget's `.net-chart*` classes (net-chart,
+   net-chart-fill, net-chart-down, net-chart-up, net-chart-axis) are defined in
+   an inline <style> block inside the `stylesheets` block of
+   `templates/dashboard/index.html.twig` — they are dashboard-page-scoped, not
+   a globally-loaded stylesheet, so they are not available on /unifi. Per the
+   plan's fallback, the same visual structure is reproduced here with explicit
+   style/stroke/fill attributes instead of those classes. No new CSS file. #}
+<div class="row row-deck row-cards">
+
+  <div class="col-12 col-xl-7">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">{{ 'unifi.history.traffic'|trans }}</h3>
+      </div>
+      <div class="card-body">
+        {% if usageChart is not null %}
+          <div class="d-flex justify-content-end text-secondary small mb-1">
+            ↓ {{ usageChart.downTotal }} · ↑ {{ usageChart.upTotal }}
+          </div>
+          <svg class="unifi-chart" viewBox="0 0 600 120" preserveAspectRatio="none" role="img"
+               aria-label="{{ 'unifi.history.traffic'|trans }}">
+            <polygon class="unifi-chart-fill" points="{{ usageChart.downArea }}"/>
+            <polyline class="unifi-chart-down" points="{{ usageChart.downLine }}"/>
+            <polyline class="unifi-chart-up" points="{{ usageChart.upLine }}"/>
+            {% for p in usageChart.points %}
+              <rect x="{{ p.x }}" y="0" width="{{ p.w }}" height="120" fill="transparent"><title>{{ p.label }}</title></rect>
+            {% endfor %}
+          </svg>
+          <div class="unifi-chart-axis">
+            <span>{{ usageChart.startLabel }}</span><span>{{ usageChart.endLabel }}</span>
+          </div>
+        {% else %}
+          <div class="empty"><p class="empty-title">{{ 'unifi.empty'|trans }}</p></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-5">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">{{ 'unifi.history.speedtests'|trans }}</h3>
+      </div>
+      <div class="card-body">
+        {% if speedChart is not null %}
+          <div class="d-flex justify-content-end text-secondary small mb-1">
+            {{ 'unifi.history.latency_range'|trans({
+                 min: speedChart.latencyMin ?? '—',
+                 avg: speedChart.latencyAvg ?? '—',
+                 max: speedChart.latencyMax ?? '—'
+               }) }}
+          </div>
+          {# Three series on a dual scale: throughput lines share the left scale
+             (peak = speedChart.peakMbps), latency has its own on the right. The
+             helper has already mapped every series into this 600x120 box, so
+             nothing here does arithmetic. #}
+          <svg class="unifi-chart" viewBox="0 0 600 120" preserveAspectRatio="none" role="img"
+               aria-label="{{ 'unifi.history.speedtests'|trans }}">
+            <polyline class="unifi-chart-down" points="{{ speedChart.downLine }}"/>
+            <polyline class="unifi-chart-up" points="{{ speedChart.upLine }}"/>
+            <polyline class="unifi-chart-latency" points="{{ speedChart.latencyLine }}"/>
+            {% for p in speedChart.points %}
+              <rect x="{{ p.x }}" y="0" width="{{ p.w }}" height="120" fill="transparent"><title>{{ p.label }}</title></rect>
+            {% endfor %}
+          </svg>
+          <div class="unifi-chart-axis">
+            <span>{{ speedChart.startLabel }}</span><span>{{ speedChart.endLabel }}</span>
+          </div>
+          <div class="text-secondary small mt-2">
+            {# latestDown/Up/Latency are pre-formatted strings from Task 3 — the
+               translation must not append units. #}
+            {{ 'unifi.history.latest'|trans({
+                 down: speedChart.latestDown ?? '—',
+                 up: speedChart.latestUp ?? '—',
+                 latency: speedChart.latestLatency ?? '—'
+               }) }}
+            · {{ 'unifi.history.peak'|trans({ peak: speedChart.peakMbps }) }}
+          </div>
+          {% if speedChart.points|length < 5 %}
+            {# Not an error: scheduled speedtests are disabled on this console, so
+               the archive is sparse and the line is short. #}
+            <div class="text-secondary small mt-1">
+              {{ 'unifi.history.speedtests_sparse'|trans({ count: speedChart.points|length }) }}
+            </div>
+          {% endif %}
+        {% else %}
+          {# SpeedtestChart returns null below two usable runs — the single-run
+             case, which this console can reach. Say why. #}
+          <div class="empty">
+            <p class="empty-title">{{ 'unifi.empty'|trans }}</p>
+            <p class="empty-subtitle text-secondary">
+              {{ 'unifi.history.speedtests_sparse'|trans({ count: (history.speedtests ?? [])|length }) }}
+            </p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>

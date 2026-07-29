@@ -1,0 +1,315 @@
+<style>
+  /* ── Quick-look modal ───────────────────────────────────────────── */
+  .ql-modal-content { background: var(--tblr-bg-surface); overflow: hidden; border-radius: 14px; }
+  .ql-loading { padding: 4rem; text-align: center; }
+  .ql-backdrop {
+    position: relative; min-height: 180px;
+    background-size: cover; background-position: center 25%;
+    background-color: var(--tblr-bg-surface-secondary);
+  }
+  .ql-backdrop-fade {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, var(--tblr-bg-surface) 2%, rgba(0,0,0,.15) 60%, rgba(0,0,0,.35) 100%);
+  }
+  /* Close must survive any hero artwork: 32px circular target on a permanent
+     dark scrim, full-opacity glyph (was Bootstrap's 14px at 40% opacity). */
+  .ql-close { position: absolute; top: .75rem; right: .75rem; z-index: 2;
+    width: 32px; height: 32px; padding: 0; border-radius: 50%; opacity: 1;
+    background-color: rgba(0,0,0,.55); background-size: .85rem; }
+  .ql-close:hover, .ql-close:focus { opacity: 1; background-color: rgba(0,0,0,.75); }
+  .ql-body { display: flex; gap: 1.25rem; padding: 0 1.5rem 1.5rem; margin-top: -60px; position: relative; z-index: 1; }
+  @media (max-width: 576px) { .ql-body { flex-direction: column; align-items: center; text-align: center; } }
+  .ql-poster { width: 120px; aspect-ratio: 2/3; object-fit: cover; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.45); flex-shrink: 0; }
+  .ql-poster-empty { display: flex; align-items: center; justify-content: center; background: var(--tblr-bg-surface-secondary); color: var(--tblr-secondary); }
+  .ql-main { flex: 1; min-width: 0; padding-top: 64px; }
+  @media (max-width: 576px) { .ql-main { padding-top: .5rem; } }
+  .ql-title { font-size: 1.4rem; font-weight: 700; margin: 0 0 .5rem; color: var(--tblr-body-color); }
+  .ql-year { font-weight: 400; color: var(--tblr-secondary); }
+  .ql-meta { display: flex; flex-wrap: wrap; gap: .5rem .7rem; align-items: center; margin-bottom: .85rem; font-size: .8rem; color: var(--tblr-secondary); }
+  .ql-meta .ql-rating { color: #f59e0b; font-weight: 600; }
+  .ql-chip { padding: .12rem .5rem; background: rgba(148,163,184,.18); border-radius: 4px; font-size: .7rem; }
+  .ql-badge { padding: .15rem .55rem; border-radius: 999px; font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .ql-badge.is-downloaded { background: rgba(34,197,94,.18); color: #22c55e; }
+  .ql-badge.is-monitored { background: rgba(99,102,241,.18); color: #6366f1; }
+  .ql-badge.is-missing { background: rgba(245,158,11,.18); color: #f59e0b; }
+  .ql-overview { font-size: .88rem; line-height: 1.55; color: var(--tblr-body-color); margin-bottom: 1rem; }
+  .ql-action {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .5rem 1rem; border-radius: 8px;
+    background: var(--tblr-primary); color: #fff; font-weight: 600; font-size: .85rem;
+    text-decoration: none !important;
+  }
+  .ql-action:hover { filter: brightness(1.08); color: #fff; }
+  .ql-error { padding: 3rem 1.5rem; text-align: center; color: var(--tblr-secondary); }
+  /* ── Release dates + air-status ────────────────────────────────── */
+  .ql-dates { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; margin-bottom: .85rem; }
+  .ql-date {
+    display: inline-flex; flex-direction: column; gap: .05rem;
+    padding: .2rem .55rem; border-radius: 6px;
+    background: rgba(148,163,184,.12); border: 1px solid var(--tblr-border-color);
+    font-size: .72rem; line-height: 1.3;
+  }
+  .ql-date-label { color: var(--tblr-secondary); font-size: .65rem; text-transform: uppercase; letter-spacing: .03em; }
+  .ql-date-val { color: var(--tblr-body-color); font-weight: 500; }
+  .ql-date.is-upcoming {
+    background: rgba(var(--tblr-primary-rgb, 32,107,196),.13);
+    border-color: var(--tblr-primary);
+  }
+  .ql-date.is-upcoming .ql-date-label { color: var(--tblr-primary); }
+  .ql-date.is-upcoming .ql-date-val { color: var(--tblr-primary); font-weight: 600; }
+  .ql-airstatus { display: inline-flex; align-items: center; justify-content: center; padding: .25rem .6rem; border-radius: 999px; font-size: .68rem; font-weight: 600; line-height: 1; text-transform: uppercase; letter-spacing: .04em; }
+  .ql-airstatus.is-continuing { background: rgba(34,197,94,.16); color: #22c55e; }
+  .ql-airstatus.is-ended { background: rgba(148,163,184,.18); color: var(--tblr-secondary); }
+  /* ── Providers / cast / trailer / actions ──────────────────────── */
+  .ql-providers { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .85rem; }
+  .ql-provider { width: 30px; height: 30px; border-radius: 6px; object-fit: cover; }
+  .ql-cast { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1rem; }
+  .ql-cast-item { width: 52px; text-align: center; }
+  .ql-cast-photo { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; }
+  .ql-cast-photo-empty { display: flex; align-items: center; justify-content: center; background: var(--tblr-bg-surface-secondary); color: var(--tblr-secondary); font-size: .8rem; }
+  .ql-cast-name { display: block; font-size: .6rem; line-height: 1.15; color: var(--tblr-secondary); margin-top: .2rem; }
+  .ql-trailer { border-radius: 10px; overflow: hidden; margin-bottom: 1rem; }
+  .ql-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .ql-action-secondary {
+    display: inline-flex; align-items: center; padding: .5rem .9rem; border-radius: 8px;
+    border: 1px solid var(--tblr-border-color); color: var(--tblr-body-color);
+    font-weight: 600; font-size: .8rem; text-decoration: none !important;
+  }
+  .ql-action-secondary:hover { border-color: var(--tblr-primary); color: var(--tblr-primary); }
+  .ql-wl { cursor: pointer; gap: .35rem; }
+  .ql-wl.is-active { border-color: #f59e0b; color: #f59e0b; }
+  .ql-wl.is-active:hover { border-color: #f59e0b; color: #f59e0b; }
+
+  /* ── Mobile/tablet readability floor (responsive audit 2026-06-29) ──
+     Floor sub-11px text at 11px (.6875rem) below the lg breakpoint;
+     desktop (≥992px) keeps the original sizes. */
+  @media (max-width: 991.98px) {
+    .ql-badge,
+    .ql-date-label,
+    .ql-airstatus,
+    .ql-cast-name { font-size: .6875rem; }
+  }
+</style>
+
+{% include 'dashboard/_quicklook_modal.html.twig' with {} only %}
+
+<script>
+  (function () {
+    // ── Quick-look modal: delegated open + fetch + manual show/hide.
+    // Tiles carry [data-ql-trigger] + data-ql-source/type/slug/id and keep
+    // their href as a no-JS fallback. We intercept the click, open the shell,
+    // fetch the matching fragment, and swap it into [data-ql-body].
+    // Re-query the modal on every use: it lives in the content block, so Turbo
+    // replaces the node on each render. Caching it once would leave the
+    // document-level delegated listeners pointing at a detached node after a
+    // navigation, and the quick-look would silently stop opening.
+    function qlEl() { return document.getElementById('ql-modal'); }
+    function qlBody() { var m = qlEl(); return m ? m.querySelector('[data-ql-body]') : null; }
+
+    function qlOpen() {
+      var m = qlEl();
+      if (!m) return;
+      m.classList.add('show');
+      m.style.display = 'block';
+      m.removeAttribute('aria-hidden');
+      m.setAttribute('aria-modal', 'true');
+      document.body.classList.add('modal-open');
+      if (!document.querySelector('.modal-backdrop.ql-backdrop-el')) {
+        var bd = document.createElement('div');
+        bd.className = 'modal-backdrop fade show ql-backdrop-el';
+        document.body.appendChild(bd);
+      }
+      // Reflect watchlist state onto the ☆ button each time a fragment loads.
+      var body = m.querySelector('[data-ql-body]');
+      if (body && window.MutationObserver) {
+        if (qlWlObserver) { qlWlObserver.disconnect(); }
+        qlWlObserver = new MutationObserver(function () { qlDecorateWl(body); });
+        qlWlObserver.observe(body, { childList: true });
+      }
+    }
+    function qlClose() {
+      var m = qlEl();
+      if (!m) return;
+      if (qlWlObserver) { qlWlObserver.disconnect(); qlWlObserver = null; }
+      m.classList.remove('show');
+      m.style.display = 'none';
+      m.setAttribute('aria-hidden', 'true');
+      m.removeAttribute('aria-modal');
+      var bd = document.querySelector('.modal-backdrop.ql-backdrop-el');
+      if (bd) bd.remove();
+      if (!document.querySelector('.modal.show')) { document.body.classList.remove('modal-open'); }
+      var b = qlBody();
+      if (b) { b.innerHTML = '<div class="ql-loading"><span class="spinner-border"></span></div>'; }
+    }
+
+    // ── Watchlist: shared global index + modal ☆ toggle ──────────────
+    // Index is fetched once and reused across the dashboard, top-bar search
+    // and the Explorer page. A MutationObserver on the modal body reflects
+    // current state onto the ☆ button whenever a fragment loads, so no
+    // per-open wiring is needed at the call sites.
+    window._prismarrWatchlist = window._prismarrWatchlist || {};
+    if (!window._prismarrWatchlistReady) {
+      window._prismarrWatchlistReady = fetch('/decouverte/watchlist/status', { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { window._prismarrWatchlist = d.index || {}; return window._prismarrWatchlist; })
+        .catch(function () { return window._prismarrWatchlist; });
+    }
+    var qlWlObserver = null;
+    function qlWlKey(type, id) { return type + '_' + id; }
+    function qlSetWl(btn, inWl) {
+      btn.classList.toggle('is-active', inWl);
+      var label = btn.querySelector('[data-wl-label]');
+      if (label) { label.textContent = inWl ? (btn.getAttribute('data-wl-on') || '') : (btn.getAttribute('data-wl-add') || ''); }
+      var svg = btn.querySelector('svg');
+      if (svg) { svg.setAttribute('fill', inWl ? 'currentColor' : 'none'); }
+    }
+    function qlDecorateWl(scope) {
+      var root = scope || document;
+      var apply = function () {
+        root.querySelectorAll('[data-ql-wl]').forEach(function (btn) {
+          qlSetWl(btn, !!window._prismarrWatchlist[qlWlKey(btn.getAttribute('data-wl-type'), btn.getAttribute('data-wl-id'))]);
+        });
+      };
+      apply();
+      if (window._prismarrWatchlistReady) { window._prismarrWatchlistReady.then(apply); }
+    }
+
+    function qlUrl(t) {
+      var src = t.getAttribute('data-ql-source');
+      var type = t.getAttribute('data-ql-type');
+      var id = t.getAttribute('data-ql-id');
+      if (!type || !id) return null;
+      if (src === 'tmdb') { return '/tableau-de-bord/quicklook/tmdb/' + type + '/' + id; }
+      var slug = t.getAttribute('data-ql-slug');
+      if (!slug) return null;
+      return '/tableau-de-bord/quicklook/' + type + '/' + slug + '/' + id;
+    }
+
+    // Open the modal, fetch a quick-look fragment, and inject it. On an empty
+    // or failed response, fall back to `fallbackHref` (full-page navigation)
+    // when one is given, else render the inline error. Shared by the delegated
+    // [data-ql-trigger] handler and any caller via window.prismarrQl.openUrl
+    // (e.g. the calendar opens events in place instead of ejecting to /medias).
+    function qlOpenUrl(url, fallbackHref) {
+      if (!url) { if (fallbackHref) window.location.href = fallbackHref; return; }
+      qlOpen();
+      fetch(url, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+        .then(function (r) { return r.ok ? r.text() : ''; })
+        .then(function (html) {
+          var b = qlBody();
+          if (!b) return;
+          if ((html || '').trim()) { b.innerHTML = html; }
+          else if (fallbackHref) { window.location.href = fallbackHref; }
+          else { b.innerHTML = '<div class="ql-error"></div>'; }
+        })
+        .catch(function () { if (fallbackHref) window.location.href = fallbackHref; });
+    }
+
+    if (!window._qlDelegated) {
+      window._qlDelegated = true;
+      document.addEventListener('click', function (e) {
+        var trigger = e.target.closest('[data-ql-trigger]');
+        if (trigger) {
+          var url = qlUrl(trigger);
+          if (!url) return; // missing data → let the href navigate (fallback)
+          e.preventDefault();
+          qlOpenUrl(url, trigger.getAttribute('href'));
+          return;
+        }
+        // Close on backdrop click or [data-ql-dismiss] (the × in the body).
+        if (e.target.closest('[data-ql-dismiss]') || e.target === qlEl()) {
+          qlClose();
+        }
+      });
+      document.addEventListener('keydown', function (e) {
+        var m = qlEl();
+        if (e.key === 'Escape' && m && m.classList.contains('show')) { qlClose(); }
+      });
+      // Keyboard activation for card DIVs that act as buttons (media/ex/
+      // calendar cards). They open a modal/quick-look on click but aren't
+      // native buttons; make Enter/Space trigger the same click. Ignore the
+      // keystroke when focus is inside a real control.
+      document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+        var el = e.target.closest('[data-kb-activate]');
+        if (!el || el !== e.target) return;
+        if (e.target.matches('input, textarea, select, button, a, [contenteditable="true"]')) return;
+        e.preventDefault();
+        el.click();
+      });
+      // Watchlist ☆ toggle from inside the modal (optimistic, then reconcile).
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-ql-wl]');
+        if (!btn) return;
+        e.preventDefault();
+        var type = btn.getAttribute('data-wl-type');
+        var id = btn.getAttribute('data-wl-id');
+        var key = qlWlKey(type, id);
+        var wasIn = !!window._prismarrWatchlist[key];
+        var willAdd = !wasIn;
+        if (willAdd) { window._prismarrWatchlist[key] = true; } else { delete window._prismarrWatchlist[key]; }
+        qlSetWl(btn, willAdd);
+        fetch('/decouverte/watchlist/toggle', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tmdb_id: parseInt(id, 10), type: type,
+            title: btn.getAttribute('data-wl-title') || '',
+            poster_path: btn.getAttribute('data-wl-poster-path') || null,
+            vote: btn.getAttribute('data-wl-vote') ? parseFloat(btn.getAttribute('data-wl-vote')) : null,
+            year: btn.getAttribute('data-wl-year') ? parseInt(btn.getAttribute('data-wl-year'), 10) : null
+          })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var added = d.action === 'added';
+          if (added) { window._prismarrWatchlist[key] = true; } else { delete window._prismarrWatchlist[key]; }
+          if (added !== willAdd) { qlSetWl(btn, added); }
+          if (window._prismarrToast) { window._prismarrToast(added ? (btn.getAttribute('data-wl-toast-add') || '') : (btn.getAttribute('data-wl-toast-rm') || ''), added ? 'success' : 'info'); }
+        })
+        .catch(function () {
+          if (wasIn) { window._prismarrWatchlist[key] = true; } else { delete window._prismarrWatchlist[key]; }
+          qlSetWl(btn, wasIn);
+        });
+      });
+      // Add-to-Radarr/Sonarr from the modal → resolve the TMDb id to the *arr
+      // payload, then hand off to the shared quick-add picker (the
+      // document-level [data-quick-add] handler). Mirrors the old Explorer
+      // modal's Add button so search, dashboard and Explorer share one path.
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-ql-add]');
+        if (!btn) return;
+        e.preventDefault();
+        var type = btn.getAttribute('data-ql-add-type'); // movie | tv
+        var id = btn.getAttribute('data-ql-add-id');
+        if (!type || !id) return;
+        var orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
+        fetch('/decouverte/resolve/' + type + '/' + id, { credentials: 'same-origin' })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data || data.error) { btn.disabled = false; btn.innerHTML = orig; return; }
+            qlClose();
+            setTimeout(function () {
+              var trigger = document.createElement('a');
+              trigger.href = '#';
+              trigger.setAttribute('data-quick-add', JSON.stringify(data));
+              trigger.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+              document.body.appendChild(trigger);
+              trigger.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+              setTimeout(function () { trigger.remove(); }, 100);
+            }, 200);
+          })
+          .catch(function () { btn.disabled = false; btn.innerHTML = orig; });
+      });
+      // Tidy up if Turbo navigates away with the modal open.
+      document.addEventListener('turbo:before-render', function () {
+        var m = qlEl();
+        if (m && m.classList.contains('show')) { qlClose(); }
+      });
+    }
+
+    window.prismarrQl = { open: qlOpen, close: qlClose, body: qlBody, openUrl: qlOpenUrl, decorateWatchlist: qlDecorateWl };
+  })();
+</script>

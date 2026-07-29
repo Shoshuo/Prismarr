@@ -71,15 +71,15 @@
   .media-card[data-tmdb-id] .card-year { font-size: .62rem; color: rgba(255,255,255,.6); }
   .media-card[data-tmdb-id] .quality-badge {
     position: absolute; top: .4rem; left: .4rem;
-    font-size: .6rem; font-weight: 700; padding: .1rem .35rem;
+    font-size: .6875rem; font-weight: 700; padding: .1rem .35rem;
     border-radius: .25rem; background: rgba(0,0,0,.65); color: #fff;
     backdrop-filter: blur(4px);
   }
   .media-card[data-tmdb-id] .quality-badge.movie { background: rgba(255,194,48,.92); color: #1a1a1a; }
   .media-card[data-tmdb-id] .quality-badge.tv    { background: rgba(0,204,255,.92);  color: #1a1a1a; }
   .media-card[data-tmdb-id] .lib-badge {
-    position: absolute; top: .4rem; left: calc(.4rem + 2.2rem + .25rem);
-    font-size: .6rem; font-weight: 700; padding: .1rem .35rem;
+    position: absolute; top: .4rem; left: calc(.4rem + 2.7rem + .25rem);
+    font-size: .6875rem; font-weight: 700; padding: .1rem .35rem;
     border-radius: .25rem; color: #fff;
     backdrop-filter: blur(4px);
   }
@@ -147,6 +147,33 @@
   .media-card[data-tmdb-id] .wl-star.in-wl { opacity: 1; background: rgba(245,158,11,.85); }
   .media-card[data-tmdb-id] .wl-star.in-wl:hover { background: rgba(245,158,11,1); }
   .media-card[data-tmdb-id] .wl-star:not(.in-wl):hover { background: rgba(245,158,11,.6); }
+
+  /* ── Touch devices: hover-only actions made reachable (audit 2026-06-29)
+     Details/Add and the watchlist star only appear via :hover, which never
+     fires on touch. On hover-less devices the hover-info becomes a compact
+     persistent bottom bar (not the full-cover overlay) carrying title/year
+     + actions, replacing the plain card-overlay, and the star stays
+     visible. CSS-only; desktop hover behaviour unchanged. */
+  @media (hover: none) {
+    .media-card[data-tmdb-id] .hover-info {
+      opacity: 1; pointer-events: auto;
+      top: auto; /* bottom bar instead of inset:0 full cover */
+      background: linear-gradient(transparent, rgba(0,0,0,.88) 35%);
+      padding-top: 1.4rem;
+    }
+    .media-card[data-tmdb-id] .hover-info .h-overview { display: none; }
+    .media-card[data-tmdb-id] .card-overlay { display: none; } /* title/year now in hover-info */
+    .media-card[data-tmdb-id] .wl-star { opacity: 1; }
+    /* Tap targets: the 24px star and the tiny action buttons get a larger
+       hit area on coarse pointers. */
+    .media-card[data-tmdb-id] .wl-star { width: 32px; height: 32px; }
+    .media-card[data-tmdb-id] .wl-star svg { width: 16px; height: 16px; }
+    .media-card[data-tmdb-id] .hover-info .h-actions .btn { min-height: 32px; }
+    /* The compact "Vu récemment" strip (100px tiles) has no room for the
+       persistent bar — keep its plain overlay there. */
+    #tmdb-recent-row .media-card[data-tmdb-id] .hover-info { display: none; }
+    #tmdb-recent-row .media-card[data-tmdb-id] .card-overlay { display: block; }
+  }
 
   /* Overrides contextuels */
   .tmdb-results-grid .media-card[data-tmdb-id] { flex: none; width: auto; }
@@ -434,6 +461,29 @@
   }
   .td-video-btn:hover { background: var(--tblr-primary); color: white; border-color: var(--tblr-primary); }
   .td-video-btn.active { background: var(--tblr-primary); color: white; border-color: var(--tblr-primary); }
+
+  /* ── Mobile/tablet readability floor (responsive audit 2026-06-29) ──
+     Floor sub-11px text at 11px (.6875rem) below the lg breakpoint. Kept
+     last in this block so it wins the cascade at equal specificity;
+     desktop (≥992px) keeps the original sizes. */
+  @media (max-width: 991.98px) {
+    .media-card[data-tmdb-id] .card-year,
+    .media-card[data-tmdb-id] .quality-badge,
+    .media-card[data-tmdb-id] .lib-badge,
+    .media-card[data-tmdb-id] .vote-badge,
+    .media-card[data-tmdb-id] .countdown-badge,
+    #tmdb-recent-row .media-card[data-tmdb-id] .card-title-text,
+    #tmdb-recent-row .media-card[data-tmdb-id] .card-year,
+    .media-card[data-tmdb-id] .hover-info .h-year,
+    .media-card[data-tmdb-id] .hover-info .h-actions .btn,
+    .tmdb-search-kbd,
+    .tmdb-filter-badge,
+    .tmdb-results-grid .media-card .card-year,
+    .tmdb-hero-label,
+    .td-cast-card .cast-role,
+    .td-season-card .season-meta,
+    .td-genre-badge { font-size: .6875rem; }
+  }
 </style>
 
 <div class="page-body">
@@ -487,38 +537,44 @@
       </div>
     </div>
 
-    {# Filter bar (hidden by default) #}
-    <div id="tmdb-filters" class="card mb-3" style="display:none;">
-      <div class="card-body py-2">
-        <div class="row g-2 align-items-end">
-          <div class="col-auto">
+    {# Filter drawer (offcanvas at all widths) #}
+    <div id="tmdb-filters" class="offcanvas offcanvas-start" tabindex="-1" aria-labelledby="tmdb-filters-label">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="tmdb-filters-label">{{ 'decouverte.filters.drawer_title'|trans }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tmdb-filters" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <div class="d-flex flex-column gap-3">
+          <div>
             <label class="form-label small mb-1">{{ 'decouverte.filters.type'|trans }}</label>
-            <div class="btn-group" role="group">
+            <div class="btn-group d-flex" role="group">
               <input type="radio" class="btn-check" name="filter-type" id="filter-type-movie" value="movie" checked>
               <label class="btn btn-outline-primary btn-sm" for="filter-type-movie">{{ 'decouverte.filters.movies'|trans }}</label>
               <input type="radio" class="btn-check" name="filter-type" id="filter-type-tv" value="tv">
               <label class="btn btn-outline-primary btn-sm" for="filter-type-tv">{{ 'decouverte.filters.series'|trans }}</label>
             </div>
           </div>
-          <div class="col-md-3">
+          <div>
             <label class="form-label small mb-1">{{ 'decouverte.filters.genre'|trans }}</label>
             <select class="form-select form-select-sm" id="filter-genre">
               <option value="">{{ 'decouverte.filters.all'|trans }}</option>
             </select>
           </div>
-          <div class="col-auto">
-            <label class="form-label small mb-1">{{ 'decouverte.filters.year_from'|trans }}</label>
-            <input type="number" class="form-control form-control-sm" id="filter-year-min" placeholder="1970" min="1900" max="2030" style="width:90px;">
+          <div class="d-flex gap-2">
+            <div class="flex-fill">
+              <label class="form-label small mb-1">{{ 'decouverte.filters.year_from'|trans }}</label>
+              <input type="number" class="form-control form-control-sm" id="filter-year-min" placeholder="1970" min="1900" max="2030">
+            </div>
+            <div class="flex-fill">
+              <label class="form-label small mb-1">{{ 'decouverte.filters.year_to'|trans }}</label>
+              <input type="number" class="form-control form-control-sm" id="filter-year-max" placeholder="2030" min="1900" max="2030">
+            </div>
           </div>
-          <div class="col-auto">
-            <label class="form-label small mb-1">{{ 'decouverte.filters.year_to'|trans }}</label>
-            <input type="number" class="form-control form-control-sm" id="filter-year-max" placeholder="2030" min="1900" max="2030" style="width:90px;">
-          </div>
-          <div class="col-auto" style="min-width:140px;">
+          <div>
             <label class="form-label small mb-1">{{ 'decouverte.filters.vote_min'|trans({value: '__VAL__'})|replace({'__VAL__': '<span id="filter-vote-val" class="fw-medium">0</span>'})|raw }}</label>
             <input type="range" class="form-range" id="filter-vote-min" min="0" max="10" step="0.5" value="0">
           </div>
-          <div class="col-md-2">
+          <div>
             <label class="form-label small mb-1">{{ 'decouverte.filters.sort'|trans }}</label>
             <select class="form-select form-select-sm" id="filter-sort">
               <option value="popularity.desc">{{ 'decouverte.filters.sort_options.popularity'|trans }}</option>
@@ -528,11 +584,9 @@
               <option value="revenue.desc">{{ 'decouverte.filters.sort_options.revenue'|trans }}</option>
             </select>
           </div>
-          <div class="col-auto">
-            <button type="button" class="btn btn-primary btn-sm" id="filter-apply">{{ 'decouverte.filters.apply'|trans }}</button>
-          </div>
-          <div class="col-auto">
+          <div class="d-flex gap-2 justify-content-end mt-2 pt-2 border-top">
             <button type="button" class="btn btn-ghost-secondary btn-sm" id="filter-reset">{{ 'decouverte.filters.reset'|trans }}</button>
+            <button type="button" class="btn btn-primary btn-sm" id="filter-apply">{{ 'decouverte.filters.apply'|trans }}</button>
           </div>
         </div>
       </div>
@@ -948,6 +1002,8 @@
   {% elseif item.vote >= 5 %}{% set voteClass = 'mid' %}
   {% endif %}
   <div class="media-card"
+       tabindex="0" role="button" data-kb-activate
+       aria-label="{{ item.title }}"
        data-tmdb-id="{{ item.id }}"
        data-tmdb-type="{{ item.type }}"
        data-tmdb-title="{{ item.title }}"
@@ -962,7 +1018,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 4v16l13 -8z"/></svg>
       </div>
     {% endif %}
-    <span class="quality-badge {{ item.type }}">{{ item.type == 'movie' ? 'decouverte.modal.type_film'|trans : 'decouverte.modal.type_series'|trans }}</span>
+    <span class="quality-badge {{ item.type }}">{{ item.type == 'movie' ? 'decouverte.badge_type_film'|trans : 'decouverte.badge_type_series'|trans }}</span>
     {% if item.in_library %}
       {% set statusColors = {'downloaded':'#22c55e','missing':'#f59e0b','announced':'#6366f1','inCinemas':'#6366f1','partial':'#3b82f6','unmonitored':'#6b7280'} %}
       {% set statusShortKey = 'decouverte.card.status_short.' ~ (item.lib_status ?: 'default') %}
@@ -1007,6 +1063,8 @@
   var TMDB_I18N = {
     type_film:    {{ 'decouverte.modal.type_film'|trans|json_encode|raw }},
     type_series:  {{ 'decouverte.modal.type_series'|trans|json_encode|raw }},
+    badge_film:   {{ 'decouverte.badge_type_film'|trans|json_encode|raw }},
+    badge_series: {{ 'decouverte.badge_type_series'|trans|json_encode|raw }},
     watchlist:    {{ 'decouverte.modal.watchlist'|trans|json_encode|raw }},
     in_watchlist: {{ 'decouverte.modal.in_watchlist'|trans|json_encode|raw }},
     in_library:   {{ 'decouverte.modal.in_library'|trans|json_encode|raw }},
@@ -1160,7 +1218,7 @@
       if (diff > 0 && diff <= 365) {
         var badge = document.createElement('span');
         badge.className = 'countdown-badge';
-        badge.textContent = 'J-' + diff;
+        badge.textContent = '{{ 'decouverte.countdown_prefix'|trans|e('js') }}' + diff;
         card.appendChild(badge);
       }
     });
@@ -1769,7 +1827,7 @@
     var countdown = '';
     if (item.release) {
       var diff = Math.ceil((new Date(item.release) - new Date()) / 86400000);
-      if (diff > 0 && diff <= 365) countdown = '<span class="countdown-badge">J-' + diff + '</span>';
+      if (diff > 0 && diff <= 365) countdown = '<span class="countdown-badge">{{ 'decouverte.countdown_prefix'|trans|e('js') }}' + diff + '</span>';
     }
 
     // safeTitle is already escHtml'd above; also escape the textual fields
@@ -1778,9 +1836,9 @@
     // numeric but defense-in-depth costs nothing.
     var titleOrDash = item.title ? safeTitle : '—';
     var safeYear    = escHtml(item.year || '');
-    return '<div class="media-card" data-tmdb-id="' + item.id + '" data-tmdb-type="' + item.type + '" data-tmdb-title="' + safeTitle + '" data-tmdb-vote="' + (item.vote||'') + '" data-tmdb-year="' + safeYear + '" data-release="' + escHtml(item.release||'') + '">'
+    return '<div class="media-card" tabindex="0" role="button" data-kb-activate aria-label="' + safeTitle + '" data-tmdb-id="' + item.id + '" data-tmdb-type="' + item.type + '" data-tmdb-title="' + safeTitle + '" data-tmdb-vote="' + (item.vote||'') + '" data-tmdb-year="' + safeYear + '" data-release="' + escHtml(item.release||'') + '">'
       + poster
-      + '<span class="quality-badge ' + item.type + '">' + (item.type === 'movie' ? TMDB_I18N.type_film : TMDB_I18N.type_series) + '</span>'
+      + '<span class="quality-badge ' + item.type + '">' + (item.type === 'movie' ? TMDB_I18N.badge_film : TMDB_I18N.badge_series) + '</span>'
       + libBadge + countdown + wlStar + voteBadge
       + '<div class="card-overlay"><div class="card-title-text" title="' + safeTitle + '">' + titleOrDash + '</div>'
       + '<div class="card-year">' + safeYear + '</div></div>'
@@ -1919,11 +1977,19 @@
   var filterReset   = document.getElementById('filter-reset');
   var genresCache   = { movie: null, tv: null };
 
+  // This build ships Bootstrap under window.tabler (no window.bootstrap global),
+  // so resolve the Offcanvas class defensively rather than assuming `bootstrap`.
+  function offcanvasFor(el) {
+    var C = (window.bootstrap && window.bootstrap.Offcanvas)
+         || (window.tabler && (window.tabler.Offcanvas
+              || (window.tabler.bootstrap && window.tabler.bootstrap.Offcanvas)));
+    return C ? C.getOrCreateInstance(el) : null;
+  }
+
   filtersToggle.addEventListener('click', function() {
-    var show = filtersPanel.style.display === 'none';
-    filtersPanel.style.display = show ? '' : 'none';
-    filtersToggle.classList.toggle('active', show);
-    if (show && !genresCache.movie) loadGenres('movie');
+    var oc = offcanvasFor(filtersPanel);
+    if (oc) oc.toggle();
+    if (!genresCache.movie) loadGenres('movie');
   });
 
   function currentType() {
@@ -2017,7 +2083,11 @@
         searchGrid.innerHTML = '<div class="alert alert-danger">' + {{ 'decouverte.search.search_error'|trans|json_encode|raw }} + '</div>';
       });
   }
-  filterApply.addEventListener('click', applyFilters);
+  filterApply.addEventListener('click', function() {
+    applyFilters();
+    var oc = offcanvasFor(filtersPanel);
+    if (oc) oc.hide();
+  });
   filterReset.addEventListener('click', function() {
     filterGenre.value = '';
     filterYearMin.value = '';

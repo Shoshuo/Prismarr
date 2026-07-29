@@ -43,6 +43,8 @@ class ControllersSmokeTest extends AbstractWebTestCase
             'prowlarr index'      => ['/prowlarr', 'ProwlarrController::index'],
             'jellyseerr index'    => ['/jellyseerr', 'JellyseerrController::index'],
             'qbittorrent index'   => ['/qbittorrent', 'QBittorrentController::index'],
+            'deluge index'        => ['/deluge', 'DelugeController::index'],
+            'transmission index'  => ['/transmission', 'TransmissionController::index'],
             // Usenet pages (#20) — unconfigured in the test env, so they
             // redirect home with a flash rather than crash.
             'usenet sabnzbd'      => ['/usenet/sabnzbd', 'UsenetController::index'],

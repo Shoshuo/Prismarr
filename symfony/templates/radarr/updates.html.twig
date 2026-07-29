@@ -85,7 +85,7 @@
                             {% if update.changes.new is defined and update.changes.new %}
                             <div class="mb-2">
                                 <div class="small fw-semibold" style="color:#22c55e;">{{ 'media.arr_admin.updates.changes_new'|trans }}</div>
-                                <ul class="mb-0" style="font-size:.75rem;padding-left:1.2rem;color:rgba(255,255,255,.6);">
+                                <ul class="mb-0" style="font-size:.75rem;padding-left:1.2rem;color:var(--tblr-secondary-color);">
                                     {% for item in update.changes.new %}<li>{{ item }}</li>{% endfor %}
                                 </ul>
                             </div>
@@ -93,7 +93,7 @@
                             {% if update.changes.fixed is defined and update.changes.fixed %}
                             <div>
                                 <div class="small fw-semibold" style="color:#38bdf8;">{{ 'media.arr_admin.updates.changes_fixed'|trans }}</div>
-                                <ul class="mb-0" style="font-size:.75rem;padding-left:1.2rem;color:rgba(255,255,255,.6);">
+                                <ul class="mb-0" style="font-size:.75rem;padding-left:1.2rem;color:var(--tblr-secondary-color);">
                                     {% for item in update.changes.fixed %}<li>{{ item }}</li>{% endfor %}
                                 </ul>
                             </div>

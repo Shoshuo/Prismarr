@@ -1,0 +1,32 @@
+{# Shared header stat-tiles. Params:
+     tiles  : list of { value, label, hue?, unit?, id?, data_stat? }
+              hue = a Tabler token ('success','warning','blue','green','cyan',
+              'orange','secondary','danger') applied as .text-<hue>, OR a raw
+              color ('#hex' / 'var(--…)' / 'rgb(…)') applied inline. value +
+              label are already resolved/translated by the caller.
+     layout : 'strip' (one card, inline value+label row) | 'grid' (one card per tile)
+     wrap   : bool (default true) — wrap in the outer .card (strip) / .row (grid)
+     cols   : grid column classes (default 'col-6 col-sm-4 col-lg')  [grid only]
+     row_class : outer row classes (default 'row g-2 mb-3')          [grid only] #}
+{% macro _val(t) %}
+  {%- set raw = t.hue is defined and t.hue is not null and (t.hue starts with '#' or t.hue starts with 'var(' or t.hue starts with 'rgb') -%}
+  <div class="stat-val{% if t.hue is defined and t.hue is not null and not raw %} text-{{ t.hue }}{% endif %}"{% if raw %} style="color:{{ t.hue }}"{% endif %}{% if t.id is defined and t.id %} id="{{ t.id }}"{% endif %}{% if t.data_stat is defined and t.data_stat %} data-stat="{{ t.data_stat }}"{% endif %}>{{ t.value|raw }}{% if t.unit is defined and t.unit %} <span class="text-muted fs-5">{{ t.unit }}</span>{% endif %}</div>
+{% endmacro %}
+{% import _self as st %}
+{% if layout|default('grid') == 'strip' %}
+  <div class="card card-sm mb-3"><div class="card-body py-2 d-flex flex-wrap align-items-baseline justify-content-around gap-2 gap-sm-3">
+    {% for t in tiles %}
+      <div>{{ st._val(t) }}<span class="stat-lbl ms-1">{{ t.label }}</span></div>
+    {% endfor %}
+  </div></div>
+{% else %}
+  <div class="{{ row_class|default('row g-2 mb-3') }}">
+    {% for t in tiles %}
+      <div class="{{ cols|default('col-6 col-sm-4 col-lg') }}">
+        <div class="card card-sm"><div class="card-body text-center">
+          {{ st._val(t) }}<div class="stat-lbl mt-1">{{ t.label }}</div>
+        </div></div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

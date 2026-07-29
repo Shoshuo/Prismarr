@@ -3,16 +3,24 @@
 namespace App\Service;
 
 use App\Entity\ServiceInstance;
+use App\Service\Media\DelugeClient;
+use App\Service\Media\HoundarrClient;
 use App\Service\Media\JellyseerrClient;
 use App\Service\Media\ProwlarrClient;
 use App\Service\Media\QBittorrentClient;
+use App\Service\Media\TransmissionClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\ServiceHealthCache;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TautulliClient;
 use App\Service\Media\TmdbClient;
+use App\Service\Media\UnifiClient;
+use App\Service\Media\UnraidClient;
 use App\Service\Media\Usenet\NzbgetClient;
 use App\Service\Media\Usenet\SabnzbdClient;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * Tests third-party service availability.
@@ -26,12 +34,23 @@ use App\Service\Media\Usenet\SabnzbdClient;
  *    the admin "Test connection" button can return an actionable hint
  *    without leaking internal stack traces.
  */
-class HealthService
+class HealthService implements ResetInterface
 {
     private const CACHE_TTL = 10;
 
+    /**
+     * Pool key of the cache "generation" — a random token mixed into every
+     * status key. invalidate() just drops it: the next read mints a new one,
+     * which orphans every previous entry at once (they expire by TTL anyway)
+     * without having to enumerate per-instance slugs.
+     */
+    private const GEN_KEY = 'health.status.gen';
+
     /** @var array<string, array{result: array{status: ?string, latencyMs: ?int}, at: int}> */
     private array $statusCache = [];
+
+    /** Per-request memo of the pool generation token. */
+    private ?string $generation = null;
 
     public function __construct(
         private readonly RadarrClient      $radarr,
@@ -51,6 +70,26 @@ class HealthService
         // Tautulli (current Plex activity) — nullable + last for the same
         // legacy-test-constructor reason as the Usenet clients above.
         private readonly ?TautulliClient   $tautulli = null,
+        // Unraid (server monitoring widget) — nullable + last, same
+        // legacy-test-constructor reason as the Usenet clients above.
+        private readonly ?UnraidClient     $unraid = null,
+        // Shared status cache (cache.app). Without it the 10 s memo lives
+        // only in $statusCache, which classic-mode FrankenPHP discards with
+        // the request — every topbar poll then re-pings every service.
+        // Nullable + last for the legacy-test-constructor reason above.
+        private readonly ?CacheInterface   $statusPool = null,
+        // Houndarr (dashboard stat tile) — nullable + last, same
+        // legacy-test-constructor reason as the clients above.
+        private readonly ?HoundarrClient   $houndarr = null,
+        // Deluge (#deluge-tab) — nullable + last, same legacy-test-constructor
+        // reason as the clients above.
+        private readonly ?DelugeClient     $deluge = null,
+        // UniFi (network monitoring widget) — nullable + last, same
+        // legacy-positional-constructor stance as Unraid/Houndarr.
+        private readonly ?UnifiClient      $unifi = null,
+        // Transmission — nullable + last for the same legacy-test-constructor
+        // reason as the clients above.
+        private readonly ?TransmissionClient $transmission = null,
     ) {}
 
     /**
@@ -110,10 +149,32 @@ class HealthService
             return $this->statusCache[$key]['result'];
         }
 
+        // Shared pool first (cache.app) — one probe sweep per TTL for the
+        // whole install instead of per request/tab. Falls back to a direct
+        // probe when no pool is wired (legacy test constructors).
+        $result = $this->statusPool !== null
+            ? $this->statusPool->get($this->poolKey($key), function (ItemInterface $item) use ($service, $instanceSlug): array {
+                $item->expiresAfter(self::CACHE_TTL);
+                return $this->computeStatus($service, $instanceSlug);
+            })
+            : $this->computeStatus($service, $instanceSlug);
+
+        return $this->remember($key, $result, $now);
+    }
+
+    /**
+     * The uncached probe: configured check → circuit breaker → live ping,
+     * classified by round-trip latency. Extracted from statusFor() so the
+     * shared-pool path and the pool-less legacy path run the same logic.
+     *
+     * @return array{status: ?string, latencyMs: ?int}
+     */
+    private function computeStatus(string $service, ?string $instanceSlug): array
+    {
         // Unconfigured services are never pinged (issue #9). Skipped when no
         // ConfigService is wired (legacy test paths).
         if ($this->config !== null && !$this->isConfigured($service)) {
-            return $this->remember($key, ['status' => null, 'latencyMs' => null], $now);
+            return ['status' => null, 'latencyMs' => null];
         }
 
         // Circuit breaker open → we'd serve a stale cached-down verdict without
@@ -121,7 +182,7 @@ class HealthService
         // outage → degraded. radarr/sonarr mark the breaker WITH the instance
         // slug, so per-instance degraded detection lines up here.
         if ($this->serviceHealthCache?->isDown($service, $instanceSlug)) {
-            return $this->remember($key, ['status' => 'degraded', 'latencyMs' => null], $now);
+            return ['status' => 'degraded', 'latencyMs' => null];
         }
 
         // Live probe — time it with a monotonic clock.
@@ -134,17 +195,25 @@ class HealthService
         $latencyMs = (int) round((hrtime(true) - $start) / 1e6);
 
         if ($ok === null) {
-            return $this->remember($key, ['status' => null, 'latencyMs' => null], $now);
+            return ['status' => null, 'latencyMs' => null];
         }
         if ($ok === false) {
-            return $this->remember($key, ['status' => 'down', 'latencyMs' => null], $now);
+            return ['status' => 'down', 'latencyMs' => null];
         }
 
-        return $this->remember(
-            $key,
-            ['status' => self::classifyLatency($latencyMs), 'latencyMs' => $latencyMs],
-            $now,
-        );
+        return ['status' => self::classifyLatency($latencyMs), 'latencyMs' => $latencyMs];
+    }
+
+    /**
+     * Pool key for one service/instance status. Namespaced by the current
+     * generation token; ':' (PSR-6 reserved) in instance-scoped keys becomes
+     * '.'. Only called when $statusPool is non-null.
+     */
+    private function poolKey(string $key): string
+    {
+        $this->generation ??= $this->statusPool->get(self::GEN_KEY, fn (): string => bin2hex(random_bytes(4)));
+
+        return 'health.status.' . $this->generation . '.' . str_replace(':', '.', $key);
     }
 
     /**
@@ -182,6 +251,7 @@ class HealthService
             'prowlarr'    => $this->prowlarr->ping(),
             'jellyseerr'  => $this->jellyseerr->ping(),
             'qbittorrent' => $this->qbittorrent->ping(),
+            'deluge'      => $this->deluge?->ping() ?? false,
             'tmdb'        => $this->tmdb->ping(),
             // SABnzbd's ping() now probes mode=queue (key-aware) and runs
             // through the client's circuit breaker, so a downed SABnzbd
@@ -190,6 +260,10 @@ class HealthService
             'sabnzbd'     => $this->sabnzbd?->ping() ?? false,
             'nzbget'      => $this->nzbget?->ping() ?? false,
             'tautulli'    => $this->tautulli?->ping() ?? false,
+            'unraid'      => $this->unraid?->ping() ?? false,
+            'houndarr'    => $this->houndarr?->ping() ?? false,
+            'unifi'       => $this->unifi?->ping() ?? false,
+            'transmission' => $this->transmission?->ping() ?? false,
             default       => true,
         };
     }
@@ -206,7 +280,67 @@ class HealthService
      * (issue #15). Radarr/Sonarr are absent on purpose — they enable/disable
      * per instance via the `enabled` flag on `service_instance`.
      */
-    public const TOGGLEABLE_SERVICES = ['prowlarr', 'jellyseerr', 'qbittorrent', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli'];
+    public const TOGGLEABLE_SERVICES = ['prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'unraid', 'houndarr', 'unifi'];
+
+    /** Brand colors for the health chips — single source for dashboard + topbar. */
+    private const SERVICE_COLORS = [
+        'radarr'      => '#FFC230',
+        'sonarr'      => '#00CCFF',
+        'prowlarr'    => '#E88D1A',
+        'jellyseerr'  => '#a259ff',
+        'qbittorrent' => '#2f67ba',
+        'deluge'      => '#3e7bbf',
+        'transmission' => '#d7302f',
+        'sabnzbd'     => '#fbc531',
+        'nzbget'      => '#54c754',
+        'tmdb'        => '#01B4E4',
+        'tautulli'    => '#e5a00d',
+        'unraid'      => '#f15a2c',
+        'houndarr'    => '#c2703d',
+        'unifi'       => '#006fff',
+    ];
+
+    /**
+     * Services-health chip list — the ONE list both the dashboard section and
+     * the topbar popover render (they drifted apart when built separately).
+     * Radarr/Sonarr expand to one chip per enabled instance; unconfigured
+     * services (status null) are dropped; Unraid is admin-gated by the caller.
+     *
+     * @return list<array{id: string, name: string, status: string, latencyMs: ?int, color: string}>
+     */
+    public function chips(bool $includeUnraid = false): array
+    {
+        $chips = [];
+
+        foreach ([ServiceInstance::TYPE_RADARR, ServiceInstance::TYPE_SONARR] as $type) {
+            foreach ($this->instances?->getEnabled($type) ?? [] as $inst) {
+                try {
+                    $s = $this->statusFor($type, $inst->getSlug());
+                } catch (\Throwable) {
+                    $s = ['status' => 'down', 'latencyMs' => null];
+                }
+                if ($s['status'] === null) continue;
+                $chips[] = ['id' => $type, 'name' => $inst->getName(), 'status' => $s['status'], 'latencyMs' => $s['latencyMs'], 'color' => self::SERVICE_COLORS[$type]];
+            }
+        }
+
+        $labels = ['prowlarr' => 'Prowlarr', 'jellyseerr' => 'Seerr', 'qbittorrent' => 'qBittorrent', 'deluge' => 'Deluge', 'transmission' => 'Transmission', 'sabnzbd' => 'SABnzbd', 'nzbget' => 'NZBGet', 'tmdb' => 'TMDb', 'tautulli' => 'Tautulli', 'houndarr' => 'Houndarr'];
+        if ($includeUnraid) {
+            $labels['unraid'] = 'Unraid';
+            $labels['unifi']  = 'UniFi';
+        }
+        foreach ($labels as $service => $label) {
+            try {
+                $s = $this->statusFor($service);
+            } catch (\Throwable) {
+                $s = ['status' => null, 'latencyMs' => null];
+            }
+            if ($s['status'] === null) continue;
+            $chips[] = ['id' => $service, 'name' => $label, 'status' => $s['status'], 'latencyMs' => $s['latencyMs'], 'color' => self::SERVICE_COLORS[$service]];
+        }
+
+        return $chips;
+    }
 
     public function isConfigured(string $service): bool
     {
@@ -240,6 +374,11 @@ class HealthService
             // See issue #10.
             'qbittorrent' =>
                 $this->config->has('qbittorrent_url'),
+            // Deluge — URL only, same reverse-proxy stance as qBittorrent:
+            // an empty password is a legitimate "the proxy injects the
+            // session" setup, not a misconfiguration.
+            'deluge' =>
+                $this->config->has('deluge_url'),
             // SABnzbd needs URL + API key. NZBGet only needs the URL — user /
             // password are optional (reverse-proxy or auth-disabled LAN setup),
             // mirroring qBittorrent's reverse-proxy stance.
@@ -251,6 +390,19 @@ class HealthService
             // including get_activity, is apikey-authenticated).
             'tautulli' =>
                 $this->config->has('tautulli_url') && $this->config->has('tautulli_api_key'),
+            // Unraid needs both the URL and a (read-only scoped) API key.
+            'unraid' =>
+                $this->config->has('unraid_url') && $this->config->has('unraid_api_key'),
+            // Houndarr needs both the URL and the (single, widget-scoped) API key.
+            'houndarr' =>
+                $this->config->has('houndarr_url') && $this->config->has('houndarr_api_key'),
+            // UniFi needs the console URL and a local API key (Network 9.0+).
+            'unifi' =>
+                $this->config->has('unifi_url') && $this->config->has('unifi_api_key'),
+            // Transmission — URL-only, same reverse-proxy-friendly stance as
+            // qBittorrent/Deluge (empty user/password is a legitimate setup).
+            'transmission' =>
+                $this->config->has('transmission_url'),
             default => true,
         };
     }
@@ -264,10 +416,20 @@ class HealthService
      */
     public function invalidate(?string $service = null): void
     {
+        // Shared pool: rotate the generation token — every pooled status
+        // (including per-instance ones we can't enumerate here) becomes
+        // unreachable at once. Cheaper than tracking keys, and the orphans
+        // expire on their own within CACHE_TTL. Scoped invalidation isn't
+        // worth the bookkeeping at a 10 s TTL.
+        if ($this->statusPool !== null) {
+            $this->statusPool->delete(self::GEN_KEY);
+            $this->generation = null;
+        }
+
         if ($service === null) {
             $this->statusCache = [];
             if ($this->serviceHealthCache !== null) {
-                foreach (['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli'] as $svc) {
+                foreach (['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'unraid', 'houndarr', 'unifi'] as $svc) {
                     $this->serviceHealthCache->clear($svc);
                 }
             }
@@ -275,6 +437,21 @@ class HealthService
             unset($this->statusCache[$service]);
             $this->serviceHealthCache?->clear($service);
         }
+    }
+
+    /**
+     * FrankenPHP worker mode — Symfony's services_resetter calls reset()
+     * between requests (this service is auto-tagged kernel.reset via the
+     * ResetInterface autoconfiguration). Drop the per-request in-process
+     * memo so one request's health verdicts and generation token can't bleed
+     * into the next. The cross-request shared pool (cache.app) is left intact
+     * on purpose — that's the whole point of the shared 10 s cache; it self-
+     * expires by TTL and rotates via invalidate() on reconfiguration.
+     */
+    public function reset(): void
+    {
+        $this->statusCache = [];
+        $this->generation  = null;
     }
 
     /**
@@ -315,6 +492,7 @@ class HealthService
             $probe['headers'] ?? [],
             $probe['method'] ?? 'GET',
             $probe['body']    ?? null,
+            $probe['insecure'] ?? false,
         );
 
         return $this->diagnoseFromResponse($resp, $service);
@@ -342,6 +520,24 @@ class HealthService
         if ($service === 'qbittorrent' && $http === 200 && is_string($body) && trim($body) === 'Fails.') {
             return ['ok' => false, 'category' => 'auth', 'http' => $http];
         }
+        // Deluge: deluge-web answers HTTP 200 for everything — the outcome is
+        // in the JSON-RPC envelope. auth.login with a wrong password returns
+        // {"result": false}; an error object also means failure. In
+        // reverse-proxy mode the probe calls web.get_config, whose success
+        // result is a (truthy) dict.
+        if ($service === 'deluge' && $http === 200 && is_string($body)) {
+            $decoded = json_decode($body, true);
+            if (is_array($decoded)) {
+                if (($decoded['error'] ?? null) !== null) {
+                    return ['ok' => false, 'category' => 'auth', 'http' => $http];
+                }
+                if (($decoded['result'] ?? null) === false) {
+                    return ['ok' => false, 'category' => 'auth', 'http' => $http];
+                }
+                return ['ok' => true, 'category' => 'ok', 'http' => $http];
+            }
+            return ['ok' => false, 'category' => 'unknown', 'http' => $http];
+        }
         // SABnzbd answers 403 for BOTH a wrong API key and a host that isn't in
         // its host_whitelist (anti DNS-rebinding). Tell them apart so the admin
         // gets an actionable hint instead of a bare "forbidden".
@@ -368,6 +564,13 @@ class HealthService
             }
             return ['ok' => true, 'category' => 'ok', 'http' => $http];
         }
+        // Transmission: a fresh/expired session always answers 409 with the
+        // real X-Transmission-Session-Id in the response header — that IS a
+        // healthy, reachable daemon, not a failure. A bad RPC password is a
+        // separate 401, independent of the session-id handshake.
+        if ($service === 'transmission' && $http === 409) {
+            return ['ok' => true, 'category' => 'ok', 'http' => $http];
+        }
         if ($http !== null && $http >= 200 && $http < 300) {
             return ['ok' => true, 'category' => 'ok', 'http' => $http];
         }
@@ -387,7 +590,7 @@ class HealthService
      * service has no URL/credentials configured at all.
      *
      * @param array<string, ?string>|null $overrides
-     * @return ?array{url: string, headers?: array<int,string>, method?: string, body?: string}
+     * @return ?array{url: string, headers?: array<int,string>, method?: string, body?: string, insecure?: bool}
      */
     private function probeFor(string $service, ?array $overrides = null): ?array
     {
@@ -486,6 +689,26 @@ class HealthService
                     'body'    => http_build_query(['username' => $user, 'password' => $pass]),
                 ];
             }
+            case 'deluge': {
+                $url  = $get('deluge_url');
+                $pass = $get('deluge_password');
+                if ($url === '') return null;
+
+                // Reverse-proxy mode (empty password): auth.login('') would
+                // return result:false even when the proxy setup is fine, so
+                // probe a session-authenticated method instead — the proxy
+                // injects the session. Success result is a dict (truthy);
+                // without a proxy deluge-web answers an error envelope,
+                // which diagnoseFromResponse() maps to auth.
+                $method = $pass === '' ? 'web.get_config' : 'auth.login';
+                $params = $pass === '' ? [] : [$pass];
+                return [
+                    'url'     => rtrim($url, '/') . '/json',
+                    'headers' => ['Content-Type: application/json', 'Accept: application/json'],
+                    'method'  => 'POST',
+                    'body'    => json_encode(['method' => $method, 'params' => $params, 'id' => 1]),
+                ];
+            }
             case 'sabnzbd': {
                 $url = $get('sabnzbd_url');
                 $key = $get('sabnzbd_api_key');
@@ -525,6 +748,66 @@ class HealthService
                     'headers' => $headers,
                     'method'  => 'POST',
                     'body'    => (string) json_encode(['version' => '1.1', 'id' => 1, 'method' => 'version', 'params' => []]),
+                ];
+            }
+            case 'unraid': {
+                $url = $get('unraid_url');
+                $key = $get('unraid_api_key');
+                if ($url === '' || $key === '') return null;
+                // Trivial read-only GraphQL query; a bad key gets a 401/403.
+                return [
+                    'url'      => rtrim($url, '/') . '/graphql',
+                    'headers'  => ['x-api-key: ' . $key, 'Content-Type: application/json', 'Accept: application/json'],
+                    'method'   => 'POST',
+                    'body'     => (string) json_encode(['query' => UnraidClient::QUERY_PING]),
+                    // LAN Unraid GUIs commonly run self-signed certs.
+                    'insecure' => $get('unraid_skip_tls_verify') === '1',
+                ];
+            }
+            case 'houndarr': {
+                $url = $get('houndarr_url');
+                $key = $get('houndarr_api_key');
+                if ($url === '' || $key === '') return null;
+                // The single endpoint the Houndarr key authorizes; a bad or
+                // revoked key answers 401 → diagnosed as `auth`.
+                return [
+                    'url'     => rtrim($url, '/') . '/api/v1/widget',
+                    'headers' => ['X-Api-Key: ' . $key, 'Accept: application/json'],
+                ];
+            }
+            case 'unifi': {
+                $url  = $get('unifi_url');
+                $key  = $get('unifi_api_key');
+                $site = trim($get('unifi_site'));
+                if ($url === '' || $key === '') return null;
+                // Same read-only endpoint the widget uses; a bad key answers
+                // 401 → diagnosed as `auth`.
+                return [
+                    'url'      => rtrim($url, '/') . '/proxy/network/api/s/'
+                        . rawurlencode($site !== '' ? $site : 'default') . UnifiClient::PATH_HEALTH,
+                    'headers'  => ['X-API-KEY: ' . $key, 'Accept: application/json'],
+                    // UniFi OS consoles ship a self-signed cert by default.
+                    'insecure' => $get('unifi_skip_tls_verify') === '1',
+                ];
+            }
+            case 'transmission': {
+                $url  = $get('transmission_url');
+                $user = $get('transmission_user');
+                $pass = $get('transmission_password');
+                if ($url === '') return null;
+                // Deliberately no X-Transmission-Session-Id header: a fresh
+                // client always gets HTTP 409 back with the real token, and
+                // that 409 IS the "reachable" signal diagnoseFromResponse()
+                // is looking for — no retry needed just to test connectivity.
+                $headers = ['Content-Type: application/json'];
+                if ($user !== '') {
+                    $headers[] = 'Authorization: Basic ' . base64_encode($user . ':' . $pass);
+                }
+                return [
+                    'url'     => rtrim($url, '/') . '/transmission/rpc',
+                    'headers' => $headers,
+                    'method'  => 'POST',
+                    'body'    => (string) json_encode(['method' => 'session-get', 'arguments' => ['fields' => ['version']], 'tag' => 1]),
                 ];
             }
             default:
@@ -614,7 +897,7 @@ class HealthService
      * @param array<int, string> $headers
      * @return array{http: ?int, body: ?string, err: string}
      */
-    private function httpProbe(string $url, array $headers, string $method, ?string $body): array
+    private function httpProbe(string $url, array $headers, string $method, ?string $body, bool $insecure = false): array
     {
         // SSRF guard #1 — reject before opening the socket. Cuts off
         // file:// / gopher:// / dict:// schemes that curl would otherwise
@@ -637,8 +920,8 @@ class HealthService
             CURLOPT_TIMEOUT        => 5,
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_NOSIGNAL       => true,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_SSL_VERIFYPEER => !$insecure,
+            CURLOPT_SSL_VERIFYHOST => $insecure ? 0 : 2,
             CURLOPT_HTTPHEADER     => $headers,
         ]);
         if ($method === 'POST') {

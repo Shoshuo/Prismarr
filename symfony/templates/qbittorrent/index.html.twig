@@ -10,8 +10,6 @@
    ══════════════════════════════════════════════════════════════════════════ */
 .qbt-stat-card { position:relative; overflow:hidden; height:100%; }
 .qbt-stat-card .card-body { min-height:88px; display:flex; flex-direction:column; justify-content:center; }
-.qbt-stat-card .stat-val { font-size:1.5rem; font-weight:700; line-height:1; letter-spacing:-.5px; }
-.qbt-stat-card .stat-lbl { font-size:.7rem; text-transform:uppercase; letter-spacing:.4px; color:var(--tblr-text-secondary); font-weight:600; }
 .qbt-stat-card .stat-speed { font-size:.72rem; font-weight:600; margin-top:2px; font-family:'SF Mono', Menlo, monospace; min-height:1em; }
 .qbt-stat-card .stat-icon { position:absolute; right:-8px; top:-8px; opacity:.08; }
 /* 2e ligne — cards totaux un peu plus hautes, stat-val à droite */
@@ -139,17 +137,6 @@ body[data-bs-theme="dark"] .qbt-bar-wrap { background:rgba(255,255,255,.06); }
 /* ══════════════════════════════════════════════════════════════════════════
    Filtres + recherche
    ══════════════════════════════════════════════════════════════════════════ */
-.qbt-filter-btn { border-radius:6px !important; background:transparent !important; font-size:.78rem; padding:4px 10px; transition:all .15s; }
-.qbt-filter-btn:hover { background:rgba(47,103,186,.06) !important; }
-.qbt-filter-btn.active { font-weight:600; }
-.qbt-filter-btn[data-filter="all"].active         { background:rgba(107,114,128,.15) !important; color:#6b7280 !important; }
-.qbt-filter-btn[data-filter="active"].active      { background:rgba(250,204,21,.18) !important; color:#b45309 !important; }
-.qbt-filter-btn[data-filter="downloading"].active { background:rgba(59,130,246,.15) !important; color:#3b82f6 !important; }
-.qbt-filter-btn[data-filter="seeding"].active     { background:rgba(34,197,94,.15) !important; color:#22c55e !important; }
-.qbt-filter-btn[data-filter="stalled"].active     { background:rgba(249,115,22,.15) !important; color:#f97316 !important; }
-.qbt-filter-btn[data-filter="paused"].active      { background:rgba(245,158,11,.15) !important; color:#f59e0b !important; }
-.qbt-filter-btn[data-filter="completed"].active   { background:rgba(20,184,166,.15) !important; color:#14b8a6 !important; }
-.qbt-filter-btn[data-filter="error"].active       { background:rgba(239,68,68,.15) !important; color:#ef4444 !important; }
 
 .qbt-filter-badge { display:inline-block; margin-left:4px; padding:0 5px; font-size:.6rem; background:rgba(0,0,0,.08); border-radius:8px; font-weight:700; }
 
@@ -205,13 +192,6 @@ body[data-bs-theme="dark"] .qbt-mini-bar { background:rgba(255,255,255,.08); }
 /* ══════════════════════════════════════════════════════════════════════════
    Sélecteur de vue
    ══════════════════════════════════════════════════════════════════════════ */
-.qbt-view-switcher { display:inline-flex; background:rgba(0,0,0,.04); border-radius:6px; padding:2px; gap:1px; }
-body[data-bs-theme="dark"] .qbt-view-switcher { background:rgba(255,255,255,.05); }
-.qbt-view-btn { border:none !important; background:transparent; padding:3px 9px; border-radius:4px; font-size:.72rem; font-weight:500; color:var(--tblr-text-secondary); display:inline-flex; align-items:center; gap:4px; transition:all .12s; cursor:pointer; }
-.qbt-view-btn:hover { background:rgba(47,103,186,.08); color:#2f67ba; }
-.qbt-view-btn.active { background:#2f67ba; color:#fff; box-shadow:0 1px 3px rgba(47,103,186,.3); }
-.qbt-view-btn.active:hover { background:#2f67ba; color:#fff; }
-.qbt-view-btn svg { width:13px; height:13px; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    Mode COMPACT
@@ -340,14 +320,14 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     </div>
     <div class="col-6 col-md-4 col-lg-2">
         <div class="card card-sm qbt-stat-card"><div class="card-body">
-            <span class="stat-val" style="color:#f59e0b" id="qbt-stat-paused">{{ stats.paused ?? 0 }}</span>
+            <span class="stat-val" style="color:{{ (stats.paused ?? 0) > 0 ? '#f59e0b' : 'var(--tblr-text-secondary)' }}" id="qbt-stat-paused">{{ stats.paused ?? 0 }}</span>
             <div class="stat-lbl mt-1">{{ 'qbittorrent.stats.paused'|trans }}</div>
             <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
         </div></div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
         <div class="card card-sm qbt-stat-card"><div class="card-body">
-            <span class="stat-val" style="color:#ef4444" id="qbt-stat-error">{{ stats.errored ?? 0 }}</span>
+            <span class="stat-val" style="color:{{ (stats.errored ?? 0) > 0 ? '#ef4444' : 'var(--tblr-text-secondary)' }}" id="qbt-stat-error">{{ stats.errored ?? 0 }}</span>
             <div class="stat-lbl mt-1">{{ 'qbittorrent.stats.errored'|trans }}</div>
             <svg class="stat-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v4m0 4h.01"/></svg>
         </div></div>
@@ -450,14 +430,19 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
                 <input type="text" id="qbt-search" class="form-control form-control-sm" placeholder="{{ 'qbittorrent.filters.search_placeholder'|trans }}" autocomplete="off">
             </div>
             <div class="d-flex gap-1 flex-wrap">
-                <button class="btn btn-sm qbt-filter-btn active" data-filter="all">{{ 'qbittorrent.filters.all'|trans }}</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="active" title="{{ 'qbittorrent.filters.active_title'|trans }}">{{ 'qbittorrent.filters.active'|trans }}</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="downloading">{{ 'qbittorrent.filters.downloading'|trans }}</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="seeding">{{ 'qbittorrent.filters.seeding'|trans }}</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="stalled">{{ 'qbittorrent.filters.stalled'|trans }}</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="paused">{{ 'qbittorrent.filters.paused'|trans }}</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="completed">{{ 'qbittorrent.filters.completed'|trans }}</button>
-                <button class="btn btn-sm qbt-filter-btn" data-filter="error">{{ 'qbittorrent.filters.error'|trans }}</button>
+                {% include '_filter_pills.html.twig' with {
+                  active: 'all',
+                  pills: [
+                    { filter: 'all',         label: 'qbittorrent.filters.all'|trans,         hue: '#6b7280' },
+                    { filter: 'active',      label: 'qbittorrent.filters.active'|trans,      hue: '#b45309', title: 'qbittorrent.filters.active_title'|trans },
+                    { filter: 'downloading', label: 'qbittorrent.filters.downloading'|trans, hue: '#3b82f6' },
+                    { filter: 'seeding',     label: 'qbittorrent.filters.seeding'|trans,     hue: '#22c55e' },
+                    { filter: 'stalled',     label: 'qbittorrent.filters.stalled'|trans,     hue: '#f97316' },
+                    { filter: 'paused',      label: 'qbittorrent.filters.paused'|trans,      hue: '#f59e0b' },
+                    { filter: 'completed',   label: 'qbittorrent.filters.completed'|trans,   hue: '#14b8a6' },
+                    { filter: 'error',       label: 'qbittorrent.filters.error'|trans,       hue: '#ef4444' }
+                  ]
+                } only %}
             </div>
             <span class="text-muted small ms-auto" id="qbt-count">{{ 'qbittorrent.count_tpl'|trans({count: torrents|length}) }}</span>
             <div class="d-flex gap-1">
@@ -510,20 +495,18 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
                     <option value="seeds|1">{{ 'qbittorrent.sort.seeds_desc'|trans }}</option>
                 </select>
             </div>
-            <div class="qbt-view-switcher" role="group" aria-label="{{ 'qbittorrent.view.aria_label'|trans }}">
-                <button type="button" class="qbt-view-btn active" data-view="list" title="{{ 'qbittorrent.view.list_title'|trans }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-                    {{ 'qbittorrent.view.list'|trans }}
-                </button>
-                <button type="button" class="qbt-view-btn" data-view="table" title="{{ 'qbittorrent.view.table_title'|trans }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v14H3zM3 10h18M3 15h18M10 5v14"/></svg>
-                    {{ 'qbittorrent.view.table'|trans }}
-                </button>
-                <button type="button" class="qbt-view-btn" data-view="compact" title="{{ 'qbittorrent.view.compact_title'|trans }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-                    {{ 'qbittorrent.view.compact'|trans }}
-                </button>
-            </div>
+            {% set vs_icon_list = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>' %}
+            {% set vs_icon_table = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v14H3zM3 10h18M3 15h18M10 5v14"/></svg>' %}
+            {% set vs_icon_compact = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>' %}
+            {% include '_view_switcher.html.twig' with {
+                active: 'list',
+                aria_label: 'qbittorrent.view.aria_label'|trans,
+                modes: [
+                    { view: 'list', label: 'qbittorrent.view.list'|trans, title: 'qbittorrent.view.list_title'|trans, icon: vs_icon_list },
+                    { view: 'table', label: 'qbittorrent.view.table'|trans, title: 'qbittorrent.view.table_title'|trans, icon: vs_icon_table },
+                    { view: 'compact', label: 'qbittorrent.view.compact'|trans, title: 'qbittorrent.view.compact_title'|trans, icon: vs_icon_compact }
+                ]
+            } only %}
         </div>
         {# 3rd row of the card: pagination #}
         <div id="qbt-pagination-bar" class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-2 pt-2" style="display:none;border-top:1px solid var(--tblr-border-color);">
@@ -865,7 +848,6 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
 (function(){
     var BASE = '{{ path("app_qbittorrent_index") }}';
     var LOCALE = {{ app.request.locale|default('fr')|json_encode|raw }};
-    var refreshTimer = null;
     var currentFilter = 'all';
     var selectedHashes = {};
     var deleteTarget = { hashes: [], mode: 'single' };
@@ -1191,13 +1173,28 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     // ── Refresh temps réel ──────────────────────────────────────────────────
     var REFRESH_INTERVAL = 3000; // 3s — compromis entre fluidité et charge qBit
 
+    // Le handle du timer vit sur window et NON dans cette closure : Turbo Drive
+    // ré-exécute le script de la page entrante avec une closure neuve, tandis que
+    // celle de la page sortante survit, son setInterval toujours vivant. Les trois
+    // pages de clients torrent (qBittorrent, Deluge, Transmission) partagent ce
+    // nom — une seule est montée à la fois — et rendent les MÊMES ids d'éléments :
+    // sans ce global, le poller orphelin de la page sortante continuerait d'écrire
+    // ses torrents par-dessus ceux de la page entrante. base.html.twig le purge
+    // aussi sur turbo:before-render, pour la navigation vers une page non-torrent.
+    function clearPollTimer() {
+        if (window._prismarrTorrentPagePollTimer) {
+            clearInterval(window._prismarrTorrentPagePollTimer);
+            window._prismarrTorrentPagePollTimer = null;
+        }
+    }
+
     function startRefresh() {
-        if (refreshTimer) clearInterval(refreshTimer);
+        clearPollTimer();
         if (document.hidden) return;  // pas de poll si onglet masqué
-        refreshTimer = setInterval(refreshData, REFRESH_INTERVAL);
+        window._prismarrTorrentPagePollTimer = setInterval(refreshData, REFRESH_INTERVAL);
     }
     function stopRefresh() {
-        if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+        clearPollTimer();
         if (refreshCtrl) { refreshCtrl.abort(); refreshCtrl = null; }
     }
 
@@ -1212,10 +1209,17 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     });
 
     var refreshCtrl = null;
+    var refreshSeq = 0;
     function refreshData() {
         // Annule le fetch précédent s'il est encore en vol (évite empilement)
         if (refreshCtrl) refreshCtrl.abort();
         refreshCtrl = new AbortController();
+        // abort() n'a aucun effet si la réponse précédente est déjà arrivée
+        // (fréquent en local, où le round-trip peut être plus rapide que le
+        // délai clic → exécution JS) : sans ce numéro de séquence, une réponse
+        // de sondage périodique pour l'ancienne page peut s'appliquer APRÈS
+        // celle du clic sur une autre page, et y revenir juste après l'affichage.
+        var seq = ++refreshSeq;
         var q = new URLSearchParams({
             page: pagState.page,
             perPage: pagState.perPage,
@@ -1229,6 +1233,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         fetch(BASE + '/api/torrents?' + q, { signal: refreshCtrl.signal, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(function(r) { return r.json(); })
         .then(function(data) {
+            if (seq !== refreshSeq) return; // une requête plus récente a déjà été émise
             if (data.error) return;
             updateStats(data.stats);
             updateList(data.torrents);
@@ -1255,6 +1260,10 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         set('qbt-stat-total', s.total); set('qbt-stat-dl', s.downloading); set('qbt-stat-seed', s.seeding);
         set('qbt-stat-paused', s.paused); set('qbt-stat-error', s.errored);
         set('qbt-stat-stalled', s.stalled || 0);
+        // Semantic hues must be earned: orange/red only when the count is
+        // nonzero, otherwise the numeral goes neutral like the total.
+        function hue(id, n, c) { var el = document.getElementById(id); if (el) el.style.color = n > 0 ? c : 'var(--tblr-text-secondary)'; }
+        hue('qbt-stat-paused', s.paused, '#f59e0b'); hue('qbt-stat-error', s.errored, '#ef4444');
         var dlEl = document.getElementById('qbt-speed-dl'); if (dlEl) dlEl.innerHTML = s.dl_speed > 0 ? ('&#8595; ' + fmtSpeed(s.dl_speed)) : '&nbsp;';
         var upEl = document.getElementById('qbt-speed-up'); if (upEl) upEl.innerHTML = s.up_speed > 0 ? ('&#8593; ' + fmtSpeed(s.up_speed)) : '&nbsp;';
         var dot = document.getElementById('qbt-conn-dot');
@@ -1543,7 +1552,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         if (list) list.dataset.view = view;
         var hdr = document.getElementById('qbt-table-header');
         if (hdr) hdr.classList.toggle('show', view === 'table');
-        var btns = document.querySelectorAll('.qbt-view-btn');
+        var btns = document.querySelectorAll('.view-btn');
         for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('active', btns[i].dataset.view === view);
         syncSortUI();
     }
@@ -1574,7 +1583,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     }
 
     bindDoc('click', 'viewSortPag', function(e) {
-        var vb = e.target.closest('.qbt-view-btn');
+        var vb = e.target.closest('.view-btn');
         if (vb) { applyView(vb.dataset.view); return; }
         var sb = e.target.closest('#qbt-table-header .qbt-sort');
         if (sb) {
@@ -1600,7 +1609,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     });
 
     // ── Filtres ─────────────────────────────────────────────────────────────
-    var filterBtns = document.querySelectorAll('.qbt-filter-btn');
+    var filterBtns = document.querySelectorAll('.filter-pill');
     for (var i = 0; i < filterBtns.length; i++) {
         // onclick (pas addEventListener) — évite les doublons après re-exec Turbo
         filterBtns[i].onclick = function(){
@@ -2069,8 +2078,8 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     // ── Init ────────────────────────────────────────────────────────────────
     applyView(currentView);
     syncSortUI();
-    // Aligne l'état avec le filtre actif (.qbt-filter-btn.active)
-    var activeFilter = document.querySelector('.qbt-filter-btn.active');
+    // Aligne l'état avec le filtre actif (.filter-pill.active)
+    var activeFilter = document.querySelector('.filter-pill.active');
     if (activeFilter) pagState.filter = activeFilter.dataset.filter || 'all';
     refreshData();    // premier fetch immédiat (applique pagination+tri+filtre serveur)
     startRefresh();

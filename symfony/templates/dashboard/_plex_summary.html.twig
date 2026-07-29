@@ -3,11 +3,27 @@
    dashboard widget (_plex_activity) and the Tautulli page (_now_playing). The
    .plex-summary CSS lives in dashboard/_plex_styles.html.twig (loaded on both). #}
 {% import '_icons.html.twig' as ico %}
+{# Distinct current viewers, for the stacked avatar-list glance below. #}
+{% set viewers = [] %}
+{% for s in plex.sessions|default([]) %}
+  {% if s.userDisplayName and s.userDisplayName not in viewers %}
+    {% set viewers = viewers|merge([s.userDisplayName]) %}
+  {% endif %}
+{% endfor %}
 <div class="plex-summary">
   <div class="plex-stat">
     <div class="plex-stat-value">{{ plex.streamCount }}</div>
     <div class="plex-stat-label">{{ 'dashboard.plex.streams'|trans }}</div>
   </div>
+  {% if viewers is not empty %}
+  <div class="avatar-list avatar-list-stacked plex-viewers" aria-label="{{ 'dashboard.plex.viewers'|trans }}">
+    {% for v in viewers|slice(0, 5) %}
+      {% set initials = v|split(' ')|map(w => w|first)|slice(0, 2)|join|upper %}
+      <span class="avatar avatar-sm" style="background:hsl({{ (loop.index0 * 67) % 360 }}, 42%, 46%);color:#fff;" title="{{ v }}">{{ initials }}</span>
+    {% endfor %}
+    {% if viewers|length > 5 %}<span class="avatar avatar-sm">+{{ viewers|length - 5 }}</span>{% endif %}
+  </div>
+  {% endif %}
   <div class="plex-stat-badges">
     {% if plex.directPlayCount > 0 %}<span class="badge bg-green-lt text-green">{{ 'dashboard.plex.summary.direct_play'|trans({count: plex.directPlayCount}) }}</span>{% endif %}
     {% if plex.directStreamCount > 0 %}<span class="badge bg-azure-lt text-azure">{{ 'dashboard.plex.summary.direct_stream'|trans({count: plex.directStreamCount}) }}</span>{% endif %}

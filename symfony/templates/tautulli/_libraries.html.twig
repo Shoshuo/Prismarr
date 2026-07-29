@@ -1,7 +1,10 @@
 {# Library list (slim single column). `libraries` = list of {name, type, count, childCount}. #}
 {% import '_icons.html.twig' as ico %}
 {% if libraries is empty %}
-  <div class="text-center text-secondary py-4">{{ 'tautulli.libraries.empty'|trans }}</div>
+  <div class="empty py-4">
+    <div class="empty-icon">{{ ico.icon('book', '', 32) }}</div>
+    <p class="empty-subtitle text-secondary mb-0">{{ 'tautulli.libraries.empty'|trans }}</p>
+  </div>
 {% else %}
 <div class="list-group list-group-flush">
   {% for lib in libraries %}

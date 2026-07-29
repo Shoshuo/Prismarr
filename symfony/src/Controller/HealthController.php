@@ -13,7 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class HealthController extends AbstractController
 {
     /** Single-instance services — kept on the legacy flat ping API. */
-    private const FLAT_SERVICES = ['prowlarr', 'jellyseerr', 'qbittorrent', 'sabnzbd', 'nzbget', 'tmdb'];
+    private const FLAT_SERVICES = ['prowlarr', 'jellyseerr', 'qbittorrent', 'transmission', 'sabnzbd', 'nzbget', 'tmdb'];
 
     #[Route('/api/health', name: 'api_health', methods: ['GET'])]
     public function health(Connection $db): JsonResponse
@@ -53,8 +53,6 @@ class HealthController extends AbstractController
     ): JsonResponse {
         $services = [];
         $instancesMap = ['radarr' => [], 'sonarr' => []];
-        $ok    = 0;
-        $total = 0;
 
         // Flat single-instance services first.
         foreach (self::FLAT_SERVICES as $service) {
@@ -64,10 +62,6 @@ class HealthController extends AbstractController
                 $state = null;
             }
             $services[$service] = $state;
-            if ($state !== null) {
-                $total++;
-                if ($state) $ok++;
-            }
         }
 
         // Multi-instance Radarr / Sonarr — ping each enabled instance and
@@ -88,19 +82,26 @@ class HealthController extends AbstractController
                     'state' => $state,
                 ];
                 if ($state !== null) {
-                    $total++;
-                    if ($state) $ok++;
                     $aggregate = ($aggregate === null) ? $state : ($aggregate && $state);
                 }
             }
             $services[$type] = $aggregate;
         }
 
+        // Unified chip list — same rows the dashboard section renders, so the
+        // popover is a true mirror. Unconfigured services are absent (no more
+        // "Not configured" rows); Unraid is admin-only like on the dashboard.
+        $chips = $health->chips($this->isGranted('ROLE_ADMIN'));
+        $okChips = count(array_filter($chips, static fn(array $c): bool => in_array($c['status'], ['up', 'slow', 'very_slow'], true)));
+
         return new JsonResponse([
+            // Legacy shape — kept for upstream-diff hygiene and stale cached JS.
             'services'  => $services,
             'instances' => $instancesMap,
-            'ok'        => $ok,
-            'total'     => $total,
+            // v1.2 — the topbar renders from `chips`; ok/total mirror the chip list.
+            'chips'     => $chips,
+            'ok'        => $okChips,
+            'total'     => count($chips),
             'timestamp' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
         ]);
     }

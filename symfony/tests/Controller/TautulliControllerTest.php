@@ -170,4 +170,26 @@ class TautulliControllerTest extends AbstractWebTestCase
         self::assertResponseIsSuccessful();
         self::assertStringNotContainsString('Exception', (string) $this->client->getResponse()->getContent());
     }
+
+    /**
+     * /tautulli/api/quicklook/{ratingKey} fails open to {type:null, id:null}
+     * when Tautulli is not configured — the frontend then falls back to the
+     * legacy Plex metadata modal instead of a broken quick-look.
+     */
+    public function testQuickLookResolveReturnsNullShapeWhenUnconfigured(): void
+    {
+        $this->client->request('GET', '/tautulli/api/quicklook/12345');
+
+        self::assertResponseIsSuccessful();
+        $content = (string) $this->client->getResponse()->getContent();
+        self::assertJson($content);
+        self::assertSame(['type' => null, 'id' => null], json_decode($content, true));
+    }
+
+    /** Non-numeric rating keys never reach the client — 404 by route requirement. */
+    public function testQuickLookResolveRejectsNonNumericKeys(): void
+    {
+        $this->client->request('GET', '/tautulli/api/quicklook/abc');
+        self::assertResponseStatusCodeSame(404);
+    }
 }

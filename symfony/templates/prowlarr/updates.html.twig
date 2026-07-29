@@ -72,9 +72,10 @@
     </div>
     <div class="card-body p-0">
         {% if updates is empty %}
-            <div class="text-muted text-center py-5">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="mb-2 text-success d-block mx-auto"><path d="M5 12l5 5l10 -10"/></svg>
-                {{ 'prowlarr.updates.empty'|trans }}
+            {% import '_icons.html.twig' as ico %}
+            <div class="empty py-5">
+                <div class="empty-icon">{{ ico.icon('check', 'text-success', 36) }}</div>
+                <p class="empty-title mb-0">{{ 'prowlarr.updates.empty'|trans }}</p>
             </div>
         {% else %}
             <div id="install-progress" class="alert alert-info d-none m-3">
@@ -142,7 +143,7 @@
                                 {% if update.changes.new is defined and update.changes.new %}
                                 <div class="mb-2">
                                     <div class="small fw-semibold" style="color:#22c55e;">{{ 'prowlarr.updates.changes_new'|trans }}</div>
-                                    <ul class="mb-0" style="font-size:.75rem;padding-left:1.2rem;color:rgba(255,255,255,.6);">
+                                    <ul class="mb-0" style="font-size:.75rem;padding-left:1.2rem;color:var(--tblr-secondary-color);">
                                         {% for item in update.changes.new %}
                                             <li>{{ item }}</li>
                                         {% endfor %}
@@ -152,7 +153,7 @@
                                 {% if update.changes.fixed is defined and update.changes.fixed %}
                                 <div>
                                     <div class="small fw-semibold" style="color:#38bdf8;">{{ 'prowlarr.updates.changes_fixed'|trans }}</div>
-                                    <ul class="mb-0" style="font-size:.75rem;padding-left:1.2rem;color:rgba(255,255,255,.6);">
+                                    <ul class="mb-0" style="font-size:.75rem;padding-left:1.2rem;color:var(--tblr-secondary-color);">
                                         {% for item in update.changes.fixed %}
                                             <li>{{ item }}</li>
                                         {% endfor %}

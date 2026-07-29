@@ -165,7 +165,7 @@
     </div>
     <div class="col-6 col-lg-2">
         <div class="card card-sm"><div class="card-body text-center">
-            <div class="js-stat" style="color:#f59e0b;">{{ counts.pending ?? 0 }}</div>
+            <div class="js-stat" style="color:{{ (counts.pending ?? 0) > 0 ? '#f59e0b' : 'var(--tblr-text-secondary)' }};">{{ counts.pending ?? 0 }}</div>
             <div class="text-secondary small">{{ 'jellyseerr.index.stat_pending'|trans }}</div>
         </div></div>
     </div>
@@ -183,7 +183,7 @@
     </div>
     <div class="col-6 col-lg-2">
         <div class="card card-sm"><div class="card-body text-center">
-            <div class="js-stat" style="color:#ef4444;">{{ counts.declined ?? 0 }}</div>
+            <div class="js-stat" style="color:{{ (counts.declined ?? 0) > 0 ? '#ef4444' : 'var(--tblr-text-secondary)' }};">{{ counts.declined ?? 0 }}</div>
             <div class="text-secondary small">{{ 'jellyseerr.index.stat_declined'|trans }}</div>
         </div></div>
     </div>
@@ -547,7 +547,7 @@
                     html += 'background:linear-gradient(135deg, #1a1033 0%, #2d1b69 50%, #0f0a1a 100%);';
                 }
                 html += '">';
-                html += '<div style="position:absolute;inset:0;background:linear-gradient(to top, var(--tblr-card-bg) 0%, rgba(0,0,0,.5) 50%, rgba(0,0,0,.2) 100%);"></div>';
+                html += '<div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(15,15,20,.96) 0%, rgba(0,0,0,.5) 50%, rgba(0,0,0,.2) 100%);"></div>';
                 html += '<div style="position:relative;z-index:1;padding:1.5rem 1.5rem 0;display:flex;gap:1.25rem;align-items:flex-end;min-height:240px;">';
 
                 if (poster) {

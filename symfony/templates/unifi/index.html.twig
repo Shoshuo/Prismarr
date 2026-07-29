@@ -1,0 +1,226 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'unifi.title'|trans }}{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+  /* Chart styling for the history panel. Lives here rather than inline in the
+     fragment for two reasons: a media query is impossible in a style attribute
+     (and the axis labels break this project's sub-11px mobile floor without
+     one), and the fragment is re-injected on every 300s poll, so a <style> tag
+     inside it would accumulate duplicates.
+
+     Deliberately NOT reusing the dashboard's .net-chart* classes: those live in
+     an inline <style> in dashboard/index.html.twig and are scoped to that page,
+     so /unifi never loads them. These mirror them 1:1 under a page-local name.
+     No new CSS file — same pattern the dashboard itself uses. */
+  .unifi-chart { display: block; width: 100%; height: 120px; margin-top: .35rem; }
+  .unifi-chart-fill { fill: rgba(var(--tblr-primary-rgb, 99,102,241), .22); stroke: none; }
+  .unifi-chart-down { fill: none; stroke: var(--tblr-primary); stroke-width: 1.5; }
+  /* Upload is a fixed sky blue, not the theme primary: green-primary presets
+     otherwise render download and upload in near-identical greens. Carried over
+     from the widget, where it was live-verified across the 17 presets. */
+  .unifi-chart-up { fill: none; stroke: #38bdf8; stroke-width: 1.5; }
+  .unifi-chart-latency { fill: none; stroke: var(--tblr-orange); stroke-width: 2; stroke-dasharray: 4 3; }
+  .unifi-chart-axis { display: flex; justify-content: space-between; font-size: .62rem; color: var(--tblr-secondary); margin-top: .2rem; }
+
+  /* Lining figures so digits align down a column — these tables exist to be
+     compared vertically (which box is hot, which radio is retrying). */
+  .unifi-nums { font-variant-numeric: tabular-nums; }
+
+  /* Mobile readability floor (responsive audit 2026-06-29): nothing below 11px
+     under the lg breakpoint. .62rem is ~9.9px, so bump it exactly as the
+     dashboard does for its own axis. */
+  @media (max-width: 991.98px) {
+    .unifi-chart-axis { font-size: .6875rem; }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="page-header d-print-none">
+  <div class="row align-items-center">
+    <div class="col">
+      <h2 class="page-title">{{ 'unifi.title'|trans }}</h2>
+      <div class="text-secondary">{{ 'unifi.subtitle'|trans }}</div>
+    </div>
+    <div class="col-auto ms-auto">
+      <span class="badge bg-secondary-lt" data-unifi-updated>—</span>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+
+    {# Three regions, three cadences. Each carries the same data-* contract the
+       dashboard widgets use, so the scheduler below is a near-copy of the
+       dashboard's — deliberately, because that one is shipped and debugged. #}
+    {% for region in [
+      { name: 'live',    poll: 10000  },
+      { name: 'infra',   poll: 60000  },
+      { name: 'history', poll: 300000 }
+    ] %}
+      <div class="mb-3"
+           data-dash-widget="{{ region.name }}"
+           data-dash-poll="{{ region.poll }}"
+           data-dash-url="{{ path('app_unifi_panel', { panel: region.name }) }}">
+        <div data-dash-body>
+          <div class="text-center text-secondary py-4">
+            <span class="spinner-border spinner-border-sm"></span>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+(function () {
+  'use strict';
+
+  var PANELS_URL = '{{ path('app_unifi_panels') }}';
+  var UPDATED_TPL = {{ 'unifi.updated'|trans({ seconds: '%S%' })|json_encode|raw }};
+
+  function body(node) { return node.querySelector('[data-dash-body]') || node; }
+
+  function applyFragment(node, html) {
+    body(node).innerHTML = html;
+    // Un-hide: a region hidden by an earlier empty body ("not applicable")
+    // must come back if the console later starts returning content — e.g. the
+    // admin configures UniFi in another tab mid-session. Without this, the
+    // fragment lands on an invisible node and the panel never reappears.
+    if (node.style.display === 'none') { node.style.display = ''; }
+  }
+
+  function applyFailure(node) {
+    body(node).innerHTML =
+      '<div class="card"><div class="card-body"><div class="empty">' +
+        '<p class="empty-title">{{ 'unifi.unreachable'|trans|e('js') }}</p>' +
+        '<div class="empty-action">' +
+          '<button type="button" class="btn btn-primary" data-dash-retry>{{ 'unifi.retry'|trans|e('js') }}</button>' +
+        '</div>' +
+      '</div></div></div>';
+  }
+
+  function nodes() {
+    return document.querySelectorAll('[data-dash-widget][data-dash-url]');
+  }
+
+  // ── First hydration: one request per region, after first paint ──
+  function hydrate(node) {
+    if (node.dataset.dashLoaded === '1') return;
+    node.dataset.dashLoaded = '1';
+    fetch(node.dataset.dashUrl, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+      .then(function (r) {
+        // Non-OK keeps the region visible with a retry — never hide the evidence
+        // on a monitoring page. An empty 200 body means "not applicable".
+        if (!r.ok) { applyFailure(node); return; }
+        return r.text().then(function (html) {
+          if (!html.trim()) { node.style.display = 'none'; return; }
+          applyFragment(node, html);
+        });
+      })
+      .catch(function () { applyFailure(node); });
+  }
+
+  function hydrateAll() {
+    var list = nodes();
+    for (var i = 0; i < list.length; i++) { hydrate(list[i]); }
+  }
+
+  // ── Retry, delegated and bound once per session ──
+  if (!window._prismarrUnifiRetryBound) {
+    window._prismarrUnifiRetryBound = true;
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-dash-retry]');
+      if (!btn) return;
+      var node = btn.closest('[data-dash-widget]');
+      if (!node) return;
+      node.dataset.dashLoaded = '';
+      body(node).innerHTML = '<div class="text-center text-secondary py-4"><span class="spinner-border spinner-border-sm"></span></div>';
+      hydrate(node);
+    });
+  }
+
+  // ── Coalescing scheduler ──
+  // Tick at the GCD of the three cadences (10s) and batch every region due on
+  // that tick into ONE /unifi/api/panels request. A tick with all three due is
+  // one HTTP request, not three — which matters because worker mode is off by
+  // default, so every request re-pings the console from a cold cache.
+  function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+
+  var nextDue = {};
+  var baseTick = 0;
+  (function plan() {
+    var list = nodes();
+    var now = Date.now();
+    for (var i = 0; i < list.length; i++) {
+      var name = list[i].dataset.dashWidget;
+      var ms = parseInt(list[i].dataset.dashPoll, 10) || 60000;
+      if (!(name in nextDue)) { nextDue[name] = now + ms; }
+      baseTick = baseTick ? gcd(baseTick, ms) : ms;
+    }
+    if (!baseTick) { baseTick = 60000; }
+  })();
+
+  var lastTick = 0;
+
+  function tick() {
+    if (document.hidden) return;
+    var list = nodes();
+    if (!list.length) return;
+
+    var now = Date.now();
+    var byName = {};
+    var due = [];
+    for (var i = 0; i < list.length; i++) {
+      var name = list[i].dataset.dashWidget;
+      var ms = parseInt(list[i].dataset.dashPoll, 10) || 60000;
+      byName[name] = list[i];
+      if (now >= (nextDue[name] || 0)) { due.push(name); nextDue[name] = now + ms; }
+    }
+    if (!due.length) return;
+
+    fetch(PANELS_URL + '?p=' + encodeURIComponent(due.join(',')),
+          { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (map) {
+        if (!map) return;
+        // A region absent from the map keeps its last-good content — same
+        // fails-open contract as the dashboard poller.
+        Object.keys(map).forEach(function (name) {
+          var node = byName[name];
+          if (!node || !(map[name] || '').trim()) return;
+          applyFragment(node, map[name]);
+        });
+        lastTick = Date.now();
+        paintUpdated();
+      })
+      .catch(function () {});
+  }
+
+  // ── "Updated Ns ago" chip ──
+  function paintUpdated() {
+    var chip = document.querySelector('[data-unifi-updated]');
+    if (!chip || !lastTick) return;
+    var secs = Math.max(0, Math.round((Date.now() - lastTick) / 1000));
+    chip.textContent = UPDATED_TPL.replace('%S%', secs);
+  }
+
+  hydrateAll();
+  document.addEventListener('turbo:load', hydrateAll);
+
+  // Singleton timer. base.html.twig's turbo:before-render handler clears
+  // _prismarrUnifiPollTimer (Task 7 Step 11) — without that registration this
+  // interval keeps polling a detached DOM after navigating away.
+  if (window._prismarrUnifiPollTimer) { clearInterval(window._prismarrUnifiPollTimer); }
+  window._prismarrUnifiPollTimer = setInterval(function () { tick(); paintUpdated(); }, baseTick);
+})();
+</script>
+{% endblock %}

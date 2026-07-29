@@ -1,0 +1,43 @@
+{# Personal watchlist (local DB) — self-gates when watchlist is empty. #}
+<div data-section-key="watchlist">
+{% if watchlist is not empty %}
+<div class="row-section">
+  <div class="row-section-head">
+    <h2 class="row-section-title">
+      <span class="row-section-title-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></svg>
+      </span>
+      {{ 'dashboard.watchlist.title'|trans }}
+    </h2>
+    <a href="{{ path('tmdb_watchlist') }}" class="row-section-link">{{ 'dashboard.watchlist.view_all'|trans }}</a>
+  </div>
+  <div class="poster-row">
+    {% for w in watchlist %}
+      <a href="{{ path('tmdb_index') }}?detail={{ w.mediaType }}/{{ w.tmdbId }}" class="poster-tile"
+         data-ql-trigger
+         data-ql-source="tmdb"
+         data-ql-type="{{ w.mediaType == 'tv' ? 'tv' : 'movie' }}"
+         data-ql-id="{{ w.tmdbId }}">
+        <div class="poster-tile-wrap">
+          {% if w.poster %}
+            <img src="https://image.tmdb.org/t/p/w342{{ w.poster }}" alt="{{ w.title }}" loading="lazy" class="poster-tile-img">
+          {% else %}
+            <div class="poster-tile-placeholder">{{ w.mediaType == 'tv' ? ico.icon('device-tv', '', 28) : ico.icon('movie', '', 28) }}</div>
+          {% endif %}
+          {% if w.vote and w.vote > 0 %}
+            <span class="poster-tile-badge">{{ ico.icon('star-filled', '', 12) }} {{ w.vote|round(1) }}</span>
+          {% endif %}
+        </div>
+        <div class="poster-tile-info">
+          <div class="poster-tile-title text-truncate">{{ w.title }}</div>
+          <div class="poster-tile-sub">
+            {{ w.mediaType == 'tv' ? 'dashboard.type.series'|trans : 'dashboard.type.film'|trans }}
+            {%- if w.year %} · {{ w.year }}{% endif -%}
+          </div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+</div>

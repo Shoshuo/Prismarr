@@ -430,4 +430,58 @@ class HealthServiceTest extends TestCase
     {
         $this->assertNull(HealthService::urlBlockedReason('https://api.themoviedb.org/3/configuration'));
     }
+
+    // ─── chips() — shared chip builder (dashboard + topbar single source) ───
+
+    public function testChipsExpandsInstancesAddsColorsAndFiltersUnconfigured(): void
+    {
+        $svc = $this->chipsService(); // helper below
+
+        $chips = $svc->chips();
+
+        self::assertSame([
+            ['id' => 'radarr',  'name' => 'Radarr 1080p', 'status' => 'up', 'latencyMs' => 12, 'color' => '#FFC230'],
+            ['id' => 'sabnzbd', 'name' => 'SABnzbd',      'status' => 'up', 'latencyMs' => 30, 'color' => '#fbc531'],
+        ], $chips);
+    }
+
+    public function testChipsIncludesUnraidOnlyWhenAsked(): void
+    {
+        $svc = $this->chipsService();
+
+        $ids = array_column($svc->chips(true), 'id');
+        self::assertContains('unraid', $ids);
+        self::assertSame('#f15a2c', $svc->chips(true)[array_search('unraid', $ids, true)]['color']);
+
+        self::assertNotContains('unraid', array_column($svc->chips(), 'id'));
+    }
+
+    /** HealthService with statusFor stubbed: radarr-1/sabnzbd/unraid up, rest unconfigured. */
+    private function chipsService(): HealthService
+    {
+        $inst = $this->createMock(ServiceInstance::class);
+        $inst->method('getSlug')->willReturn('radarr-1');
+        $inst->method('getName')->willReturn('Radarr 1080p');
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getEnabled')->willReturnCallback(
+            fn(string $t): array => $t === ServiceInstance::TYPE_RADARR ? [$inst] : []
+        );
+
+        return new class(
+            $this->createMock(RadarrClient::class), $this->createMock(SonarrClient::class),
+            $this->createMock(ProwlarrClient::class), $this->createMock(JellyseerrClient::class),
+            $this->createMock(QBittorrentClient::class), $this->createMock(TmdbClient::class),
+            null, null, $instances,
+        ) extends HealthService {
+            public function statusFor(string $service, ?string $instanceSlug = null): array
+            {
+                return match ($service) {
+                    'radarr'  => ['status' => 'up', 'latencyMs' => 12],
+                    'sabnzbd' => ['status' => 'up', 'latencyMs' => 30],
+                    'unraid'  => ['status' => 'up', 'latencyMs' => 13],
+                    default   => ['status' => null, 'latencyMs' => null],
+                };
+            }
+        };
+    }
 }

@@ -2,21 +2,27 @@
 
 namespace App\Controller;
 
+use App\Dashboard\NetworkUsageChart;
 use App\Entity\ServiceInstance;
 use App\Repository\Media\WatchlistItemRepository;
 use App\Service\HealthService;
+use App\Service\Media\HoundarrClient;
 use App\Service\Media\JellyseerrClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TautulliClient;
 use App\Service\Media\TmdbClient;
+use App\Service\Media\UnifiClient;
+use App\Service\Media\UnraidClient;
 use App\Service\ServiceInstanceProvider;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Service\ResetInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -27,7 +33,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  * whole page. Session 9c will wire the UI preferences (timezone, date
  * format, density…) into this template.
  */
-class DashboardController extends AbstractController
+class DashboardController extends AbstractController implements ResetInterface
 {
     private const UPCOMING_DAYS       = 7;
     private const MAX_REQUESTS        = 5;
@@ -63,7 +69,32 @@ class DashboardController extends AbstractController
         private readonly TranslatorInterface $translator,
         private readonly CacheInterface $cache,
         private readonly TautulliClient $tautulli,
+        private readonly \App\Service\DashboardLayoutService $layout,
+        // Unraid server widget — nullable + last so legacy positional test
+        // constructors keep working.
+        private readonly ?UnraidClient $unraid = null,
+        // Houndarr stat tile — nullable + last so legacy positional test
+        // constructors keep working.
+        private readonly ?HoundarrClient $houndarr = null,
+        // UniFi network widget — nullable + last so legacy positional test
+        // constructors keep working.
+        private readonly ?UnifiClient $unifi = null,
     ) {}
+
+    /**
+     * FrankenPHP worker mode — controllers autowired as services are shared
+     * singletons that survive across requests in a worker. Without this, the
+     * per-request `$moviesCache` / `$seriesCache` memo (primed by the first
+     * dashboard paint) would be served to every later request in the same
+     * worker, showing stale library data until the worker recycled. Symfony's
+     * services_resetter calls reset() between requests (auto-tagged
+     * kernel.reset via the ResetInterface autoconfiguration).
+     */
+    public function reset(): void
+    {
+        $this->moviesCache = null;
+        $this->seriesCache = null;
+    }
 
     /**
      * #30 — wrap an expensive upstream aggregate in a short shared cache.
@@ -156,11 +187,15 @@ class DashboardController extends AbstractController
             'jellyseerr' => $this->health->isConfigured('jellyseerr'),
             'tmdb'       => $this->health->isConfigured('tmdb'),
             'tautulli'   => $this->health->isConfigured('tautulli'),
+            'unraid'     => $this->health->isConfigured('unraid'),
+            'houndarr'   => $this->health->isConfigured('houndarr'),
+            'unifi'      => $this->health->isConfigured('unifi'),
         ];
 
         return $this->render('dashboard/index.html.twig', [
             'watchlist'           => $this->watchlist(),
             'services_configured' => $configured,
+            'dashboard_layout'    => $this->layout->resolve(),
         ]);
     }
 
@@ -240,6 +275,58 @@ class DashboardController extends AbstractController
     }
 
     /**
+     * Combined live-widget fragment endpoint (#perf). The dashboard's five
+     * "live" widgets (plex/health/server/houndarr/network) poll on staggered
+     * cadences; instead of one timer + one HTTP request each, the client
+     * coalesces every widget due on a given tick into a single request here and
+     * we render each requested fragment into a { name: html } JSON map.
+     *
+     * Reuses the individual widget actions verbatim, so their admin gates,
+     * empty-when-unconfigured contract and fail-open behaviour are identical. A
+     * widget that renders empty (not applicable) or an unknown name is omitted
+     * from the map — the client then leaves that node at its last value, which
+     * matches each per-widget poll's own "keep last on empty" behaviour.
+     */
+    #[Route('/tableau-de-bord/widgets', name: 'app_dashboard_widgets')]
+    public function widgets(Request $request): Response
+    {
+        set_time_limit(60);
+
+        $names = array_filter(array_map('trim', explode(',', (string) $request->query->get('w', ''))));
+        $out = [];
+        foreach (array_unique($names) as $name) {
+            $fragment = $this->renderLiveWidget($name);
+            if ($fragment === null) {
+                continue;
+            }
+            $html = (string) $fragment->getContent();
+            if (trim($html) === '') {
+                continue;
+            }
+            $out[$name] = $html;
+        }
+
+        return $this->json($out);
+    }
+
+    /**
+     * Dispatch a live-widget name to its existing fragment action. Unknown
+     * names return null (omitted from the combined map). Kept in sync with the
+     * data-dash-poll nodes in the dashboard section partials.
+     */
+    private function renderLiveWidget(string $name): ?Response
+    {
+        return match ($name) {
+            'plex'     => $this->widgetPlex(),
+            'health'   => $this->widgetHealth(),
+            'server'   => $this->widgetServer(),
+            'houndarr' => $this->widgetHoundarr(),
+            'network'  => $this->widgetNetwork(),
+            default    => null,
+        };
+    }
+
+    /**
      * Async fragment (#27) — services health chips. The card is always present;
      * the pings can be slow (timeouts on a down service), so it loads after
      * first paint. Unconfigured services come back as null and are filtered out.
@@ -250,7 +337,7 @@ class DashboardController extends AbstractController
         set_time_limit(60);
 
         return $this->render('dashboard/_health.html.twig', [
-            'services_health' => $this->servicesHealth(),
+            'services_health' => $this->health->chips($this->isGranted('ROLE_ADMIN')),
         ]);
     }
 
@@ -282,6 +369,123 @@ class DashboardController extends AbstractController
             'plex'        => $activity,
             'plex_history'=> $history,
             'plex_tab'    => $streaming ? 'now' : 'recent',
+        ]);
+    }
+
+    /**
+     * Async fragment — Unraid server monitoring (array, disks, system, Docker,
+     * UPS). Admin-only: server internals aren't for regular users, so both the
+     * fragment and the section partial gate on ROLE_ADMIN, and non-admins never
+     * trigger an Unraid API call. Empty body → hidden client-side. Fails open:
+     * an unreachable Unraid renders the fragment's "unreachable" state.
+     */
+    #[Route('/tableau-de-bord/widget/server', name: 'app_dashboard_widget_server')]
+    public function widgetServer(): Response
+    {
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return new Response('');
+        }
+        if ($this->unraid === null || !$this->health->isConfigured('unraid')) {
+            return new Response('');
+        }
+        set_time_limit(60);
+
+        return $this->render('dashboard/_server.html.twig', [
+            'server' => $this->unraid->overview(),
+        ]);
+    }
+
+    /**
+     * Async fragment — Houndarr backlog-search totals. Visible to every
+     * logged-in user (harmless read-only counts). Empty body → hidden
+     * client-side when unconfigured. Fails open: an unreachable Houndarr
+     * renders the fragment's "unreachable" state, never breaks the dashboard.
+     */
+    #[Route('/tableau-de-bord/widget/houndarr', name: 'app_dashboard_widget_houndarr')]
+    public function widgetHoundarr(): Response
+    {
+        if ($this->houndarr === null || !$this->health->isConfigured('houndarr')) {
+            return new Response('');
+        }
+
+        return $this->render('dashboard/_houndarr.html.twig', [
+            'houndarr'  => $this->houndarr->widget(),
+            'instances' => $this->arrWantedCounts(),
+        ]);
+    }
+
+    /**
+     * Per-instance Radarr/Sonarr wanted counts for the Houndarr widget's
+     * *arr split rows. These come from OUR *arr clients (`totalRecords` of
+     * /wanted/missing and /wanted/cutoff), not from Houndarr's cooldown
+     * math — the widget renders a micro-note to that effect. One row per
+     * enabled instance, Radarr first. Fails open per instance: a dead
+     * Radarr yields null counts (rendered as '—'), never a broken fragment.
+     *
+     * @return list<array{type: string, name: string, wanted: ?int, cutoffUnmet: ?int}>
+     */
+    private function arrWantedCounts(): array
+    {
+        return $this->cached('houndarr.arr_wanted', function () {
+            // totalRecords read defensively: the *arr wanted endpoints return
+            // the decoded paging envelope directly ({page, totalRecords,
+            // records…}), but a failed call surfaces as [] — count unknown.
+            $total = static function (array $data): ?int {
+                return isset($data['totalRecords']) ? (int) $data['totalRecords'] : null;
+            };
+
+            $out = [];
+            foreach ([['radarr', ServiceInstance::TYPE_RADARR, $this->radarr],
+                      ['sonarr', ServiceInstance::TYPE_SONARR, $this->sonarr]] as [$type, $instType, $client]) {
+                foreach ($this->instances->getEnabled($instType) as $inst) {
+                    $wanted = $cutoff = null;
+                    try {
+                        $bound  = $client->withInstance($inst);
+                        // pageSize 1 — only the envelope's totalRecords matters.
+                        $wanted = $total($bound->getMissing(1, 1));
+                        $cutoff = $total($bound->getCutoff(1, 1));
+                    } catch (\Throwable $e) {
+                        $this->logger->warning('Dashboard widget failed [houndarr.arr_wanted.{slug}]: {message}', [
+                            'slug'    => $inst->getSlug(),
+                            'message' => $e->getMessage(),
+                        ]);
+                    }
+                    $out[] = [
+                        'type'        => $type,
+                        'name'        => $inst->getName(),
+                        'wanted'      => $wanted,
+                        'cutoffUnmet' => $cutoff,
+                    ];
+                }
+            }
+            return $out;
+        });
+    }
+
+    /**
+     * Async fragment — UniFi network overview (WAN throughput, clients, 24h
+     * usage, infrastructure). Admin-only: WAN IPs and client counts aren't
+     * for regular users, so both the fragment and the section partial gate
+     * on ROLE_ADMIN, and non-admins never trigger a UniFi call. Empty body →
+     * hidden client-side. Fails open: an unreachable console renders the
+     * fragment's "unreachable" state.
+     */
+    #[Route('/tableau-de-bord/widget/network', name: 'app_dashboard_widget_network')]
+    public function widgetNetwork(): Response
+    {
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return new Response('');
+        }
+        if ($this->unifi === null || !$this->health->isConfigured('unifi')) {
+            return new Response('');
+        }
+        set_time_limit(60);
+
+        $net = $this->unifi->overview();
+
+        return $this->render('dashboard/_network.html.twig', [
+            'net'   => $net,
+            'chart' => NetworkUsageChart::build($net['usage24h'] ?? null),
         ]);
     }
 
@@ -505,6 +709,88 @@ class DashboardController extends AbstractController
     }
 
     /**
+     * Build the ordered release-date chips for a movie quick-look. Fixed
+     * semantic order cinema→digital→physical; nulls skipped; each chip flags
+     * whether the date is today-or-later (so the template can emphasize the
+     * next upcoming event). @return list<array{kind:string,label:string,date:\DateTimeImmutable,upcoming:bool}>
+     */
+    private function movieReleaseChips(?\DateTimeImmutable $cinema, ?\DateTimeImmutable $digital, ?\DateTimeImmutable $physical, \DateTimeImmutable $today): array
+    {
+        $defs = [
+            ['kind' => 'cinema',   'at' => $cinema,   'key' => 'dashboard.quicklook.date.cinema'],
+            ['kind' => 'digital',  'at' => $digital,  'key' => 'dashboard.quicklook.date.digital'],
+            ['kind' => 'physical', 'at' => $physical, 'key' => 'dashboard.quicklook.date.physical'],
+        ];
+        $chips = [];
+        foreach ($defs as $d) {
+            if (!$d['at'] instanceof \DateTimeImmutable) continue;
+            $chips[] = [
+                'kind'     => $d['kind'],
+                'label'    => $this->translator->trans($d['key']),
+                'date'     => $d['at'],
+                'upcoming' => $d['at']->setTime(0, 0) >= $today,
+            ];
+        }
+        return $chips;
+    }
+
+    /**
+     * Extract cinema/digital/physical dates from TMDb's release_dates append,
+     * preferring FR then US then the first country that has each type. TMDb
+     * type codes: 2/3 = theatrical, 4 = digital, 5 = physical.
+     * @return list<array{kind:string,label:string,date:\DateTimeImmutable,upcoming:bool}>
+     */
+    private function tmdbMovieReleaseDates(array $results, \DateTimeImmutable $today): array
+    {
+        $byCountry = [];
+        foreach ($results as $r) {
+            $cc = $r['iso_3166_1'] ?? '';
+            foreach ($r['release_dates'] ?? [] as $rd) {
+                $byCountry[$cc][(int) ($rd['type'] ?? 0)] = $rd['release_date'] ?? null;
+            }
+        }
+        // Locale-led country priority (was hardcoded FR→US), then any other
+        // countries the payload contains, so an English user gets US/GB dates.
+        $order = TmdbClient::regionPriority($this->translator->getLocale(), array_keys($byCountry));
+        $pick = function (array $types) use ($byCountry, $order): ?\DateTimeImmutable {
+            foreach ($order as $cc) {
+                foreach ($types as $t) {
+                    $raw = $byCountry[$cc][$t] ?? null;
+                    if ($raw) return new \DateTimeImmutable($raw);
+                }
+            }
+            return null;
+        };
+        return $this->movieReleaseChips($pick([3, 2]), $pick([4]), $pick([5]), $today);
+    }
+
+    /**
+     * Air-date chips for a series quick-look: first-aired (if known), then
+     * either the next upcoming episode (continuing) or the last-aired date
+     * (ended). @return list<array{kind:string,label:string,date:\DateTimeImmutable,upcoming:bool}>
+     */
+    private function seriesReleaseChips(?\DateTimeImmutable $firstAired, ?\DateTimeImmutable $nextEpisode, ?\DateTimeImmutable $lastEpisode, bool $ended, \DateTimeImmutable $today): array
+    {
+        $chip = fn(string $kind, string $key, \DateTimeImmutable $d): array => [
+            'kind' => $kind, 'label' => $this->translator->trans($key),
+            'date' => $d, 'upcoming' => $d->setTime(0, 0) >= $today,
+        ];
+        $chips = [];
+        if ($firstAired) $chips[] = $chip('first_aired', 'dashboard.quicklook.date.first_aired', $firstAired);
+        if (!$ended && $nextEpisode) {
+            $chips[] = $chip('next_episode', 'dashboard.quicklook.date.next_episode', $nextEpisode);
+        } elseif ($ended && $lastEpisode) {
+            $chips[] = $chip('ended', 'dashboard.quicklook.date.ended', $lastEpisode);
+        }
+        return $chips;
+    }
+
+    private function parseDate(?string $raw): ?\DateTimeImmutable
+    {
+        return ($raw !== null && $raw !== '') ? new \DateTimeImmutable($raw) : null;
+    }
+
+    /**
      * Return the earliest release date that is today or later for a Radarr
      * movie, together with a human-readable badge identifying which date
      * it is (digital / cinema / physical). The comparison is done at
@@ -579,44 +865,6 @@ class DashboardController extends AbstractController
         return $out;
     }
 
-    /**
-     * @return list<array{id: string, name: string, status: string, latencyMs: ?int}>
-     *
-     * v1.1.0 — radarr/sonarr expand to one chip PER enabled instance, named
-     * after the instance (Radarr 1080p, Radarr 4K…), matching the topbar
-     * dropdown / `/api/health/services` rather than collapsing to a single
-     * aggregate dot. Mono-instance services (prowlarr, jellyseerr, qbit, tmdb)
-     * keep one chip each. Unconfigured entries (isHealthy null) are dropped.
-     */
-    private function servicesHealth(): array
-    {
-        $chips = [];
-
-        foreach ([ServiceInstance::TYPE_RADARR, ServiceInstance::TYPE_SONARR] as $type) {
-            foreach ($this->instances->getEnabled($type) as $inst) {
-                try {
-                    $s = $this->health->statusFor($type, $inst->getSlug());
-                } catch (\Throwable) {
-                    $s = ['status' => 'down', 'latencyMs' => null];
-                }
-                if ($s['status'] === null) continue; // instance has no credentials yet
-                $chips[] = ['id' => $type, 'name' => $inst->getName(), 'status' => $s['status'], 'latencyMs' => $s['latencyMs']];
-            }
-        }
-
-        $labels = ['prowlarr' => 'Prowlarr', 'jellyseerr' => 'Seerr', 'qbittorrent' => 'qBittorrent', 'tmdb' => 'TMDb', 'tautulli' => 'Tautulli'];
-        foreach ($labels as $service => $label) {
-            try {
-                $s = $this->health->statusFor($service);
-            } catch (\Throwable) {
-                $s = ['status' => null, 'latencyMs' => null];
-            }
-            if ($s['status'] === null) continue; // not configured / disabled
-            $chips[] = ['id' => $service, 'name' => $label, 'status' => $s['status'], 'latencyMs' => $s['latencyMs']];
-        }
-
-        return $chips;
-    }
 
     private function recommendations(): array
     {
@@ -742,6 +990,9 @@ class DashboardController extends AbstractController
         $badgeKind = $hasFile ? 'downloaded' : ($monitored ? 'monitored' : 'missing');
         $badgeKey  = 'dashboard.quicklook.status.' . $badgeKind;
 
+        $ended     = ($row['ended'] ?? false) === true || ($row['status'] ?? '') === 'ended';
+        $airStatus = $type === 'series' ? ($ended ? 'ended' : 'continuing') : null;
+
         if ($type === 'series') {
             $metaLine  = $row['network'] ?? null;
             $actionUrl = $this->generateUrl('app_media_series', ['slug' => $slug]) . '?open=' . $id;
@@ -752,17 +1003,33 @@ class DashboardController extends AbstractController
         }
 
         return [
-            'title'       => $row['title'] ?? '—',
-            'year'        => $row['year'] ?? null,
-            'poster'      => $row['poster'] ?? null,
-            'backdrop'    => $row['fanart'] ?? null,
-            'overview'    => $row['overview'] ?? null,
-            'genres'      => array_slice($row['genres'] ?? [], 0, 4),
-            'rating'      => $row['ratings'] ?? null,
-            'metaLine'    => $metaLine,
-            'statusBadge' => ['label' => $this->translator->trans($badgeKey), 'kind' => $badgeKind],
-            'actionUrl'   => $actionUrl,
-            'actionLabel' => $this->translator->trans('dashboard.quicklook.manage'),
+            'title'        => $row['title'] ?? '—',
+            'year'         => $row['year'] ?? null,
+            'poster'       => $row['poster'] ?? null,
+            'backdrop'     => $row['fanart'] ?? null,
+            'overview'     => $row['overview'] ?? null,
+            'genres'       => array_slice($row['genres'] ?? [], 0, 4),
+            'rating'       => $row['ratings'] ?? null,
+            'metaLine'     => $metaLine,
+            'statusBadge'  => ['label' => $this->translator->trans($badgeKey), 'kind' => $badgeKind],
+            'actionUrl'    => $actionUrl,
+            'actionLabel'  => $this->translator->trans('dashboard.quicklook.manage'),
+            'inLibrary'    => true,
+            'airStatus'    => $airStatus,
+            'releaseDates' => $type === 'series'
+                ? $this->seriesReleaseChips(
+                    $row['firstAired'] ?? null,
+                    $row['nextAiring'] ?? null,
+                    $row['previousAiring'] ?? null,
+                    $ended,
+                    new \DateTimeImmutable('today'),
+                )
+                : $this->movieReleaseChips(
+                    $row['inCinemasAt'] ?? null,
+                    $row['digitalAt'] ?? null,
+                    $row['physicalAt'] ?? null,
+                    new \DateTimeImmutable('today'),
+                ),
         ];
     }
 
@@ -806,18 +1073,192 @@ class DashboardController extends AbstractController
             $metaLine = $runtime ? $this->translator->trans('dashboard.quicklook.runtime', ['min' => $runtime]) : null;
         }
 
+        $ended     = $isTv && in_array($data['status'] ?? '', ['Ended', 'Canceled'], true);
+        $airStatus = $isTv ? ($ended ? 'ended' : 'continuing') : null;
+
+        $extras = $this->quickLookExtras($data);
+
+        // Unify the action model with the old Explorer modal: a title already
+        // in a Radarr/Sonarr library deep-links to Manage (exact instance);
+        // otherwise the body renders an Add affordance. Reuses the cached
+        // library aggregates — no extra upstream calls.
+        $match = $this->quickLookLibraryMatch($type, $id);
+        if ($match !== null) {
+            $statusBadge = [
+                'label' => $this->translator->trans('dashboard.quicklook.status.' . $match['status']),
+                'kind'  => $match['status'],
+            ];
+            $actionUrl   = $isTv
+                ? $this->generateUrl('app_media_series', ['slug' => $match['slug']]) . '?open=' . $match['id']
+                : $this->generateUrl('app_media_films', ['slug' => $match['slug']]) . '?open=' . $match['id'];
+            $actionLabel = $this->translator->trans('dashboard.quicklook.manage');
+        } else {
+            $statusBadge = null;
+            $actionUrl   = $this->generateUrl('tmdb_index') . '?detail=' . $type . '/' . $id;
+            $actionLabel = $this->translator->trans('dashboard.quicklook.discover');
+        }
+
         return [
-            'title'       => $data['title'] ?? $data['name'] ?? '—',
-            'year'        => $year,
-            'poster'      => $this->tmdbImage($data['poster_path'] ?? null, 'w342'),
-            'backdrop'    => $this->tmdbImage($data['backdrop_path'] ?? null, 'w1280'),
-            'overview'    => $data['overview'] ?? null,
-            'genres'      => array_slice(array_map(fn($g) => $g['name'] ?? '', $data['genres'] ?? []), 0, 4),
-            'rating'      => $data['vote_average'] ?? null,
-            'metaLine'    => $metaLine,
-            'statusBadge' => null,
-            'actionUrl'   => $this->generateUrl('tmdb_index') . '?detail=' . $type . '/' . $id,
-            'actionLabel' => $this->translator->trans('dashboard.quicklook.discover'),
+            'title'        => $data['title'] ?? $data['name'] ?? '—',
+            'year'         => $year,
+            'poster'       => $this->tmdbImage($data['poster_path'] ?? null, 'w342'),
+            'posterPath'   => $data['poster_path'] ?? null,
+            'backdrop'     => $this->tmdbImage($data['backdrop_path'] ?? null, 'w1280'),
+            'overview'     => $data['overview'] ?? null,
+            'genres'       => array_slice(array_map(fn($g) => $g['name'] ?? '', $data['genres'] ?? []), 0, 4),
+            'rating'       => $data['vote_average'] ?? null,
+            'metaLine'     => $metaLine,
+            'statusBadge'  => $statusBadge,
+            'actionUrl'    => $actionUrl,
+            'actionLabel'  => $actionLabel,
+            'inLibrary'    => $match !== null,
+            'airStatus'    => $airStatus,
+            'cast'         => $extras['cast'],
+            'providers'    => $extras['providers'],
+            'trailerKey'   => $extras['trailerKey'],
+            'imdbId'       => $extras['imdbId'],
+            'tmdbId'       => $id,
+            'tmdbType'     => $type,
+            'releaseDates' => $isTv
+                ? $this->seriesReleaseChips(
+                    $this->parseDate($data['first_air_date'] ?? null),
+                    $this->parseDate($data['next_episode_to_air']['air_date'] ?? null),
+                    $this->parseDate($data['last_episode_to_air']['air_date'] ?? null),
+                    $ended,
+                    new \DateTimeImmutable('today'),
+                )
+                : $this->tmdbMovieReleaseDates(
+                    $data['release_dates']['results'] ?? [],
+                    new \DateTimeImmutable('today'),
+                ),
+        ];
+    }
+
+    /**
+     * Locate a TMDb id within the aggregated Radarr/Sonarr libraries so the
+     * quick-look can deep-link to Manage (and badge the status) for titles
+     * already added, and show an Add affordance otherwise. Reuses the
+     * per-request cached movies()/series() aggregates — no extra upstream
+     * calls. $type is the TMDb media type ('movie'|'tv').
+     *
+     * @return array{slug: string, id: int, status: string}|null
+     */
+    private function quickLookLibraryMatch(string $type, int $tmdbId): ?array
+    {
+        // Fail open: if the library can't be read (service down / not
+        // configured), treat the title as not-in-library so the modal still
+        // offers Add rather than erroring — same philosophy as the widgets.
+        try {
+            $rows = $type === 'movie' ? $this->movies() : $this->series();
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        if ($type === 'movie') {
+            foreach ($rows as $m) {
+                if ((int) ($m['tmdbId'] ?? 0) !== $tmdbId) {
+                    continue;
+                }
+                $slug = $m['_instanceSlug'] ?? null;
+                if ($slug === null) {
+                    continue;
+                }
+                $status = ($m['hasFile'] ?? false) === true
+                    ? 'downloaded'
+                    : (($m['monitored'] ?? false) === true ? 'monitored' : 'missing');
+                return ['slug' => $slug, 'id' => (int) ($m['id'] ?? 0), 'status' => $status];
+            }
+            return null;
+        }
+
+        foreach ($rows as $s) {
+            if ((int) ($s['tmdbId'] ?? 0) !== $tmdbId) {
+                continue;
+            }
+            $slug = $s['_instanceSlug'] ?? null;
+            if ($slug === null) {
+                continue;
+            }
+            $status = ($s['monitored'] ?? false) === true ? 'monitored' : 'missing';
+            return ['slug' => $slug, 'id' => (int) ($s['id'] ?? 0), 'status' => $status];
+        }
+        return null;
+    }
+
+    /**
+     * Extract the richer detail bits (cast, streaming providers, trailer, IMDb
+     * id) from a TMDb detail payload. TmdbClient::getMovie/getTv already pull
+     * credits/videos/watch-providers/external_ids via append_to_response, so
+     * this is pure extraction — no extra API call.
+     *
+     * @param array<string, mixed> $data
+     * @return array{cast: list<array{name: string, profile: ?string}>, providers: list<array{name: string, logo: ?string}>, trailerKey: ?string, imdbId: ?string}
+     */
+    private function quickLookExtras(array $data): array
+    {
+        $cast = [];
+        foreach (array_slice($data['credits']['cast'] ?? [], 0, 6) as $c) {
+            $cast[] = [
+                'name'    => $c['name'] ?? '',
+                'profile' => TmdbClient::posterUrl($c['profile_path'] ?? null, 'w185'),
+            ];
+        }
+
+        // Streaming (flatrate) providers, locale-led then common fallbacks —
+        // mirrors TmdbController::pickProviders' country priority.
+        $providers = [];
+        foreach (TmdbClient::regionPriority($this->translator->getLocale()) as $cc) {
+            $flat = $data['watch/providers']['results'][$cc]['flatrate'] ?? [];
+            if ($flat === []) {
+                continue;
+            }
+            foreach ($flat as $p) {
+                $providers[] = [
+                    'name' => $p['provider_name'] ?? '',
+                    'logo' => TmdbClient::posterUrl($p['logo_path'] ?? null, 'w92'),
+                ];
+            }
+            break;
+        }
+
+        // Best YouTube trailer/teaser — official + EN/FR preferred, mirrors
+        // TmdbController::pickTrailer's scoring (trimmed for the modal).
+        $trailerKey = null;
+        $videos = array_filter(
+            $data['videos']['results'] ?? [],
+            static fn($v) => ($v['site'] ?? '') === 'YouTube',
+        );
+        $score = static function (array $v): int {
+            $s = 0;
+            if (($v['type'] ?? '') === 'Trailer') {
+                $s += 100;
+            } elseif (($v['type'] ?? '') === 'Teaser') {
+                $s += 50;
+            }
+            if (($v['official'] ?? false) === true) {
+                $s += 40;
+            }
+            $lang = strtolower($v['iso_639_1'] ?? '');
+            if ($lang === 'en') {
+                $s += 20;
+            } elseif ($lang === 'fr') {
+                $s += 15;
+            }
+            return $s;
+        };
+        usort($videos, static fn($a, $b) => $score($b) <=> $score($a));
+        $first = reset($videos);
+        if ($first) {
+            $trailerKey = $first['key'] ?? null;
+        }
+
+        $imdbId = $data['imdb_id'] ?? ($data['external_ids']['imdb_id'] ?? null);
+
+        return [
+            'cast'       => $cast,
+            'providers'  => $providers,
+            'trailerKey' => $trailerKey,
+            'imdbId'     => $imdbId,
         ];
     }
 

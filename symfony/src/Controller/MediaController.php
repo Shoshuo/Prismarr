@@ -299,7 +299,7 @@ class MediaController extends AbstractController
 
             $health = $this->radarr->getSystemHealth();
             foreach ($health as $h) {
-                $warnings[] = ($h['source'] ?? 'Radarr') . ' : ' . ($h['message'] ?? '?');
+                $warnings[] = $this->translator->trans('media.api.warning_format', ['source' => $h['source'] ?? 'Radarr', 'message' => $h['message'] ?? '?']);
             }
 
             $queue = $this->radarr->getQueue();
@@ -2115,6 +2115,7 @@ class MediaController extends AbstractController
                 $results[] = [
                     'type'      => 'film',
                     'id'        => $m['tmdbId'] ?? $id,
+                    'tmdbId'    => $m['tmdbId'] ?? $id,
                     'title'     => $m['title'] ?? '—',
                     'year'      => $m['year'] ?? null,
                     'poster'    => $m['poster'] ?? null,
@@ -2133,6 +2134,8 @@ class MediaController extends AbstractController
                 $results[] = [
                     'type'      => 'serie',
                     'id'        => $s['tvdbId'] ?? $id,
+                    'tmdbId'    => $s['tmdbId'] ?? null,
+                    'tvdbId'    => $s['tvdbId'] ?? null,
                     'title'     => $s['title'] ?? '—',
                     'year'      => $s['year'] ?? null,
                     'poster'    => $s['poster'] ?? null,

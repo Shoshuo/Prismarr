@@ -1,0 +1,18 @@
+{# Recent library additions (async-hydrated) — self-gates on radarr/sonarr config. #}
+<div data-section-key="recent">
+{% if services_configured.radarr or services_configured.sonarr %}
+<div class="row-section" data-dash-widget="recent" data-dash-url="{{ path('app_dashboard_widget_recent') }}">
+  <div class="row-section-head">
+    <h2 class="row-section-title">
+      <span class="row-section-title-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2l4 -4"/></svg>
+      </span>
+      {{ 'dashboard.recent.title'|trans }}
+    </h2>
+  </div>
+  <div class="poster-row" data-dash-body>
+    {% for i in 1..7 %}<div class="poster-tile dash-skel" aria-hidden="true"><div class="poster-tile-wrap"></div><div class="poster-tile-info"><div class="dash-skel-line"></div></div></div>{% endfor %}
+  </div>
+</div>
+{% endif %}
+</div>

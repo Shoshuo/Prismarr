@@ -212,4 +212,73 @@ class ServiceRouteGuardSubscriberTest extends TestCase
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertStringContainsString('app_setup_downloads', $response->getTargetUrl());
     }
+
+    public function testDelugeUnconfiguredRedirectsToDownloadsWizard(): void
+    {
+        $event = $this->event('app_deluge_index');
+        ($this->subscriber())->onKernelRequest($event);
+
+        $response = $event->getResponse();
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertStringContainsString('app_setup_downloads', $response->getTargetUrl());
+    }
+
+    public function testTransmissionUnconfiguredRedirectsToDownloadsWizard(): void
+    {
+        $event = $this->event('app_transmission_add');
+        ($this->subscriber())->onKernelRequest($event);
+
+        $response = $event->getResponse();
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertStringContainsString('app_setup_downloads', $response->getTargetUrl());
+    }
+
+    public function testDelugeConfiguredLetsThrough(): void
+    {
+        $event = $this->event('app_deluge_index');
+        $sub = $this->subscriber(
+            configuredKeys: ['deluge_url'],
+            healthy: ['deluge'],
+        );
+        $sub->onKernelRequest($event);
+
+        $this->assertFalse($event->hasResponse());
+    }
+
+    public function testUnifiRouteRedirectsToSettingsWhenUnconfigured(): void
+    {
+        // unifi_url present, unifi_api_key missing → half configured, must bounce.
+        // UniFi has no wizard step, so the target is admin settings.
+        $event = $this->event('app_unifi_index');
+        $sub = $this->subscriber(configuredKeys: ['unifi_url']);
+        $sub->onKernelRequest($event);
+
+        $response = $event->getResponse();
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertStringContainsString('admin_settings_index', $response->getTargetUrl());
+    }
+
+    public function testUnifiRoutePassesWhenFullyConfiguredAndHealthy(): void
+    {
+        $event = $this->event('app_unifi_index');
+        $sub = $this->subscriber(
+            configuredKeys: ['unifi_url', 'unifi_api_key'],
+            healthy: ['unifi'],
+        );
+        $sub->onKernelRequest($event);
+
+        $this->assertNull($event->getResponse());
+    }
+
+    public function testTransmissionConfiguredAndHealthyLetsThrough(): void
+    {
+        $event = $this->event('app_transmission_index');
+        $sub = $this->subscriber(
+            configuredKeys: ['transmission_url'],
+            healthy: ['transmission'],
+        );
+        $sub->onKernelRequest($event);
+
+        $this->assertFalse($event->hasResponse());
+    }
 }

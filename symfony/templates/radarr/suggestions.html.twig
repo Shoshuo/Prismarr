@@ -41,6 +41,14 @@
   font-size: .6rem; font-weight: 700; padding: .1rem .3rem;
   border-radius: .25rem; background: rgba(0,128,0,.75); color: #fff;
 }
+
+/* ── Mobile/tablet readability floor (responsive audit 2026-06-29) ──
+   Floor sub-11px text at 11px (.6875rem) below the lg breakpoint;
+   desktop (≥992px) keeps the original sizes. */
+@media (max-width: 991.98px) {
+  .media-card .card-year,
+  .already-badge { font-size: .6875rem; }
+}
 </style>
 {% endblock %}
 

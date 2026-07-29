@@ -5,7 +5,6 @@
 
 {% block stylesheets %}
 <style>
-.pw-stat { font-size:1.5rem; font-weight:700; line-height:1; }
 .pw-indexer-row { transition:background .1s; }
 .pw-indexer-row:hover { background:rgba(255,255,255,.02); }
 .pw-health-item { display:flex; align-items:flex-start; gap:.5rem; padding:.5rem .75rem; border-radius:.4rem; margin-bottom:.35rem; }
@@ -15,6 +14,10 @@
 .pw-search-results { max-height:500px; overflow-y:auto; }
 .pw-result-row { font-size:.8rem; }
 .pw-result-row td { padding:.35rem .5rem !important; }
+/* The ADDED column is the least-read one; below ~1550px viewport the full
+   table outgrows the card and clips the actions column, so drop it first.
+   (Bootstrap's xxl breakpoint at 1400px is below the real fit point.) */
+@media (max-width: 1549.98px) { .pw-col-added { display:none; } }
 .pw-toggle-btn { cursor:pointer; padding:2px 6px; border-radius:.25rem; border:1px solid var(--tblr-border-color); background:none; transition:all .15s; font-size:.7rem; }
 .pw-toggle-btn:hover { border-color:var(--tblr-primary); }
 .pw-toggle-btn.is-on { background:rgba(34,197,94,.15); border-color:#22c55e; color:#22c55e; }
@@ -48,45 +51,15 @@
 
 {% if not error %}
 
-{# ── Stats ── #}
-<div class="row g-3 mb-3">
-    <div class="col-6 col-lg-2">
-        <div class="card card-sm"><div class="card-body text-center">
-            <div class="pw-stat" style="color:#E88D1A;">{{ stats.total ?? 0 }}</div>
-            <div class="text-secondary small">{{ 'prowlarr.index.stats_indexers'|trans }}</div>
-        </div></div>
-    </div>
-    <div class="col-6 col-lg-2">
-        <div class="card card-sm"><div class="card-body text-center">
-            <div class="pw-stat text-success">{{ stats.enabled ?? 0 }}</div>
-            <div class="text-secondary small">{{ 'prowlarr.index.stats_active'|trans }}</div>
-        </div></div>
-    </div>
-    <div class="col-6 col-lg-2">
-        <div class="card card-sm"><div class="card-body text-center">
-            <div class="pw-stat text-danger">{{ stats.failing ?? 0 }}</div>
-            <div class="text-secondary small">{{ 'prowlarr.index.stats_failing'|trans }}</div>
-        </div></div>
-    </div>
-    <div class="col-6 col-lg-2">
-        <div class="card card-sm"><div class="card-body text-center">
-            <div class="pw-stat" style="color:var(--tblr-primary);">{{ stats.torrent ?? 0 }}</div>
-            <div class="text-secondary small">{{ 'prowlarr.index.stats_torrent'|trans }}</div>
-        </div></div>
-    </div>
-    <div class="col-6 col-lg-2">
-        <div class="card card-sm"><div class="card-body text-center">
-            <div class="pw-stat" style="color:#0ea5e9;">{{ stats.usenet ?? 0 }}</div>
-            <div class="text-secondary small">{{ 'prowlarr.index.stats_usenet'|trans }}</div>
-        </div></div>
-    </div>
-    <div class="col-6 col-lg-2">
-        <div class="card card-sm"><div class="card-body text-center">
-            <div class="pw-stat" style="color:#22c55e;">{{ apps|length }}</div>
-            <div class="text-secondary small">{{ 'prowlarr.index.stats_apps'|trans }}</div>
-        </div></div>
-    </div>
-</div>
+{# ── Stats (shared partial) ── #}
+{% include '_stat_tiles.html.twig' with { layout:'grid', cols:'col-6 col-lg-2', tiles:[
+    { value: stats.total ?? 0,   label: 'prowlarr.index.stats_indexers'|trans, hue:'#E88D1A' },
+    { value: stats.enabled ?? 0, label: 'prowlarr.index.stats_active'|trans,   hue:'success' },
+    { value: stats.failing ?? 0, label: 'prowlarr.index.stats_failing'|trans,  hue: (stats.failing ?? 0) > 0 ? 'danger' : 'secondary' },
+    { value: stats.torrent ?? 0, label: 'prowlarr.index.stats_torrent'|trans,  hue:'var(--tblr-primary)' },
+    { value: stats.usenet ?? 0,  label: 'prowlarr.index.stats_usenet'|trans,   hue:'#0ea5e9' },
+    { value: apps|length,        label: 'prowlarr.index.stats_apps'|trans,     hue:'#22c55e' }
+] } only %}
 
 {# ── Health ── #}
 {% if health is not empty %}
@@ -153,7 +126,7 @@
                         <th>{{ 'prowlarr.index.col_grabs'|trans }}</th>
                         <th>{{ 'prowlarr.index.col_failures'|trans }}</th>
                         <th>{{ 'prowlarr.index.col_health'|trans }}</th>
-                        <th>{{ 'prowlarr.index.col_added'|trans }}</th>
+                        <th class="pw-col-added">{{ 'prowlarr.index.col_added'|trans }}</th>
                         <th class="text-end">{{ 'prowlarr.index.col_actions'|trans }}</th>
                     </tr>
                 </thead>
@@ -170,7 +143,7 @@
                             </td>
                             <td>
                                 {% if idx.protocol == 'torrent' %}
-                                    <span class="badge" style="background:rgba(var(--tblr-primary-rgb),.15);color:#818cf8;">Torrent</span>
+                                    <span class="badge" style="background:rgba(var(--tblr-primary-rgb),.15);color:var(--tblr-primary);">Torrent</span>
                                 {% elseif idx.protocol == 'usenet' %}
                                     <span class="badge" style="background:rgba(14,165,233,.15);color:#38bdf8;">Usenet</span>
                                 {% else %}
@@ -220,7 +193,7 @@
                                     <span class="d-flex align-items-center gap-1 text-success small"><span class="status-dot status-dot-animated bg-success"></span> {{ 'prowlarr.index.status_ok'|trans }}</span>
                                 {% endif %}
                             </td>
-                            <td class="text-secondary small text-nowrap">{{ idx.added ? idx.added|date('d/m/Y') : '—' }}</td>
+                            <td class="text-secondary small text-nowrap pw-col-added">{{ idx.added ? idx.added|date('d/m/Y') : '—' }}</td>
                             <td class="text-end">
                                 <div class="d-flex gap-1 justify-content-end">
                                     <button class="btn btn-sm btn-ghost-secondary p-1" data-edit-id="{{ idx.id }}" title="{{ 'prowlarr.common.edit'|trans }}">
@@ -229,10 +202,13 @@
                                     <button class="btn btn-sm btn-ghost-secondary p-1" data-test-id="{{ idx.id }}" title="{{ 'prowlarr.common.test'|trans }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5l10-10"/></svg>
                                     </button>
-                                    <button class="pw-toggle-btn {{ idx.enabled ? 'is-on' : 'is-off' }}" data-toggle-id="{{ idx.id }}" title="{{ idx.enabled ? 'prowlarr.index.toggle_disable_title'|trans : 'prowlarr.index.toggle_enable_title'|trans }}">
-                                        {{ idx.enabled ? 'prowlarr.common.on'|trans : 'prowlarr.common.off'|trans }}
-                                    </button>
-                                    <button class="btn btn-sm btn-ghost-danger p-1" data-delete-id="{{ idx.id }}" data-delete-name="{{ idx.name }}" title="{{ 'prowlarr.common.delete'|trans }}">
+                                    {# Enabled state as a switch: position IS the state, so it can't
+                                       read as a mislabeled action button; the destructive delete is
+                                       separated from it by an extra gap. #}
+                                    <label class="form-check form-switch m-0 d-inline-flex align-items-center" title="{{ idx.enabled ? 'prowlarr.index.toggle_disable_title'|trans : 'prowlarr.index.toggle_enable_title'|trans }}">
+                                        <input class="form-check-input" type="checkbox" data-toggle-id="{{ idx.id }}" {% if idx.enabled %}checked{% endif %}>
+                                    </label>
+                                    <button class="btn btn-sm btn-ghost-danger p-1 ms-2" data-delete-id="{{ idx.id }}" data-delete-name="{{ idx.name }}" title="{{ 'prowlarr.common.delete'|trans }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
                                     </button>
                                 </div>
@@ -616,15 +592,15 @@
         (tagsCache || []).forEach(function(t) {
             var active = selectedTags.indexOf(t.id) !== -1;
             h += '<span class="badge ' + (active ? '' : '') + '" style="cursor:pointer;font-size:.7rem;padding:.3em .6em;border-radius:2rem;transition:all .15s;'
-              + (active ? 'background:var(--tblr-primary);color:#fff;box-shadow:0 0 6px rgba(var(--tblr-primary-rgb),.4);' : 'background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);')
+              + (active ? 'background:var(--tblr-primary);color:#fff;box-shadow:0 0 6px rgba(var(--tblr-primary-rgb),.4);' : 'background:rgba(var(--tblr-primary-rgb),.08);color:var(--tblr-secondary-color);border:1px solid var(--tblr-border-color);')
               + '" data-tag-id="' + t.id + '">'
               + (active ? '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-right:3px;"><path d="M5 12l5 5l10-10"/></svg>' : '')
               + esc(t.label) + '</span>';
         });
         // Create-new input
         h += '<div class="d-flex gap-1 align-items-center ms-1" style="border-left:1px solid rgba(255,255,255,.08);padding-left:.5rem;">'
-           + '<input type="text" class="form-control form-control-sm" id="pw-tag-new" placeholder="' + esc(_I18N.newTag) + '" style="width:90px;font-size:.7rem;background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);">'
-           + '<button class="btn btn-sm btn-icon" id="pw-tag-add-btn" style="width:28px;height:28px;background:rgba(var(--tblr-primary-rgb),.15);color:#818cf8;border:none;border-radius:.3rem;" title="' + esc(_I18N.createTagTitle) + '">'
+           + '<input type="text" class="form-control form-control-sm" id="pw-tag-new" placeholder="' + esc(_I18N.newTag) + '" style="width:90px;font-size:.7rem;background:var(--tblr-bg-surface);border-color:rgba(255,255,255,.1);">'
+           + '<button class="btn btn-sm btn-icon" id="pw-tag-add-btn" style="width:28px;height:28px;background:rgba(var(--tblr-primary-rgb),.15);color:var(--tblr-primary);border:none;border-radius:.3rem;" title="' + esc(_I18N.createTagTitle) + '">'
            + '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button></div>';
         wrap.innerHTML = h;
 
@@ -702,13 +678,14 @@
         return fields;
     }
 
-    // ── Toggle ON/OFF ──
-    document.querySelectorAll('[data-toggle-id]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            btn.disabled = true; btn.textContent = '…';
-            fetch('/prowlarr/indexer/' + btn.dataset.toggleId + '/toggle', { method: 'POST' })
+    // ── Toggle ON/OFF (Tabler switch — checked state mirrors the server) ──
+    document.querySelectorAll('[data-toggle-id]').forEach(function (input) {
+        input.addEventListener('change', function () {
+            input.disabled = true;
+            fetch('/prowlarr/indexer/' + input.dataset.toggleId + '/toggle', { method: 'POST' })
                 .then(function (r) { return r.json(); })
-                .then(function (d) { btn.disabled = false; if (d.ok) { btn.classList.toggle('is-on', d.enabled); btn.classList.toggle('is-off', !d.enabled); btn.textContent = d.enabled ? 'ON' : 'OFF'; } });
+                .then(function (d) { input.disabled = false; input.checked = d.ok ? d.enabled : !input.checked; })
+                .catch(function () { input.disabled = false; input.checked = !input.checked; });
         });
     });
 
@@ -939,7 +916,7 @@
 
         var h = '';
         filtered.forEach(function (s) {
-            var proto = s.protocol === 'torrent' ? '<span class="badge" style="background:rgba(var(--tblr-primary-rgb),.15);color:#818cf8;font-size:.6rem;">Torrent</span>' : '<span class="badge" style="background:rgba(14,165,233,.15);color:#38bdf8;font-size:.6rem;">Usenet</span>';
+            var proto = s.protocol === 'torrent' ? '<span class="badge" style="background:rgba(var(--tblr-primary-rgb),.15);color:var(--tblr-primary);font-size:.6rem;">Torrent</span>' : '<span class="badge" style="background:rgba(14,165,233,.15);color:#38bdf8;font-size:.6rem;">Usenet</span>';
             var privacy = s.privacy === 'private' ? '<span class="badge bg-danger-lt" style="font-size:.6rem;">' + esc(_I18N.infoPrivacyPrivate) + '</span>' : (s.privacy === 'semiPrivate' ? '<span class="badge bg-warning-lt" style="font-size:.6rem;">' + esc(_I18N.listPrivacySemi) + '</span>' : '<span class="badge bg-green-lt" style="font-size:.6rem;">' + esc(_I18N.infoPrivacyPublic) + '</span>');
             var displayName = esc(s.name || s.definitionName || s.implementationName || '—');
             var lang = s.language ? '<span class="badge bg-secondary-lt" style="font-size:.55rem;">' + esc(s.language) + '</span>' : '';
@@ -1149,7 +1126,7 @@
         var musicParams = cap.musicSearchParams || [];
         var bookParams = cap.bookSearchParams || [];
 
-        var protoBadge = raw.protocol === 'torrent' ? '<span class="badge" style="background:rgba(var(--tblr-primary-rgb),.15);color:#818cf8;">Torrent</span>' : '<span class="badge" style="background:rgba(14,165,233,.15);color:#38bdf8;">Usenet</span>';
+        var protoBadge = raw.protocol === 'torrent' ? '<span class="badge" style="background:rgba(var(--tblr-primary-rgb),.15);color:var(--tblr-primary);">Torrent</span>' : '<span class="badge" style="background:rgba(14,165,233,.15);color:#38bdf8;">Usenet</span>';
         var privBadge = raw.privacy === 'private' ? '<span class="badge bg-danger-lt">' + esc(_I18N.infoPrivacyPrivate) + '</span>' : (raw.privacy === 'semiPrivate' ? '<span class="badge bg-warning-lt">' + esc(_I18N.infoPrivacySemi) + '</span>' : '<span class="badge bg-green-lt">' + esc(_I18N.infoPrivacyPublic) + '</span>');
 
         var torznabUrl = '';
@@ -1183,7 +1160,7 @@
         h += '<div class="row g-1">';
         capRows.forEach(function(c) {
             h += '<div class="col-12 d-flex align-items-center gap-2 py-1">';
-            h += '<div class="small" style="width:130px;flex-shrink:0;color:rgba(255,255,255,.6);">' + esc(c.label) + '</div>';
+            h += '<div class="small" style="width:130px;flex-shrink:0;color:var(--tblr-secondary-color);">' + esc(c.label) + '</div>';
             if (c.supported !== undefined) {
                 h += c.supported
                     ? '<span class="badge bg-green-lt" style="font-size:.6rem;">' + esc(_I18N.infoCapSupported) + '</span>'

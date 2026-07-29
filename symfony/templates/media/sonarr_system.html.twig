@@ -28,28 +28,42 @@
     </div>
     <div class="card-body">
       {% if status %}
-        <dl class="row g-1">
-          <dt class="col-5 text-muted small">{{ 'media.arr_system.status.version'|trans }}</dt>
-          <dd class="col-7 small fw-medium mb-0">{{ status.version ?? '—' }}</dd>
-          <dt class="col-5 text-muted small">{{ 'media.arr_system.status.os'|trans }}</dt>
-          <dd class="col-7 small mb-0">{{ status.osName ?? '—' }} {{ status.osVersion ?? '' }}</dd>
-          <dt class="col-5 text-muted small">{{ 'media.arr_system.status.net'|trans }}</dt>
-          <dd class="col-7 small mb-0">{{ status.runtimeVersion ?? '—' }}</dd>
-          <dt class="col-5 text-muted small">{{ 'media.arr_system.status.db'|trans }}</dt>
-          <dd class="col-7 small mb-0">{{ status.databaseVersion ?? '—' }}</dd>
+        <div class="datagrid">
+          <div class="datagrid-item">
+            <div class="datagrid-title">{{ 'media.arr_system.status.version'|trans }}</div>
+            <div class="datagrid-content fw-medium">{{ status.version ?? '—' }}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">{{ 'media.arr_system.status.os'|trans }}</div>
+            <div class="datagrid-content">{{ status.osName ?? '—' }} {{ status.osVersion ?? '' }}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">{{ 'media.arr_system.status.net'|trans }}</div>
+            <div class="datagrid-content">{{ status.runtimeVersion ?? '—' }}</div>
+          </div>
+          <div class="datagrid-item">
+            <div class="datagrid-title">{{ 'media.arr_system.status.db'|trans }}</div>
+            <div class="datagrid-content">{{ status.databaseVersion ?? '—' }}</div>
+          </div>
           {% if status.startTime is defined %}
-          <dt class="col-5 text-muted small">{{ 'media.arr_system.status.started'|trans }}</dt>
-          <dd class="col-7 small mb-0">{{ status.startTime|date('d/m/Y H:i') }}</dd>
+          <div class="datagrid-item">
+            <div class="datagrid-title">{{ 'media.arr_system.status.started'|trans }}</div>
+            <div class="datagrid-content">{{ status.startTime|date('d/m/Y H:i') }}</div>
+          </div>
           {% endif %}
-          <dt class="col-5 text-muted small">{{ 'media.arr_system.status.url_base'|trans }}</dt>
-          <dd class="col-7 small mb-0">{{ status.urlBase ?? '/' }}</dd>
+          <div class="datagrid-item">
+            <div class="datagrid-title">{{ 'media.arr_system.status.url_base'|trans }}</div>
+            <div class="datagrid-content">{{ status.urlBase ?? '/' }}</div>
+          </div>
           {% if status.isDocker is defined %}
-          <dt class="col-5 text-muted small">{{ 'media.arr_system.status.docker'|trans }}</dt>
-          <dd class="col-7 small mb-0">
-            {% if status.isDocker %}<span class="badge bg-blue-lt">{{ 'media.arr_system.status.yes'|trans }}</span>{% else %}<span class="badge bg-secondary-lt">{{ 'media.arr_system.status.no'|trans }}</span>{% endif %}
-          </dd>
+          <div class="datagrid-item">
+            <div class="datagrid-title">{{ 'media.arr_system.status.docker'|trans }}</div>
+            <div class="datagrid-content">
+              {% if status.isDocker %}<span class="badge bg-blue-lt">{{ 'media.arr_system.status.yes'|trans }}</span>{% else %}<span class="badge bg-secondary-lt">{{ 'media.arr_system.status.no'|trans }}</span>{% endif %}
+            </div>
+          </div>
           {% endif %}
-        </dl>
+        </div>
       {% else %}
         <div class="text-muted small">{{ 'media.arr_system.status.unavailable'|trans }}</div>
       {% endif %}

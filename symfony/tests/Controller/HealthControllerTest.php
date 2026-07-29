@@ -8,18 +8,22 @@ use App\Service\ServiceInstanceProvider;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 #[AllowMockObjectsWithoutExpectations]
 class HealthControllerTest extends TestCase
 {
-    private function newController(): HealthController
+    private function newController(bool $isAdmin = false): HealthController
     {
         $controller = new HealthController();
-        // AbstractController constructor initializes nothing, but some helpers
-        // require a container. Minimal stub.
-        $controller->setContainer($this->createMock(ContainerInterface::class));
+        $checker = $this->createMock(\Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface::class);
+        $checker->method('isGranted')->willReturn($isAdmin);
+        $container = $this->createMock(\Psr\Container\ContainerInterface::class);
+        $container->method('has')->willReturn(true);
+        $container->method('get')->willReturnCallback(
+            fn(string $id) => $id === 'security.authorization_checker' ? $checker : null
+        );
+        $controller->setContainer($container);
         return $controller;
     }
 
@@ -69,6 +73,12 @@ class HealthControllerTest extends TestCase
             default       => null,   // prowlarr, jellyseerr, tmdb not configured
         });
 
+        $health->method('chips')->willReturn([
+            ['id' => 'qbittorrent', 'name' => 'qBittorrent', 'status' => 'up',   'latencyMs' => 40, 'color' => '#2f67ba'],
+            ['id' => 'sabnzbd',     'name' => 'SABnzbd',     'status' => 'up',   'latencyMs' => 30, 'color' => '#fbc531'],
+            ['id' => 'tautulli',    'name' => 'Tautulli',    'status' => 'down', 'latencyMs' => null, 'color' => '#e5a00d'],
+        ]);
+
         $instances = $this->createMock(ServiceInstanceProvider::class);
         $instances->method('getEnabled')->willReturn([]);
 
@@ -81,9 +91,25 @@ class HealthControllerTest extends TestCase
         $this->assertTrue($payload['services']['sabnzbd']);
         $this->assertNull($payload['services']['nzbget']);
 
-        // sabnzbd + qbittorrent are up → counted; nzbget (null) is not.
+        // ok/total now mirror the chip list (2 of 3 up); legacy keys still present.
         $this->assertSame(2, $payload['ok']);
-        $this->assertSame(2, $payload['total']);
+        $this->assertSame(3, $payload['total']);
+        $this->assertCount(3, $payload['chips']);
+        $this->assertSame('qBittorrent', $payload['chips'][0]['name']);
+    }
+
+    public function testUnraidChipIsAdminGated(): void
+    {
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getEnabled')->willReturn([]);
+
+        $health = $this->createMock(HealthService::class);
+        $health->expects($this->once())->method('chips')->with(true)->willReturn([]);
+        $this->newController(isAdmin: true)->servicesHealth($health, $instances);
+
+        $health2 = $this->createMock(HealthService::class);
+        $health2->expects($this->once())->method('chips')->with(false)->willReturn([]);
+        $this->newController(isAdmin: false)->servicesHealth($health2, $instances);
     }
 
     public function testErrorResponseDoesNotLeakDetails(): void

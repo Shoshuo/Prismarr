@@ -38,9 +38,10 @@
     </div>
     <div class="card-body p-0">
         {% if tasks is empty %}
-            <div class="text-muted text-center py-5">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2 d-block mx-auto text-secondary"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-                {{ 'prowlarr.tasks.empty'|trans }}
+            {% import '_icons.html.twig' as ico %}
+            <div class="empty py-5">
+                <div class="empty-icon">{{ ico.icon('clock', '', 36) }}</div>
+                <p class="empty-title mb-0">{{ 'prowlarr.tasks.empty'|trans }}</p>
             </div>
         {% else %}
             <div class="table-responsive">

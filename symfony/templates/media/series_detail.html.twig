@@ -6,7 +6,7 @@
 <style>
 .serie-header {
   position: relative;
-  background: var(--tblr-bg-surface);
+  background: #181818;
   border-radius: .5rem;
   overflow: hidden;
   margin-bottom: 1rem;
@@ -94,7 +94,7 @@
 
       <div class="d-flex flex-wrap gap-2 mb-2">
         {% if serie.status == 'continuing' %}
-          <span class="badge" style="background:rgba(var(--tblr-primary-rgb),.2);color:#818cf8;">{{ 'media.series_detail.header.status_continuing'|trans }}</span>
+          <span class="badge" style="background:rgba(var(--tblr-primary-rgb),.2);color:var(--tblr-primary);">{{ 'media.series_detail.header.status_continuing'|trans }}</span>
         {% elseif serie.status == 'ended' %}
           <span class="badge bg-secondary-lt">{{ 'media.series_detail.header.status_ended'|trans }}</span>
         {% else %}

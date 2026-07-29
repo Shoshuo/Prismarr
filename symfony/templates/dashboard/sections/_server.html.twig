@@ -1,0 +1,27 @@
+{# Unraid server monitoring — admin-only, self-gates on unraid config.
+   The fragment endpoint re-checks ROLE_ADMIN server-side; this gate just
+   avoids rendering a card shell non-admins would see spin forever. #}
+<div data-section-key="server">
+{% if is_granted('ROLE_ADMIN') and services_configured.unraid %}
+<div class="row row-cards mb-3">
+  <div class="col-12" data-dash-widget="server" data-dash-url="{{ path('app_dashboard_widget_server') }}" data-dash-poll="30000">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="card-title">
+          <span class="card-title-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="8" rx="2"/><rect x="3" y="12" width="18" height="8" rx="2"/><path d="M7 8l0 .01M7 16l0 .01"/></svg>
+          </span>
+          {{ 'dashboard.server.title'|trans }}
+        </h3>
+        <div class="card-actions">
+          <a href="{{ path('admin_settings_index') }}" class="dash-action-btn">{{ 'dashboard.server.settings_cta'|trans }}</a>
+        </div>
+      </div>
+      <div class="card-body" data-dash-body>
+        <div class="text-center text-secondary py-3"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+</div>

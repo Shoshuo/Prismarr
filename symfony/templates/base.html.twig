@@ -1,6 +1,6 @@
 {% import '_icons.html.twig' as ico %}
 <!doctype html>
-<html lang="{{ app.request.locale|default('fr') }}">
+<html lang="{{ app.request.locale|default('fr') }}" data-bs-theme="{{ theme().light ? 'light' : 'dark' }}">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -62,6 +62,28 @@
         return Math.round(bytes) + ' ' + u.B;
       };
     }
+    // Shared sidebar download-count badge updater. Hides at 0, else shows the
+    // clamped count. Fires a single state-driven `.dl-bumped` pulse only when
+    // the count rises above its previous value (never on first paint), so the
+    // motion means "a new download appeared" rather than looping decoratively.
+    if (!window.prismarrDlBadge) {
+      window.prismarrDlBadge = function (badge, active) {
+        if (!badge) return;
+        if (active > 0) {
+          var prev = badge._dlPrev;
+          badge.textContent = active > 99 ? '99+' : String(active);
+          badge.style.display = '';
+          if (typeof prev === 'number' && active > prev) {
+            badge.classList.remove('dl-bumped');
+            void badge.offsetWidth; // restart the animation
+            badge.classList.add('dl-bumped');
+          }
+        } else {
+          badge.style.display = 'none';
+        }
+        badge._dlPrev = active;
+      };
+    }
 
     // HTML escape helper used wherever JS builds strings via innerHTML with
     // operator-side-controlled values (instance names, search results titles,
@@ -102,7 +124,9 @@
     body.density-compact .card-body { padding: .7rem .85rem; }
     body.density-compact .list-group-item { padding: .45rem .75rem; }
     body.density-compact .row.g-3 > *, body.density-compact .row.g-2 > * { padding-top: .35rem; padding-bottom: .35rem; }
-    body.density-compact .form-control,
+    /* The global search input keeps fixed horizontal padding for its
+       absolutely-positioned icon, so it is exempt from the compact shrink. */
+    body.density-compact .form-control:not(.prismarr-search-input),
     body.density-compact .form-select { padding: .35rem .55rem; }
 
     /* Toasts off (opt-out via display_toasts = '0') — JS also guards, this
@@ -142,13 +166,25 @@
       font-size: .68rem; font-weight: 700; line-height: 1;
       background: linear-gradient(135deg, #3b82f6, #60a5fa);
       color: #fff; border-radius: 9px;
-      box-shadow: 0 0 10px rgba(59,130,246,.55);
-      animation: dl-pulse 2.2s ease-in-out infinite;
+      box-shadow: 0 0 8px rgba(59,130,246,.5);
     }
-    @keyframes dl-pulse {
-      0%, 100% { box-shadow: 0 0 8px rgba(59,130,246,.45); transform: scale(1); }
-      50%      { box-shadow: 0 0 14px rgba(59,130,246,.9);  transform: scale(1.08); }
+    /* The badge's presence is the state signal (downloads active); a static
+       glow draws the eye without an always-on decorative loop. When the count
+       increases the poller adds `.dl-bumped` for a single state-driven pulse. */
+    .sidebar-dl-badge.dl-bumped { animation: dl-bump .45s ease-out; }
+    @keyframes dl-bump {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.14); box-shadow: 0 0 14px rgba(59,130,246,.9); }
+      100% { transform: scale(1); }
     }
+    @media (prefers-reduced-motion: reduce) {
+      .sidebar-dl-badge.dl-bumped { animation: none; }
+    }
+
+    /* Keyboard focus ring for card DIVs promoted to buttons (media/ex/wl/
+       calendar cards carry [data-kb-activate]). outline is not clipped by the
+       cards' overflow:hidden, so a positive offset renders cleanly. */
+    [data-kb-activate]:focus-visible { outline: 2px solid var(--tblr-primary); outline-offset: 2px; }
 
     /* ── Live Plex streaming pill (sous le logo) ── */
     .sidebar-plex-pill {
@@ -161,68 +197,63 @@
     html.sidebar-collapsed aside.navbar-vertical .sidebar-plex-pill span { display: none; }
 
     /* ── Header sticky (recherche + profil) ── */
-    .page-header:has(#topbar-actions) { position: sticky; top: 0; z-index: 40; background: rgba(17,17,17,.95); backdrop-filter: blur(12px); margin: 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .page-header:has(#topbar-actions) { position: sticky; top: 0; z-index: 40; background: var(--prismarr-topbar-bg); backdrop-filter: blur(12px); margin: 0; border-bottom: 1px solid var(--prismarr-border); }
     .page-header:has(#topbar-actions) .container-xl { padding-top: .5rem; padding-bottom: .5rem; }
     .page-header:has(#topbar-actions) .page-title { margin: 0; padding: 0; line-height: 1; }
     .page-header:has(#topbar-actions) .row { margin: 0; align-items: center; }
+    /* Shared segmented view-switcher (list-density toggles on the download-client pages) */
+    .view-switcher { display:inline-flex; background:rgba(0,0,0,.04); border-radius:6px; padding:2px; gap:1px; }
+    [data-bs-theme="dark"] .view-switcher { background:rgba(255,255,255,.05); }
+    .view-switcher .view-btn { border:0; background:transparent; color:var(--tblr-body-color); padding:3px 9px; border-radius:4px; font-size:.72rem; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:background .12s ease, color .12s ease; }
+    .view-switcher .view-btn:hover { background:rgba(var(--tblr-primary-rgb),.08); }
+    .view-switcher .view-btn.active { background:var(--tblr-primary); color:#fff; }
+    .view-switcher .view-btn svg { width:13px; height:13px; }
+    /* Shared stat-tile vocabulary (header summary metrics) */
+    .stat-val { font-size: 1.5rem; font-weight: 700; line-height: 1; letter-spacing: -.5px; }
+    .stat-lbl { font-size: .7rem; text-transform: uppercase; letter-spacing: .4px; color: var(--tblr-secondary-color); font-weight: 600; }
+    /* Shared filter pill: transparent by default, hue-tinted when active.
+       Per-pill semantic colour comes in via --pill-hue (a raw colour or a
+       Tabler var); defaults to the theme primary. */
+    .filter-pill { border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 4px 11px; font-size: .78rem; font-weight: 500; line-height: 1.3; color: var(--tblr-body-color); cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: .35rem; transition: background .12s ease, color .12s ease; }
+    .filter-pill:hover { background: rgba(var(--tblr-primary-rgb), .07); }
+    .filter-pill.active { font-weight: 600; background: color-mix(in srgb, var(--pill-hue, var(--tblr-primary)) 16%, transparent); color: var(--pill-hue, var(--tblr-primary)); }
     /* ── Mode clair global — plus de profondeur et contraste ── */
-    [data-bs-theme="light"] .page-header:has(#topbar-actions) { background: rgba(250,250,252,.97); border-bottom: 1px solid rgba(0,0,0,.1); box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    [data-bs-theme="light"] .page-header:has(#topbar-actions) { border-bottom: 1px solid var(--prismarr-border); box-shadow: 0 1px 4px rgba(0,0,0,.05); }
     :root[data-bs-theme="light"] .card { border-color: rgba(0,0,0,.1); box-shadow: 0 1px 6px rgba(0,0,0,.06); }
     :root[data-bs-theme="light"] .card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.1); }
-    :root[data-bs-theme="light"] .card-header { border-color: rgba(0,0,0,.08); background: rgba(0,0,0,.015); }
-    :root[data-bs-theme="light"] .page-wrapper { background: #f0f2f7; }
+    :root[data-bs-theme="light"] .card-header { border-color: var(--prismarr-border); background: rgba(0,0,0,.015); }
+    :root[data-bs-theme="light"] .page-wrapper { background: var(--tblr-body-bg); }
     :root[data-bs-theme="light"] .page-body { background: transparent; }
     :root[data-bs-theme="light"] .table { --tblr-table-striped-bg: rgba(0,0,0,.02); }
     :root[data-bs-theme="light"] .table thead th { background: rgba(0,0,0,.03); color: #444; font-weight: 600; border-bottom: 2px solid rgba(0,0,0,.1); }
-    :root[data-bs-theme="light"] .navbar-vertical { background: #fff !important; border-right: 1px solid rgba(0,0,0,.08); box-shadow: 2px 0 8px rgba(0,0,0,.04); }
+    :root[data-bs-theme="light"] .navbar-vertical { background: var(--prismarr-surface) !important; border-right: 1px solid var(--prismarr-border); box-shadow: 2px 0 8px rgba(0,0,0,.04); }
     :root[data-bs-theme="light"] .badge.bg-secondary-lt { background: rgba(0,0,0,.06) !important; color: #555 !important; }
     :root[data-bs-theme="light"] .text-secondary { color: #5a5a6e !important; }
     :root[data-bs-theme="light"] .btn-ghost-secondary:hover { background: rgba(0,0,0,.05) !important; }
+
+    /* ── Readability floor (responsive audit 2026-06-29, extended to desktop
+       2026-07-10) ── Sub-12px text (clusters at 8.8/9.6/10.4px) is illegible
+       on phones and hard to read anywhere. The shared offenders are floored
+       at 11px (.6875rem) at ALL breakpoints. Hierarchy is preserved — floored
+       text stays the smallest on the page. Per-page style blocks carry the
+       same floor for their local classes below lg. */
+    .sidebar-dl-badge,
+    .prismarr-search-section,
+    .prismarr-search-section .count { font-size: .6875rem; }
+    /* Badges/helper text sized via inline style="font-size:.5–.68rem"
+       (Twig + JS-built markup across the app): an attribute-substring
+       match is the only CSS-only way to floor inline styles. Only values
+       starting with ".5"/".6"/"0.5"/"0.6" match — larger sizes such as
+       "1.5rem" contain "1.5", never ":.5", and are unaffected. */
+    [style*="font-size:.5"], [style*="font-size:.6"],
+    [style*="font-size: .5"], [style*="font-size: .6"],
+    [style*="font-size:0.5"], [style*="font-size:0.6"] {
+      font-size: .6875rem !important;
+    }
   </style>
 
-  {# Light/dark theme handling — all in <head> to survive Turbo navigations #}
+  {# Modal and backdrop cleanup — in <head> to survive Turbo navigations #}
   <script>
-    (function () {
-      // 1. Apply the theme immediately (before CSS) to avoid any flash
-      var t = localStorage.getItem('tablerTheme') || 'dark';
-      document.documentElement.setAttribute('data-bs-theme', t);
-
-      // 2. Sync moon/sun icons after each load/navigation
-      var THEME_LABEL_LIGHT = {{ 'topbar.theme.label_light'|trans|json_encode|raw }};
-      var THEME_LABEL_DARK  = {{ 'topbar.theme.label_dark'|trans|json_encode|raw }};
-      function syncIcons() {
-        var theme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
-        var isDark = theme === 'dark';
-        var moon  = document.getElementById('icon-moon');
-        var sun   = document.getElementById('icon-sun');
-        var label = document.getElementById('theme-label');
-        if (moon) moon.style.display = isDark ? '' : 'none';
-        if (sun)  sun.style.display  = isDark ? 'none' : '';
-        if (label) label.textContent = isDark ? THEME_LABEL_LIGHT : THEME_LABEL_DARK;
-        var moonT = document.getElementById('icon-moon-top');
-        var sunT  = document.getElementById('icon-sun-top');
-        if (moonT) moonT.style.display = isDark ? '' : 'none';
-        if (sunT)  sunT.style.display  = isDark ? 'none' : '';
-      }
-
-      // 3. Click handler via event delegation on document
-      //    → survives Turbo navigations, never duplicated since it's in the <head>
-      document.addEventListener('click', function (e) {
-        if (e.target.closest('#theme-toggle') || e.target.closest('#theme-toggle-top')) {
-          e.preventDefault();
-          var next = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
-          document.documentElement.setAttribute('data-bs-theme', next);
-          localStorage.setItem('tablerTheme', next);
-          syncIcons();
-        }
-      });
-
-      // 4. Sync icons on first load and after each Turbo navigation
-      document.addEventListener('DOMContentLoaded', syncIcons);
-      document.addEventListener('turbo:load', syncIcons);
-
-    })();
-
     // Backdrop and modal cleanup
     (function() {
       // Before each modal opens: clean up extra backdrops
@@ -260,22 +291,36 @@
   <link rel="stylesheet" href="{{ asset('static/tabler/css/tabler.min.css') }}"/>
   <link rel="stylesheet" href="{{ asset('static/tabler/css/tabler-themes.min.css') }}"/>
 
-  {# Override Tabler dark blue background + visual tweaks #}
-  <style>
-    /* User-picked theme color — MUST be set after Tabler's own stylesheet,
-       otherwise its own `:root { --tblr-primary }` rule wins the cascade
-       and every page resets to Tabler's default blue. */
+  {# Library filter memory: loaded once in <head> so Turbo runs it a single
+     time; it binds its own turbo:load/DOMContentLoaded listeners. #}
+  <script defer src="{{ asset('static/js/library-filter-memory.js') }}"></script>
+
+  {# Theme variables + user-picked accent — MUST be set after Tabler's own
+     stylesheet, otherwise its own `:root { --tblr-primary }` rule wins the
+     cascade and every page resets to Tabler's default blue.
+
+     `data-turbo-track="reload"`: the theme is global, so this block is byte-for-byte
+     identical on every page and normal Turbo visits stay fast. But when the admin
+     changes the theme/accent, the saved page's block differs → Turbo forces a FULL
+     reload, which re-parses `<html data-bs-theme>` AND these vars together. Without
+     it, Turbo keeps the persistent <html> element and the old `data-bs-theme`
+     sticks, leaving text colours unreadable until a manual refresh. #}
+  <style data-turbo-track="reload">
     :root {
+      {% for _name, _value in theme().css %}{{ _name }}: {{ _value }};
+      {% endfor %}
       --tblr-primary: {{ display_pref('theme_color_hex') }};
       --tblr-primary-rgb: {{ display_pref('theme_color_rgb') }};
     }
+  </style>
 
+  {# Override Tabler dark blue background + visual tweaks #}
+  <style>
     [data-bs-theme="dark"] {
-      --tblr-body-bg:       #111111;
-      --tblr-secondary-bg:  #1a1a1a;
-      --tblr-tertiary-bg:   #1a1a1a;
-      --tblr-card-bg:       #1c1c1c;
-      --tblr-border-color:  rgba(255, 255, 255, 0.08);
+      --tblr-secondary-bg:  var(--prismarr-surface);
+      --tblr-tertiary-bg:   var(--prismarr-surface);
+      --tblr-card-bg:       var(--prismarr-surface);
+      --tblr-border-color:  var(--prismarr-border);
     }
 
     /* ── Topbar layout : title left · big search centered · actions right ── */
@@ -463,37 +508,38 @@
     .prismarr-health-row-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .prismarr-health-row-dot.is-ok  { background: #22c55e; }
     .prismarr-health-row-dot.is-ko  { background: #ef4444; }
+    .prismarr-health-row-dot.is-warn { background: #f59e0b; }
     .prismarr-health-row-dot.is-unk { background: #6b7280; }
     .prismarr-health-row-name { flex: 1; font-weight: 500; }
     .prismarr-health-row-state { font-size: .7rem; color: var(--tblr-secondary); }
 
     /* Ciblage direct — évite tout conflit de variable */
-    [data-bs-theme="dark"] body          { background-color: #111111 !important; }
-    [data-bs-theme="dark"] .page-wrapper { background-color: #111111 !important; }
-    [data-bs-theme="dark"] .page-body    { background-color: #111111 !important; }
+    [data-bs-theme="dark"] body          { background-color: var(--tblr-body-bg) !important; }
+    [data-bs-theme="dark"] .page-wrapper { background-color: var(--tblr-body-bg) !important; }
+    [data-bs-theme="dark"] .page-body    { background-color: var(--tblr-body-bg) !important; }
 
     /* Sidebar fond neutre */
     [data-bs-theme="dark"] .navbar-vertical {
-      background-color: #0d0d0d !important;
-      border-right: 1px solid rgba(255,255,255,0.07) !important;
+      background-color: var(--prismarr-sidebar) !important;
+      border-right: 1px solid var(--prismarr-border) !important;
     }
-    [data-bs-theme="light"] body          { background-color: #f4f6fb !important; }
-    [data-bs-theme="light"] .page-wrapper { background-color: #f4f6fb !important; }
-    [data-bs-theme="light"] .page-body    { background-color: #f4f6fb !important; }
+    [data-bs-theme="light"] body          { background-color: var(--tblr-body-bg) !important; }
+    [data-bs-theme="light"] .page-wrapper { background-color: var(--tblr-body-bg) !important; }
+    [data-bs-theme="light"] .page-body    { background-color: var(--tblr-body-bg) !important; }
     [data-bs-theme="light"] .navbar-vertical {
-      background-color: #ffffff !important;
-      border-right: 1px solid rgba(0,0,0,0.08) !important;
+      background-color: var(--prismarr-surface) !important;
+      border-right: 1px solid var(--prismarr-border) !important;
     }
 
     /* Cards : fond légèrement surélevé + ombre douce */
     [data-bs-theme="dark"] .card {
-      background-color: #1c1c1c !important;
-      border: 1px solid rgba(255,255,255,0.08) !important;
+      background-color: var(--prismarr-surface) !important;
+      border: 1px solid var(--prismarr-border) !important;
       box-shadow: 0 2px 16px rgba(0,0,0,0.35) !important;
     }
     [data-bs-theme="dark"] .card-footer  {
-      background-color: #161616 !important;
-      border-top: 1px solid rgba(255,255,255,0.06) !important;
+      background-color: var(--prismarr-surface-2) !important;
+      border-top: 1px solid var(--prismarr-border) !important;
     }
     [data-bs-theme="light"] .card {
       box-shadow: 0 1px 8px rgba(0,0,0,0.08);
@@ -514,8 +560,8 @@
     /* Scrollbar discrète */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 99px; }
-    [data-bs-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
+    ::-webkit-scrollbar-thumb { background: var(--prismarr-border); border-radius: 99px; }
+    [data-bs-theme="light"] ::-webkit-scrollbar-thumb { background: var(--prismarr-border); }
 
     /* Sous-menu Infrastructure — décalé + plus petit */
     #infra-submenu .nav-link {
@@ -673,6 +719,31 @@
     .navbar-vertical ~ .navbar {
       transition: margin-left 0.2s ease;
     }
+
+    /* ── Tap targets on touch devices (responsive audit 2026-06-29) ────
+       Secondary controls measured 22–33px (nav toggle 32px, topbar icon
+       buttons, search clear 22px) against the 44px guideline. Coarse-pointer
+       only, so desktop rendering is completely unchanged. */
+    @media (pointer: coarse) {
+      .btn-icon,
+      .navbar-toggler {
+        min-width: 44px; min-height: 44px;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      .prismarr-search-clear { width: 32px; height: 32px; right: .45rem; }
+      .prismarr-search-recent .clear-x { width: 32px; height: 32px; }
+    }
+
+    /* ── Phone table density (responsive audit 2026-06-29) ─────────────
+       Library sub-pages (history/queue…) keep their .table-responsive
+       sideways scroll, but slightly tighter type/padding lets noticeably
+       more columns fit on a phone. 13px stays above the 11px readability
+       floor. */
+    @media (max-width: 575.98px) {
+      .table-responsive > .table { font-size: .8125rem; }
+      .table-responsive > .table th,
+      .table-responsive > .table td { padding: .4rem .5rem; }
+    }
   </style>
 
   {% block stylesheets %}{% endblock %}
@@ -696,7 +767,10 @@
         </button>
 
         <div class="navbar-brand navbar-brand-autodark">
-          <a href="{{ path('tmdb_index') }}" class="d-flex align-items-center gap-2 text-decoration-none">
+          {# Logo → the home route, which resolves the admin's display_home_page
+             preference (dashboard/discovery/films/…/last-visited), instead of
+             hardcoding Discover. #}
+          <a href="{{ path('app_home') }}" class="d-flex align-items-center gap-2 text-decoration-none">
             <img src="{{ asset('img/prismarr/prismarr-icon-512.png') }}" alt="Prismarr" width="28" height="28" style="border-radius:5px;">
             <span class="fw-bold fs-4" style="color: var(--tblr-primary)">Prismarr</span>
           </a>
@@ -802,7 +876,7 @@
               {% if _radarr_count <= 1 %}
                 {# Single instance — keep the legacy URL so existing bookmarks survive. #}
                 <li class="nav-item">
-                  <a class="nav-link {{ _radarr_active ? 'active' }}" href="{{ instance_path('app_media_films') }}">
+                  <a class="nav-link {{ _radarr_active ? 'active' }} js-libfilter-link" href="{{ instance_path('app_media_films') }}">
                     {{ _radarr_icon|raw }}
                     <span class="nav-link-title">Radarr</span>
                   </a>
@@ -810,7 +884,7 @@
               {% elseif _radarr_count <= 3 %}
                 {% for _inst in _radarr_instances %}
                   <li class="nav-item">
-                    <a class="nav-link {{ _radarr_active and _radarr_slug == _inst.slug ? 'active' }}"
+                    <a class="nav-link {{ _radarr_active and _radarr_slug == _inst.slug ? 'active' }} js-libfilter-link"
                        href="{{ instance_path('app_media_films', { slug: _inst.slug }) }}">
                       {{ _radarr_icon|raw }}
                       <span class="nav-link-title">{{ _inst.name }}</span>
@@ -826,7 +900,7 @@
                   </a>
                   <div class="dropdown-menu">
                     {% for _inst in _radarr_instances %}
-                      <a class="dropdown-item {{ _radarr_active and _radarr_slug == _inst.slug ? 'active' }}"
+                      <a class="dropdown-item {{ _radarr_active and _radarr_slug == _inst.slug ? 'active' }} js-libfilter-link"
                          href="{{ instance_path('app_media_films', { slug: _inst.slug }) }}">
                         {{ _inst.name }}
                       </a>
@@ -853,7 +927,7 @@
 
               {% if _sonarr_count <= 1 %}
                 <li class="nav-item">
-                  <a class="nav-link {{ _sonarr_active ? 'active' }}" href="{{ instance_path('app_media_series') }}">
+                  <a class="nav-link {{ _sonarr_active ? 'active' }} js-libfilter-link" href="{{ instance_path('app_media_series') }}">
                     {{ _sonarr_icon|raw }}
                     <span class="nav-link-title">Sonarr</span>
                   </a>
@@ -861,7 +935,7 @@
               {% elseif _sonarr_count <= 3 %}
                 {% for _inst in _sonarr_instances %}
                   <li class="nav-item">
-                    <a class="nav-link {{ _sonarr_active and _sonarr_slug == _inst.slug ? 'active' }}"
+                    <a class="nav-link {{ _sonarr_active and _sonarr_slug == _inst.slug ? 'active' }} js-libfilter-link"
                        href="{{ instance_path('app_media_series', { slug: _inst.slug }) }}">
                       {{ _sonarr_icon|raw }}
                       <span class="nav-link-title">{{ _inst.name }}</span>
@@ -877,7 +951,7 @@
                   </a>
                   <div class="dropdown-menu">
                     {% for _inst in _sonarr_instances %}
-                      <a class="dropdown-item {{ _sonarr_active and _sonarr_slug == _inst.slug ? 'active' }}"
+                      <a class="dropdown-item {{ _sonarr_active and _sonarr_slug == _inst.slug ? 'active' }} js-libfilter-link"
                          href="{{ instance_path('app_media_series', { slug: _inst.slug }) }}">
                         {{ _inst.name }}
                       </a>
@@ -927,6 +1001,42 @@
                 </span>
                 <span class="nav-link-title d-flex align-items-center">{{ 'sidebar.nav.qbittorrent'|trans }}
                   <span id="sidebar-qbt-badge" class="sidebar-dl-badge" style="display:none;">0</span>
+                </span>
+              </a>
+            </li>
+            {% endif %}
+
+            {% if service_visible_in_sidebar('deluge') %}
+            <li class="nav-item">
+              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_deluge_' ? 'active' }}"
+                 href="{{ path('app_deluge_index') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                       fill="none" stroke="#3e7bbf" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3c3.5 4.2 6 7.4 6 10.5a6 6 0 1 1 -12 0c0 -3.1 2.5 -6.3 6 -10.5z"/>
+                  </svg>
+                </span>
+                <span class="nav-link-title d-flex align-items-center">{{ 'sidebar.nav.deluge'|trans }}
+                  <span id="sidebar-deluge-badge" class="sidebar-dl-badge" style="display:none;">0</span>
+                </span>
+              </a>
+            </li>
+            {% endif %}
+
+            {% if service_visible_in_sidebar('transmission') %}
+            <li class="nav-item">
+              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_transmission_' ? 'active' }}"
+                 href="{{ path('app_transmission_index') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                       fill="none" stroke="#d7302f" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round" class="icon">
+                    <path d="M12 3c3.5 4.2 6 7.4 6 10.5a6 6 0 1 1 -12 0c0 -3.1 2.5 -6.3 6 -10.5z"/>
+                  </svg>
+                </span>
+                <span class="nav-link-title d-flex align-items-center">{{ 'sidebar.nav.transmission'|trans }}
+                  <span id="sidebar-transmission-badge" class="sidebar-dl-badge" style="display:none;">0</span>
                 </span>
               </a>
             </li>
@@ -982,6 +1092,25 @@
                   </svg>
                 </span>
                 <span class="nav-link-title">Tautulli</span>
+              </a>
+            </li>
+            {% endif %}
+
+            {% if is_granted('ROLE_ADMIN') and service_visible_in_sidebar('unifi') %}
+            <li class="nav-item">
+              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_unifi_' ? 'active' }}"
+                 href="{{ path('app_unifi_index') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                       fill="none" stroke="#0559C9" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round" class="icon">
+                    <path d="M12 18l.01 0"/>
+                    <path d="M9.172 15.172a4 4 0 0 1 5.656 0"/>
+                    <path d="M6.343 12.343a8 8 0 0 1 11.314 0"/>
+                    <path d="M3.515 9.515c4.686 -4.687 12.284 -4.687 17 0"/>
+                  </svg>
+                </span>
+                <span class="nav-link-title">{{ 'unifi.title'|trans }}</span>
               </a>
             </li>
             {% endif %}
@@ -1137,19 +1266,6 @@
                     </div>
                   </div>
                 </div>
-
-                {# Theme #}
-                <a href="#" id="theme-toggle-top" class="btn btn-icon btn-ghost-secondary" title="{{ 'topbar.theme.toggle'|trans }}">
-                  <svg id="icon-moon-top" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                       fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/>
-                  </svg>
-                  <svg id="icon-sun-top" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                       fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                    <circle cx="12" cy="12" r="4"/>
-                    <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-                  </svg>
-                </a>
 
                 {# Profile #}
                 <div class="dropdown" style="position:relative;">
@@ -1369,6 +1485,8 @@
 
   </div>
 
+  {% include '_quicklook.html.twig' with {} only %}
+
   <script src="{{ asset('static/tabler/js/tabler.min.js') }}"></script>
 
   {# Strings translated server-side and exposed to inline JS. Keep this block
@@ -1391,16 +1509,18 @@
       'search.forget':         'topbar.search.forget'|trans,
       'search.in_library_badge': 'topbar.search.in_library_badge'|trans,
       'search.not_added_badge':  'topbar.search.not_added_badge'|trans,
-      'theme.label_light':     'topbar.theme.label_light'|trans,
-      'theme.label_dark':      'topbar.theme.label_dark'|trans,
+      'search.add':              'topbar.search.add'|trans,
+      'dashboard.quicklook.manage': 'dashboard.quicklook.manage'|trans,
       'health.all_ok':         'topbar.health.summary_ok'|trans,
       'health.loading':        'topbar.health.loading'|trans,
       'health.unknown':        'topbar.health.summary_unknown'|trans,
       'health.no_service':     'topbar.health.summary_no_service'|trans,
       'health.summary_tpl':    'topbar.health.summary_running'|trans({'{ok}': '__OK__', '{total}': '__TOTAL__'}),
-      'health.status_ok':      'topbar.health.status.ok'|trans,
-      'health.status_down':    'topbar.health.status.down'|trans,
-      'health.status_unk':     'topbar.health.status.not_configured'|trans,
+      'health.status_up':        'dashboard.health.status_up'|trans,
+      'health.status_slow':      'dashboard.health.status_slow'|trans,
+      'health.status_very_slow': 'dashboard.health.status_very_slow'|trans,
+      'health.status_degraded':  'dashboard.health.status_degraded'|trans,
+      'health.status_down':      'dashboard.health.status_down'|trans,
       'common.loading':        'common.status.loading'|trans,
       'qa.add_radarr':         'quickadd.cta.add_radarr'|trans,
       'qa.add_sonarr':         'quickadd.cta.add_sonarr'|trans,
@@ -1479,7 +1599,7 @@
         var poster = item.poster
           ? '<img src="' + item.poster + '" style="width:30px;height:45px;object-fit:cover;border-radius:4px;" class="flex-shrink-0" loading="lazy">'
           : '<div style="width:30px;height:45px;background:rgba(255,255,255,.05);border-radius:4px;display:flex;align-items:center;justify-content:center;" class="flex-shrink-0">' + typeIcon + '</div>';
-        var dataAttr = ' data-quick-add=\'' + JSON.stringify(item).replace(/'/g, '&#39;') + '\'';
+        var dataAttr = ' data-item=\'' + JSON.stringify(item).replace(/'/g, '&#39;') + '\'';
         // v1.1.0 multi-instance: when the result comes from a non-default
         // instance, surface its name in the meta line so the user knows
         // exactly which Radarr 4K / Sonarr Anime owns the match. Default
@@ -1619,6 +1739,49 @@
       var lastLocal = [];
       var lastOnline = [];
 
+      function openDetailFor(item) {
+        if (!window.prismarrQl) return;
+        var isFilm = item.type === 'film';
+        var url;
+        if (item.inLibrary && item.instance && item.instance.slug && item.id) {
+          // Local library result — authoritative Radarr/Sonarr data + Manage deep-link.
+          url = '/tableau-de-bord/quicklook/' + (isFilm ? 'movie' : 'series')
+              + '/' + item.instance.slug + '/' + item.id;
+        } else {
+          // Online result — TMDb data. Movies key on tmdbId (== id); series need tmdbId.
+          var tmdbId = item.tmdbId || (isFilm ? item.id : null);
+          if (!tmdbId) {
+            // No TMDb id (e.g. TVDB-only series) → can't show TMDb detail.
+            // Fall back to the existing quick-add flow so the user can still add it.
+            closeResults();
+            var trigger = document.createElement('a');
+            trigger.href = '#';
+            trigger.setAttribute('data-quick-add', JSON.stringify(item));
+            trigger.style.display = 'none';
+            document.body.appendChild(trigger);
+            trigger.click();           // bubbles to the document-level [data-quick-add] handler
+            trigger.remove();
+            return;
+          }
+          url = '/tableau-de-bord/quicklook/tmdb/' + (isFilm ? 'movie' : 'tv') + '/' + tmdbId;
+        }
+        closeResults();
+        window.prismarrQl.open();
+        fetch(url, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+          .then(function (r) { return r.ok ? r.text() : ''; })
+          .then(function (html) {
+            var b = window.prismarrQl.body();
+            if (!b) return;
+            b.innerHTML = (html || '').trim() || '<div class="ql-error"></div>';
+            // The quick-look body now renders the correct primary action
+            // server-side (Manage deep-link to the exact instance when the
+            // title is in a library, otherwise an Add button wired to the
+            // shared resolve→quick-add flow), so no client-side patching is
+            // needed here.
+          })
+          .catch(function () { window.prismarrQl.close(); });
+      }
+
       function runSearch(q) {
         showSpinner();
         var ctrl = new AbortController();
@@ -1715,7 +1878,10 @@
         }
         var item = e.target.closest('.prismarr-search-item');
         if (item) {
+          e.preventDefault();
+          e.stopPropagation();
           saveRecent(input.value.trim());
+          try { openDetailFor(JSON.parse(item.dataset.item)); } catch (err) {}
         }
       });
 
@@ -1857,6 +2023,7 @@
         if (!qaModal) return;
         e.preventDefault();
         e.stopPropagation();
+        if (window.prismarrQl) { window.prismarrQl.close(); }
 
         qaItem = JSON.parse(el.dataset.quickAdd);
         var isFilm = qaItem.type === 'film';
@@ -2187,7 +2354,11 @@
     if (!window._prismarrQbtCleanupBound) {
       window._prismarrQbtCleanupBound = true;
       document.addEventListener('turbo:before-render', function () {
-        ['_prismarrQbtPollTimer', '_prismarrQbtVpnTimer'].forEach(function (key) {
+        // _prismarrTorrentPagePollTimer : le poller 3s des pages qBittorrent /
+        // Deluge / Transmission. Un seul nom pour les trois (une seule page de
+        // client torrent est montée à la fois) ; sans cette purge, naviguer vers
+        // une page NON-torrent laisse l'intervalle tourner indéfiniment.
+        ['_prismarrQbtPollTimer', '_prismarrQbtVpnTimer', '_prismarrDelugePollTimer', '_prismarrUnifiPollTimer', '_prismarrTransmissionPollTimer', '_prismarrTorrentPagePollTimer'].forEach(function (key) {
           if (window[key]) { clearInterval(window[key]); window[key] = null; }
         });
         // Usenet page uses a setTimeout poll chain — kill it on navigation so
@@ -2294,16 +2465,8 @@
     function fmtGo(bytes) { return window.prismarrBytes(bytes); }
 
     function updateBadge(active) {
-      var label = active > 99 ? '99+' : String(active);
       ['sidebar-qbt-badge', 'sidebar-media-badge'].forEach(function (id) {
-        var badge = document.getElementById(id);
-        if (!badge) return;
-        if (active > 0) {
-          badge.textContent = label;
-          badge.style.display = '';
-        } else {
-          badge.style.display = 'none';
-        }
+        window.prismarrDlBadge(document.getElementById(id), active);
       });
     }
 
@@ -2403,6 +2566,340 @@
   {% endif %}
 
   {# ══════════════════════════════════════════════════════════════════════════
+     Global Deluge poll — DL completion / error toasts + sidebar badge
+     Active only on media pages (avoids hitting Deluge everywhere). Also skipped
+     when Deluge is disabled (#15) — otherwise the poll endpoint would chase a
+     route-guard redirect every few seconds and turn `r.json()` into a JS
+     SyntaxError that the circuit breaker then backs off for two minutes.
+     ══════════════════════════════════════════════════════════════════════════ #}
+  {% set route = app.request.attributes.get('_route') ?? '' %}
+  {% if service_configured('deluge') and (
+        route starts with 'app_deluge_'
+     or route starts with 'app_media'
+     or route starts with 'radarr_'
+     or route starts with 'sonarr_'
+     or route starts with 'prowlarr_'
+     or route starts with 'jellyseerr_'
+     or route starts with 'tmdb_') %}
+  <script>
+  (function () {
+    var DELUGE_POLL_URL = '{{ path('app_deluge_api_poll_summary') }}';
+    {# User preference drives the polling cadence — 0 disables Deluge polling entirely. #}
+    var DELUGE_POLL_INTERVAL_SECONDS = {{ display_pref('deluge_refresh_seconds') }};
+    if (DELUGE_POLL_INTERVAL_SECONDS <= 0) return;  // poll disabled via /admin/settings
+    var DELUGE_POLL_INTERVAL = DELUGE_POLL_INTERVAL_SECONDS * 1000;
+    var STATE_KEY = 'prismarr_deluge_last_state';
+    var NOTIFIED_KEY = 'prismarr_deluge_notified';  // hashes already notified (cross-tab dedup)
+    var NOTIFIED_TTL = 60 * 60 * 1000; // 1h — beyond that we re-allow the notification (e.g. torrent re-DL)
+
+    // Cross-tab channel to sync notifications across multiple open tabs
+    var bchan = null;
+    try { if (typeof BroadcastChannel !== 'undefined') bchan = new BroadcastChannel('prismarr-deluge-toasts'); } catch (e) {}
+    if (bchan && !window._prismarrDelugeBchanBound) {
+      window._prismarrDelugeBchanBound = true;
+      bchan.onmessage = function (e) {
+        // Another tab already notified this hash → mark locally to skip
+        if (e.data && e.data.type === 'notified' && e.data.hash) markNotified(e.data.hash);
+      };
+    }
+
+    function loadNotified() { try { return JSON.parse(localStorage.getItem(NOTIFIED_KEY) || '{}'); } catch (e) { return {}; } }
+    function markNotified(hash) {
+      var n = loadNotified();
+      n[hash] = Date.now();
+      // Purge entries that are too old to avoid bloat
+      var cutoff = Date.now() - NOTIFIED_TTL;
+      Object.keys(n).forEach(function (k) { if (n[k] < cutoff) delete n[k]; });
+      try { localStorage.setItem(NOTIFIED_KEY, JSON.stringify(n)); } catch (e) {}
+      if (bchan) try { bchan.postMessage({ type: 'notified', hash: hash }); } catch (e) {}
+    }
+    function alreadyNotified(hash) {
+      var n = loadNotified();
+      return n[hash] && (Date.now() - n[hash]) < NOTIFIED_TTL;
+    }
+
+    function loadPrev() { try { return JSON.parse(localStorage.getItem(STATE_KEY) || '{}'); } catch (e) { return {}; } }
+    function savePrev(map) { try { localStorage.setItem(STATE_KEY, JSON.stringify(map)); } catch (e) {} }
+
+    // window.prismarrBytes is defined in the head script at the top of
+    // base.html.twig so child templates' javascripts block can rely on it
+    // during initial render. Local fmtGo wrapper kept for the Deluge poll
+    // block below.
+    function fmtGo(bytes) { return window.prismarrBytes(bytes); }
+
+    function updateBadge(active) {
+      window.prismarrDlBadge(document.getElementById('sidebar-deluge-badge'), active);
+    }
+
+    // Circuit breaker: when Deluge is unreachable we back off exponentially
+    // from 15s up to 2min between polls instead of hammering the NAS every
+    // 15s. A single successful poll resets the backoff to the base interval.
+    var DELUGE_POLL_INTERVAL_MAX = 120000; // 2 min
+    window._prismarrDelugeFailCount = 0;
+
+    function delugeNextDelay() {
+      if (window._prismarrDelugeFailCount === 0) return DELUGE_POLL_INTERVAL;
+      var scaled = DELUGE_POLL_INTERVAL * Math.pow(2, window._prismarrDelugeFailCount - 1);
+      return Math.min(scaled, DELUGE_POLL_INTERVAL_MAX);
+    }
+
+    function schedulePoll() {
+      if (window._prismarrDelugePollTimer) clearTimeout(window._prismarrDelugePollTimer);
+      window._prismarrDelugePollTimer = setTimeout(pollDeluge, delugeNextDelay());
+    }
+
+    function pollDeluge() {
+      fetch(DELUGE_POLL_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (d) {
+          if (!d || d.error) {
+            // Server says Deluge is unreachable — count it as a failure.
+            window._prismarrDelugeFailCount++;
+            schedulePoll();
+            return;
+          }
+
+          // Success: reset backoff and resume base interval.
+          window._prismarrDelugeFailCount = 0;
+          updateBadge(d.active || 0);
+
+          // Detect transitions (vs previous snapshot)
+          var prev = loadPrev();
+          var next = {};
+          var justCompleted = [];
+          var justErrored = [];
+          (d.items || []).forEach(function (it) {
+            next[it.hash] = it.state;
+            var was = prev[it.hash];
+            if (was === 'downloading' && (it.state === 'completed' || it.state === 'seeding')) {
+              justCompleted.push(it);
+            }
+            if (was && was !== 'error' && it.state === 'error') {
+              justErrored.push(it);
+            }
+          });
+
+          if (window._prismarrToast) {
+            justCompleted.forEach(function (it) {
+              if (alreadyNotified(it.hash)) return;
+              var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
+              window._prismarrToast(truncated + ' — ' + fmtGo(it.size), 'success', 6000);
+              markNotified(it.hash);
+            });
+            justErrored.forEach(function (it) {
+              if (alreadyNotified(it.hash)) return;
+              var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
+              window._prismarrToast('Erreur sur : ' + truncated, 'danger', 8000);
+              markNotified(it.hash);
+            });
+          }
+
+          savePrev(next);
+          schedulePoll();
+        })
+        .catch(function () {
+          // Network error / fetch rejected → back off.
+          window._prismarrDelugeFailCount++;
+          schedulePoll();
+        });
+    }
+
+    // Turbo-safe singleton pattern: a single global poll even with re-exec
+    if (window._prismarrDelugePollTimer) clearTimeout(window._prismarrDelugePollTimer);
+    pollDeluge();
+
+    // Pause when tab is hidden, resume when it returns
+    if (!window._prismarrDelugeVisibilityBound) {
+      window._prismarrDelugeVisibilityBound = true;
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+          if (window._prismarrDelugePollTimer) { clearTimeout(window._prismarrDelugePollTimer); window._prismarrDelugePollTimer = null; }
+        } else {
+          pollDeluge();
+        }
+      });
+    }
+  })();
+  </script>
+  {% endif %}
+
+  {# ══════════════════════════════════════════════════════════════════════════
+     Global Transmission poll — DL completion / error toasts + sidebar badge
+     Active only on media pages (avoids hitting Transmission everywhere). Also
+     skipped when Transmission is disabled (#15) — otherwise the poll endpoint
+     would chase a route-guard redirect every few seconds and turn `r.json()`
+     into a JS SyntaxError that the circuit breaker then backs off for two
+     minutes.
+     ══════════════════════════════════════════════════════════════════════════ #}
+  {% set route = app.request.attributes.get('_route') ?? '' %}
+  {% if service_configured('transmission') and (
+        route starts with 'app_transmission_'
+     or route starts with 'app_media'
+     or route starts with 'radarr_'
+     or route starts with 'sonarr_'
+     or route starts with 'prowlarr_'
+     or route starts with 'jellyseerr_'
+     or route starts with 'tmdb_') %}
+  <script>
+  (function () {
+    var TRANSMISSION_POLL_URL = '{{ path('app_transmission_api_poll_summary') }}';
+    {# User preference drives the polling cadence — 0 disables Transmission polling entirely. #}
+    var TRANSMISSION_POLL_INTERVAL_SECONDS = {{ display_pref('transmission_refresh_seconds') }};
+    if (TRANSMISSION_POLL_INTERVAL_SECONDS <= 0) return;  // poll disabled via /admin/settings
+    var TRANSMISSION_POLL_INTERVAL = TRANSMISSION_POLL_INTERVAL_SECONDS * 1000;
+    var STATE_KEY = 'prismarr_transmission_last_state';
+    var NOTIFIED_KEY = 'prismarr_transmission_notified';  // hashes already notified (cross-tab dedup)
+    var NOTIFIED_TTL = 60 * 60 * 1000; // 1h — beyond that we re-allow the notification (e.g. torrent re-DL)
+
+    // Cross-tab channel to sync notifications across multiple open tabs
+    var bchan = null;
+    try { if (typeof BroadcastChannel !== 'undefined') bchan = new BroadcastChannel('prismarr-transmission-toasts'); } catch (e) {}
+    if (bchan && !window._prismarrTransmissionBchanBound) {
+      window._prismarrTransmissionBchanBound = true;
+      bchan.onmessage = function (e) {
+        // Another tab already notified this hash → mark locally to skip
+        if (e.data && e.data.type === 'notified' && e.data.hash) markNotified(e.data.hash);
+      };
+    }
+
+    function loadNotified() { try { return JSON.parse(localStorage.getItem(NOTIFIED_KEY) || '{}'); } catch (e) { return {}; } }
+    function markNotified(hash) {
+      var n = loadNotified();
+      n[hash] = Date.now();
+      // Purge entries that are too old to avoid bloat
+      var cutoff = Date.now() - NOTIFIED_TTL;
+      Object.keys(n).forEach(function (k) { if (n[k] < cutoff) delete n[k]; });
+      try { localStorage.setItem(NOTIFIED_KEY, JSON.stringify(n)); } catch (e) {}
+      if (bchan) try { bchan.postMessage({ type: 'notified', hash: hash }); } catch (e) {}
+    }
+    function alreadyNotified(hash) {
+      var n = loadNotified();
+      return n[hash] && (Date.now() - n[hash]) < NOTIFIED_TTL;
+    }
+
+    function loadPrev() { try { return JSON.parse(localStorage.getItem(STATE_KEY) || '{}'); } catch (e) { return {}; } }
+    function savePrev(map) { try { localStorage.setItem(STATE_KEY, JSON.stringify(map)); } catch (e) {} }
+
+    // window.prismarrBytes is defined in the head script at the top of
+    // base.html.twig so child templates' javascripts block can rely on it
+    // during initial render. Local fmtGo wrapper kept for the Transmission
+    // poll block below.
+    function fmtGo(bytes) { return window.prismarrBytes(bytes); }
+
+    function updateBadge(active) {
+      var label = active > 99 ? '99+' : String(active);
+      ['sidebar-transmission-badge'].forEach(function (id) {
+        var badge = document.getElementById(id);
+        if (!badge) return;
+        if (active > 0) {
+          badge.textContent = label;
+          badge.style.display = '';
+        } else {
+          badge.style.display = 'none';
+        }
+      });
+    }
+
+    // Circuit breaker: when Transmission is unreachable we back off
+    // exponentially from 15s up to 2min between polls instead of hammering
+    // the NAS every 15s. A single successful poll resets the backoff to the
+    // base interval.
+    var TRANSMISSION_POLL_INTERVAL_MAX = 120000; // 2 min
+    window._prismarrTransmissionFailCount = 0;
+
+    function transmissionNextDelay() {
+      if (window._prismarrTransmissionFailCount === 0) return TRANSMISSION_POLL_INTERVAL;
+      var scaled = TRANSMISSION_POLL_INTERVAL * Math.pow(2, window._prismarrTransmissionFailCount - 1);
+      return Math.min(scaled, TRANSMISSION_POLL_INTERVAL_MAX);
+    }
+
+    function schedulePoll() {
+      if (window._prismarrTransmissionPollTimer) clearTimeout(window._prismarrTransmissionPollTimer);
+      window._prismarrTransmissionPollTimer = setTimeout(pollTransmission, transmissionNextDelay());
+    }
+
+    function pollTransmission() {
+      fetch(TRANSMISSION_POLL_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (d) {
+          if (!d || d.error) {
+            // Server says Transmission is unreachable — count it as a failure.
+            window._prismarrTransmissionFailCount++;
+            schedulePoll();
+            return;
+          }
+
+          // Success: reset backoff and resume base interval.
+          window._prismarrTransmissionFailCount = 0;
+          updateBadge(d.active || 0);
+
+          // Detect transitions (vs previous snapshot)
+          var prev = loadPrev();
+          var next = {};
+          var justCompleted = [];
+          var justErrored = [];
+          (d.items || []).forEach(function (it) {
+            next[it.hash] = it.state;
+            var was = prev[it.hash];
+            if (was === 'downloading' && (it.state === 'completed' || it.state === 'seeding')) {
+              justCompleted.push(it);
+            }
+            if (was && was !== 'error' && it.state === 'error') {
+              justErrored.push(it);
+            }
+          });
+
+          if (window._prismarrToast) {
+            justCompleted.forEach(function (it) {
+              if (alreadyNotified(it.hash)) return;
+              var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
+              window._prismarrToast(truncated + ' — ' + fmtGo(it.size), 'success', 6000);
+              markNotified(it.hash);
+            });
+            justErrored.forEach(function (it) {
+              if (alreadyNotified(it.hash)) return;
+              var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
+              window._prismarrToast('Erreur sur : ' + truncated, 'danger', 8000);
+              markNotified(it.hash);
+            });
+          }
+
+          savePrev(next);
+          schedulePoll();
+        })
+        .catch(function () {
+          // Network error / fetch rejected → back off.
+          window._prismarrTransmissionFailCount++;
+          schedulePoll();
+        });
+    }
+
+    // Turbo-safe singleton pattern: a single global poll even with re-exec
+    if (window._prismarrTransmissionPollTimer) clearTimeout(window._prismarrTransmissionPollTimer);
+    pollTransmission();
+
+    // Pause when tab is hidden, resume when it returns
+    if (!window._prismarrTransmissionVisibilityBound) {
+      window._prismarrTransmissionVisibilityBound = true;
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+          if (window._prismarrTransmissionPollTimer) { clearTimeout(window._prismarrTransmissionPollTimer); window._prismarrTransmissionPollTimer = null; }
+        } else {
+          pollTransmission();
+        }
+      });
+    }
+  })();
+  </script>
+  {% endif %}
+
+  {# ══════════════════════════════════════════════════════════════════════════
      Jellyseerr pending-requests poll — sidebar badge. Unlike the qBit poll
      above (media pages only, to avoid hammering the NAS every 15s), this one
      runs on every page that renders the sidebar: the 60s cadence is light
@@ -2421,14 +2918,7 @@
     window._prismarrSeerrFailCount = 0;
 
     function updateSeerrBadge(pending) {
-      var badge = document.getElementById('sidebar-seerr-badge');
-      if (!badge) return;
-      if (pending > 0) {
-        badge.textContent = pending > 99 ? '99+' : String(pending);
-        badge.style.display = '';
-      } else {
-        badge.style.display = 'none';
-      }
+      window.prismarrDlBadge(document.getElementById('sidebar-seerr-badge'), pending);
     }
 
     function seerrNextDelay() {
@@ -2543,10 +3033,7 @@
       var fails = 0, timer = null;
 
       function update(active) {
-        var badge = document.getElementById(c.id);
-        if (!badge) return;
-        if (active > 0) { badge.textContent = active > 99 ? '99+' : String(active); badge.style.display = ''; }
-        else { badge.style.display = 'none'; }
+        window.prismarrDlBadge(document.getElementById(c.id), active);
       }
       function schedule() {
         if (timer) clearTimeout(timer);
@@ -2571,73 +3058,48 @@
   <script>
     // Topbar health indicator — lazy-loaded state + auto-refresh 60s.
     (function () {
-      var SERVICE_LABELS = {
-        radarr: 'Radarr', sonarr: 'Sonarr', prowlarr: 'Prowlarr',
-        jellyseerr: 'Seerr', qbittorrent: 'qBittorrent',
-        sabnzbd: 'SABnzbd', nzbget: 'NZBGet', tmdb: 'TMDb',
-      };
-      // v1.1.0 — radarr/sonarr can have multiple instances; we render
-      // each instance on its own row instead of a single aggregate row.
-      var INSTANCE_TYPES = ['radarr', 'sonarr'];
-      var FLAT_SERVICES = ['tmdb', 'prowlarr', 'jellyseerr', 'qbittorrent', 'sabnzbd', 'nzbget'];
       var dot   = document.getElementById('topbar-health-dot');
       var summ  = document.getElementById('topbar-health-summary');
       var list  = document.getElementById('topbar-health-list');
       if (!dot || !summ || !list) return;
 
+      // v1.2 — renders the server-built `chips` list (same rows as the
+      // dashboard health section): brand-colored names, latency, 5-state
+      // dots, and NO rows for unconfigured services.
+      var STATUS_I18N = { up: 'health.status_up', slow: 'health.status_slow', very_slow: 'health.status_very_slow', degraded: 'health.status_degraded', down: 'health.status_down' };
+      var DOT_CLS = { up: 'is-ok', slow: 'is-warn', very_slow: 'is-warn', degraded: 'is-warn', down: 'is-ko' };
+
       function renderHealth(data) {
+        var i18n = window._i18n || {};
+        var chips = data.chips || [];
         var ok = data.ok || 0;
         var total = data.total || 0;
-        var services = data.services || {};
 
-        // Overall dot color : all configured up = green, partial = orange,
-        // none configured or all down = red.
         dot.classList.remove('is-ok', 'is-warn', 'is-ko');
         if (total === 0)       dot.classList.add('is-ko');
         else if (ok === total) dot.classList.add('is-ok');
         else if (ok > 0)       dot.classList.add('is-warn');
         else                   dot.classList.add('is-ko');
 
-        var i18n = window._i18n || {};
         summ.textContent = total === 0
           ? (i18n['health.no_service'] || 'No service configured')
           : (i18n['health.summary_tpl'] || '__OK__ / __TOTAL__ services up')
               .replace('__OK__', ok).replace('__TOTAL__', total);
 
-        function rowFor(name, state) {
-          var cls = state === null || state === undefined ? 'is-unk' : (state ? 'is-ok' : 'is-ko');
-          var label = state === null || state === undefined
-            ? (i18n['health.status_unk']  || 'Not configured')
-            : (state
-                ? (i18n['health.status_ok']   || 'Up')
-                : (i18n['health.status_down'] || 'Unreachable'));
-          return '<div class="prismarr-health-row">'
-               +  '<span class="prismarr-health-row-dot ' + cls + '"></span>'
-               +  '<span class="prismarr-health-row-name">' + window.escHtml(name) + '</span>'
-               +  '<span class="prismarr-health-row-state">' + label + '</span>'
-               +  '</div>';
+        if (!chips.length) {
+          list.innerHTML = '<div class="px-3 py-2 small text-secondary">'
+            + (i18n['health.no_service'] || 'No service configured') + '</div>';
+          return;
         }
-
-        var html = '';
-        // TMDb first (cosmetic — matches the wizard order).
-        html += rowFor(SERVICE_LABELS.tmdb, services.tmdb);
-        // Multi-instance services — one row per configured instance, falls
-        // back to a single "Not configured" row when none enabled.
-        INSTANCE_TYPES.forEach(function (type) {
-          var insts = (data.instances || {})[type] || [];
-          if (insts.length === 0) {
-            html += rowFor(SERVICE_LABELS[type], services[type]);
-            return;
-          }
-          insts.forEach(function (inst) {
-            html += rowFor(inst.name, inst.state);
-          });
-        });
-        // Remaining flat services.
-        ['prowlarr', 'jellyseerr', 'qbittorrent', 'sabnzbd', 'nzbget'].forEach(function (id) {
-          html += rowFor(SERVICE_LABELS[id], services[id]);
-        });
-        list.innerHTML = html;
+        list.innerHTML = chips.map(function (c) {
+          var state = i18n[STATUS_I18N[c.status]] || c.status || '';
+          if (c.latencyMs !== null && c.latencyMs !== undefined) state += ' · ' + c.latencyMs + ' ms';
+          return '<div class="prismarr-health-row">'
+            +  '<span class="prismarr-health-row-dot ' + (DOT_CLS[c.status] || 'is-unk') + '"></span>'
+            +  '<span class="prismarr-health-row-name" style="color:' + (c.color || 'inherit') + '">' + window.escHtml(c.name) + '</span>'
+            +  '<span class="prismarr-health-row-state">' + window.escHtml(state) + '</span>'
+            +  '</div>';
+        }).join('');
       }
 
       function fetchHealth() {

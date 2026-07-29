@@ -166,6 +166,83 @@ class TautulliClient implements ResetInterface
     }
 
     /**
+     * Map a raw `get_metadata` payload to the {type, id} pair the global
+     * quick-look modal consumes, or null when the item has no usable
+     * show/movie-level tmdb guid.
+     *
+     * movie/show read the item's own guids; season reads parent_guids and
+     * episode grandparent_guids (both = the show) — an episode-level tmdb
+     * guid identifies the episode, which the quick-look can't render.
+     * Only the numeric TMDb id survives; raw guids stay out of every
+     * client payload, same allow-list stance as the normalizers.
+     *
+     * @param array<string, mixed> $data
+     * @return ?array{type: string, id: int}
+     */
+    public static function tmdbIdFromMetadata(array $data): ?array
+    {
+        [$type, $guidField] = match (self::str($data['media_type'] ?? null)) {
+            'movie'   => ['movie', 'guids'],
+            'show'    => ['tv', 'guids'],
+            'season'  => ['tv', 'parent_guids'],
+            'episode' => ['tv', 'grandparent_guids'],
+            default   => [null, null],
+        };
+        if ($type === null || !is_array($data[$guidField] ?? null)) {
+            return null;
+        }
+        foreach ($data[$guidField] as $guid) {
+            if (is_string($guid) && preg_match('#^tmdb://(\d+)$#', $guid, $m) === 1) {
+                return ['type' => $type, 'id' => (int) $m[1]];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Resolve a Plex rating key to the TMDb {type, id} the global quick-look
+     * opens with. Fails open to null (disabled / unconfigured / unreachable /
+     * no tmdb guid) so the caller can fall back to the legacy Plex modal.
+     * When an episode/season payload lacks show-level guids (older Tautulli),
+     * one extra metadata hop to the show's own rating key covers it.
+     *
+     * @return ?array{type: string, id: int}
+     */
+    public function resolveTmdbId(string $ratingKey): ?array
+    {
+        $this->ensureConfig();
+        if (!$this->enabled || $this->baseUrl === '' || $this->apiKey === '') {
+            return null;
+        }
+        if ($ratingKey === '' || !ctype_digit($ratingKey)) {
+            return null;
+        }
+
+        $resp = $this->request(['cmd' => 'get_metadata', 'rating_key' => $ratingKey]);
+        if ($resp === null || $resp['ok'] !== true || $resp['data'] === []) {
+            return null;
+        }
+        $data = $resp['data'];
+        if (($found = self::tmdbIdFromMetadata($data)) !== null) {
+            return $found;
+        }
+
+        $showKey = match (self::str($data['media_type'] ?? null)) {
+            'episode' => self::str($data['grandparent_rating_key'] ?? null),
+            'season'  => self::str($data['parent_rating_key'] ?? null),
+            default   => '',
+        };
+        if ($showKey === '' || !ctype_digit($showKey)) {
+            return null;
+        }
+        $resp = $this->request(['cmd' => 'get_metadata', 'rating_key' => $showKey]);
+        if ($resp === null || $resp['ok'] !== true || $resp['data'] === []) {
+            return null;
+        }
+        return self::tmdbIdFromMetadata($resp['data']);
+    }
+
+    /**
      * Recent watch history, normalized + sanitized. Returns a plain list (no
      * envelope) — an empty list covers disabled/unconfigured/unreachable so the
      * widget's "recently watched" pane just shows its empty state.

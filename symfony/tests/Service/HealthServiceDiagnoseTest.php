@@ -64,6 +64,30 @@ class HealthServiceDiagnoseTest extends TestCase
         self::assertSame('network', $this->makeService()->diagnoseFromResponse($resp, 'nzbget')['category']);
     }
 
+    /**
+     * Transmission's session-id handshake is the one case in this codebase
+     * where a non-2xx status means "reachable": the probe is deliberately
+     * sent WITHOUT a session id, so a healthy daemon always answers 409
+     * with the real token in a response header — that is 'ok', not a failure.
+     */
+    public function testTransmission409HandshakeIsOk(): void
+    {
+        $resp = ['http' => 409, 'body' => '{"result":"Conflict"}', 'err' => ''];
+        self::assertSame('ok', $this->makeService()->diagnoseFromResponse($resp, 'transmission')['category']);
+    }
+
+    public function testTransmission401BadRpcCredentialsIsAuth(): void
+    {
+        $resp = ['http' => 401, 'body' => '', 'err' => ''];
+        self::assertSame('auth', $this->makeService()->diagnoseFromResponse($resp, 'transmission')['category']);
+    }
+
+    public function testTransmission200SuccessIsOk(): void
+    {
+        $resp = ['http' => 200, 'body' => '{"result":"success","arguments":{"version":"4.0.5"}}', 'err' => ''];
+        self::assertSame('ok', $this->makeService()->diagnoseFromResponse($resp, 'transmission')['category']);
+    }
+
     public function testPassiveDiagnoseShortCircuitsWhenBreakerDown(): void
     {
         // #20 perf: a passive diagnosis (no overrides) must honour the circuit
@@ -192,5 +216,41 @@ class HealthServiceDiagnoseTest extends TestCase
         $m = new ReflectionMethod(HealthService::class, 'probeFor');
         $m->setAccessible(true);
         return $m->invoke($this->makeService(), $service, $overrides);
+    }
+
+    // Deluge (#deluge-tab): deluge-web answers HTTP 200 for everything — the
+    // real outcome lives in the JSON-RPC envelope, same shape problem as
+    // Tautulli above but with a different success/failure encoding.
+    public function testDelugeWrongPasswordIsAuthNotOk(): void
+    {
+        $health = $this->makeService();
+        $r = $health->diagnoseFromResponse(
+            ['http' => 200, 'body' => '{"result": false, "error": null, "id": 1}', 'err' => ''],
+            'deluge'
+        );
+        $this->assertFalse($r['ok']);
+        $this->assertSame('auth', $r['category']);
+    }
+
+    public function testDelugeRpcErrorEnvelopeIsAuth(): void
+    {
+        $health = $this->makeService();
+        $r = $health->diagnoseFromResponse(
+            ['http' => 200, 'body' => '{"result": null, "error": {"message": "Not authenticated", "code": 1}, "id": 1}', 'err' => ''],
+            'deluge'
+        );
+        $this->assertFalse($r['ok']);
+        $this->assertSame('auth', $r['category']);
+    }
+
+    public function testDelugeSuccessEnvelopeIsOk(): void
+    {
+        $health = $this->makeService();
+        $r = $health->diagnoseFromResponse(
+            ['http' => 200, 'body' => '{"result": true, "error": null, "id": 1}', 'err' => ''],
+            'deluge'
+        );
+        $this->assertTrue($r['ok']);
+        $this->assertSame('ok', $r['category']);
     }
 }

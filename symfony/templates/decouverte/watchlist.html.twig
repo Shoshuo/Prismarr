@@ -101,6 +101,25 @@
   }
   .wl-search:focus { border-color: var(--tblr-primary); outline: none; box-shadow: 0 0 0 3px rgba(var(--tblr-primary-rgb),.18); }
   .wl-count { font-size: .8rem; color: var(--tblr-muted); }
+
+  /* ── Touch devices: remove/notes buttons are hover-only and unreachable
+     on touch (responsive audit 2026-06-29) — keep them always visible with
+     a bigger hit area. Desktop hover behaviour unchanged. */
+  @media (hover: none) {
+    .wl-card .wl-remove,
+    .wl-card .wl-notes-ico { opacity: 1; width: 32px; height: 32px; }
+    .wl-card .wl-notes-ico { right: 2.6rem; }
+  }
+
+  /* ── Mobile/tablet readability floor (responsive audit 2026-06-29) ──
+     Floor sub-11px text at 11px (.6875rem) below the lg breakpoint;
+     desktop (≥992px) keeps the original sizes. */
+  @media (max-width: 991.98px) {
+    .wl-card .card-sub,
+    .wl-card .type-badge,
+    .wl-card .vote-badge,
+    .wl-card .wl-notes-preview { font-size: .6875rem; }
+  }
 </style>
 
 <div class="container-xl">
@@ -164,6 +183,8 @@
   <div class="wl-grid" id="wl-grid">
     {% for item in items %}
     <div class="wl-card"
+         tabindex="0" role="button" data-kb-activate
+         aria-label="{{ item.title }}"
          data-wl-id="{{ item.id }}"
          data-tmdb-id="{{ item.tmdbId }}"
          data-type="{{ item.type }}"

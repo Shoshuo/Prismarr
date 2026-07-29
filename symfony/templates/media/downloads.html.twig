@@ -89,7 +89,13 @@
 
 {# ── Grille ── #}
 {% if torrents is empty and not error %}
-  <div class="card"><div class="card-body text-center text-muted py-4">{{ 'media.downloads.empty'|trans }}</div></div>
+  {% import '_icons.html.twig' as ico %}
+  <div class="card">
+    <div class="empty py-4">
+      <div class="empty-icon">{{ ico.icon('download', '', 32) }}</div>
+      <p class="empty-title mb-0">{{ 'media.downloads.empty'|trans }}</p>
+    </div>
+  </div>
 {% else %}
   <div class="torrent-grid" id="torrent-grid">
     {% for t in torrents %}
