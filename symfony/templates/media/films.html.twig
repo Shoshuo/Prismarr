@@ -285,14 +285,14 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 <div id="queue-card" class="card mb-3" style="{{ queue is empty ? 'display:none' : '' }}">
   <div class="card-header" style="cursor:pointer;" id="queue-toggle">
     <h3 class="card-title d-flex align-items-center gap-2">
-      <svg id="queue-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .2s; transform: rotate(90deg);"><path d="m9 18 6-6-6-6"/></svg>
+      <svg id="queue-chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .2s;"><path d="m9 18 6-6-6-6"/></svg>
       {{ ico.icon('download', '', 18) }} {{ 'media.films.queue.title'|trans }} <span class="badge bg-primary text-white ms-1" id="queue-count">{{ queue|length }}</span>
     </h3>
     <div class="card-actions">
       <span class="text-muted small" id="queue-refresh-label"></span>
     </div>
   </div>
-  <div id="queue-body"></div>
+  <div id="queue-body" style="display:none;"></div>
 </div>
 
 {# ── Filters (issue #19 — server-side pagination + filters) ──
