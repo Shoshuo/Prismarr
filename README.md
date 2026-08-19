@@ -419,7 +419,7 @@ enough to keep me going. This release is for you.
 
 ## Star history
 
-[![Star history](https://api.star-history.com/svg?repos=Shoshuo/Prismarr&type=Date)](https://star-history.com/#Shoshuo/Prismarr&Date)
+[![Star history](https://star-history.dera.page/svg?repos=Shoshuo/Prismarr&type=Date)](https://star-history.dera.page/#Shoshuo/Prismarr&Date)
 
 ---
 
