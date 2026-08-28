@@ -54,6 +54,16 @@ class ServiceInstance
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $apiKey = null;
 
+    /**
+     * Preferred quality profile id for this instance's quick-add / suggested-add
+     * flows (issue #5). Null = fall back to the previous behaviour (the first
+     * profile the service returns), so existing installs are unaffected. The id
+     * is only meaningful within THIS instance's Radarr/Sonarr — profiles are not
+     * shared across instances, which is why the default lives per-instance.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?int $defaultQualityProfileId = null;
+
     #[ORM\Column]
     private bool $isDefault = false;
 
@@ -96,6 +106,9 @@ class ServiceInstance
 
     public function getApiKey(): ?string { return $this->apiKey; }
     public function setApiKey(?string $apiKey): static { $this->apiKey = $apiKey; return $this->touch(); }
+
+    public function getDefaultQualityProfileId(): ?int { return $this->defaultQualityProfileId; }
+    public function setDefaultQualityProfileId(?int $id): static { $this->defaultQualityProfileId = $id; return $this->touch(); }
 
     public function isDefault(): bool { return $this->isDefault; }
     public function setIsDefault(bool $isDefault): static { $this->isDefault = $isDefault; return $this->touch(); }

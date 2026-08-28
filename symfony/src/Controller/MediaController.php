@@ -479,11 +479,18 @@ class MediaController extends AbstractController
     public function filmAdd(Request $request): JsonResponse
     {
         $data  = $request->toArray();
+        // Issue #5 — when the client doesn't specify a profile, fall back to
+        // this instance's configured default (id 0 = "unset", Radarr ids start
+        // at 1) before the legacy 0, so programmatic/degraded adds honor it too.
+        $qualityProfileId = (int) ($data['qualityProfileId'] ?? 0);
+        if ($qualityProfileId === 0) {
+            $qualityProfileId = $this->radarr->getInstance()?->getDefaultQualityProfileId() ?? 0;
+        }
         $payload = [
             'tmdbId'              => (int) ($data['tmdbId'] ?? 0),
             'title'               => $data['title'] ?? '',
             'year'                => (int) ($data['year'] ?? 0),
-            'qualityProfileId'    => (int) ($data['qualityProfileId'] ?? 0),
+            'qualityProfileId'    => $qualityProfileId,
             'monitored'           => (bool) ($data['monitored'] ?? true),
             'minimumAvailability' => $data['minimumAvailability'] ?? 'released',
             'addOptions'          => ['searchForMovie' => (bool) ($data['searchForMovie'] ?? true)],
@@ -920,8 +927,14 @@ class MediaController extends AbstractController
         if (empty($lookupRaw)) return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.series_data_missing')]);
         $raw = $lookupRaw[0];
 
-        // Apply options
-        $raw['qualityProfileId'] = (int) ($data['qualityProfileId'] ?? $raw['qualityProfileId'] ?? 1);
+        // Apply options — issue #5: client choice wins, else this instance's
+        // configured default, else the lookup's own value, else 1 (legacy).
+        $raw['qualityProfileId'] = (int) (
+            $data['qualityProfileId']
+            ?? $this->sonarr->getInstance()?->getDefaultQualityProfileId()
+            ?? $raw['qualityProfileId']
+            ?? 1
+        );
         $raw['rootFolderPath'] = $data['rootFolderPath'] ?? '/jellyfin/Series';
         $raw['monitored'] = (bool) ($data['monitored'] ?? true);
         $raw['seasonFolder'] = (bool) ($data['seasonFolder'] ?? true);
@@ -1399,6 +1412,9 @@ class MediaController extends AbstractController
             'qualityProfiles' => $this->radarr->getQualityProfiles(),
             'rootFolders'     => $this->radarr->getRootFolders(),
             'tags'            => $this->radarr->getTags(),
+            // Issue #5 — lets the library Add modal preselect this instance's
+            // preferred profile; null keeps the legacy first-profile default.
+            'defaultQualityProfileId' => $this->radarr->getInstance()?->getDefaultQualityProfileId(),
         ]);
     }
 

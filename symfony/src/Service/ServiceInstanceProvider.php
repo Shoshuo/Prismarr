@@ -219,6 +219,7 @@ class ServiceInstanceProvider implements ResetInterface
         ?string $slug = null,
         bool $enabled = true,
         ?int $position = null,
+        ?int $defaultQualityProfileId = null,
     ): ServiceInstance {
         $name = trim($name);
         $url  = trim($url);
@@ -268,6 +269,7 @@ class ServiceInstanceProvider implements ResetInterface
         $instance->setEnabled($enabled);
         $instance->setIsDefault($isFirst); // first instance is automatically default
         $instance->setPosition($finalPosition);
+        $instance->setDefaultQualityProfileId($defaultQualityProfileId);
         $this->repository->save($instance);
         $this->invalidate();
         return $instance;
@@ -288,6 +290,7 @@ class ServiceInstanceProvider implements ResetInterface
         ?string $slug = null,
         ?bool $enabled = null,
         ?int $position = null,
+        int|false|null $defaultQualityProfileId = false,
     ): ServiceInstance {
         $name = trim($name);
         $url  = trim($url);
@@ -332,6 +335,12 @@ class ServiceInstanceProvider implements ResetInterface
 
         if ($position !== null) {
             $instance->setPosition($position);
+        }
+
+        // `false` = field absent, leave unchanged; null = explicit "None"
+        // (fall back to the first profile); int = the chosen default profile.
+        if ($defaultQualityProfileId !== false) {
+            $instance->setDefaultQualityProfileId($defaultQualityProfileId);
         }
 
         $this->repository->save($instance);

@@ -323,6 +323,54 @@ class ServiceInstanceProviderTest extends TestCase
         $this->assertSame('New name', $instance->getName());
     }
 
+    public function testUpdateSetsDefaultQualityProfileId(): void
+    {
+        // Issue #5 — an explicit int selects that profile as the instance default.
+        $instance = $this->makeInstance('radarr', 'main');
+        $repo = $this->createMock(ServiceInstanceRepository::class);
+
+        $this->provider($repo)->update($instance, 'Radarr', 'http://r:7878', null, defaultQualityProfileId: 7);
+
+        $this->assertSame(7, $instance->getDefaultQualityProfileId());
+    }
+
+    public function testUpdateClearsDefaultQualityProfileIdWithNull(): void
+    {
+        // Explicit "None" resets to the first-profile fallback.
+        $instance = $this->makeInstance('radarr', 'main');
+        $instance->setDefaultQualityProfileId(7);
+        $repo = $this->createMock(ServiceInstanceRepository::class);
+
+        $this->provider($repo)->update($instance, 'Radarr', 'http://r:7878', null, defaultQualityProfileId: null);
+
+        $this->assertNull($instance->getDefaultQualityProfileId());
+    }
+
+    public function testUpdateLeavesDefaultQualityProfileIdUnchangedWhenAbsent(): void
+    {
+        // The `false` sentinel (field not submitted) must not wipe an existing
+        // default — same "absent means unchanged" contract as the api key.
+        $instance = $this->makeInstance('radarr', 'main');
+        $instance->setDefaultQualityProfileId(7);
+        $repo = $this->createMock(ServiceInstanceRepository::class);
+
+        $this->provider($repo)->update($instance, 'Radarr', 'http://r:7878', null);
+
+        $this->assertSame(7, $instance->getDefaultQualityProfileId());
+    }
+
+    public function testCreateStoresDefaultQualityProfileId(): void
+    {
+        // Preserved across the v2 backup/restore path, which re-creates instances.
+        $repo = $this->createMock(ServiceInstanceRepository::class);
+        $repo->method('findOneBySlug')->willReturn(null);
+        $repo->method('findByType')->willReturn([]);
+
+        $instance = $this->provider($repo)->create('radarr', 'Radarr 4K', 'http://r:7878', 'key', defaultQualityProfileId: 4);
+
+        $this->assertSame(4, $instance->getDefaultQualityProfileId());
+    }
+
     public function testUpdateRejectsSlugClashOnAnotherInstance(): void
     {
         // The instance under edit has id=1 and slug=main; another instance

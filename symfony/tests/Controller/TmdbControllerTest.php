@@ -133,6 +133,7 @@ class TmdbControllerTest extends TestCase
         $sonarrAutowired = $this->createMock(SonarrClient::class);
 
         $instA = $this->radarrInstance('radarr-a', 'Radarr A', isDefault: true);
+        $instA->setDefaultQualityProfileId(7); // issue #5 — must surface in candidates
         $instB = $this->radarrInstance('radarr-b', 'Radarr B');
         $instances = $this->createMock(ServiceInstanceProvider::class);
         $instances->method('getEnabled')->willReturnCallback(
@@ -169,6 +170,10 @@ class TmdbControllerTest extends TestCase
         $cBySlug = array_column($payload['candidates'], null, 'slug');
         $this->assertTrue($cBySlug['radarr-a']['is_default']);
         $this->assertFalse($cBySlug['radarr-b']['is_default']);
+        // Issue #5 — each candidate carries its instance's default quality profile
+        // so the quick-add modal can preselect it (null when unset).
+        $this->assertSame(7, $cBySlug['radarr-a']['defaultQualityProfileId']);
+        $this->assertNull($cBySlug['radarr-b']['defaultQualityProfileId']);
     }
 
     public function testResolveMovieEmptyInstancesWhenNoOwnerFound(): void

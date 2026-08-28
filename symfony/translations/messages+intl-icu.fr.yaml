@@ -735,6 +735,9 @@ admin:
       slug_auto: Généré automatiquement à partir du nom
       slug_hint: 'Utilisé dans les URLs (ex. /radarr/{slug}/films). Lettres minuscules, chiffres et tirets uniquement.'
       slug_warning: 'Modifier l''identifiant cassera tous les signets et liens externes pointant vers l''ancienne URL.'
+      default_quality_profile: Profil de qualité par défaut
+      default_quality_profile_none: 'Aucun (utiliser le premier disponible)'
+      default_quality_profile_hint: 'Présélectionné dans les formulaires d''ajout rapide et de bibliothèque pour cette instance. Laisser sur Aucun conserve le comportement précédent.'
     flash:
       created: Instance créée.
       updated: Instance mise à jour.

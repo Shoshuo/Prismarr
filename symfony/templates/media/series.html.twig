@@ -4714,6 +4714,12 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         profiles.forEach(function(p) {
           var o = document.createElement('option'); o.value = p.id; o.textContent = p.name; qSel.appendChild(o);
         });
+        {% if current_instance.defaultQualityProfileId is not null %}
+        // Issue #5 — preselect this instance's default profile when it still exists.
+        if (qSel.querySelector('option[value="{{ current_instance.defaultQualityProfileId }}"]')) {
+          qSel.value = '{{ current_instance.defaultQualityProfileId }}';
+        }
+        {% endif %}
         var rSel = document.getElementById('add-serie-root');
         rSel.innerHTML = '';
         roots.forEach(function(r) {

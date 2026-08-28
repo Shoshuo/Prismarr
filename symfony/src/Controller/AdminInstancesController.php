@@ -90,6 +90,7 @@ class AdminInstancesController extends AbstractController
                 apiKey:   (string) $request->request->get('api_key', ''),
                 slug:     $this->trimToNull($request->request->get('slug')),
                 enabled:  $request->request->get('enabled', '1') === '1',
+                defaultQualityProfileId: $this->parseQualityProfileId($request),
             );
             $this->afterMutation();
             $this->addFlash('success', $this->translator->trans('admin.instances.flash.updated'));
@@ -226,5 +227,19 @@ class AdminInstancesController extends AbstractController
     {
         $s = trim((string) ($raw ?? ''));
         return $s === '' ? null : $s;
+    }
+
+    /**
+     * Map the edit form's quality-profile select to the provider's tri-state:
+     * field absent → false (leave unchanged); empty "None" → null (fall back to
+     * the first profile); a numeric id → that profile.
+     */
+    private function parseQualityProfileId(Request $request): int|false|null
+    {
+        if (!$request->request->has('default_quality_profile_id')) {
+            return false;
+        }
+        $raw = trim((string) $request->request->get('default_quality_profile_id', ''));
+        return $raw === '' ? null : (int) $raw;
     }
 }

@@ -1905,6 +1905,10 @@
       // qaSelectedSlug tracks the slug currently chosen in #qa-instance —
       // doAdd() reads it instead of the legacy DEFAULT_*_SLUG.
       var qaSelectedSlug = null;
+      // Issue #5 — slug → preferred quality profile id, from the resolve
+      // candidates. fillSelects() preselects the matching option so quick-add
+      // honors each instance's default instead of the first profile returned.
+      var qaProfileDefaults = {};
 
       function loadProfilesFolders(isFilm, slug) {
         var cacheKey = (isFilm ? 'film:' : 'serie:') + slug;
@@ -2019,6 +2023,7 @@
             var defaultSlug = isFilm ? DEFAULT_RADARR_SLUG : DEFAULT_SONARR_SLUG;
             var owners      = resolved.instances || [];
             var candidates  = resolved.candidates || [];
+            candidates.forEach(function (c) { qaProfileDefaults[c.slug] = c.defaultQualityProfileId; });
 
             // 1. Always surface the existing owners (if any) so the user can
             //    jump to them via "Voir".
@@ -2078,6 +2083,12 @@
         qSel.innerHTML = (data.profiles || []).map(function (p) {
           return '<option value="' + window.escHtml(p.id) + '">' + window.escHtml(p.name || p.id) + '</option>';
         }).join('');
+        // Issue #5 — preselect the instance's default profile when set and the
+        // option still exists; otherwise the browser keeps the first (legacy).
+        var def = qaProfileDefaults[qaSelectedSlug];
+        if (def !== undefined && def !== null && qSel.querySelector('option[value="' + def + '"]')) {
+          qSel.value = String(def);
+        }
         fSel.innerHTML = (data.folders || []).map(function (f) {
           var path = f.path || f;
           return '<option value="' + window.escHtml(path) + '">' + window.escHtml(path) + '</option>';

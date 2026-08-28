@@ -736,6 +736,9 @@ admin:
       slug_auto: Auto-generated from the name
       slug_hint: 'Used in URLs (e.g. /radarr/{slug}/films). Lowercase letters, digits and dashes only.'
       slug_warning: 'Editing the slug will break any external bookmark or link pointing to the old URL.'
+      default_quality_profile: Default quality profile
+      default_quality_profile_none: 'None (use the first available)'
+      default_quality_profile_hint: 'Preselected in the quick-add and library add forms for this instance. Leave on None to keep the previous behaviour.'
     flash:
       created: Instance created.
       updated: Instance updated.

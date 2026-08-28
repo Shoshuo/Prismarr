@@ -3896,6 +3896,9 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
           var opt = document.createElement('option'); opt.value = rf.path; opt.textContent = rf.path;
           folderSel.appendChild(opt);
         });
+        if (cfg.defaultQualityProfileId != null && qualSel.querySelector('option[value="' + cfg.defaultQualityProfileId + '"]')) {
+          qualSel.value = String(cfg.defaultQualityProfileId);
+        }
       });
     } else if (configData) {
       var qualSel   = document.getElementById('add-quality-select');
@@ -3910,6 +3913,9 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
           var opt = document.createElement('option'); opt.value = rf.path; opt.textContent = rf.path;
           folderSel.appendChild(opt);
         });
+        if (configData.defaultQualityProfileId != null && qualSel.querySelector('option[value="' + configData.defaultQualityProfileId + '"]')) {
+          qualSel.value = String(configData.defaultQualityProfileId);
+        }
       }
     }
   });
