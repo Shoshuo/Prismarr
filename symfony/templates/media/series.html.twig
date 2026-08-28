@@ -1116,6 +1116,8 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     d_col_action: {{ 'media.series.detail.col_action'|trans|json_encode|raw }},
     d_col_source: {{ 'media.series.detail.col_source'|trans|json_encode|raw }},
     d_col_quality: {{ 'media.series.detail.col_quality'|trans|json_encode|raw }},
+    ep_quality_label: {{ 'media.series.detail.ep_quality_label'|trans|json_encode|raw }},
+    ep_cf_score_label: {{ 'media.series.detail.ep_cf_score_label'|trans|json_encode|raw }},
     d_col_date: {{ 'media.series.detail.col_date'|trans|json_encode|raw }},
     d_col_current_name: {{ 'media.series.detail.col_current_name'|trans|json_encode|raw }},
     d_col_new_name: {{ 'media.series.detail.col_new_name'|trans|json_encode|raw }},
@@ -2320,6 +2322,21 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               if (emi.subtitles) miLines.push(SERIES_I18N.d_ei_subs + emi.subtitles);
               if (epFile.size) miLines.push(SERIES_I18N.d_ei_size + fmtSizeEp(epFile.size));
               if (epFile.releaseGroup) miLines.push(SERIES_I18N.d_ei_group + epFile.releaseGroup);
+            }
+            // Issue #39 — surface quality + custom-format score inline, not only
+            // on the info-hover below. Quality badge whenever a file exists; CF
+            // score only when non-zero (Sonarr returns 0 for most files, and a
+            // wall of "0"s would just add noise). Colours mirror the interactive
+            // search table's score convention.
+            if (epFile) {
+              var eqName = (epFile.quality && epFile.quality.quality) ? epFile.quality.quality.name : '';
+              if (eqName) {
+                html += '<span class="badge bg-blue-lt" style="font-size:.66rem;flex-shrink:0;white-space:nowrap;" title="' + esc(SERIES_I18N.ep_quality_label) + '">' + esc(eqName) + '</span>';
+              }
+              var cfScore = epFile.customFormatScore || 0;
+              if (cfScore) {
+                html += '<span class="' + (cfScore > 0 ? 'text-success' : 'text-danger') + '" style="font-size:.66rem;font-weight:600;flex-shrink:0;white-space:nowrap;cursor:help;" title="' + esc(SERIES_I18N.ep_cf_score_label) + '">' + (cfScore > 0 ? '+' : '') + cfScore + '</span>';
+              }
             }
             var epInfoTip = miLines.length ? miLines.join('\n') : SERIES_I18N.d_ei_none;
             html += '<button class="btn btn-ghost-secondary btn-icon btn-sm" title="' + epInfoTip.replace(/"/g,'&quot;') + '" style="flex-shrink:0;width:20px;height:20px;cursor:help;">' +

@@ -2033,6 +2033,8 @@ media:
       col_age: Âge
       col_episode: Épisode
       col_action: Action
+      ep_quality_label: Qualité téléchargée
+      ep_cf_score_label: Score de format personnalisé
       col_source: Source
       col_date: Date
       age_suffix: 'j'

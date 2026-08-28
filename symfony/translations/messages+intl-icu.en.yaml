@@ -2034,6 +2034,8 @@ media:
       col_age: Age
       col_episode: Episode
       col_action: Action
+      ep_quality_label: Downloaded quality
+      ep_cf_score_label: Custom format score
       col_source: Source
       col_date: Date
       age_suffix: 'd'
