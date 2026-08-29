@@ -1,5 +1,17 @@
 {
-	frankenphp
+	# Worker mode is opt-in and OFF by default. The s6 run script exports
+	# PRISMARR_WORKER_DIRECTIVE=`worker /var/www/html/public/index.php [num]`
+	# only when PRISMARR_WORKER=1; otherwise this placeholder expands to
+	# nothing and the block is empty — i.e. classic single-request mode,
+	# byte-for-byte the old `frankenphp` behaviour. In worker mode the global
+	# `worker` directive keeps the Symfony kernel resident and `php_server`
+	# below automatically routes matching requests through it. Symfony 8's
+	# default runtime (symfony/runtime FrankenPhpWorkerRunner) enters the
+	# worker loop when FrankenPHP sets FRANKENPHP_WORKER, so no APP_RUNTIME or
+	# extra composer package is required.
+	frankenphp {
+		{$PRISMARR_WORKER_DIRECTIVE}
+	}
 	order mercure after encode
 
 	# No HTTPS (local or behind a reverse proxy)
