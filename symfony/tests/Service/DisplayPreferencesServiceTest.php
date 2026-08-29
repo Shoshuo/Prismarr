@@ -185,6 +185,37 @@ class DisplayPreferencesServiceTest extends TestCase
         $this->assertSame('2026-04-21 · 14:30', $prefs->formatDateTime($dt));
     }
 
+    public function testFormatTimeWithSecondsHonorsPreference(): void
+    {
+        // Log / command tables need second precision; the flag is opt-in so
+        // every existing caller keeps its seconds-free output.
+        $dt = new \DateTimeImmutable('2026-04-21 14:30:07', new \DateTimeZone('Europe/Paris'));
+        $paris = ['display_timezone' => 'Europe/Paris'];
+
+        $this->assertSame('14:30:07', $this->serviceWith($paris + ['display_time_format' => '24h'])->formatTime($dt, true));
+        $this->assertSame('2:30:07 PM', $this->serviceWith($paris + ['display_time_format' => '12h'])->formatTime($dt, true));
+
+        // Omitting the flag must be unchanged behaviour.
+        $this->assertSame('14:30', $this->serviceWith($paris + ['display_time_format' => '24h'])->formatTime($dt));
+        $this->assertSame('2:30 PM', $this->serviceWith($paris + ['display_time_format' => '12h'])->formatTime($dt));
+
+        $this->assertNull($this->serviceWith([])->formatTime(null, true));
+    }
+
+    public function testFormatDateTimeWithSecondsForwardsTheFlag(): void
+    {
+        $dt = new \DateTimeImmutable('2026-04-21 14:30:07', new \DateTimeZone('Europe/Paris'));
+        $prefs = $this->serviceWith([
+            'display_date_format' => 'iso',
+            'display_time_format' => '24h',
+            'display_timezone'    => 'Europe/Paris',
+        ]);
+
+        $this->assertSame('2026-04-21 · 14:30:07', $prefs->formatDateTime($dt, true));
+        $this->assertSame('2026-04-21 · 14:30', $prefs->formatDateTime($dt));
+        $this->assertNull($prefs->formatDateTime(null, true));
+    }
+
     public function testInvalidStoredTimezoneFallsBackToRawDatetime(): void
     {
         // An invalid timezone in the DB must not crash the render.

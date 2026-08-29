@@ -2070,7 +2070,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
       items.slice(0, 15).forEach(function (item) {
         var evType  = item.eventType || '';
-        var date    = item.date ? new Date(item.date).toLocaleDateString('fr-FR') + ' ' + new Date(item.date).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) : '—';
+        var date    = item.date ? window._prismarrFmtDateTime(new Date(item.date)) : '—';
         var quality = (item.quality && item.quality.quality) ? item.quality.quality.name : '';
         var source  = (item.data && item.data.releaseTitle) ? item.data.releaseTitle : ((item.data && item.data.importedPath) ? item.data.importedPath : '');
         var lbl     = evLabel[evType] || evType;
@@ -3478,7 +3478,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
           '<div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:' + pct + '%"></div></div>' +
           '<span class="text-muted small">' + pct + '%</span></div>' +
           '<div class="text-muted" style="font-size:.7rem">' + sizeLabel +
-          (q.eta ? FILM_I18N.q_eta_prefix + new Date(q.eta).toLocaleTimeString(document.documentElement.lang || 'fr-FR', {hour:'2-digit',minute:'2-digit'}) : '') + '</div>';
+          (q.eta ? FILM_I18N.q_eta_prefix + window._prismarrFmtTime(new Date(q.eta)) : '') + '</div>';
       }
 
       // Status badge — import state takes priority over DL status

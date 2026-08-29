@@ -53,7 +53,7 @@
                     {% for r in records %}
                     {% set data = r.data ?? {} %}
                     <tr>
-                        <td class="text-secondary small text-nowrap">{{ r.date is defined and r.date ? r.date|date('d/m H:i') : '—' }}</td>
+                        <td class="text-secondary small text-nowrap">{{ r.date is defined and r.date ? r.date|prismarr_datetime : '—' }}</td>
                         <td>
                             {% if r.eventType is defined %}
                                 {% if r.eventType == 'indexerRss' %}

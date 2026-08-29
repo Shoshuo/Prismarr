@@ -312,7 +312,11 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               S{{ '%02d'|format(ep.season) }}E{{ '%02d'|format(ep.episode) }} — {{ ep.title }}
             </td>
             <td class="text-muted" style="font-size:.78rem;">
-              {% if ep.airDate %}{{ ep.airDate|date('D d/m H:i', 'Europe/Paris') }}{% else %}—{% endif %}
+              {# The weekday is the useful part of an air date, so it survives the
+                 preference sweep (#54) as a separate |date('D') — the date and time
+                 halves go through |prismarr_datetime, which applies the user's
+                 timezone itself, so the hardcoded zone is gone. #}
+              {% if ep.airDate %}{{ ep.airDate|date('D', display_pref('timezone')) }} {{ ep.airDate|prismarr_datetime }}{% else %}—{% endif %}
             </td>
             <td>
               {% if ep.hasFile %}

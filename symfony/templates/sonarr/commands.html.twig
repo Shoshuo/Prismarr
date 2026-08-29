@@ -71,10 +71,10 @@
               {% endif %}
             </td>
             <td class="text-muted small">
-              {{ cmd.started is defined ? cmd.started|date('H:i:ss') : '—' }}
+              {{ cmd.started is defined ? cmd.started|prismarr_time(true) : '—' }}
             </td>
             <td class="text-muted small">
-              {{ cmd.ended is defined ? cmd.ended|date('H:i:ss') : '—' }}
+              {{ cmd.ended is defined ? cmd.ended|prismarr_time(true) : '—' }}
             </td>
             <td class="text-muted small">
               {% if cmd.duration is defined %}

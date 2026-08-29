@@ -50,7 +50,7 @@
               <span class="badge bg-blue-lt">{{ b.quality.quality.name }}</span>
             {% else %}—{% endif %}
           </td>
-          <td class="text-muted">{{ b.date ? b.date|date('d/m/Y H:i', 'Europe/Paris') : '—' }}</td>
+          <td class="text-muted">{{ b.date ? b.date|prismarr_datetime : '—' }}</td>
           <td class="text-end">
             <button class="btn btn-ghost-danger btn-icon btn-sm btn-blocklist-del" data-id="{{ b.id }}" title="{{ 'media.series_blocklist.delete'|trans }}">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>

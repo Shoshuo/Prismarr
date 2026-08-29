@@ -75,7 +75,7 @@
                 {{ backup.size is defined ? backup.size|prismarr_bytes : '—' }}
               </td>
               <td class="text-muted small">
-                {{ backup.time is defined ? backup.time|date('d/m/Y H:i') : '—' }}
+                {{ backup.time is defined ? backup.time|prismarr_datetime : '—' }}
               </td>
               <td class="text-end">
                 <button class="btn btn-ghost-primary btn-sm btn-restore"

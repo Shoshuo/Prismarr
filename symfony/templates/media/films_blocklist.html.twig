@@ -56,7 +56,7 @@
           </td>
           <td class="text-muted small text-nowrap">
             {% if item.date is defined %}
-              {{ item.date|date('d/m/Y H:i') }}
+              {{ item.date|prismarr_datetime }}
             {% else %}
               —
             {% endif %}

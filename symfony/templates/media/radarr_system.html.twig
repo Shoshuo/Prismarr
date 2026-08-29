@@ -47,7 +47,7 @@
 
           {% if status.startTime is defined %}
           <dt class="col-5 text-muted small">{{ 'media.arr_system.status.started'|trans }}</dt>
-          <dd class="col-7 small mb-0">{{ status.startTime|date('d/m/Y H:i') }}</dd>
+          <dd class="col-7 small mb-0">{{ status.startTime|prismarr_datetime }}</dd>
           {% endif %}
 
           <dt class="col-5 text-muted small">{{ 'media.arr_system.status.url_base'|trans }}</dt>
@@ -274,7 +274,7 @@
         {% for log in logs %}
           <tr>
             <td class="text-muted small text-nowrap">
-              {% if log.time is defined %}{{ log.time|date('d/m/Y H:i:s') }}{% else %}—{% endif %}
+              {% if log.time is defined %}{{ log.time|prismarr_datetime(true) }}{% else %}—{% endif %}
             </td>
             <td>
               {% set lvl = log.level ?? '' %}

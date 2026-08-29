@@ -55,7 +55,7 @@
                         </button>
                     </td>
                     <td class="text-muted small" id="next-{{ job.id }}">
-                        {% if job.nextExecutionTime %}{{ job.nextExecutionTime|date('d/m/Y H:i') }}{% else %}—{% endif %}
+                        {% if job.nextExecutionTime %}{{ job.nextExecutionTime|prismarr_datetime }}{% else %}—{% endif %}
                     </td>
                     <td>
                         <span id="status-{{ job.id }}" class="badge {{ job.running ?? false ? 'bg-purple-lt text-purple js-running' : 'bg-green-lt text-green' }}">
@@ -302,7 +302,7 @@
                 if (d.ok && d.job && d.job.nextExecutionTime) {
                     var dt = new Date(d.job.nextExecutionTime);
                     var nextEl = document.getElementById('next-' + jobId);
-                    if (nextEl) nextEl.textContent = dt.toLocaleDateString('fr-FR') + ' ' + dt.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+                    if (nextEl) nextEl.textContent = window._prismarrFmtDateTime(dt);
                 }
                 setTimeout(function(){ location.reload(); }, 3000);
             })
@@ -536,7 +536,7 @@
                 if (d.job && d.job.nextExecutionTime) {
                     var dt = new Date(d.job.nextExecutionTime);
                     var nextEl = document.getElementById('next-' + jobId);
-                    if (nextEl) nextEl.textContent = dt.toLocaleDateString('fr-FR') + ' ' + dt.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+                    if (nextEl) nextEl.textContent = window._prismarrFmtDateTime(dt);
                 }
             }
             cronSave.disabled = false;

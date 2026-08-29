@@ -79,7 +79,7 @@
                             </td>
                             <td class="text-muted small">
                                 {% if task.lastExecution is defined %}
-                                    {{ task.lastExecution|date('d/m/Y H:i') }}
+                                    {{ task.lastExecution|prismarr_datetime }}
                                 {% else %}
                                     <span class="text-secondary">{{ 'prowlarr.tasks.last_never'|trans }}</span>
                                 {% endif %}
@@ -93,7 +93,7 @@
                             </td>
                             <td class="text-muted small">
                                 {% if task.nextExecution is defined %}
-                                    {{ task.nextExecution|date('d/m/Y H:i') }}
+                                    {{ task.nextExecution|prismarr_datetime }}
                                 {% else %}
                                     —
                                 {% endif %}

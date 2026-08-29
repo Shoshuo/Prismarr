@@ -63,6 +63,68 @@
       };
     }
 
+    // Global preference-aware date/time formatters (#54) — the JS mirror of the
+    // |prismarr_date / |prismarr_time / |prismarr_datetime Twig filters, so rows
+    // rebuilt by a poller read the same as the server-rendered ones instead of
+    // falling back to the UI locale (or a hardcoded fr-FR).
+    //
+    // Defined here in <head> for exactly the reason prismarrBytes is above: the
+    // child templates' "javascripts" block renders far higher up the body than
+    // the page-lifecycle script near the end of this template, and callers such
+    // as films.html.twig's renderQueue() run during the initial parse — a later
+    // definition would race with the first call.
+    //
+    // These take a JS Date, so the zone is the browser's. That matches the
+    // pre-existing client-side behaviour; only the *format* becomes a
+    // preference. The server-side filters remain the timezone-aware path.
+
+    // The prefs payload is re-stamped on EVERY document, outside the guard below:
+    // after an admin changes the Display preference, a Turbo-navigated page must
+    // not keep serving the old format from a stale global while the
+    // server-rendered dates around it have already updated. The function bodies
+    // are pure, so those stay guarded and are defined once.
+    window._prismarrDatePrefs = {
+      date: {{ display_pref('date_format')|json_encode|raw }},
+      time: {{ display_pref('time_format')|json_encode|raw }}
+    };
+    if (!window._prismarrFmtDate) {
+      // An unparseable payload yields an Invalid Date; callers only guard
+      // truthiness, so return the pages' em-dash placeholder rather than
+      // "NaN-NaN-NaN" / "Invalid Date".
+      window._prismarrFmtDate = function (d) {
+        if (isNaN(d.getTime())) return '—';
+        var p = window._prismarrDatePrefs || {};
+        if (p.date === 'iso') {
+          var m = ('0' + (d.getMonth() + 1)).slice(-2), day = ('0' + d.getDate()).slice(-2);
+          return d.getFullYear() + '-' + m + '-' + day;
+        }
+        // 'us' mirrors formatDate()'s 'M j, Y' → "Apr 21, 2026", not en-US's
+        // default numeric 4/21/2026.
+        if (p.date === 'us') {
+          return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        return d.toLocaleDateString('fr-FR');
+      };
+      window._prismarrFmtTime = function (d, withSeconds) {
+        if (isNaN(d.getTime())) return '—';
+        var p = window._prismarrDatePrefs || {};
+        // 12h uses a bare hour to match PHP 'g' ("2:30 PM"); 24h pads to match 'H'.
+        var opts = {
+          hour: p.time === '12h' ? 'numeric' : '2-digit',
+          minute: '2-digit',
+          hour12: p.time === '12h'
+        };
+        if (withSeconds) opts.second = '2-digit';
+        return d.toLocaleTimeString(p.time === '12h' ? 'en-US' : 'fr-FR', opts);
+      };
+      // ' · ' is the separator formatDateTime() uses server-side — the two must
+      // agree, since a poller can rewrite an element Twig already rendered.
+      window._prismarrFmtDateTime = function (d, withSeconds) {
+        if (isNaN(d.getTime())) return '—';
+        return window._prismarrFmtDate(d) + ' · ' + window._prismarrFmtTime(d, withSeconds);
+      };
+    }
+
     // HTML escape helper used wherever JS builds strings via innerHTML with
     // operator-side-controlled values (instance names, search results titles,
     // upstream messages). Self-XSS today (ROLE_ADMIN is the only writer for

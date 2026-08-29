@@ -30,7 +30,7 @@
         {% for d in ql.releaseDates|default([]) %}
           <span class="ql-date{% if d.upcoming %} is-upcoming{% endif %}">
             <span class="ql-date-label">{{ d.label }}</span>
-            <span class="ql-date-val">{{ d.date|date('M j, Y') }}</span>
+            <span class="ql-date-val">{{ d.date|prismarr_date }}</span>
           </span>
         {% endfor %}
       </div>

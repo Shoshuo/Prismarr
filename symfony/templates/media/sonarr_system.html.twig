@@ -39,7 +39,7 @@
           <dd class="col-7 small mb-0">{{ status.databaseVersion ?? '—' }}</dd>
           {% if status.startTime is defined %}
           <dt class="col-5 text-muted small">{{ 'media.arr_system.status.started'|trans }}</dt>
-          <dd class="col-7 small mb-0">{{ status.startTime|date('d/m/Y H:i') }}</dd>
+          <dd class="col-7 small mb-0">{{ status.startTime|prismarr_datetime }}</dd>
           {% endif %}
           <dt class="col-5 text-muted small">{{ 'media.arr_system.status.url_base'|trans }}</dt>
           <dd class="col-7 small mb-0">{{ status.urlBase ?? '/' }}</dd>
@@ -197,7 +197,7 @@
         <tbody>
         {% for log in logs %}
           <tr>
-            <td class="text-muted small text-nowrap">{{ log.time is defined ? log.time|date('d/m/Y H:i:s') : '—' }}</td>
+            <td class="text-muted small text-nowrap">{{ log.time is defined ? log.time|prismarr_datetime(true) : '—' }}</td>
             <td>
               {% if log.level == 'error' or log.level == 'fatal' %}<span class="badge bg-danger-lt">{{ log.level }}</span>
               {% elseif log.level == 'warn' %}<span class="badge bg-warning-lt">{{ log.level }}</span>

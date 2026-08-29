@@ -140,7 +140,7 @@
         {% for s in searches %}
           <tr>
             <td class="text-muted small text-nowrap">
-              {{ s.date ? s.date|date('d/m H:i') : '—' }}
+              {{ s.date ? s.date|prismarr_datetime : '—' }}
             </td>
             <td class="small">{{ s.indexer }}</td>
             <td class="small text-truncate" style="max-width:300px;" title="{{ s.query }}">{{ s.query }}</td>

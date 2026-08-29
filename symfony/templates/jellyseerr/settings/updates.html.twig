@@ -72,7 +72,7 @@
                                 {% endif %}
                             </td>
                             <td class="text-muted small">
-                                {% if rel.date %}{{ rel.date|date('d/m/Y') }}{% else %}—{% endif %}
+                                {% if rel.date %}{{ rel.date|prismarr_date }}{% else %}—{% endif %}
                             </td>
                             <td>
                                 {% if rel.current %}

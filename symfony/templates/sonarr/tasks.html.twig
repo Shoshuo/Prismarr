@@ -26,8 +26,8 @@
             <tr>
               <td class="fw-medium">{{ task.name ?? task.taskName ?? '—' }}</td>
               <td class="text-muted">{{ task.interval is defined ? task.interval ~ ' min' : '—' }}</td>
-              <td class="text-muted small">{{ task.lastExecution is defined ? task.lastExecution|date('d/m/Y H:i') : '—' }}</td>
-              <td class="text-muted small">{{ task.nextExecution is defined ? task.nextExecution|date('d/m/Y H:i') : '—' }}</td>
+              <td class="text-muted small">{{ task.lastExecution is defined ? task.lastExecution|prismarr_datetime : '—' }}</td>
+              <td class="text-muted small">{{ task.nextExecution is defined ? task.nextExecution|prismarr_datetime : '—' }}</td>
               <td>
                 <button class="btn btn-ghost-primary btn-icon btn-sm btn-task-run"
                         data-command="{{ task.taskName ?? task.name ?? '' }}"
