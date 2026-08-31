@@ -112,6 +112,7 @@
 {% block javascripts %}
 <script>
 (function(){
+var BASE = window.BASE_PATH;
 var I18N = {
   confirmCancelTpl: {{ 'media.arr_admin.commands.confirm_cancel_tpl'|trans({id: '__ID__'})|json_encode|raw }},
   cancelledTpl: {{ 'media.arr_admin.commands.cancelled_tpl'|trans({id: '__ID__'})|json_encode|raw }},
@@ -132,7 +133,7 @@ function bindCancelButtons() {
       var cmdId = btn.dataset.id;
       if (!confirm(I18N.confirmCancelTpl.replace('__ID__', cmdId))) return;
       btn.disabled = true;
-      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/command/' + cmdId + '/annuler', {
+      fetch(BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/command/' + cmdId + '/annuler', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}'

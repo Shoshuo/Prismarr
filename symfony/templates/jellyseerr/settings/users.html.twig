@@ -150,6 +150,7 @@
 {% block javascripts %}
 <script>
 (function(){
+    var BASE = window.BASE_PATH;
     var SU_I18N = {
         saved: {{ 'jellyseerr.settings.settings_users.saved'|trans|json_encode|raw }},
         error: {{ 'jellyseerr.settings.settings_users.error'|trans|json_encode|raw }}
@@ -207,7 +208,7 @@
 
         saveBtn.disabled = true; var orig = saveBtn.innerHTML;
         saveBtn.innerHTML = '<div class="spinner-border spinner-border-sm" style="width:16px;height:16px;"></div>';
-        fetch('/jellyseerr/parametres/save', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'}, body:JSON.stringify(payload) })
+        fetch(BASE + '/jellyseerr/parametres/save', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'}, body:JSON.stringify(payload) })
         .then(function(r){ return r.json(); })
         .then(function(d){ saveBtn.disabled=false; saveBtn.innerHTML=orig; statusEl.innerHTML=d.ok?'<span class="text-success">'+SU_I18N.saved+'</span>':'<span class="text-danger">'+SU_I18N.error+'</span>'; setTimeout(function(){statusEl.innerHTML='';},3000); })
         .catch(function(){ saveBtn.disabled=false; saveBtn.innerHTML=orig; statusEl.innerHTML='<span class="text-danger">'+SU_I18N.error+'</span>'; });

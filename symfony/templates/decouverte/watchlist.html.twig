@@ -232,6 +232,7 @@
 
 <script>
 (function() {
+  var BASE = window.BASE_PATH;
   var grid = document.getElementById('wl-grid');
   var cards = grid ? Array.from(grid.querySelectorAll('.wl-card')) : [];
   var currentFilter = 'all';
@@ -304,7 +305,7 @@
     var wlId = rmBtn.dataset.wlId;
     if (!confirm({{ 'decouverte.watchlist.remove_confirm'|trans({title: '__TITLE__'})|json_encode|raw }}.replace('__TITLE__', card.dataset.title))) return;
 
-    fetch('/decouverte/watchlist/remove/' + wlId, { method: 'POST', credentials: 'same-origin' })
+    fetch(BASE + '/decouverte/watchlist/remove/' + wlId, { method: 'POST', credentials: 'same-origin' })
       .then(function(r) { return r.json(); })
       .then(function(d) {
         if (d.ok) {
@@ -364,7 +365,7 @@
   notesSave.addEventListener('click', function() {
     if (!currentNotesId) return;
     var notes = notesText.value.trim();
-    fetch('/decouverte/watchlist/notes/' + currentNotesId, {
+    fetch(BASE + '/decouverte/watchlist/notes/' + currentNotesId, {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
@@ -396,7 +397,7 @@
     if (e.target.closest('.wl-remove') || e.target.closest('.wl-notes-ico')) return;
     var card = e.target.closest('.wl-card');
     if (!card) return;
-    window.location.href = '/decouverte?detail=' + card.dataset.type + '/' + card.dataset.tmdbId;
+    window.location.href = BASE + '/decouverte?detail=' + card.dataset.type + '/' + card.dataset.tmdbId;
   });
 
   function updateStats() {

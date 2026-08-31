@@ -147,6 +147,7 @@
 {% block javascripts %}
 <script>
 (function () {
+  var BASE = window.BASE_PATH;
   var FM_I18N = {
     searching: {{ 'media.films_missing.searching'|trans|json_encode|raw }},
     download_started: {{ 'media.films_missing.download_started'|trans|json_encode|raw }},
@@ -205,7 +206,7 @@
       statusEl.classList.remove('d-none');
       statusEl.innerHTML = '<span class="text-muted">' + FM_I18N.searching + '</span>';
 
-      postJson('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + id + '/search')
+      postJson(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + id + '/search')
       .then(function (data) {
         if (!data.ok || !data.cmdId) {
           btn.innerHTML = SVG_FAIL;
@@ -215,7 +216,7 @@
           return;
         }
         var pollTimer = setInterval(function() {
-          getJson('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId).then(function(cmd) {
+          getJson(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId).then(function(cmd) {
             var st = (cmd.status || '').toLowerCase();
             var msg = cmd.message || '';
             if (st === 'completed') {
@@ -267,7 +268,7 @@
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + ids.length + '...';
     showBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + FM_I18N.searching_for_tpl.replace('__COUNT__', ids.length), 'info');
 
-    postJson('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/recherche-manquants')
+    postJson(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/recherche-manquants')
     .then(function (data) {
       if (!data.ok || !data.cmdId) {
         showBanner(FM_I18N.launch_error, 'danger');
@@ -282,7 +283,7 @@
       var pollTimer = setInterval(function() {
         pollCount++;
         var elapsed = Math.round(pollCount * 1.5);
-        getJson('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId).then(function(cmd) {
+        getJson(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId).then(function(cmd) {
           var st = (cmd.status || '').toLowerCase();
           var msg = cmd.message || '';
 
@@ -342,7 +343,7 @@
       var row = btn.closest('tr');
       if (!confirm(FM_I18N.confirm_unmonitor)) return;
       btn.disabled = true;
-      postJson('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + id + '/monitor', { monitored: false })
+      postJson(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + id + '/monitor', { monitored: false })
       .then(function (data) {
         if (data.ok) {
           row.style.opacity = '0.3';

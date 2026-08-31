@@ -178,6 +178,7 @@
 {% block javascripts %}
 <script>
 (function () {
+    var BASE = window.BASE_PATH;
     var _I18N = {
         saveBtn: {{ 'prowlarr.general.save_btn'|trans|json_encode|raw }},
         saving: {{ 'prowlarr.common.saving'|trans|json_encode|raw }},
@@ -227,7 +228,7 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + _I18N.saving;
 
-        fetch('/prowlarr/general/save', {
+        fetch(BASE + '/prowlarr/general/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

@@ -171,6 +171,7 @@
 {% block javascripts %}
 <script>
 (function(){
+    var BASE = window.BASE_PATH;
     var _I18N = {
         addTitleTpl: {{ 'jellyseerr.settings.services.modal_add_title_tpl'|trans|json_encode|raw }},
         editTitleTpl: {{ 'jellyseerr.settings.services.modal_edit_title_tpl'|trans|json_encode|raw }},
@@ -391,8 +392,8 @@
 
         btn.disabled = true; btn.innerHTML = '<div class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></div>';
         var saveUrl = currentId === -1
-            ? '/jellyseerr/parametres/services/' + currentType + '/create'
-            : '/jellyseerr/parametres/services/' + currentType + '/' + currentId + '/save';
+            ? BASE + '/jellyseerr/parametres/services/' + currentType + '/create'
+            : BASE + '/jellyseerr/parametres/services/' + currentType + '/' + currentId + '/save';
         fetch(saveUrl, {
             method:'POST', credentials:'same-origin',
             headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
@@ -407,7 +408,7 @@
     document.getElementById('js-modal-test').addEventListener('click', function(){
         var statusEl = document.getElementById('js-modal-status');
         statusEl.innerHTML = '<div class="spinner-border spinner-border-sm text-success" style="width:14px;height:14px;"></div> ' + _I18N.testingLabel;
-        fetch('/jellyseerr/parametres/services/test', {
+        fetch(BASE + '/jellyseerr/parametres/services/test', {
             method:'POST', credentials:'same-origin',
             headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
             body: JSON.stringify({ type:currentType, hostname:document.getElementById('js-srv-host').value, port:parseInt(document.getElementById('js-srv-port').value)||0, apiKey:document.getElementById('js-srv-apikey').value, useSsl:document.getElementById('js-srv-ssl').checked, baseUrl:document.getElementById('js-srv-base').value })
@@ -460,7 +461,7 @@
         var typeLabel = currentType === 'radarr' ? _I18N.radarrLabel : _I18N.sonarrLabel;
         if (!confirm(tpl(_I18N.confirmDeleteTpl, {TYPE: typeLabel}))) return;
         this.disabled = true;
-        fetch('/jellyseerr/parametres/services/' + currentType + '/' + currentId + '/delete', {
+        fetch(BASE + '/jellyseerr/parametres/services/' + currentType + '/' + currentId + '/delete', {
             method:'POST', credentials:'same-origin', headers:{'X-Requested-With':'XMLHttpRequest'}
         })
         .then(function(r){ return r.json(); })
@@ -473,7 +474,7 @@
     document.querySelectorAll('.js-test-srv').forEach(function(btn){
         btn.addEventListener('click', function(){
             var self = this; self.disabled = true; self.innerHTML = '<div class="spinner-border spinner-border-sm" style="width:12px;height:12px;"></div>';
-            fetch('/jellyseerr/parametres/services/test', {
+            fetch(BASE + '/jellyseerr/parametres/services/test', {
                 method:'POST', credentials:'same-origin',
                 headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
                 body: JSON.stringify({ type:this.dataset.type, hostname:this.dataset.hostname, port:parseInt(this.dataset.port), apiKey:(JSON.parse(this.closest('.card-body').querySelector('.js-edit-srv').dataset.srv)||{}).apiKey||'', useSsl:this.dataset.ssl==='1', baseUrl:this.dataset.base||'' })

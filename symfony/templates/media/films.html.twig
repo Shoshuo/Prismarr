@@ -1081,6 +1081,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 {% block javascripts %}
 <script>
 (function () {
+  var BASE = window.BASE_PATH;
   /* ══════════════════════════════════════════════════════════════════════════
      i18n injection (FR source of truth ; locale bascule via ?_locale=en)
      ══════════════════════════════════════════════════════════════════════════ */
@@ -1412,7 +1413,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
   // the server (so bulk-filtered actions hit the whole filtered scope, not
   // just the items rendered on the current page).
   function fetchFilteredIds(extra) {
-    var url = '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/filter/ids?' + currentFilterParams(extra || {});
+    var url = BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/filter/ids?' + currentFilterParams(extra || {});
     return ajaxGet(url).then(function(data) {
       return (data && Array.isArray(data.ids)) ? data.ids : [];
     });
@@ -1481,7 +1482,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + ids.length + '...';
       showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_update_tpl, {COUNT: ids.length}), 'info');
 
-      return ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/refresh', { movieIds: ids })
+      return ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/refresh', { movieIds: ids })
       .then(function(data) {
         btn.disabled = false;
         btn.innerHTML = originalHtml;
@@ -1522,7 +1523,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + ids.length + '...';
       showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_search_progress_tpl, {COUNT: ids.length, IDX: INDEXER_COUNT}), 'info');
 
-      return ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/search', { movieIds: ids })
+      return ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/search', { movieIds: ids })
     .then(function(data) {
       if (data.ok && data.cmdId) {
         // Poll le statut de la commande
@@ -1532,7 +1533,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         var bulkPoll = setInterval(function() {
           bulkPollCount++;
           var elapsed = bulkPollCount * 2;
-          ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId)
+          ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId)
           .then(function(cmd) {
             var st = (cmd.status || '').toLowerCase();
             var msg = cmd.message || '';
@@ -1848,7 +1849,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     var extrasEl = document.getElementById('film-extras');
     extrasEl.style.display = 'none';
     if (m.hasFile && m.id) {
-      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + m.id + '/extras').then(function(extras) {
+      ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + m.id + '/extras').then(function(extras) {
         if (!extras || !extras.length) {
           extrasEl.textContent = FILM_I18N.no_extras;
         } else {
@@ -1908,8 +1909,8 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     titlesTbody.innerHTML = '';
 
     Promise.all([
-      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + movieId + '/credits'),
-      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/person/following')
+      ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + movieId + '/credits'),
+      ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/person/following')
     ])
     .then(function (results) {
       var credits = results[0] || [];
@@ -1939,14 +1940,14 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
               bm.querySelector('svg').setAttribute('fill', 'none');
               bm.querySelector('svg').setAttribute('stroke', 'rgba(255,255,255,.4)');
               bm.classList.remove('active');
-              ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/person/unfollow', { listId: parseInt(lid) });
+              ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/person/unfollow', { listId: parseInt(lid) });
               delete following[tmdbId];
             } else {
               // Follow
               bm.querySelector('svg').setAttribute('fill', '#6366f1');
               bm.querySelector('svg').setAttribute('stroke', '#6366f1');
               bm.classList.add('active');
-              ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/person/follow', {
+              ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/person/follow', {
                 personTmdbId: tmdbId,
                 personName: personName,
                 type: personType,
@@ -2054,7 +2055,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     timeline.innerHTML     = '';
     empty.style.display    = 'none';
 
-    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + movieId + '/history')
+    ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + movieId + '/history')
     .then(function (items) {
       loading.style.display = 'none';
       if (!items.length) { empty.style.display = ''; return; }
@@ -2160,7 +2161,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + FILM_I18N.search_launch;
     showSearchFeedback(tpl(FILM_I18N.search_start_tpl, {TITLE: movieTitle}), 'info', true);
 
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/search')
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/search')
     .then(function (data) {
       if (!data.ok || !data.cmdId) {
         btn.disabled = false;
@@ -2177,7 +2178,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
       pollTimer = setInterval(function () {
         pollCount++;
-        ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId)
+        ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId)
         .then(function (cmd) {
           var st = (cmd.status || '').toLowerCase();
 
@@ -2188,8 +2189,8 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
             // Step 3: check the queue and history for the result
             Promise.all([
-              ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/history'),
-              ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue')
+              ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/history'),
+              ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue')
             ]).then(function (results) {
               var history = results[0] || [];
               var queue = results[1] || {};
@@ -2236,7 +2237,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
                   showSearchFeedback(msgs[msgIdx] + tpl(FILM_I18N.search_progress_elapsed_tpl, {SEC: releaseTimer}), 'info', true);
                 }, 1000);
 
-                ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/releases')
+                ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/releases')
                 .then(function(releases) {
                   clearInterval(releaseCountdown);
                   var approved = (releases || []).filter(function(r) { return r.approved; });
@@ -2245,7 +2246,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
                   if (approved.length > 0) {
                     showSearchFeedback(tpl(FILM_I18N.search_results_grab_best_tpl, {TOTAL: total, APPR: approved.length}), 'info', true);
                     var best = approved[0];
-                    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/grab', { guid: best.guid, indexerId: best.indexerId })
+                    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/grab', { guid: best.guid, indexerId: best.indexerId })
                     .then(function(gd) {
                       if (gd.ok) {
                         showSearchFeedback(tpl(FILM_I18N.search_grab_started_tpl, {INDEXER: best.indexer, TITLE: best.title.substring(0, 50)}), 'success', false);
@@ -2318,7 +2319,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     empty.style.display     = 'none';
     tbody.innerHTML         = '';
 
-    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/releases')
+    ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/releases')
     .then(function (releases) {
       loading.style.display = 'none';
       if (!releases.length) { empty.style.display = ''; return; }
@@ -2418,7 +2419,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     var relTitle = row ? row.querySelector('td').textContent.trim() : '';
     btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.7rem;height:.7rem"></span>';
 
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/grab', { guid: btn.dataset.guid, indexerId: parseInt(btn.dataset.indexer) })
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/grab', { guid: btn.dataset.guid, indexerId: parseInt(btn.dataset.indexer) })
     .then(function (data) {
       if (data.ok) {
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -2446,7 +2447,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     btn.disabled = true;
     showSearchFeedback(FILM_I18N.refresh_in_progress, 'info', true);
 
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/refresh')
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/refresh')
     .then(function (data) {
       if (!data.ok || !data.cmdId) {
         btn.disabled = false;
@@ -2454,7 +2455,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         return;
       }
       pollTimer = setInterval(function () {
-        ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId)
+        ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId)
         .then(function (cmd) {
           var st = (cmd.status || '').toLowerCase();
           if (st === 'completed') {
@@ -2463,7 +2464,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
             showSearchFeedback(FILM_I18N.refresh_done, 'success', false);
             setTimeout(hideSearchFeedback, 4000);
             // Refresh infos du film
-            ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/info').then(function(movie) {
+            ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/info').then(function(movie) {
               if (!movie || !movie.id) return;
               currentMovie = movie;
               var card = grid.querySelector('[data-id="' + currentId + '"]');
@@ -2494,7 +2495,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     var newMon = !currentMonitored;
     btn.disabled = true;
 
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/monitor', { monitored: newMon })
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/monitor', { monitored: newMon })
     .then(function (data) {
       btn.disabled = false;
       if (data.ok) {
@@ -2551,7 +2552,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     content.innerHTML = '';
     feedback.style.display = 'none';
 
-    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/config').then(function(config) {
+    ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/config').then(function(config) {
       editCardLoaded = true;
       loading.style.display = 'none';
       var m = currentMovie;
@@ -2637,7 +2638,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         var val = input.value.trim();
         if (!val) return;
         input.value = '';
-        ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/config/tag', { label: val }).then(function(data) {
+        ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/config/tag', { label: val }).then(function(data) {
           if (data.ok && data.tag) {
             var container = document.getElementById('edit-tags-container');
             var lbl = document.createElement('label');
@@ -2662,7 +2663,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       function browsePath(path) {
         browser.style.display = '';
         browser.innerHTML = '<div class="p-2 text-muted small"><span class="spinner-border spinner-border-sm me-1"></span></div>';
-        ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/filesystem?path=' + encodeURIComponent(path)).then(function(data) {
+        ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/filesystem?path=' + encodeURIComponent(path)).then(function(data) {
           var dirs = data.directories || [];
           var parentPath = data.parent || '/';
           var h = '';
@@ -2693,7 +2694,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       document.getElementById('edit-path-update').addEventListener('click', function() {
         var newPath = document.getElementById('edit-path').value;
         if (!newPath || !confirm(tpl(FILM_I18N.edit_update_path_confirm_tpl, {PATH: newPath}))) return;
-        ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/edit', { path: newPath }).then(function(data) {
+        ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/edit', { path: newPath }).then(function(data) {
           if (data.ok) showPageBanner(FILM_I18N.banner_path_update, 'success');
         });
       });
@@ -2711,7 +2712,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       document.getElementById('edit-delete-movie').addEventListener('click', function() {
         if (!confirm(tpl(FILM_I18N.edit_delete_confirm_tpl, {TITLE: m.title || ''}))) return;
         var deleteFiles = confirm(FILM_I18N.edit_delete_files_confirm);
-        ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/delete', { deleteFiles: deleteFiles }).then(function() {
+        ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/delete', { deleteFiles: deleteFiles }).then(function() {
           var card = grid.querySelector('[data-id="' + currentId + '"]');
           if (card) card.remove();
           closeEditCard();
@@ -2727,7 +2728,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         content.querySelectorAll('.edit-tag-cb:checked').forEach(function(cb) {
           selectedTags.push(parseInt(cb.value));
         });
-        ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/edit', {
+        ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/edit', {
           monitored: document.getElementById('edit-monitored').checked,
           minimumAvailability: document.getElementById('edit-availability').value,
           qualityProfileId: parseInt(document.getElementById('edit-qualityProfile').value),
@@ -2801,7 +2802,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     deleteStatusMsg(FILM_I18N.delete_in_progress, 'muted');
 
     if (removeFromRadarr) {
-      ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/delete', { deleteFiles: deleteFiles })
+      ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/delete', { deleteFiles: deleteFiles })
       .then(function (data) {
         if (data.ok) {
           deleteStatusMsg(FILM_I18N.delete_success, 'success');
@@ -2811,10 +2812,10 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         } else { deleteStatusMsg(FILM_I18N.delete_error_msg, 'danger'); }
       }).catch(function () { deleteStatusMsg(FILM_I18N.network_error, 'danger'); });
     } else {
-      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/files')
+      ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/files')
       .then(function (files) {
         if (!files || !files.length) { deleteStatusMsg(FILM_I18N.no_file_found, 'danger'); return Promise.reject('no file'); }
-        return ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/files/' + files[0].id + '/delete');
+        return ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/files/' + files[0].id + '/delete');
       })
       .then(function (data) {
         if (data && data.ok) {
@@ -2890,7 +2891,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     // Show current filename from movieFile
     var curName = (currentMovie.movieFile && currentMovie.movieFile.relativePath) ? currentMovie.movieFile.relativePath : '';
 
-    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + movieId + '/rename-preview')
+    ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + movieId + '/rename-preview')
     .then(function (proposals) {
       loading.style.display = 'none';
       if (!proposals || !proposals.length) {
@@ -2956,7 +2957,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + FILM_I18N.rename_launch;
     showRenameFeedback(FILM_I18N.rename_launch_start, 'info', true);
 
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/rename')
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/rename')
     .then(function (data) {
       if (!data.ok || !data.cmdId) {
         btn.disabled = false;
@@ -2967,7 +2968,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
       // Poll command status
       var renamePoll = setInterval(function () {
-        ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId)
+        ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId)
         .then(function (cmd) {
           var st = (cmd.status || '').toLowerCase();
           if (st === 'completed') {
@@ -2976,7 +2977,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
             btn.innerHTML = RENAME_SVG + FILM_I18N.rename_label;
             showRenameFeedback(FILM_I18N.rename_success, 'success', false);
             // Refetch the movie from the API to update the cache
-            ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/detail')
+            ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/detail')
             .then(function(freshMovie) {
               if (freshMovie && freshMovie.movieFile) {
                 currentMovie.movieFile = freshMovie.movieFile;
@@ -3072,10 +3073,10 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     content.innerHTML     = '';
 
     // Fetch files + quality definitions in parallel
-    var pFiles = ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + movieId + '/files');
+    var pFiles = ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + movieId + '/files');
     var pQuals = qualityDefsCache
       ? Promise.resolve(qualityDefsCache)
-      : ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/quality-definitions');
+      : ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/quality-definitions');
 
     Promise.all([pFiles, pQuals]).then(function (results) {
       var files = results[0] || [];
@@ -3219,7 +3220,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         if (!confirm(FILM_I18N.delete_file_confirm)) return;
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-        ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/files/' + fId + '/delete')
+        ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/files/' + fId + '/delete')
         .then(function (data) {
           if (data && data.ok) {
             showFileManagerFeedback(FILM_I18N.file_deleted, 'success');
@@ -3326,7 +3327,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + FILM_I18N.saving;
 
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/files/' + fileId + '/update', payload)
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/files/' + fileId + '/update', payload)
     .then(function (data) {
       if (data.ok) {
         showFileManagerFeedback(FILM_I18N.saved, 'success');
@@ -3380,7 +3381,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     if (bannerLocked) return;
     var el = document.getElementById('warnings-banner');
     if (!el) return;
-    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/warnings?_t=' + Date.now()).then(function(warnings) {
+    ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/warnings?_t=' + Date.now()).then(function(warnings) {
       if (!warnings || !warnings.length) {
         el.innerHTML = '';
         return;
@@ -3544,11 +3545,11 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         if (progCell) progCell.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:100%;background:#9b59b6;animation:pulse 1.5s infinite"></div></div><span style="color:#9b59b6" class="small fw-medium">' + esc(FILM_I18N.q_importing) + '</span></div>';
         if (statusCell) statusCell.innerHTML = '<span class="badge bg-purple-lt text-purple">' + esc(FILM_I18N.q_status_importing) + '</span>';
 
-        ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue/' + queueId + '/import', {})
+        ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue/' + queueId + '/import', {})
         .then(function(data) {
           if (data.ok && data.cmdId) {
             var importPoll = setInterval(function() {
-              ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId).then(function(cmd) {
+              ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId).then(function(cmd) {
                 var st = (cmd.status || '').toLowerCase();
                 var msg = cmd.message || '';
                 if (progCell && st === 'started') {
@@ -3560,8 +3561,8 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
                   if (progCell) progCell.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="queue-progress flex-grow-1"><div class="queue-progress-bar bg-success" style="width:100%"></div></div><span class="text-success small fw-medium">' + esc(FILM_I18N.q_import_done_status) + '</span></div>';
                   if (statusCell) statusCell.innerHTML = '<span class="badge bg-success-lt text-success">' + esc(FILM_I18N.q_import_done_status) + '</span>';
                   btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>';
-                  ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue/' + queueId + '/delete', { blacklist: false, skipReimport: true }).catch(function(){});
-                  if (btn.dataset.movieId) ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + btn.dataset.movieId + '/rescan', {}).catch(function(){});
+                  ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue/' + queueId + '/delete', { blacklist: false, skipReimport: true }).catch(function(){});
+                  if (btn.dataset.movieId) ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + btn.dataset.movieId + '/rescan', {}).catch(function(){});
                   setTimeout(refreshQueue, 2000);
                 } else if (st === 'failed') {
                   clearInterval(importPoll);
@@ -3593,7 +3594,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       if (btn._bound) return; btn._bound = true;
       btn.addEventListener('click', function() {
         btn.disabled = true;
-        ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue/' + btn.dataset.id + '/grab', {}).then(function(data) {
+        ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue/' + btn.dataset.id + '/grab', {}).then(function(data) {
           if (data.ok) refreshQueue();
           else btn.disabled = false;
         });
@@ -3630,7 +3631,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
           var blocklist = document.getElementById('qd-blocklist-' + queueId).checked;
           btn.disabled = true;
           optRow.remove();
-          ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue/' + queueId + '/delete', {
+          ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue/' + queueId + '/delete', {
             removeFromClient: removeFromClient,
             blocklist: blocklist,
             skipReimport: false
@@ -3649,7 +3650,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
   // Detect active commands on page load (ManualImport + searches)
   var RADARR_POLL_CMDS = {'MoviesSearch':1,'MissingMoviesSearch':1,'RenameMovie':1,'ManualImport':1};
-  ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/commands/active').then(function(cmds) {
+  ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/commands/active').then(function(cmds) {
     if (!cmds || !cmds.length) return;
     cmds.forEach(function(cmd) {
       if (!cmd.id) return;
@@ -3674,7 +3675,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       var pollCmd = setInterval(function() {
         pollCount++;
         var elapsed = pollCount * 2;
-        ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + cmd.id).then(function(st) {
+        ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + cmd.id).then(function(st) {
           var status = (st.status || '').toLowerCase();
           var msg = st.message || '';
           if (status === 'completed') {
@@ -3720,9 +3721,9 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     refreshCount++;
     // Every 3 refreshes (6s), force Radarr to query qBittorrent
     if (refreshCount % 3 === 1) {
-      ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/refresh-downloads', {}).catch(function(){});
+      ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/refresh-downloads', {}).catch(function(){});
     }
-    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue?_t=' + Date.now()).then(function(items) {
+    ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue?_t=' + Date.now()).then(function(items) {
       var currentIds = new Set();
       (items || []).forEach(function(q) { if (q.movieId) currentIds.add(q.movieId); });
 
@@ -3758,7 +3759,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
             // Si la modal est ouverte pour ce film → rafraîchir les infos
             if (currentId && String(currentId) === String(mid)) {
-              ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + mid + '/info').then(function(movie) {
+              ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + mid + '/info').then(function(movie) {
                 if (!movie || !movie.id) return;
                 currentMovie = movie;
                 try { card.dataset.movie = JSON.stringify(movie); } catch(e) {}
@@ -3814,7 +3815,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     results.innerHTML = '';
     document.getElementById('add-film-form').style.display = 'none';
 
-    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/lookup?term=' + encodeURIComponent(term))
+    ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/lookup?term=' + encodeURIComponent(term))
     .then(function (movies) {
       loading.style.display = 'none';
       if (!movies.length) {
@@ -3881,7 +3882,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     document.getElementById('add-film-form').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     if (!configLoaded) {
-      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/config')
+      ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/config')
       .then(function (cfg) {
         configData = cfg; configLoaded = true;
         var qualSel   = document.getElementById('add-quality-select');
@@ -3944,7 +3945,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     result.className = 'mt-3 alert alert-info'; result.classList.remove('d-none');
     result.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ' + FILM_I18N.m_adding;
 
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/add', {
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/add', {
       tmdbId:           parseInt(selectedMovie.tmdbId),
       title:            selectedMovie.title,
       year:             parseInt(selectedMovie.year),
@@ -3975,8 +3976,8 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
             result.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.m_searching_dots_tpl, {DOTS: dots}) + (elapsed >= 9 ? tpl(FILM_I18N.m_searching_elapsed_tpl, {SEC: elapsed}) : '');
 
             Promise.all([
-              ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue?_t=' + Date.now()),
-              ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + movieId + '/history')
+              ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue?_t=' + Date.now()),
+              ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + movieId + '/history')
             ]).then(function(results) {
               var queue = results[0];
               var history = results[1] || [];
@@ -4045,7 +4046,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_in_progress_tpl, {LBL: label}), 'info');
     var timer = setInterval(function() {
       pollCount++;
-      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + cmdId).then(function(cmd) {
+      ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + cmdId).then(function(cmd) {
         var st = (cmd.status || '').toLowerCase();
         var msg = cmd.message || '';
         if (st === 'completed') {
@@ -4064,7 +4065,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
   document.getElementById('btn-refresh-all').addEventListener('click', function() {
     var btn = this; btn.disabled = true;
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/refresh-all', {}).then(function(d) {
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/refresh-all', {}).then(function(d) {
       btn.disabled = false;
       if (d.ok && d.cmdId) pollFilmCmd(d.cmdId, FILM_I18N.w_refresh_label);
       else showPageBanner(FILM_I18N.w_generic_error, 'danger');
@@ -4073,7 +4074,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
   document.getElementById('btn-rss-sync').addEventListener('click', function() {
     var btn = this; btn.disabled = true;
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/rss-sync', {}).then(function(d) {
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/rss-sync', {}).then(function(d) {
       btn.disabled = false;
       if (d.ok && d.cmdId) pollFilmCmd(d.cmdId, FILM_I18N.w_rss_label);
       else showPageBanner(FILM_I18N.w_generic_error, 'danger');
@@ -4244,7 +4245,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     var id = btn.dataset.id;
     var mon = btn.dataset.monitored === '1';
     var newMon = !mon;
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + id + '/monitor', { monitored: newMon }).then(function(data) {
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + id + '/monitor', { monitored: newMon }).then(function(data) {
       if (data.ok) {
         btn.dataset.monitored = newMon ? '1' : '0';
         var svg = btn.querySelector('svg');
@@ -4358,7 +4359,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
   // Load config for bulk modals (lazy)
   function ensureBulkConfig(cb) {
     if (bulkConfigCache) { cb(bulkConfigCache); return; }
-    ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/config').then(function(config) {
+    ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/config').then(function(config) {
       bulkConfigCache = config;
       cb(config);
     });
@@ -4432,7 +4433,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     if (avail) payload.minimumAvailability = avail;
     if (root) payload.rootFolderPath = root;
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/edit', payload).then(function(d) {
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/edit', payload).then(function(d) {
       btn.disabled = false; btn.innerHTML = FILM_I18N.b_save;
       closeBulkModal('modal-bulk-edit');
       if (d.ok) { showPageBanner(tpl(FILM_I18N.w_bulk_modified_tpl, {COUNT: ids.length}), 'success'); setTimeout(function() { location.reload(); }, 1500); }
@@ -4465,7 +4466,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     var tagIds = []; document.querySelectorAll('.bulk-tag-cb:checked').forEach(function(cb) { tagIds.push(parseInt(cb.value)); });
     if (!tagIds.length) return;
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/edit', { movieIds: ids, tags: tagIds, applyTags: document.getElementById('bulk-tags-action').value }).then(function(d) {
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/edit', { movieIds: ids, tags: tagIds, applyTags: document.getElementById('bulk-tags-action').value }).then(function(d) {
       btn.disabled = false; btn.innerHTML = FILM_I18N.b_apply;
       closeBulkModal('modal-bulk-tags');
       if (d.ok) showPageBanner(tpl(FILM_I18N.w_bulk_tags_ok_tpl, {COUNT: ids.length}), 'success');
@@ -4498,7 +4499,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     ids.forEach(function(mid) {
       var card = grid.querySelector('[data-id="' + mid + '"]');
       var title = card ? (card.getAttribute('title') || '?') : '?';
-      ajaxGet('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + mid + '/rename-preview').then(function(proposals) {
+      ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + mid + '/rename-preview').then(function(proposals) {
         loaded++;
         if (proposals && proposals.length) {
           renameMovieIds.push(mid);
@@ -4542,7 +4543,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     var done = 0;
     renameMovieIds.forEach(function(mid) {
-      ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + mid + '/rename', {}).then(function() {
+      ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + mid + '/rename', {}).then(function() {
         done++;
         if (done >= renameMovieIds.length) { btn.disabled = false; btn.innerHTML = FILM_I18N.b_organise; closeBulkModal('modal-bulk-rename'); showPageBanner(tpl(FILM_I18N.w_bulk_rename_ok_tpl, {COUNT: renameMovieIds.length}), 'success'); }
       }).catch(function() { done++; });
@@ -4563,7 +4564,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
   document.getElementById('bulk-delete-confirm').addEventListener('click', function() {
     var ids = Array.from(selectedIds).map(Number);
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-    ajaxPost('/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/delete', { movieIds: ids, deleteFiles: document.getElementById('bulk-delete-files').checked, addExclusion: document.getElementById('bulk-delete-exclude').checked }).then(function(d) {
+    ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/delete', { movieIds: ids, deleteFiles: document.getElementById('bulk-delete-files').checked, addExclusion: document.getElementById('bulk-delete-exclude').checked }).then(function(d) {
       btn.disabled = false; btn.innerHTML = FILM_I18N.b_delete;
       closeBulkModal('modal-bulk-delete');
       if (d.ok) {

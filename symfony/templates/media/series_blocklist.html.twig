@@ -80,6 +80,7 @@
 {% block javascripts %}
 <script>
 (function() {
+  var BASE = window.BASE_PATH;
   var SB_I18N = {
     bulk_delete_tpl: {{ 'media.series_blocklist.bulk_delete_tpl'|trans({count: '__COUNT__'})|json_encode|raw }},
     confirm_delete: {{ 'media.series_blocklist.confirm_delete'|trans|json_encode|raw }},
@@ -116,7 +117,7 @@
     document.querySelectorAll('.blocklist-cb:checked').forEach(function(cb) { ids.push(parseInt(cb.dataset.id)); });
     if (!ids.length || !confirm(tpl(SB_I18N.confirm_bulk_delete_tpl, { COUNT: ids.length }))) return;
     bulkBtn.disabled = true;
-    fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/blocklist/bulk-delete', {
+    fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/blocklist/bulk-delete', {
       method: 'POST',
       headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
       body: JSON.stringify({ids: ids})
@@ -133,7 +134,7 @@
     btn.addEventListener('click', function() {
       if (!confirm(SB_I18N.confirm_delete)) return;
       btn.disabled = true;
-      fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/blocklist/' + btn.dataset.id + '/delete', {
+      fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/blocklist/' + btn.dataset.id + '/delete', {
         method: 'POST',
         headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
         body: '{}'

@@ -80,6 +80,7 @@
 
 <script>
   (function () {
+    var BASE = window.BASE_PATH;
     // ── Quick-look modal: delegated open + fetch + manual show/hide.
     // Tiles carry [data-ql-trigger] + data-ql-source/type/slug/id and keep
     // their href as a no-JS fallback. We intercept the click, open the shell,
@@ -134,7 +135,7 @@
     // per-open wiring is needed at the call sites.
     window._prismarrWatchlist = window._prismarrWatchlist || {};
     if (!window._prismarrWatchlistReady) {
-      window._prismarrWatchlistReady = fetch('/decouverte/watchlist/status', { credentials: 'same-origin' })
+      window._prismarrWatchlistReady = fetch(BASE + '/decouverte/watchlist/status', { credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
         .then(function (d) { window._prismarrWatchlist = d.index || {}; return window._prismarrWatchlist; })
         .catch(function () { return window._prismarrWatchlist; });
@@ -164,10 +165,10 @@
       var type = t.getAttribute('data-ql-type');
       var id = t.getAttribute('data-ql-id');
       if (!type || !id) return null;
-      if (src === 'tmdb') { return '/tableau-de-bord/quicklook/tmdb/' + type + '/' + id; }
+      if (src === 'tmdb') { return BASE + '/tableau-de-bord/quicklook/tmdb/' + type + '/' + id; }
       var slug = t.getAttribute('data-ql-slug');
       if (!slug) return null;
-      return '/tableau-de-bord/quicklook/' + type + '/' + slug + '/' + id;
+      return BASE + '/tableau-de-bord/quicklook/' + type + '/' + slug + '/' + id;
     }
 
     if (!window._qlDelegated) {
@@ -211,7 +212,7 @@
         var willAdd = !wasIn;
         if (willAdd) { window._prismarrWatchlist[key] = true; } else { delete window._prismarrWatchlist[key]; }
         qlSetWl(btn, willAdd);
-        fetch('/decouverte/watchlist/toggle', {
+        fetch(BASE + '/decouverte/watchlist/toggle', {
           method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -248,7 +249,7 @@
         var orig = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
-        fetch('/decouverte/resolve/' + type + '/' + id, { credentials: 'same-origin' })
+        fetch(BASE + '/decouverte/resolve/' + type + '/' + id, { credentials: 'same-origin' })
           .then(function (r) { return r.json(); })
           .then(function (data) {
             if (!data || data.error) { btn.disabled = false; btn.innerHTML = orig; return; }

@@ -378,6 +378,7 @@
 {% block javascripts %}
 <script>
 (function () {
+    var BASE = window.BASE_PATH;
     var allEvents = {{ eventsJson|json_encode|raw }};
     // Calendar-scoped i18n (strings the JS renders on the fly).
     var CAL_I18N = {
@@ -914,10 +915,10 @@
         // cached JSON or edge case with empty libraries).
         if (ev.type === 'film' && ev.id) {
             var radarrSlug = ev._instanceSlug || DEFAULT_RADARR_SLUG;
-            target = '/medias/' + radarrSlug + '/films?open=' + ev.id;
+            target = BASE + '/medias/' + radarrSlug + '/films?open=' + ev.id;
         } else if (ev.type === 'episode' && ev.seriesId) {
             var sonarrSlug = ev._instanceSlug || DEFAULT_SONARR_SLUG;
-            target = '/medias/' + sonarrSlug + '/series?open=' + ev.seriesId;
+            target = BASE + '/medias/' + sonarrSlug + '/series?open=' + ev.seriesId;
         }
         if (target) {
             e.preventDefault();

@@ -109,6 +109,7 @@
 {% block javascripts %}
 <script>
 (function(){
+  var BASE = window.BASE_PATH;
   var CF_I18N = {
     title_add: {{ 'media.arr_admin.custom_filters.modal_title_add'|trans|json_encode|raw }},
     title_edit: {{ 'media.arr_admin.custom_filters.modal_title_edit'|trans|json_encode|raw }},
@@ -165,7 +166,7 @@
     var filters;
     try { filters = JSON.parse(filtersRaw || '[]'); } catch(e) { showModalFeedback(CF_I18N.err_invalid_json, 'danger'); return; }
     var payload = {label: label, type: type, filters: filters};
-    var url = id ? '/medias/' + INSTANCE_SLUG + '/sonarr/filtres-personnalises/' + id + '/modifier' : '{{ instance_path("sonarr_custom_filter_add") }}';
+    var url = id ? BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/filtres-personnalises/' + id + '/modifier' : '{{ instance_path("sonarr_custom_filter_add") }}';
     if (id) payload.id = parseInt(id, 10);
     fetch(url, {
       method: 'POST',
@@ -180,7 +181,7 @@
   document.querySelectorAll('.btn-cf-delete').forEach(function(btn) {
     btn.onclick = function() {
       if (!confirm(CF_I18N.delete_confirm_tpl.replace('__LABEL__', btn.dataset.label))) return;
-      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/filtres-personnalises/' + btn.dataset.id + '/supprimer', {
+      fetch(BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/filtres-personnalises/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
         body: '{}',

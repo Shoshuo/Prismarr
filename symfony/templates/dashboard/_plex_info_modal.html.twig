@@ -24,6 +24,7 @@
 (function () {
   if (window._plexModalDelegated) return;
   window._plexModalDelegated = true;
+  var BASE = window.BASE_PATH;
   function openPlexModal(ratingKey, player, device) {
     var modalEl = document.getElementById('plex-info-modal');
     var trigger = document.querySelector('[data-plex-modal-trigger]');
@@ -31,7 +32,7 @@
     var body = modalEl.querySelector('[data-plex-modal-body]');
     body.innerHTML = '<div class="modal-body text-center py-5"><span class="spinner-border"></span></div>';
     trigger.click();
-    var url = '/tautulli/api/metadata/' + encodeURIComponent(ratingKey)
+    var url = BASE + '/tautulli/api/metadata/' + encodeURIComponent(ratingKey)
       + '?player=' + encodeURIComponent(player || '') + '&device=' + encodeURIComponent(device || '');
     fetch(url, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.text() : ''; })
@@ -43,7 +44,7 @@
     var legacy = function () {
       openPlexModal(ratingKey, t.getAttribute('data-plex-player'), t.getAttribute('data-plex-device'));
     };
-    fetch('/tautulli/api/quicklook/' + encodeURIComponent(ratingKey), { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+    fetch(BASE + '/tautulli/api/quicklook/' + encodeURIComponent(ratingKey), { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         var ghost = document.querySelector('[data-plex-ql-ghost]');
@@ -52,7 +53,7 @@
         ghost.setAttribute('data-ql-id', String(d.id));
         // Real deep-link href: the global handler navigates here if the
         // quick-look fragment fetch itself fails (same as watchlist tiles).
-        ghost.setAttribute('href', '/decouverte?detail=' + d.type + '/' + d.id);
+        ghost.setAttribute('href', BASE + '/decouverte?detail=' + d.type + '/' + d.id);
         ghost.click();
       })
       .catch(legacy);

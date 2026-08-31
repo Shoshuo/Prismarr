@@ -98,6 +98,7 @@
 {% block javascripts %}
 <script>
 (function () {
+    var BASE = window.BASE_PATH;
     var _I18N = {
         created: {{ 'prowlarr.tags.feedback_created'|trans|json_encode|raw }},
         error: {{ 'prowlarr.tags.feedback_error'|trans|json_encode|raw }},
@@ -141,7 +142,7 @@
     document.querySelectorAll('.btn-tag-delete').forEach(function (btn) {
         btn.addEventListener('click', function () {
             if (!confirm(_I18N.confirmDeleteTpl.replace('__LABEL__', btn.dataset.label))) return;
-            fetch('/prowlarr/tags/' + btn.dataset.id + '/supprimer', { method: 'POST', credentials: 'same-origin' })
+            fetch(BASE + '/prowlarr/tags/' + btn.dataset.id + '/supprimer', { method: 'POST', credentials: 'same-origin' })
                 .then(function (r) { return r.json(); })
                 .then(function (d) {
                     if (d.ok) {

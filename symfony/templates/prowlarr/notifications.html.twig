@@ -116,12 +116,13 @@
 {% block javascripts %}
 <script>
 (function () {
-    var SCHEMA_URL = '/prowlarr/notification/schema';
-    var GET_URL = '/prowlarr/notification/{id}';
-    var ADD_URL = '/prowlarr/notification/add';
-    var UPDATE_URL = '/prowlarr/notification/{id}/update';
-    var DELETE_URL = '/prowlarr/notification/{id}/delete';
-    var TEST_URL = '/prowlarr/notification/test';
+    var BASE = window.BASE_PATH;
+    var SCHEMA_URL = BASE + '/prowlarr/notification/schema';
+    var GET_URL = BASE + '/prowlarr/notification/{id}';
+    var ADD_URL = BASE + '/prowlarr/notification/add';
+    var UPDATE_URL = BASE + '/prowlarr/notification/{id}/update';
+    var DELETE_URL = BASE + '/prowlarr/notification/{id}/delete';
+    var TEST_URL = BASE + '/prowlarr/notification/test';
 
     var _I18N = {
         name: {{ 'prowlarr.common.name'|trans|json_encode|raw }},

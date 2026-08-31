@@ -177,6 +177,7 @@
 {% block javascripts %}
 <script>
 (function(){
+var BASE = window.BASE_PATH;
 var _I18N = {
     starting: {{ 'prowlarr.updates.install_starting'|trans|json_encode|raw }},
     launched: {{ 'prowlarr.updates.install_launched'|trans|json_encode|raw }},
@@ -193,7 +194,7 @@ document.querySelectorAll('.btn-install').forEach(function(btn) {
         progress.classList.remove('d-none');
         msg.textContent = _I18N.starting;
 
-        fetch('/prowlarr/command', {
+        fetch(BASE + '/prowlarr/command', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify({name: 'ApplicationUpdateCheck'}),

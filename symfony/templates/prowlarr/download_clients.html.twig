@@ -132,12 +132,13 @@
 {% block javascripts %}
 <script>
 (function () {
-    var SCHEMA_URL = '/prowlarr/downloadclient/schema';
-    var GET_URL = '/prowlarr/downloadclient/{id}';
-    var ADD_URL = '/prowlarr/downloadclient/add';
-    var UPDATE_URL = '/prowlarr/downloadclient/{id}/update';
-    var DELETE_URL = '/prowlarr/downloadclient/{id}/delete';
-    var TEST_URL = '/prowlarr/downloadclient/test';
+    var BASE = window.BASE_PATH;
+    var SCHEMA_URL = BASE + '/prowlarr/downloadclient/schema';
+    var GET_URL = BASE + '/prowlarr/downloadclient/{id}';
+    var ADD_URL = BASE + '/prowlarr/downloadclient/add';
+    var UPDATE_URL = BASE + '/prowlarr/downloadclient/{id}/update';
+    var DELETE_URL = BASE + '/prowlarr/downloadclient/{id}/delete';
+    var TEST_URL = BASE + '/prowlarr/downloadclient/test';
 
     var _I18N = {
         name: {{ 'prowlarr.common.name'|trans|json_encode|raw }},

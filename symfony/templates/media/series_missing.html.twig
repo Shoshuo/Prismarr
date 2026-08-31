@@ -84,6 +84,7 @@
 {% block javascripts %}
 <script>
 (function() {
+  var BASE = window.BASE_PATH;
   var SM_I18N = {
     searching_all: {{ 'media.series_missing.searching_all'|trans|json_encode|raw }},
     search_all: {{ 'media.series_missing.search_all'|trans|json_encode|raw }},
@@ -104,7 +105,7 @@
     btn.addEventListener('click', function() {
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:12px;height:12px;"></span>';
-      fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/episode/search', {
+      fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/episode/search', {
         method: 'POST',
         headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
         body: JSON.stringify({episodeIds: [parseInt(btn.dataset.epId)]})
@@ -120,7 +121,7 @@
       btnAll.disabled = true;
       btnAll.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + SM_I18N.searching_all;
       showBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + SM_I18N.searching_label, 'info');
-      fetch('/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/missing-search', {
+      fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/missing-search', {
         method: 'POST',
         headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
         body: '{}'

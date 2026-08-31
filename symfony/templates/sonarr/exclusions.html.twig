@@ -70,6 +70,7 @@
 {% block javascripts %}
 <script>
 (function() {
+  var BASE = window.BASE_PATH;
   var _I18N = {
     delete_confirm: {{ 'media.arr_admin.exclusions.delete_confirm'|trans|json_encode|raw }}
   };
@@ -77,7 +78,7 @@
     btn.addEventListener('click', function() {
       if (!confirm(_I18N.delete_confirm)) return;
       btn.disabled = true;
-      fetch('/medias/' + INSTANCE_SLUG + '/sonarr/exclusions/' + btn.dataset.id + '/supprimer', {
+      fetch(BASE + '/medias/' + INSTANCE_SLUG + '/sonarr/exclusions/' + btn.dataset.id + '/supprimer', {
         method: 'POST',
         headers: {'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
         body: '{}'
