@@ -1984,103 +1984,121 @@ class MediaController extends AbstractController
             return $this->json([]);
         }
 
-        $results = [];
-
         // Phase D — flatten every enabled Radarr/Sonarr instance into the
         // search index. Each item is tagged with `instance: {slug, name}`
         // so the Ctrl+K dropdown can show "Le Parrain — Radarr 4K" and
         // navigate to /medias/<slug>/films?open=X for the right instance.
-        // Cache key bumped to _v2 so the v1 single-instance cache from a
-        // previous build doesn't keep serving stale, untagged results.
-        $movies = $this->cache->get('prismarr_search_movies_v2', function (ItemInterface $item) {
-            $item->expiresAfter(60);
-            $out = [];
-            foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
-                try {
-                    $raw = $this->radarr->withInstance($inst)->getRawMovies();
-                } catch (\Throwable $e) {
-                    $this->logger->warning('Media globalSearch radarr failed', [
-                        'instance' => $inst->getSlug(),
-                        'exception' => $e::class,
-                        'message'   => $e->getMessage(),
-                    ]);
-                    continue;
-                }
-                foreach ($raw as $m) {
-                    $out[] = [
-                        'id'            => $m['id'] ?? null,
-                        'title'         => $m['title'] ?? '—',
-                        'originalTitle' => $m['originalTitle'] ?? null,
-                        'sortTitle'     => $m['sortTitle'] ?? '',
-                        'year'          => $m['year'] ?? null,
-                        'hasFile'       => (bool) ($m['hasFile'] ?? false),
-                        'poster'        => $this->extractPoster($m),
-                        'instance'      => ['slug' => $inst->getSlug(), 'name' => $inst->getName()],
-                    ];
-                }
-            }
-            return $out;
-        });
+        // Cache key bumped to _v3: rows now carry pre-normalized _n_* fields,
+        // and a pre-_n_* cached array from a previous build would silently
+        // match nothing.
+        $movies = $this->cache->get('prismarr_search_movies_v3', $this->buildMovieSearchIndex(...));
 
-        $series = $this->cache->get('prismarr_search_series_v2', function (ItemInterface $item) {
-            $item->expiresAfter(60);
-            $out = [];
-            foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
-                try {
-                    $raw = $this->sonarr->withInstance($inst)->getRawAllSeries();
-                } catch (\Throwable $e) {
-                    $this->logger->warning('Media globalSearch sonarr failed', [
-                        'instance' => $inst->getSlug(),
-                        'exception' => $e::class,
-                        'message'   => $e->getMessage(),
-                    ]);
-                    continue;
-                }
-                foreach ($raw as $s) {
-                    $out[] = [
-                        'id'            => $s['id'] ?? null,
-                        'title'         => $s['title'] ?? '—',
-                        'originalTitle' => $s['originalTitle'] ?? null,
-                        'sortTitle'     => $s['sortTitle'] ?? '',
-                        'year'          => $s['year'] ?? null,
-                        'hasFile'       => true,
-                        'poster'        => $this->extractPoster($s),
-                        'instance'      => ['slug' => $inst->getSlug(), 'name' => $inst->getName()],
-                    ];
-                }
-            }
-            return $out;
-        });
+        $series = $this->cache->get('prismarr_search_series_v3', $this->buildSeriesSearchIndex(...));
 
-        // Local filter, case- and accent-insensitive
-        $normalize = fn(string $s) => mb_strtolower(transliterator_transliterate('Any-Latin; Latin-ASCII; Lower()', $s));
-        $termNorm = $normalize($term);
+        $results = [];
+        foreach ($this->matchAndRank($movies, $term) as $m) {
+            $results[] = array_merge($m, ['type' => 'film', 'inLibrary' => true]);
+        }
+        foreach ($this->matchAndRank($series, $term) as $s) {
+            $results[] = array_merge($s, ['type' => 'serie', 'inLibrary' => true]);
+        }
 
-        foreach ($movies as $m) {
-            if (str_contains($normalize($m['title'] ?? ''), $termNorm)
-                || str_contains($normalize($m['originalTitle'] ?? ''), $termNorm)
-                || str_contains($normalize($m['sortTitle'] ?? ''), $termNorm)) {
-                $results[] = array_merge($m, ['type' => 'film', 'inLibrary' => true]);
+        // Re-rank across the two kinds with the same rule, then cut to 12.
+        $results = $this->matchAndRank($results, $term);
+        $results = array_slice($results, 0, 12);
+
+        return $this->json($this->stripIndexHelpers($results));
+    }
+
+    /** ICU transliteration is expensive; ONE reusable instance per build, never the procedural per-call form. */
+    private static function transliterator(): ?\Transliterator
+    {
+        static $t = null;
+        $t ??= \Transliterator::create('Any-Latin; Latin-ASCII; Lower()');
+
+        return $t;
+    }
+
+    private static function normalizeTerm(string $s): string
+    {
+        $t = self::transliterator();
+        $out = $t?->transliterate($s);
+
+        // transliterate() returns false on failure; without the fallback the
+        // normalized term would be '' and str_contains() would match the
+        // WHOLE library.
+        return mb_strtolower(is_string($out) ? $out : $s);
+    }
+
+    /**
+     * Add the pre-normalized search fields to one index row. Called once per
+     * row per 60 s cache build instead of once per row per request.
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function normalizeIndexRow(array $row): array
+    {
+        $row['_n_title']    = self::normalizeTerm((string) ($row['title'] ?? ''));
+        $row['_n_original'] = self::normalizeTerm((string) ($row['originalTitle'] ?? ''));
+        $row['_n_sort']     = self::normalizeTerm((string) ($row['sortTitle'] ?? ''));
+
+        return $row;
+    }
+
+    /**
+     * Filter + rank against the PRE-normalized fields: plain byte
+     * str_contains, zero ICU calls, and a comparator that reads _n_title
+     * instead of re-transliterating both sides of every comparison. Order is
+     * unchanged: starts-with first, then strcasecmp on the RAW title.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function matchAndRank(array $rows, string $term): array
+    {
+        $needle = self::normalizeTerm($term);
+
+        $hits = [];
+        foreach ($rows as $r) {
+            if (str_contains((string) ($r['_n_title'] ?? ''), $needle)
+                || str_contains((string) ($r['_n_original'] ?? ''), $needle)
+                || str_contains((string) ($r['_n_sort'] ?? ''), $needle)) {
+                $hits[] = $r;
             }
         }
 
-        foreach ($series as $s) {
-            if (str_contains($normalize($s['title'] ?? ''), $termNorm)
-                || str_contains($normalize($s['originalTitle'] ?? ''), $termNorm)
-                || str_contains($normalize($s['sortTitle'] ?? ''), $termNorm)) {
-                $results[] = array_merge($s, ['type' => 'serie', 'inLibrary' => true]);
+        usort($hits, static function (array $a, array $b) use ($needle): int {
+            $aStarts = str_starts_with((string) ($a['_n_title'] ?? ''), $needle);
+            $bStarts = str_starts_with((string) ($b['_n_title'] ?? ''), $needle);
+            if ($aStarts !== $bStarts) {
+                return $bStarts <=> $aStarts;
             }
-        }
 
-        // Sort: titles starting with the term first, then alphabetical
-        usort($results, function ($a, $b) use ($termNorm, $normalize) {
-            $aStarts = str_starts_with($normalize($a['title'] ?? ''), $termNorm);
-            $bStarts = str_starts_with($normalize($b['title'] ?? ''), $termNorm);
-            if ($aStarts !== $bStarts) return $bStarts <=> $aStarts;
-            return strcasecmp($a['title'], $b['title']);
+            return strcasecmp((string) ($a['title'] ?? ''), (string) ($b['title'] ?? ''));
         });
 
-        return $this->json(array_slice($results, 0, 12));
+        return $hits;
+    }
+
+    /**
+     * The Ctrl+K renderer JSON.stringify()s each whole result into a
+     * data-item attribute, so every key ships to the DOM — the helper fields
+     * must be removed, not merely ignored.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function stripIndexHelpers(array $rows): array
+    {
+        return array_map(
+            static function (array $r): array {
+                unset($r['_n_title'], $r['_n_original'], $r['_n_sort']);
+
+                return $r;
+            },
+            $rows,
+        );
     }
 
     #[Route('/search/online', name: 'search_online', methods: ['GET'])]
@@ -2098,11 +2116,11 @@ class MediaController extends AbstractController
         // of local ids cross-instance to make sure "already in library" is
         // truthful for users running multiple Radarr / Sonarr.
         $localMovieIds = array_column(
-            $this->cache->get('prismarr_search_movies_v2', fn(ItemInterface $item) => ($item->expiresAfter(60)) ?: []),
+            $this->cache->get('prismarr_search_movies_v3', $this->buildMovieSearchIndex(...)),
             'id'
         );
         $localSeriesIds = array_column(
-            $this->cache->get('prismarr_search_series_v2', fn(ItemInterface $item) => ($item->expiresAfter(60)) ?: []),
+            $this->cache->get('prismarr_search_series_v3', $this->buildSeriesSearchIndex(...)),
             'id'
         );
 
@@ -2150,18 +2168,92 @@ class MediaController extends AbstractController
         return $this->json($results);
     }
 
-    // Prowlarr indexers — moved to ProwlarrController
-
-    /** Extract the poster URL from raw Radarr/Sonarr data */
-    private function extractPoster(array $item): ?string
+    /**
+     * Build the movie search index across every enabled Radarr instance.
+     * Shared by `/search` and `/search/online`: both must produce AND consume
+     * the same cache entry. Rows come from the shared MediaLibraryCache entry,
+     * so the index costs no extra API call and can no longer drift out of sync
+     * with the Films page.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function buildMovieSearchIndex(ItemInterface $item): array
     {
-        foreach ($item['images'] ?? [] as $img) {
-            if (($img['coverType'] ?? '') === 'poster') {
-                $url = $img['remoteUrl'] ?? ($img['url'] ?? null);
-                return $url ?: null;
+        $item->expiresAfter(60);
+        $out = [];
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+            try {
+                $rows = $this->libraryCache->movies(
+                    $inst->getSlug(),
+                    fn() => $this->radarr->withInstance($inst)->getMovies(),
+                );
+            } catch (\Throwable $e) {
+                $this->logger->warning('Media globalSearch radarr failed', [
+                    'instance' => $inst->getSlug(),
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ]);
+                continue;
+            }
+            foreach ($rows as $m) {
+                $out[] = $this->normalizeIndexRow([
+                    'id'            => $m['id'] ?? null,
+                    'title'         => $m['title'] ?? '—',
+                    'originalTitle' => $m['originalTitle'] ?? null,
+                    'sortTitle'     => $m['sortTitle'] ?? '',
+                    'year'          => $m['year'] ?? null,
+                    'hasFile'       => (bool) ($m['hasFile'] ?? false),
+                    'poster'        => $m['poster'] ?? null,
+                    'instance'      => ['slug' => $inst->getSlug(), 'name' => $inst->getName()],
+                ]);
             }
         }
-        return null;
+
+        return $out;
     }
+
+    /**
+     * Series counterpart of buildMovieSearchIndex(). Sonarr's normalized rows
+     * carry no originalTitle, and a series in the library always counts as
+     * "has file" for the dropdown's purposes.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function buildSeriesSearchIndex(ItemInterface $item): array
+    {
+        $item->expiresAfter(60);
+        $out = [];
+        foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+            try {
+                $rows = $this->libraryCache->series(
+                    $inst->getSlug(),
+                    fn() => $this->sonarr->withInstance($inst)->getSeries(),
+                );
+            } catch (\Throwable $e) {
+                $this->logger->warning('Media globalSearch sonarr failed', [
+                    'instance' => $inst->getSlug(),
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ]);
+                continue;
+            }
+            foreach ($rows as $s) {
+                $out[] = $this->normalizeIndexRow([
+                    'id'            => $s['id'] ?? null,
+                    'title'         => $s['title'] ?? '—',
+                    'originalTitle' => null,
+                    'sortTitle'     => $s['sortTitle'] ?? '',
+                    'year'          => $s['year'] ?? null,
+                    'hasFile'       => true,
+                    'poster'        => $s['poster'] ?? null,
+                    'instance'      => ['slug' => $inst->getSlug(), 'name' => $inst->getName()],
+                ]);
+            }
+        }
+
+        return $out;
+    }
+
+    // Prowlarr indexers — moved to ProwlarrController
 
 }
