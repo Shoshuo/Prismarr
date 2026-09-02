@@ -1,0 +1,8 @@
+# Test env only. The messenger_messages table is NOT in the ORM schema that
+# AbstractWebTestCase::resetSchema() builds, so a doctrine-transport dispatch
+# would run auto_setup DDL inside every functional test. in-memory:// keeps
+# dispatches assertable (->getSent()) and touches no database.
+framework:
+    messenger:
+        transports:
+            async: 'in-memory://'

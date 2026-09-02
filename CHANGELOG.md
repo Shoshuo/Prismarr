@@ -5,6 +5,11 @@ All notable changes to Prismarr are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Performance
+- **The Radarr/Sonarr library is served stale-while-revalidate, from one shared entry.** The 45 s `MediaLibraryCache` window still expired inside a request, so whoever arrived first after it lapsed paid the full multi-second `getMovies()` / `getSeries()` fetch before anything rendered — and the dashboard kept its own second copy of the same payload (`dash.movies` / `dash.series`) with no invalidation hook, so a change made on the Films page could stay invisible on the dashboard for the rest of the window. A new shared `StaleWhileRevalidateCache` splits the window in two: 45 s is now the *soft* TTL (a lapsed entry is served immediately and a rebuild is queued to the already-running `messenger-worker` service, so the refetch happens outside the request) and 600 s is the hard ceiling past which a read still blocks, because the library pages cannot render without the list. The dashboard now reads the same per-instance entry as the library pages, so the three duplicate fetch paths collapse into one and existing library invalidations finally reach the dashboard. Measured on a large library: the Films page's cold load drops from ~11.5 s to ~0.32 s and the dashboard's recent-additions fragment from ~3.8 s to ~0.25 s. An empty or failed fetch is still never cached, a mutation still invalidates hard (the next read refetches), a refresh is skipped for an instance whose circuit breaker is open, and a rebuild that goes unanswered for 180 s logs one rate-limited error — the visible symptom of a stopped worker.
+
 ## [1.2.0] - 2026-08-29
 
 ### Fixed
