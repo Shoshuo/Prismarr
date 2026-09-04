@@ -42,6 +42,16 @@
     window.DEFAULT_RADARR_SLUG = DEFAULT_RADARR_SLUG;
     window.DEFAULT_SONARR_SLUG = DEFAULT_SONARR_SLUG;
 
+    // The global search dropdown renders its subtitle badge purely
+    // client-side (results are built from a JSON payload, not Twig), so the
+    // click-to-search affordance on a 'missing' badge needs an admin check
+    // in JS. This mirrors the server-side gate: `bazarr/_search_modal.html.twig`
+    // (below) is itself only ever included for admins, and BazarrController
+    // is `#[IsGranted('ROLE_ADMIN')]` on the whole class — so this flag only
+    // controls whether the badge LOOKS clickable, it grants no capability by
+    // itself.
+    window.PRISMARR_IS_ADMIN = {{ is_granted('ROLE_ADMIN') ? 'true' : 'false' }};
+
     // Global locale-aware byte formatter — must be defined here in <head>
     // BEFORE any child template's javascripts block runs. The original
     // location was a media-pages-only conditional script further down the
@@ -1057,6 +1067,23 @@
             </li>
             {% endif %}
 
+            {% if is_granted('ROLE_ADMIN') and service_visible_in_sidebar('bazarr') %}
+            <li class="nav-item">
+              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_bazarr_' ? 'active' }}"
+                 href="{{ path('app_bazarr_index') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                       fill="none" stroke="#be4bdb" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round" class="icon">
+                    <rect x="3" y="5" width="18" height="14" rx="2"/>
+                    <path d="M7 15h2"/><path d="M11 15h6"/>
+                  </svg>
+                </span>
+                <span class="nav-link-title">{{ 'sidebar.nav.bazarr'|trans }}</span>
+              </a>
+            </li>
+            {% endif %}
+
           </ul>
 
           {# ── Sidebar footer: admin settings + logout (mobile included) ── #}
@@ -1444,6 +1471,8 @@
 
   {% include '_quicklook.html.twig' with {} only %}
 
+  {% if is_granted('ROLE_ADMIN') %}{{ include('bazarr/_search_modal.html.twig') }}{% endif %}
+
   <script src="{{ asset('static/tabler/js/tabler.min.js') }}"></script>
 
   {# Strings translated server-side and exposed to inline JS. Keep this block
@@ -1466,6 +1495,8 @@
       'search.forget':         'topbar.search.forget'|trans,
       'search.in_library_badge': 'topbar.search.in_library_badge'|trans,
       'search.not_added_badge':  'topbar.search.not_added_badge'|trans,
+      'bazarr.badge.missing':    'bazarr.badge.missing'|trans,
+      'bazarr.badge.complete':   'bazarr.badge.complete'|trans,
       'search.add':              'topbar.search.add'|trans,
       'dashboard.quicklook.manage': 'dashboard.quicklook.manage'|trans,
       'theme.label_light':     'topbar.theme.label_light'|trans,
@@ -1564,6 +1595,30 @@
         var instanceLabel = (item.instance && item.instance.name)
           ? ' · <span class="text-info">' + window.escHtml(item.instance.name) + '</span>'
           : '';
+        // Subtitle status badge. `item.subtitle` only ever exists on
+        // in-library results (attached server-side in MediaController::
+        // globalSearch(), omitted for the 'hidden' state and for online/
+        // TMDb-only results), so its mere presence is the render gate.
+        // A 'missing' MOVIE badge is clickable (opens the Bazarr search modal)
+        // but only for admins — the modal itself, and its `[data-bazarr-search]`
+        // delegated listener, don't even exist in the DOM for non-admins.
+        // Series stay inert here on purpose: series subtitle search is
+        // per-episode, so there is nothing this modal could search for a whole
+        // show (the server-side partial makes the same call — its series branch
+        // drills down to the Bazarr tab instead). The badge still renders, it
+        // just reports the count.
+        var subtitleBadge = '';
+        if (item.subtitle && item.subtitle.state === 'missing') {
+          var subCount = window.escHtml(String(item.subtitle.count));
+          var subTitle = window.escHtml((window._i18n && window._i18n['bazarr.badge.missing']) || 'Missing');
+          var subClickAttrs = (window.PRISMARR_IS_ADMIN && item.type === 'film')
+            ? ' data-bazarr-search data-kind="movie" data-id="' + window.escHtml(String(item.id)) + '" role="button"'
+            : '';
+          subtitleBadge = '<span class="badge bg-warning-lt ms-1 flex-shrink-0" style="font-size:.7rem;" title="' + subTitle + '"' + subClickAttrs + '>' + subCount + '</span>';
+        } else if (item.subtitle && item.subtitle.state === 'complete') {
+          var compTitle = window.escHtml((window._i18n && window._i18n['bazarr.badge.complete']) || 'Subtitles complete');
+          subtitleBadge = '<span class="badge bg-success-lt ms-1 flex-shrink-0" style="font-size:.7rem;" title="' + compTitle + '">&#10003;</span>';
+        }
         return '<a href="#" class="prismarr-search-item" role="option" data-item-index="' + i + '"' + dataAttr + '>'
           + poster
           + '<div class="overflow-hidden flex-grow-1">'
@@ -1571,6 +1626,7 @@
           + '<div class="text-secondary" style="font-size:.7rem;">' + window.escHtml(item.year || '') + instanceLabel + '</div>'
           + '</div>'
           + badge
+          + subtitleBadge
           + '</a>';
       }
 
@@ -1809,6 +1865,9 @@
       // then fail its `.contains(e.target)` check (the orphan node is no
       // longer in the DOM) and wrongly close the dropdown.
       resultsDiv.addEventListener('click', function (e) {
+        // No `[data-bazarr-search]` carve-out needed here: that listener
+        // (bazarr/_search_modal.html.twig) runs in the capture phase and
+        // stops the event before it ever reaches this one.
         var pill = e.target.closest('.prismarr-search-pill');
         if (pill) {
           e.stopPropagation();

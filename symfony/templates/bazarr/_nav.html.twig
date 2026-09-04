@@ -1,0 +1,35 @@
+{#
+  Bazarr navigation bar — flat button group (only 4 sub-pages, no dropdowns
+  needed). The three frame views (Wanted/Movies/Series) target the shared
+  bazarr-view Turbo Frame with data-turbo-action="advance" so switching tabs
+  swaps only the frame and still creates a real history entry (URL bar,
+  back/forward, bookmarks all keep working). History stays a normal Turbo
+  Drive page — it is a separate full page with its own data and nothing else
+  links to it as a fragment.
+
+  This partial is ALSO included on history.html.twig and series_detail.html.
+  twig, neither of which ships a `#bazarr-view` frame element (both are plain
+  Turbo Drive pages, not the shell). Clicking a Wanted/Movies/Series pill from
+  there still works correctly: `data-turbo-frame="bazarr-view"` targets a
+  frame id that does not exist on the CURRENT page, and Turbo's own
+  missing-frame behaviour is to fall back to a full Drive visit instead of
+  silently no-op'ing — no extra markup or JS is needed here to cover that
+  case; it comes for free from the Turbo Frame contract itself.
+#}
+{% set _tabs = [
+  { route: 'app_bazarr_index',   view: 'wanted',  label: 'bazarr.nav.wanted',  frame: true  },
+  { route: 'app_bazarr_movies',  view: 'movies',  label: 'bazarr.nav.movies',  frame: true  },
+  { route: 'app_bazarr_series',  view: 'series',  label: 'bazarr.nav.series',  frame: true  },
+  { route: 'app_bazarr_history', view: 'history', label: 'bazarr.nav.history', frame: false },
+] %}
+{% set _route = app.request.attributes.get('_route') %}
+{% set _view = view|default(
+  _route == 'app_bazarr_history' ? 'history' : (_route == 'app_bazarr_series_detail' ? 'series' : 'wanted')
+) %}
+<div class="d-flex gap-2 align-items-center flex-wrap">
+  {% for tab in _tabs %}
+    <a href="{{ path(tab.route) }}"
+       {% if tab.frame %}data-turbo-frame="bazarr-view" data-turbo-action="advance"{% endif %}
+       class="btn btn-sm {{ _view == tab.view ? 'btn-primary' : 'btn-ghost-primary' }}">{{ tab.label|trans }}</a>
+  {% endfor %}
+</div>

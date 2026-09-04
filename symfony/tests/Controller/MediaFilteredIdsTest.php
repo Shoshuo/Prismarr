@@ -4,6 +4,7 @@ namespace App\Tests\Controller;
 
 use App\Controller\MediaController;
 use App\Service\ConfigService;
+use App\Service\Media\BazarrSubtitleIndex;
 use App\Service\Media\MediaLibraryCache;
 use App\Service\Media\MovieLibraryFilter;
 use App\Service\Media\ProwlarrClient;
@@ -51,6 +52,7 @@ class MediaFilteredIdsTest extends TestCase
             new NullLogger(),
             $translator,
             $this->createMock(MediaLibraryCache::class),
+            $this->createMock(BazarrSubtitleIndex::class),
         );
         $container = $this->createMock(ContainerInterface::class);
         $container->method('has')->willReturn(false);

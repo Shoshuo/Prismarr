@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\ServiceInstance;
+use App\Service\Media\BazarrClient;
 use App\Service\Media\DelugeClient;
 use App\Service\Media\JellyseerrClient;
 use App\Service\Media\ProwlarrClient;
@@ -77,6 +78,9 @@ class HealthService
         // Transmission — nullable + last for the same legacy-test-constructor
         // reason as the clients above.
         private readonly ?TransmissionClient $transmission = null,
+        // Bazarr (subtitle management) — nullable + last, same
+        // legacy-test-constructor reason as the clients above.
+        private readonly ?BazarrClient      $bazarr = null,
     ) {}
 
     /**
@@ -248,6 +252,7 @@ class HealthService
             'nzbget'      => $this->nzbget?->ping() ?? false,
             'tautulli'    => $this->tautulli?->ping() ?? false,
             'transmission' => $this->transmission?->ping() ?? false,
+            'bazarr'      => $this->bazarr?->ping() ?? false,
             default       => true,
         };
     }
@@ -264,7 +269,7 @@ class HealthService
      * (issue #15). Radarr/Sonarr are absent on purpose — they enable/disable
      * per instance via the `enabled` flag on `service_instance`.
      */
-    public const TOGGLEABLE_SERVICES = ['prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli'];
+    public const TOGGLEABLE_SERVICES = ['prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr'];
 
     public function isConfigured(string $service): bool
     {
@@ -318,6 +323,10 @@ class HealthService
             // including get_activity, is apikey-authenticated).
             'tautulli' =>
                 $this->config->has('tautulli_url') && $this->config->has('tautulli_api_key'),
+            // Bazarr needs both the URL and the API key (every /api call is
+            // X-API-KEY-authenticated, including /system/status).
+            'bazarr' =>
+                $this->config->has('bazarr_url') && $this->config->has('bazarr_api_key'),
             default => true,
         };
     }
@@ -344,7 +353,7 @@ class HealthService
         if ($service === null) {
             $this->statusCache = [];
             if ($this->serviceHealthCache !== null) {
-                foreach (['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli'] as $svc) {
+                foreach (['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr'] as $svc) {
                     $this->serviceHealthCache->clear($svc);
                 }
             }
@@ -651,6 +660,17 @@ class HealthService
                 return [
                     'url'     => rtrim($url, '/') . '/api/v2?' . http_build_query(['apikey' => $key, 'cmd' => 'get_activity']),
                     'headers' => ['Accept: application/json'],
+                ];
+            }
+            case 'bazarr': {
+                $url = $get('bazarr_url');
+                $key = $get('bazarr_api_key');
+                if ($url === '' || $key === '') return null;
+                // Same read-only endpoint the client's ping() uses; a bad or
+                // revoked key answers 401 → diagnosed as `auth`.
+                return [
+                    'url'     => rtrim($url, '/') . '/api/system/status',
+                    'headers' => ['X-API-KEY: ' . $key, 'Accept: application/json'],
                 ];
             }
             case 'nzbget': {

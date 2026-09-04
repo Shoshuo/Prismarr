@@ -56,6 +56,47 @@
     border-radius: .25rem; background: rgba(0,0,0,.65); color: #fff;
     backdrop-filter: blur(4px);
 }
+/* Bazarr subtitle-status pill. Font-size floor is !important because it must
+   hold at 11px in every context it's included into, including
+   the .extended-info row whose sibling badges are deliberately smaller. */
+.media-card .subtitle-badge { font-size: .6875rem !important; }
+/* z-index sits above .hover-info (z-index: 5) so the badge stays visible AND
+   clickable while the hover overlay is up — the overlay is pointer-events:none
+   anyway, and the capture-phase delegate in bazarr/_search_modal.html.twig
+   stops the card's own modal toggle from firing underneath the badge. */
+.media-card > .subtitle-badge {
+    position: absolute; top: 1.7rem; left: .4rem; z-index: 6;
+    padding: .05rem .35rem; border-radius: .25rem;
+}
+/* Solid-backed badge treatment for anything rendered over a poster image.
+   Tabler's bg-*-lt classes set background-color/color with !important and
+   resolve to a TRANSLUCENT tint (verified against tabler.min.css) — a
+   non-important background can never win against that, so poster-context
+   chips drop bg-*-lt entirely and instead mirror .quality-badge's existing
+   opaque dark-scrim convention (same rgba fill + backdrop-filter, used
+   elsewhere in this file for exactly this "must read on ANY poster" need).
+   Status is carried by colored TEXT (is-success/is-danger/is-warning,
+   sourced from the same --tblr-* vars as the -lt classes) instead of the
+   background, so it stays legible in both themes and on the flat modal
+   surface the chips partial also renders on, not only over a poster.
+   Self-contained font-size floor because the detail modal's language chips
+   use this class outside .media-card too. Flat table/list-row badges are
+   untouched — they keep the plain -lt tint, no .poster-chip. */
+.poster-chip {
+    background: rgba(0,0,0,.65);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: .6875rem !important;
+}
+.poster-chip.is-success { color: var(--tblr-success); }
+.poster-chip.is-danger { color: var(--tblr-danger); }
+.poster-chip.is-warning { color: var(--tblr-warning); }
+/* Tabler's reboot shrinks sub/sup to .75em (position:relative;top:-.5em),
+   which would put the HI/F markers under the 11px floor on a
+   .6875rem chip (.75em of that is ~8.25px). The reboot's top:-.5em offset is
+   relative to the sup's own font-size, so parity sizing still reads as a
+   raised marker instead of shrinking below the floor. */
+.poster-chip sup { font-size: 1em; }
 .queue-progress { height: 4px; border-radius: 2px; background: var(--tblr-bg-surface-secondary); overflow: hidden; margin-top: .25rem; }
 .queue-progress-bar { height: 100%; border-radius: 2px; background: var(--tblr-primary); transition: width .3s; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
@@ -144,6 +185,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 .media-grid.view-wall .media-card { border-radius: 0; border: none; }
 .media-grid.view-wall .media-card .status-dot,
 .media-grid.view-wall .media-card .quality-badge,
+.media-grid.view-wall .media-card > .subtitle-badge,
 .media-grid.view-wall .media-card .card-overlay { display: none !important; }
 .media-grid.view-wall .media-card:hover { transform: none; box-shadow: none; }
 .media-grid.view-wall.select-mode .media-card .select-cb { display: flex !important; z-index: 10; }
@@ -154,6 +196,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 .media-grid.view-extended .media-card .no-poster { width: 80px; height: 120px; aspect-ratio: auto; font-size: .55rem; flex-shrink: 0; }
 .media-grid.view-extended .media-card .status-dot,
 .media-grid.view-extended .media-card .quality-badge,
+.media-grid.view-extended .media-card > .subtitle-badge,
 .media-grid.view-extended .media-card .card-overlay,
 .media-grid.view-extended .media-card .hover-info { display: none !important; }
 .media-grid.view-extended .media-card .extended-info { display: flex; flex-direction: column; justify-content: center; padding: .5rem .75rem; flex: 1; min-width: 0; }
@@ -435,6 +478,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
               {% if movie.hasFile %}<span class="badge bg-success-lt" style="font-size:.65rem;">{{ 'media.films.status.downloaded'|trans }}</span>
               {% elseif movie.monitored %}<span class="badge bg-warning-lt" style="font-size:.65rem;">{{ 'media.films.status.missing'|trans }}</span>
               {% else %}<span class="badge bg-secondary-lt" style="font-size:.65rem;">{{ 'media.films.status.unmonitored'|trans }}</span>{% endif %}
+              {{ include('media/_subtitle_badge.html.twig', { kind: 'movie', id: movie.id }) }}
             </td>
           </tr>
           {% endfor %}
@@ -673,6 +717,8 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       <div class="quality-badge">{{ movie.quality }}</div>
     {% endif %}
 
+    {{ include('media/_subtitle_badge.html.twig', { kind: 'movie', id: movie.id, poster: true }) }}
+
     <div class="card-overlay">
       <div class="card-title-text">{{ movie.title }}</div>
       <div class="card-year">{{ movie.year }}</div>
@@ -703,6 +749,9 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         {% if movie.hasFile %}<span class="badge bg-success-lt">{{ 'media.films.status.downloaded'|trans }}</span>
         {% elseif movie.monitored %}<span class="badge bg-warning-lt">{{ 'media.films.status.missing'|trans }}</span>
         {% else %}<span class="badge bg-secondary-lt">{{ 'media.films.status.unmonitored'|trans }}</span>{% endif %}
+        {# No subtitle badge here: .hover-info is pointer-events:none, so a copy
+           inside it could never be clicked. The direct child of .media-card
+           (above) carries z-index 6 and stays usable during hover instead. #}
       </div>
       <div class="h-title">{{ movie.title }}</div>
       <div class="h-year">{{ movie.year }}{% if movie.runtime %} · {{ movie.runtime }} min{% endif %}{% if movie.sizeGb %} · {{ movie.sizeGb }} {{ 'media.films.stats.gb_suffix'|trans }}{% endif %}</div>
@@ -717,6 +766,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         {% elseif movie.monitored %}<span class="badge bg-warning-lt">{{ 'media.films.status.missing'|trans }}</span>
         {% else %}<span class="badge bg-secondary-lt">{{ 'media.films.status.unmonitored'|trans }}</span>{% endif %}
         {% if movie.quality %}<span class="badge bg-blue-lt">{{ movie.quality }}</span>{% endif %}
+        {{ include('media/_subtitle_badge.html.twig', { kind: 'movie', id: movie.id }) }}
         {% if movie.runtime %}<span class="text-muted">{{ movie.runtime }} min</span>{% endif %}
         {% if movie.sizeGb %}<span class="text-muted">{{ movie.sizeGb }} {{ 'media.films.stats.gb_suffix'|trans }}</span>{% endif %}
       </div>
@@ -881,6 +931,27 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
             {# Extra files #}
             <div id="film-extras" class="text-muted small mb-3 px-1" style="display:none"></div>
+
+            {# Bazarr subtitles: languages present/
+               missing for this movie. Hidden by default and reset to hidden at
+               the START of every modal open (see the show.bs.modal handler) so
+               a previous movie's chips never flash before the fetch resolves.
+               Only unhidden client-side when GET /bazarr/api/subtitles/movie/{id}
+               answers {ok:true, tracked:true} with at least one present/missing
+               language — admin-only, mirroring the badge's own gating. #}
+            <div id="film-subtitles" class="card mb-2 d-none">
+              <div class="card-header py-2">
+                <h3 class="card-title mb-0">{{ 'bazarr.detail.subtitles'|trans }}</h3>
+                <div class="card-actions">
+                  <button type="button" id="film-subtitles-search" class="btn btn-outline-secondary btn-sm" data-bazarr-search data-kind="movie">
+                    {{ 'bazarr.detail.search'|trans }}
+                  </button>
+                </div>
+              </div>
+              <div class="card-body py-2">
+                <div id="film-subtitles-chips" class="d-flex flex-wrap gap-1"></div>
+              </div>
+            </div>
 
             {# Rename info (only if hasFile) #}
             <div id="film-rename-info" class="card mb-2" style="display:none">
@@ -1320,7 +1391,9 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     b_correctly_named_tpl: {{ 'media.films.bulk.films_correctly_named'|trans({count: '__COUNT__'})|json_encode|raw }},
     shelf_downloaded: {{ 'media.films.status.downloaded'|trans|json_encode|raw }},
     shelf_missing: {{ 'media.films.status.missing'|trans|json_encode|raw }},
-    shelf_unmonitored: {{ 'media.films.status.unmonitored'|trans|json_encode|raw }}
+    shelf_unmonitored: {{ 'media.films.status.unmonitored'|trans|json_encode|raw }},
+    subtitle_hi_title: {{ 'bazarr.chips.hi_title'|trans|json_encode|raw }},
+    subtitle_forced_title: {{ 'bazarr.chips.forced_title'|trans|json_encode|raw }}
   };
   function tpl(s, map) {
     if (!s) return '';
@@ -1668,6 +1741,11 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     hideSearchFeedback();
     hideRenameFeedback();
     document.getElementById('releases-area').style.display = 'none';
+
+    // Bazarr subtitles: hidden by default so a previous movie's chips never
+    // flash before this movie's fetch resolves (or fails/stays untracked).
+    resetFilmSubtitles();
+    loadFilmSubtitles(currentId);
   });
 
   modalEl.addEventListener('hidden.bs.modal', function () {
@@ -1675,6 +1753,55 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     currentMovie = null;
     currentId    = null;
   });
+
+  /* ── Bazarr subtitles ──
+     Admin-only client fetch, mirroring the badge's own gating. The endpoint
+     (GET /bazarr/api/subtitles/movie/{radarrId}) is always 200 JSON and fails
+     closed — down/gated/untracked all answer {ok:true, tracked:false,
+     present:[], missing:[]} — so any non-ok/non-200/network-error/untracked/
+     empty response just leaves the section hidden; nothing here needs to
+     branch on failure explicitly beyond that early return.
+     The modal is reused across movies, so the id being fetched is captured
+     up front (movieId) and compared against currentId when the response
+     lands — a slow response for a movie the user has since navigated away
+     from (or closed the modal on) is dropped rather than rendered. */
+  function resetFilmSubtitles() {
+    document.getElementById('film-subtitles').classList.add('d-none');
+    document.getElementById('film-subtitles-chips').innerHTML = '';
+    document.getElementById('film-subtitles-search').removeAttribute('data-id');
+  }
+
+  function renderSubtitleChip(c, cls) {
+    var hi = c.hi ? '<sup title="' + window.escHtml(FILM_I18N.subtitle_hi_title) + '">HI</sup>' : '';
+    var forced = c.forced ? '<sup title="' + window.escHtml(FILM_I18N.subtitle_forced_title) + '">F</sup>' : '';
+    return '<span class="badge poster-chip ' + cls + '">' + window.escHtml(c.lang) + hi + forced + '</span>';
+  }
+
+  function loadFilmSubtitles(movieId) {
+    if (!window.PRISMARR_IS_ADMIN || !movieId) return;
+    fetch('/bazarr/api/subtitles/movie/' + encodeURIComponent(movieId), {
+      headers: { 'X-Requested-With': 'fetch' },
+      credentials: 'same-origin'
+    })
+      .then(function (r) {
+        var ct = r.headers.get('content-type') || '';
+        if (!r.ok || ct.indexOf('application/json') === -1) throw new Error('bad-response');
+        return r.json();
+      })
+      .then(function (data) {
+        if (movieId !== currentId) return; // stale: the modal moved on to another movie
+        if (!data || !data.ok || !data.tracked) return;
+        var present = data.present || [];
+        var missing = data.missing || [];
+        if (!present.length && !missing.length) return;
+        var html = present.map(function (c) { return renderSubtitleChip(c, 'is-success'); }).join('')
+          + missing.map(function (c) { return renderSubtitleChip(c, 'is-danger'); }).join('');
+        document.getElementById('film-subtitles-chips').innerHTML = html;
+        document.getElementById('film-subtitles-search').setAttribute('data-id', String(movieId));
+        document.getElementById('film-subtitles').classList.remove('d-none');
+      })
+      .catch(function () { /* fail closed: leave the section hidden */ });
+  }
 
   /* ── Header ── */
   function populateHeader(m) {

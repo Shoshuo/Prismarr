@@ -1,0 +1,93 @@
+{#
+  Bazarr page shell: header + pill nav paint ONCE, and the three tab views
+  (Wanted/Movies/Series) live inside one Turbo Frame so switching tabs swaps
+  only the frame's content instead of re-rendering the whole page chrome.
+  History stays a separate full Turbo Drive page (see _nav.html.twig).
+
+  A direct hit / full-page navigation renders THIS template, which includes
+  _bare.html.twig so the frame's initial content is already the requested
+  view's HTML — Turbo only fetches on a LATER frame-scoped navigation, so a
+  direct hit still costs exactly one request.
+#}
+{% extends 'base.html.twig' %}
+{% block title %}{{ 'bazarr.title'|trans }}{% endblock %}
+{% block stylesheets %}
+{{ parent() }}
+<style>
+/* turbo-frame is a custom element with no built-in display — left alone it
+   defaults to `inline`, which lets its content's block-level children
+   overflow/misalign around it. */
+turbo-frame { display: block; }
+/* Busy affordance for the frame swap — Turbo sets/removes the `busy`
+   attribute on the frame element itself around a frame-scoped navigation,
+   no JS needed here. */
+#bazarr-view[busy] { opacity: .5; pointer-events: none; transition: opacity .1s; }
+
+/* Landing overview (bazarr/index.html.twig): stat tiles + a "most missing"
+   poster row. Lives here (loaded once, in <head>) rather than in the
+   partial itself, which — like every view — gets its markup wholly
+   replaced on each frame swap; a <style> tag inside it would be torn down
+   and recreated (and briefly duplicated) on every navigation back to the
+   Wanted tab instead of loading once.
+
+   Card look/CSS below is a page-local copy of the Task-7 `.media-card` +
+   locked Task-1 `.poster-chip` treatment (see bazarr/_grid.html.twig), kept
+   visually identical so the landing row and the full grids read as one
+   design. */
+.bazarr-missing-row { display: flex; gap: .75rem; overflow-x: auto; padding-bottom: .4rem; }
+.bz-missing-card { flex: 0 0 150px; display: flex; flex-direction: column; }
+.bz-missing-card .media-card {
+  position: relative; display: block; border-radius: .5rem; overflow: hidden;
+  background: var(--tblr-bg-surface); border: 1px solid var(--tblr-border-color);
+  transition: transform .15s, box-shadow .15s;
+}
+.bz-missing-card .media-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+.bz-missing-card .media-card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+.bz-missing-card .no-poster {
+  width: 100%; aspect-ratio: 2/3;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--tblr-bg-surface-secondary);
+  color: var(--tblr-muted); font-size: .7rem; text-align: center; padding: .5rem;
+}
+.bz-missing-card .card-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,.85));
+  padding: .5rem .4rem .4rem;
+}
+.bz-missing-card .card-title-text {
+  font-size: .72rem; font-weight: 600; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
+}
+.bz-missing-card .card-title-text a { color: inherit; text-decoration: none; }
+.bz-missing-card .card-title-text a:hover { text-decoration: underline; }
+.bz-missing-card .card-year { font-size: .62rem; color: rgba(255,255,255,.55); }
+/* Locked .poster-chip scrim — mirrors films.html.twig/series.html.twig/_grid.html.twig. */
+.poster-chip { background: rgba(0,0,0,.65); backdrop-filter: blur(4px); color: #fff; font-size: .6875rem !important; }
+.poster-chip.is-warning { color: var(--tblr-warning); }
+.poster-chip sup { font-size: 1em; }
+.bz-missing-card .bazarr-chip { position: absolute; top: .4rem; left: .4rem; z-index: 2; padding: .1rem .4rem; border-radius: .25rem; }
+.bz-missing-card .bz-missing-footer { margin-top: .4rem; }
+/* Mobile/tablet readability floor: sub-11px text bumps to .6875rem
+   below the lg breakpoint; desktop keeps the denser sizes. */
+@media (max-width: 991.98px) {
+  .bz-missing-card .card-year { font-size: .6875rem; }
+}
+</style>
+{% endblock %}
+{% block body %}
+<div class="page-header d-print-none">
+  <div class="row align-items-center">
+    <div class="col">
+      <h2 class="page-title">{{ 'bazarr.title'|trans }}</h2>
+      <div class="text-secondary">{{ 'bazarr.subtitle'|trans }}</div>
+    </div>
+    <div class="col-auto ms-auto">{% include 'bazarr/_nav.html.twig' with { view: view } %}</div>
+  </div>
+</div>
+<div class="page-body"><div class="container-xl">
+  {# The frame's initial content IS this view's HTML: Turbo renders
+     server-supplied inner content immediately and only fetches on a later
+     frame-scoped navigation, so a direct hit costs exactly one request. #}
+  {% include 'bazarr/_bare.html.twig' %}
+</div></div>
+{% endblock %}

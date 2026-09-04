@@ -1,0 +1,154 @@
+{#
+  Cold-cache state: the messenger worker has been asked for a rebuild and we
+  are waiting. This partial renders ONLY when Bazarr is reachable
+  (BazarrController pings first; a down Bazarr renders the error banner
+  instead), so the state we are polling is "healthy but still warming", never
+  "down". So: a small, bounded backoff of automatic retries heals that case
+  on its own, then we fall back to a manual button.
+
+  A re-fetch of the frame is cheap — a ping plus a stale-while-revalidate
+  cache read; the heavy inline Bazarr fetch happens ONLY on the manual
+  button's /api/refresh. The bound is what stops an INFINITE poll when the
+  worker itself is dead (the cache then never warms): after the schedule is
+  exhausted we surface the manual button, whose breaker-gated inline rebuild
+  is the actual dead-worker recovery path.
+
+  This inline script runs both on a full page render and inside a frame swap:
+  Turbo's FrameRenderer re-creates script elements, so it does not need the
+  delegated-listener treatment the innerHTML-swapped dashboard widgets need.
+
+  JS comments in here open with slash-star and close with star-slash. A JS
+  block comment closed with a Twig comment terminator inside a script block
+  once shipped a dead modal -- and NEVER write a Twig comment terminator (or
+  opener) as literal text in a Twig comment: Twig comments do not nest, so
+  the first terminator closes this whole block and the rest leaks onto the
+  page. BazarrTemplateGuardTest models that lexing now.
+#}
+<div class="empty py-5" id="bazarr-warming">
+  <div class="empty-icon"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></div>
+  <p class="empty-title">{{ 'bazarr.warming.title'|trans }}</p>
+  <p class="empty-subtitle text-secondary">{{ 'bazarr.warming.subtitle'|trans }}</p>
+  <div class="empty-action">
+    <button type="button" class="btn btn-primary d-none" id="bazarr-warming-retry">{{ 'bazarr.warming.retry'|trans }}</button>
+  </div>
+</div>
+<script>
+(function () {
+  var el = document.getElementById('bazarr-warming');
+  if (!el || el._bzWarmInit) { return; }
+  el._bzWarmInit = true;
+
+  var btn = document.getElementById('bazarr-warming-retry');
+  var frame = document.getElementById('bazarr-view');
+  var path = window.location.pathname + window.location.search;
+  var storageKey = 'prismarr:bazarr-warm-attempts:' + path;
+
+  /* Bounded backoff schedule (ms). Its length is the max number of automatic
+     retries; a healthy-but-warming index almost always resolves inside it.
+     The steps lengthen so we probe quickly at first (a warm cache is often
+     one consumer cycle away) then back off. */
+  var SCHEDULE = [3000, 5000, 8000];
+
+  /* A warming state seen more than this after the FIRST attempt of a burst
+     counts as a NEW cold cycle (e.g. Bazarr was restarted again in the same
+     tab session) and restarts the schedule from zero, rather than staying
+     stuck on the manual button forever. */
+  var WINDOW_MS = 60000;
+
+  /* The server re-renders this markup with no memory of prior retries (the
+     cache is still cold — there is nothing to read it back FROM), so the
+     attempt count lives out-of-band, keyed by path, so ONE record survives
+     both a Turbo frame swap AND the window.location.reload() fallback below.
+     The fallback is a full document navigation, which wipes any plain
+     `window` property, so a window-only counter would forget how many times
+     it had retried and re-arm the whole schedule on every reload: an
+     unbounded poll in exactly the browsers/contexts that need the fallback.
+     sessionStorage is the primary store; `window` is kept as the fallback
+     for when sessionStorage itself throws (private browsing, disabled
+     storage, a quota error) — worse-bounded (a full navigation still resets
+     it) but never worse than a single retry. */
+  function readState() {
+    var now = Date.now();
+    var fresh = { n: 0, t: now };
+    try {
+      if (window.sessionStorage) {
+        var raw = sessionStorage.getItem(storageKey);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (parsed && (now - parsed.t) <= WINDOW_MS) { return { n: parsed.n | 0, t: parsed.t }; }
+        }
+        return fresh;
+      }
+    } catch (e) { /* fall through to the window fallback below */ }
+
+    var w = window.__bzWarmAttempts && window.__bzWarmAttempts[path];
+    if (w && (now - w.t) <= WINDOW_MS) { return { n: w.n | 0, t: w.t }; }
+    return fresh;
+  }
+
+  function writeState(state) {
+    try {
+      if (window.sessionStorage) { sessionStorage.setItem(storageKey, JSON.stringify(state)); return; }
+    } catch (e) { /* fall through to the window fallback below */ }
+
+    window.__bzWarmAttempts = window.__bzWarmAttempts || {};
+    window.__bzWarmAttempts[path] = state;
+  }
+
+  function reloadView() {
+    /* frame.reload() is a no-op when the frame has no `src` yet — true on
+       a direct hit / full-page render, since the shell ships this markup
+       as the frame's initial server-rendered content rather than fetching
+       it. Turbo.visit(url, {frame}) instead ASSIGNS the frame's `src`,
+       which works whether or not one was already set. */
+    if (frame && window.Turbo && typeof window.Turbo.visit === 'function') {
+      window.Turbo.visit(path, { frame: 'bazarr-view' });
+    } else {
+      window.location.reload();
+    }
+  }
+
+  var timer = null;
+  var state = readState();
+  if (state.n < SCHEDULE.length) {
+    /* Still inside the bounded schedule: arm the next backoff step. Persist
+       the incremented count (carrying the original burst timestamp) BEFORE
+       reloading so the next render — frame swap or full reload — picks up
+       where we left off instead of restarting the schedule. */
+    timer = setTimeout(function () {
+      writeState({ n: state.n + 1, t: state.t });
+      reloadView();
+    }, SCHEDULE[state.n]);
+  } else if (btn) {
+    // Schedule exhausted (likely a dead worker): manual button only, no timer.
+    btn.classList.remove('d-none');
+  }
+
+  if (btn) {
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+      /* Force an inline, breaker-gated rebuild — this is the recovery path
+         when the messenger worker itself is down. */
+      fetch({{ path('app_bazarr_api_refresh')|json_encode|raw }}, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin'
+      }).then(function () { reloadView(); })
+        .catch(function () { btn.disabled = false; });
+    });
+  }
+
+  // Dual-bound like _grid.html.twig's teardown: a frame swap fires
+  // turbo:before-frame-render on the frame element and NO document-level
+  // turbo:before-render; a full-page Turbo Drive visit fires only the
+  // latter. Removing both from one teardown, regardless of which fired,
+  // keeps this idempotent.
+  function teardown() {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (frame) { frame.removeEventListener('turbo:before-frame-render', teardown); }
+    document.removeEventListener('turbo:before-render', teardown);
+  }
+  if (frame) { frame.addEventListener('turbo:before-frame-render', teardown); }
+  document.addEventListener('turbo:before-render', teardown);
+})();
+</script>

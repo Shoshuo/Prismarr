@@ -75,6 +75,7 @@ sidebar:
     jellyseerr: Seerr
     films: Movies
     series: TV Shows
+    bazarr: Bazarr
   footer:
     collapse: Collapse sidebar
     expand: Expand sidebar
@@ -691,6 +692,7 @@ admin:
       nzbget: Usenet downloader
       gluetun: 'VPN / port forwarding'
       tautulli: 'Plex activity (via Tautulli)'
+      bazarr: 'Subtitle manager (via Bazarr)'
     sidebar_toggle: Menu
     sidebar_toggle_title: Show in sidebar
     status:
@@ -5478,6 +5480,118 @@ jellyseerr:
     media:
       available: Available
       partially_available: Partially available
+
+bazarr:
+  title: Bazarr
+  subtitle: Subtitle management — wanted movies and episodes
+  nav:
+    wanted: Wanted
+    movies: Movies
+    series: Series
+    history: History
+  stat:
+    movies_wanted: Movies wanted
+    episodes_wanted: Episodes wanted
+    providers: Providers enabled
+  wanted:
+    movies_title: Movies missing subtitles
+    episodes_title: Episodes missing subtitles
+    empty: Nothing wanted
+    column_title: Title
+  landing:
+    most_missing_title: Most missing subtitles
+    empty: Nothing missing
+    view_movies: All movies
+    view_series: All series
+  movies:
+    title: Movies
+    empty: No movies found
+    column_title: Title
+    column_year: Year
+    column_language: Audio language
+    column_missing: Missing subtitles
+    none_missing: Complete
+    not_tracked: Not tracked
+  series:
+    title: Series
+    empty: No series found
+    column_title: Title
+    column_year: Year
+    column_episodes: Episode files
+    column_missing: Missing episodes
+    none_missing: Complete
+    not_tracked: Not tracked
+  filter:
+    search_placeholder: Search by title…
+    status_all: All
+    status_complete: Complete
+    status_missing: Missing
+    status_not_tracked: Not tracked
+    all_languages: All languages
+    sort_title_asc: Title A→Z
+    sort_missing_desc: Most missing first
+  grid:
+    complete: Complete
+    not_tracked: Not tracked
+    empty_filtered: No items match your filters
+  warming:
+    title: Loading subtitle data from Bazarr…
+    subtitle: This takes a few seconds the first time after a restart.
+    retry: Retry now
+  history:
+    movies_title: Movie subtitle history
+    episodes_title: Episode subtitle history
+    empty: No history yet
+    column_title: Title
+    column_action: Action
+    column_provider: Provider
+    column_language: Language
+    column_date: Date
+  series_detail:
+    title: Episodes
+    back: Back to series
+    empty: No episodes found
+    column_season: Season
+    column_episode: Episode
+    column_title: Title
+    column_language: Audio language
+    column_status: Subtitles
+    search: Search
+    complete: Complete
+  badge:
+    missing: Missing
+    missing_count: '{count, plural, one {# subtitle missing} other {# subtitles missing}}'
+    missing_episodes: '{count, plural, one {# episode missing subtitles} other {# episodes missing subtitles}}'
+    complete: Subtitles complete
+    subs: Subs
+    pending: Subtitle status is still loading from Bazarr
+  chips:
+    hi_title: Hearing-impaired subtitles
+    forced_title: Forced subtitles
+  detail:
+    subtitles: Subtitles
+    search: Search
+    episode_missing: Missing subtitles
+  auto:
+    started: Automatic search started
+    button: Auto search
+  modal:
+    title: Subtitle search
+    download: Download
+    no_results: No subtitles found
+    searching: Searching…
+    downloading: Downloading…
+    success: Subtitle downloaded
+    error: Could not complete the request
+    columns:
+      provider: Provider
+      language: Language
+      hi: HI
+      forced: Forced
+      score: Score
+      release: Release
+      uploader: Uploader
+      actions: Action
 
 user:
   email:

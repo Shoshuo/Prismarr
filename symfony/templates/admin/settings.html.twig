@@ -448,6 +448,7 @@
             'nzbget':      { icon_bg: '#1f9c3a', subtitle: 'admin.services.subtitle.nzbget'|trans },
             'gluetun':     { icon_bg: '#10b981', subtitle: 'admin.services.subtitle.gluetun'|trans },
             'tautulli':    { icon_bg: '#e5a00d', subtitle: 'admin.services.subtitle.tautulli'|trans },
+            'bazarr':      { icon_bg: '#be4bdb', subtitle: 'admin.services.subtitle.bazarr'|trans },
           } %}
 
           {% set groupings = {
@@ -455,7 +456,7 @@
             ('admin.services.group.managers'|trans):   ['radarr', 'sonarr'],
             ('admin.services.group.indexers'|trans):   ['prowlarr', 'jellyseerr'],
             ('admin.services.group.downloads'|trans):  ['qbittorrent', 'deluge', 'transmission', 'gluetun', 'sabnzbd', 'nzbget'],
-            ('admin.services.group.monitoring'|trans): ['tautulli'],
+            ('admin.services.group.monitoring'|trans): ['tautulli', 'bazarr'],
           } %}
 
           {# ─── Section 1 : Services externes ─────────────────────── #}
@@ -496,7 +497,7 @@
                       {# Issue #15 — per-service kill switch. Only the flat-config
                          services have it; radarr/sonarr enable/disable per
                          instance. Unchecked box isn't POSTed → disabled. #}
-                      {% if service_id in ['tmdb', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'sabnzbd', 'nzbget', 'tautulli'] %}
+                      {% if service_id in ['tmdb', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr'] %}
                         <label class="form-check form-switch m-0 me-2" style="padding-left:2.4em;"
                                title="{{ 'admin.services.enabled_title'|trans }}">
                           <input class="form-check-input" type="checkbox"
@@ -1330,6 +1331,7 @@
         transmission: ['transmission_url', 'transmission_user', 'transmission_password'],
         sabnzbd:     ['sabnzbd_url', 'sabnzbd_api_key'],
         nzbget:      ['nzbget_url', 'nzbget_user', 'nzbget_password'],
+        bazarr:      ['bazarr_url', 'bazarr_api_key'],
       };
       // Per-service test buttons (TMDb, Prowlarr, Jellyseerr, qBit). Same
       // state-driven look as the per-instance Test (button colour + label

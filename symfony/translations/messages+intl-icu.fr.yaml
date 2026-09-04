@@ -74,6 +74,7 @@ sidebar:
     jellyseerr: Seerr
     films: Films
     series: Séries
+    bazarr: Bazarr
   footer:
     collapse: Réduire la barre latérale
     expand: Développer la barre latérale
@@ -690,6 +691,7 @@ admin:
       nzbget: Téléchargeur Usenet
       gluetun: 'VPN / port forwarding'
       tautulli: 'Activité Plex (via Tautulli)'
+      bazarr: 'Gestionnaire de sous-titres (via Bazarr)'
     sidebar_toggle: Menu
     sidebar_toggle_title: Afficher dans le menu latéral
     status:
@@ -5476,6 +5478,118 @@ jellyseerr:
     media:
       available: Disponible
       partially_available: Partiellement disponible
+
+bazarr:
+  title: Bazarr
+  subtitle: Gestion des sous-titres — films et épisodes recherchés
+  nav:
+    wanted: Recherchés
+    movies: Films
+    series: Séries
+    history: Historique
+  stat:
+    movies_wanted: Films recherchés
+    episodes_wanted: Épisodes recherchés
+    providers: Fournisseurs activés
+  wanted:
+    movies_title: Films sans sous-titres
+    episodes_title: Épisodes sans sous-titres
+    empty: Rien à rechercher
+    column_title: Titre
+  landing:
+    most_missing_title: Sous-titres les plus manquants
+    empty: Aucun sous-titre manquant
+    view_movies: Tous les films
+    view_series: Toutes les séries
+  movies:
+    title: Films
+    empty: Aucun film trouvé
+    column_title: Titre
+    column_year: Année
+    column_language: Langue audio
+    column_missing: Sous-titres manquants
+    none_missing: Complet
+    not_tracked: Non suivi
+  series:
+    title: Séries
+    empty: Aucune série trouvée
+    column_title: Titre
+    column_year: Année
+    column_episodes: Fichiers d'épisodes
+    column_missing: Épisodes manquants
+    none_missing: Complet
+    not_tracked: Non suivie
+  filter:
+    search_placeholder: Rechercher par titre…
+    status_all: Tous
+    status_complete: Complet
+    status_missing: Manquant
+    status_not_tracked: Non suivi
+    all_languages: Toutes les langues
+    sort_title_asc: Titre A→Z
+    sort_missing_desc: Le plus de manquants d'abord
+  grid:
+    complete: Complet
+    not_tracked: Non suivi
+    empty_filtered: Aucun élément ne correspond aux filtres
+  warming:
+    title: Chargement des données de sous-titres depuis Bazarr…
+    subtitle: Cela prend quelques secondes la première fois après un redémarrage.
+    retry: Réessayer
+  history:
+    movies_title: Historique des sous-titres de films
+    episodes_title: Historique des sous-titres d'épisodes
+    empty: Aucun historique pour le moment
+    column_title: Titre
+    column_action: Action
+    column_provider: Fournisseur
+    column_language: Langue
+    column_date: Date
+  series_detail:
+    title: Épisodes
+    back: Retour aux séries
+    empty: Aucun épisode trouvé
+    column_season: Saison
+    column_episode: Épisode
+    column_title: Titre
+    column_language: Langue audio
+    column_status: Sous-titres
+    search: Rechercher
+    complete: Complet
+  badge:
+    missing: Manquant
+    missing_count: '{count, plural, one {# sous-titre manquant} other {# sous-titres manquants}}'
+    missing_episodes: '{count, plural, one {# épisode sans sous-titres} other {# épisodes sans sous-titres}}'
+    complete: Sous-titres complets
+    subs: Sous-titres
+    pending: Statut des sous-titres en cours de chargement depuis Bazarr
+  chips:
+    hi_title: Sous-titres pour malentendants
+    forced_title: Sous-titres forcés
+  detail:
+    subtitles: Sous-titres
+    search: Rechercher
+    episode_missing: Sous-titres manquants
+  auto:
+    started: Recherche automatique lancée
+    button: Recherche automatique
+  modal:
+    title: Recherche de sous-titres
+    download: Télécharger
+    no_results: Aucun sous-titre trouvé
+    searching: Recherche en cours…
+    downloading: Téléchargement en cours…
+    success: Sous-titre téléchargé
+    error: Impossible de terminer la requête
+    columns:
+      provider: Fournisseur
+      language: Langue
+      hi: Malentendants
+      forced: Forcé
+      score: Score
+      release: Version
+      uploader: Auteur
+      actions: Action
 
 user:
   email:

@@ -6,6 +6,7 @@ use App\Entity\ServiceInstance;
 use App\Repository\Media\WatchlistItemRepository;
 use App\Service\HealthService;
 use App\Service\Media\JellyseerrClient;
+use App\Service\Media\MediaLibraryCache;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TautulliClient;
@@ -64,6 +65,12 @@ class DashboardController extends AbstractController
         private readonly CacheInterface $cache,
         private readonly TautulliClient $tautulli,
         private readonly \App\Service\DashboardLayoutService $layout,
+        // Shared per-instance library cache: replaces this controller's
+        // private dash.movies/dash.series copies so the dashboard shares one
+        // entry with the Films/Series pages — and so MediaController's
+        // invalidation sites finally reach the dashboard. Nullable + last so
+        // legacy positional test constructors keep working.
+        private readonly ?MediaLibraryCache $libraryCache = null,
     ) {}
 
     /**
@@ -107,40 +114,59 @@ class DashboardController extends AbstractController
      */
     private function movies(): array
     {
-        return $this->moviesCache ??= $this->cached('movies', function () {
-            $out = [];
-            foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
-                $rows = $this->safeFetch(
-                    'library.movies.' . $inst->getSlug(),
-                    fn() => $this->radarr->withInstance($inst)->getMovies(),
-                ) ?? [];
-                foreach ($rows as $row) {
-                    $row['_instanceSlug'] = $inst->getSlug();
-                    $row['_instanceName'] = $inst->getName();
-                    $out[] = $row;
-                }
-            }
-            return $out;
-        });
+        return $this->moviesCache ??= $this->collectLibrary(ServiceInstance::TYPE_RADARR);
     }
 
     private function series(): array
     {
-        return $this->seriesCache ??= $this->cached('series', function () {
-            $out = [];
-            foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
-                $rows = $this->safeFetch(
-                    'library.series.' . $inst->getSlug(),
-                    fn() => $this->sonarr->withInstance($inst)->getSeries(),
-                ) ?? [];
-                foreach ($rows as $row) {
-                    $row['_instanceSlug'] = $inst->getSlug();
-                    $row['_instanceName'] = $inst->getName();
-                    $out[] = $row;
-                }
+        return $this->seriesCache ??= $this->collectLibrary(ServiceInstance::TYPE_SONARR);
+    }
+
+    /**
+     * Fan out over every enabled instance, reading each one's list through the
+     * SHARED MediaLibraryCache entry (`media.movies.<slug>` /
+     * `media.series.<slug>`) rather than this controller's own
+     * `dash.movies` / `dash.series` copy, then tag the rows with the instance
+     * they came from. The tag is applied HERE, never stored in the cache —
+     * MediaController's library pages read the same entry and must not see
+     * dashboard-private keys.
+     *
+     * `dash.movies` / `dash.series` were a second, uncoordinated 45 s copy of
+     * the same payload with no invalidation hook, so a mutation on the Films
+     * page could stay invisible on the dashboard for the rest of the window.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function collectLibrary(string $type): array
+    {
+        $isMovies = $type === ServiceInstance::TYPE_RADARR;
+        $out      = [];
+
+        foreach ($this->instances->getEnabled($type) as $inst) {
+            $slug = $inst->getSlug();
+            $rows = $this->safeFetch(
+                'library.' . ($isMovies ? 'movies.' : 'series.') . $slug,
+                function () use ($isMovies, $inst, $slug) {
+                    if ($this->libraryCache === null) {
+                        return $isMovies
+                            ? $this->radarr->withInstance($inst)->getMovies()
+                            : $this->sonarr->withInstance($inst)->getSeries();
+                    }
+
+                    return $isMovies
+                        ? $this->libraryCache->movies($slug, fn() => $this->radarr->withInstance($inst)->getMovies())
+                        : $this->libraryCache->series($slug, fn() => $this->sonarr->withInstance($inst)->getSeries());
+                },
+            ) ?? [];
+
+            foreach ($rows as $row) {
+                $row['_instanceSlug'] = $slug;
+                $row['_instanceName'] = $inst->getName();
+                $out[] = $row;
             }
-            return $out;
-        });
+        }
+
+        return $out;
     }
 
     #[Route('/tableau-de-bord', name: 'app_dashboard')]
@@ -852,6 +878,9 @@ class DashboardController extends AbstractController
             'actionUrl'    => $actionUrl,
             'actionLabel'  => $this->translator->trans('dashboard.quicklook.manage'),
             'inLibrary'    => true,
+            // Bare *arr ids, for the quick-look's subtitle badge.
+            'radarrId'     => $type === 'movie' ? $id : null,
+            'sonarrId'     => $type === 'series' ? $id : null,
             'airStatus'    => $airStatus,
             'releaseDates' => $type === 'series'
                 ? $this->seriesReleaseChips(
@@ -949,6 +978,10 @@ class DashboardController extends AbstractController
             'actionUrl'    => $actionUrl,
             'actionLabel'  => $actionLabel,
             'inLibrary'    => $match !== null,
+            // Bare *arr ids of the matched library row, for the quick-look's
+            // subtitle badge. Null when the title is not in the library.
+            'radarrId'     => (!$isTv && $match !== null) ? $match['id'] : null,
+            'sonarrId'     => ($isTv && $match !== null) ? $match['id'] : null,
             'airStatus'    => $airStatus,
             'cast'         => $extras['cast'],
             'providers'    => $extras['providers'],

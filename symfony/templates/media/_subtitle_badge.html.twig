@@ -1,0 +1,70 @@
+{#
+    Per-item Bazarr subtitle-status badge. Shared by the Films/Series grids,
+    the quick-look modal, and search results, so the
+    missing/complete/hidden logic and admin-only search affordance live in
+    one place.
+
+    Params:
+      kind:        'movie'|'series' — dispatches to BazarrSubtitleIndex::movieStatus/seriesStatus.
+      id:          the Radarr movie id or Sonarr series id.
+      st_override: a subtitle status array (optional) — a pre-resolved status to render
+                   instead of re-looking one up via subtitle_status(kind, id).
+                   Used ONLY by the quick-look body, which must call the
+                   per-id single-item Twig function (see SubtitleBadgeExtension)
+                   rather than the bulk-map lookup this partial calls
+                   internally.
+      poster:      bool (default false) — pass true only when this include renders
+              directly over a poster image (the grid card's direct-child
+              badge). The plain Tabler -lt classes set background-color with
+              !important and resolve to a translucent tint that can blend
+              into a same-hue poster, so the poster variant drops -lt
+              entirely and instead uses the opaque `.poster-chip` scrim
+              (mirrors .quality-badge) with the status carried by a
+              colored-text modifier (`is-warning`/`is-success`) instead of
+              the background. Leave false (or omit) for table/list-row and
+              extended-info call sites, which sit on a flat background and
+              keep the plain -lt badge.
+
+    `st.count` counts different things per kind — missing *subtitles* for a
+    movie, missing *episodes* for a series — so the tooltip picks the matching
+    ICU message (bazarr.badge.missing_count vs bazarr.badge.missing_episodes).
+
+    Renders nothing when Bazarr doesn't track the item (no profile assigned,
+    or a series with zero episode files) — that's the 'hidden' state.
+#}
+{% set st = st_override ?? subtitle_status(kind, id) %}
+{% set poster = poster|default(false) %}
+{% set _missing_cls = poster ? 'poster-chip is-warning' : 'bg-warning-lt' %}
+{% set _complete_cls = poster ? 'poster-chip is-success' : 'bg-success-lt' %}
+{% if st.state != 'hidden' %}
+  {% if st.state == 'pending' %}
+    {# Index not warmed yet (fresh deploy / Bazarr outage). Rendering NOTHING
+       here would read as "nothing missing", which is a lie — show a neutral,
+       non-interactive chip instead. It self-heals on the next navigation. #}
+    <span class="badge {{ poster ? 'poster-chip' : 'bg-secondary-lt' }} subtitle-badge text-secondary"
+          title="{{ 'bazarr.badge.pending'|trans }}">…</span>
+  {% elseif st.state == 'missing' and is_granted('ROLE_ADMIN') %}
+    {% if kind == 'movie' %}
+      <button type="button" class="badge {{ _missing_cls }} border-0 subtitle-badge" data-bazarr-search data-kind="movie" data-id="{{ id }}"
+              title="{{ 'bazarr.badge.missing_count'|trans({count: st.count}) }}">
+        {{ 'bazarr.badge.missing'|trans }} {{ st.count }}
+      </button>
+    {% else %}
+      {# Series subtitle search is per-episode, so the badge drills down to the
+         Bazarr tab instead of opening the search modal. data-bazarr-nav hands
+         the navigation to the capture-phase delegate in
+         bazarr/_search_modal.html.twig: the badge is rendered inside poster
+         cards that are themselves modal togglers, and only capture-phase
+         containment can stop the card from opening at the same time. #}
+      <a class="badge {{ _missing_cls }} subtitle-badge" href="{{ path('app_bazarr_series_detail', {seriesId: id}) }}"
+         data-bazarr-nav
+         title="{{ 'bazarr.badge.missing_episodes'|trans({count: st.count}) }}">
+        {{ 'bazarr.badge.missing'|trans }} {{ st.count }}
+      </a>
+    {% endif %}
+  {% elseif st.state == 'missing' %}
+    <span class="badge {{ _missing_cls }} subtitle-badge" title="{{ kind == 'movie' ? 'bazarr.badge.missing_count'|trans({count: st.count}) : 'bazarr.badge.missing_episodes'|trans({count: st.count}) }}">{{ 'bazarr.badge.missing'|trans }} {{ st.count }}</span>
+  {% else %}
+    <span class="badge {{ _complete_cls }} subtitle-badge" title="{{ 'bazarr.badge.complete'|trans }}">{{ 'bazarr.badge.subs'|trans }}</span>
+  {% endif %}
+{% endif %}

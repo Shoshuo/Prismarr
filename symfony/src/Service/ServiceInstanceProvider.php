@@ -134,6 +134,20 @@ class ServiceInstanceProvider implements ResetInterface
     }
 
     /**
+     * True when EXACTLY one instance of $type is enabled. Shared multi-
+     * instance safety predicate: a bare *arr id (radarrId / sonarrSeriesId /
+     * episode id) is only unambiguous when its owning service pairs with a
+     * single enabled instance — with two, "movie 42" or "series 7" means a
+     * different item per instance, so any lookup keyed on that bare id must
+     * fail closed instead of guessing. Used by BazarrSubtitleIndex's badge
+     * gate and the Bazarr subtitle-detail endpoints (movie + series) alike.
+     */
+    public function hasExactlyOneEnabled(string $type): bool
+    {
+        return count($this->getEnabled($type)) === 1;
+    }
+
+    /**
      * Persist the URL + API key for the default instance of $type. Used by
      * the setup wizard and /admin/settings to mirror the v1.0 single-config
      * UX: the user types one URL + one API key per service, the provider

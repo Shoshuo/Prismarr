@@ -14,6 +14,9 @@ Icons set.
 `deluge.svg` — original minimal droplet drawn for Prismarr (Deluge brand
 color #3e7bbf), not the official Deluge logo.
 
+`bazarr.svg` — original minimal glyph drawn for Prismarr (Bazarr brand
+purple `#be4bdb`), not the official Bazarr logo.
+
 Each logo remains a trademark of its respective project. They are used
 here nominatively, to identify the third-party services Prismarr can
 connect to, never to imply endorsement.
