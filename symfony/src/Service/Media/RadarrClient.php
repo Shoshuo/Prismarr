@@ -209,9 +209,19 @@ class RadarrClient implements ResetInterface
 
     // ── Movies ────────────────────────────────────────────────────────────────
 
-    public function getMovies(): array
+    /**
+     * Wider budget for the full-library fetch (issue #41): on a large/busy
+     * Radarr the one-payload /api/v3/movie call can exceed the default 8s.
+     * Opt-in per call site — the library routes (which already allow
+     * set_time_limit(120)) pass it; frequent paths (dashboard widgets,
+     * quick-look membership checks, admin stats) keep the 8s bound so a slow
+     * instance can't pin their request for 30s.
+     */
+    public const LIBRARY_TIMEOUT = 30;
+
+    public function getMovies(int $timeout = 8): array
     {
-        $data = $this->get('/api/v3/movie');
+        $data = $this->get('/api/v3/movie', [], $timeout);
         if ($data === null) return [];
 
         return $this->normalizeMovies($data);
@@ -231,9 +241,9 @@ class RadarrClient implements ResetInterface
     }
 
     /** Returns raw movies without normalization (for lightweight cache) */
-    public function getRawMovies(): array
+    public function getRawMovies(int $timeout = 8): array
     {
-        return $this->get('/api/v3/movie') ?? [];
+        return $this->get('/api/v3/movie', [], $timeout) ?? [];
     }
 
     public function getMovie(int $id): ?array
@@ -1580,7 +1590,7 @@ class RadarrClient implements ResetInterface
 
     // ── HTTP ──────────────────────────────────────────────────────────────────
 
-    private function get(string $path, array $params = []): ?array
+    private function get(string $path, array $params = [], int $timeout = 8): ?array
     {
         if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
@@ -1602,7 +1612,7 @@ class RadarrClient implements ResetInterface
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
-            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_TIMEOUT        => $timeout,
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_NOSIGNAL       => 1,
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Accept: application/json'],
@@ -1611,14 +1621,25 @@ class RadarrClient implements ResetInterface
         $body = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $err  = curl_error($ch);
+        $errno     = curl_errno($ch);
+        $connected = curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
         curl_close($ch);
 
         if ($err || $code !== 200) {
             $this->logger->warning("RadarrClient GET {$path} → HTTP {$code} {$err}");
             $this->recordError('GET', $path, (int) $code, is_string($body) ? $body : '', $err);
             if ($err !== '' || (int) $code === 0) {
+                // Short-circuit the rest of THIS request either way (avoid
+                // stacking timeouts), but only open the cross-request breaker
+                // on connect-level failures. A read timeout after a successful
+                // connect means "slow payload", not "dead instance" — marking
+                // it down would make every caller short-circuit to
+                // "unreachable" for the breaker window (issue #41's root
+                // failure mode).
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                if (!($errno === CURLE_OPERATION_TIMEDOUT && $connected)) {
+                    $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                }
             }
             return null;
         }
@@ -1683,17 +1704,25 @@ class RadarrClient implements ResetInterface
             }
         } while ($running && $status === CURLM_OK);
 
-        $networkError = false;
-        $anySuccess   = false;
+        $connectFailure = false;
+        $networkError   = false;
+        $anySuccess     = false;
         foreach ($handles as $name => $ch) {
             $body = curl_multi_getcontent($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $err  = curl_error($ch);
+            $errno     = curl_errno($ch);
+            $connected = curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
             curl_multi_remove_handle($mh, $ch);
             curl_close($ch);
 
             if ($err !== '' || (int) $code === 0) {
                 $networkError = true;
+                // Same distinction as get(): a read timeout after a successful
+                // connect is "slow payload", not "dead instance".
+                if (!($errno === CURLE_OPERATION_TIMEDOUT && $connected)) {
+                    $connectFailure = true;
+                }
                 $this->logger->warning("RadarrClient multiGet {$name} → HTTP {$code} {$err}");
                 continue; // leave null
             }
@@ -1715,7 +1744,9 @@ class RadarrClient implements ResetInterface
             $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         } elseif ($networkError) {
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+            if ($connectFailure) {
+                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+            }
         }
 
         return $out;
