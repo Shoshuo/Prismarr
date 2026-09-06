@@ -196,9 +196,19 @@ class SonarrClient implements ResetInterface
 
     // ── Full library ──────────────────────────────────────────────────────────
 
-    public function getSeries(): array
+    /**
+     * Wider budget for the full-library fetch (issue #41): on a large/busy
+     * Sonarr the one-payload /api/v3/series call can take well over the
+     * default 4s. Opt-in per call site — the library routes (which already
+     * allow set_time_limit(120)) pass it; frequent paths (dashboard widgets,
+     * quick-look membership checks, admin stats) keep the 4s bound so a slow
+     * instance can't pin their request for 30s.
+     */
+    public const LIBRARY_TIMEOUT = 30;
+
+    public function getSeries(int $timeout = 4): array
     {
-        $data = $this->get('/api/v3/series');
+        $data = $this->get('/api/v3/series', [], $timeout);
         if ($data === null) return [];
 
         return $this->normalizeSeriesList($data);
@@ -217,9 +227,9 @@ class SonarrClient implements ResetInterface
     }
 
     /** Returns raw series without normalization (for lightweight cache) */
-    public function getRawAllSeries(): array
+    public function getRawAllSeries(int $timeout = 4): array
     {
-        return $this->get('/api/v3/series') ?? [];
+        return $this->get('/api/v3/series', [], $timeout) ?? [];
     }
 
     public function getSerie(int $id): ?array
@@ -1755,14 +1765,25 @@ class SonarrClient implements ResetInterface
         $body = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $err  = curl_error($ch);
+        $errno     = curl_errno($ch);
+        $connected = curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
         curl_close($ch);
 
         if ($err || $code !== 200) {
             $this->logger->warning("SonarrClient {$path} → HTTP {$code} {$err}");
             $this->recordError('GET', $path, (int) $code, is_string($body) ? $body : '', $err);
             if ($err !== '' || (int) $code === 0) {
+                // Short-circuit the rest of THIS request either way (avoid
+                // stacking timeouts), but only open the cross-request breaker
+                // on connect-level failures. A read timeout after a successful
+                // connect means "slow payload", not "dead instance" — marking
+                // it down would make every caller short-circuit to
+                // "unreachable" for the breaker window (issue #41's root
+                // failure mode).
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                if (!($errno === CURLE_OPERATION_TIMEDOUT && $connected)) {
+                    $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                }
             }
             return null;
         }
@@ -1822,17 +1843,25 @@ class SonarrClient implements ResetInterface
             }
         } while ($running && $status === CURLM_OK);
 
-        $networkError = false;
-        $anySuccess   = false;
+        $connectFailure = false;
+        $networkError   = false;
+        $anySuccess     = false;
         foreach ($handles as $name => $ch) {
             $body = curl_multi_getcontent($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $err  = curl_error($ch);
+            $errno     = curl_errno($ch);
+            $connected = curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
             curl_multi_remove_handle($mh, $ch);
             curl_close($ch);
 
             if ($err !== '' || (int) $code === 0) {
                 $networkError = true;
+                // Same distinction as get(): a read timeout after a successful
+                // connect is "slow payload", not "dead instance".
+                if (!($errno === CURLE_OPERATION_TIMEDOUT && $connected)) {
+                    $connectFailure = true;
+                }
                 $this->logger->warning("SonarrClient multiGet {$name} → HTTP {$code} {$err}");
                 continue;
             }
@@ -1854,7 +1883,9 @@ class SonarrClient implements ResetInterface
             $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         } elseif ($networkError) {
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+            if ($connectFailure) {
+                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+            }
         }
 
         return $out;
