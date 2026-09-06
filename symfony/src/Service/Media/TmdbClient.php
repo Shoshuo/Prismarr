@@ -268,6 +268,48 @@ class TmdbClient implements ResetInterface
         return $path ? self::IMG_BASE . "/{$size}{$path}" : null;
     }
 
+    /**
+     * TMDb country-code priority for release dates / certifications / watch
+     * providers. Led by the region implied by $locale — an English user sees
+     * US/GB data first, a French user FR/BE — then a broad common fallback
+     * chain, then any extra country codes the payload actually contains
+     * ($append). Order-preserving and de-duplicated. Replaces the old
+     * hardcoded FR-first lists so localized users get relevant regions first.
+     *
+     * @param list<string> $append extra country codes discovered in the payload
+     * @return list<string>
+     */
+    public static function regionPriority(string $locale, array $append = []): array
+    {
+        // An explicit region subtag wins outright: en_GB / fr-CA users have
+        // literally named their country, so it leads even the language map.
+        $region = '';
+        if (preg_match('/^[a-zA-Z]{2,3}[_-]([a-zA-Z]{2})\b/', $locale, $m)) {
+            $region = strtoupper($m[1]);
+        }
+        $lang = strtolower(substr($locale, 0, 2));
+        $lead = match ($lang) {
+            'fr'    => ['FR', 'BE', 'LU', 'CA'],
+            'en'    => ['US', 'GB', 'CA', 'AU'],
+            'es'    => ['ES', 'MX', 'AR'],
+            'de'    => ['DE', 'AT', 'CH'],
+            'pt'    => ['PT', 'BR'],
+            'it'    => ['IT', 'CH'],
+            // Unknown language → no lead guess. (Never upcast the language
+            // code itself: 'sv' is Swedish, but 'SV' is El Salvador.) The
+            // common chain + payload countries below still apply.
+            default => [],
+        };
+        $order = [];
+        foreach ([$region, ...$lead, 'FR', 'US', 'GB', 'BE', 'LU', 'CA', ...$append] as $cc) {
+            $cc = strtoupper((string) $cc);
+            if ($cc !== '' && !in_array($cc, $order, true)) {
+                $order[] = $cc;
+            }
+        }
+        return $order;
+    }
+
     private function cachedGet(string $cacheKey, string $path, array $params, int $ttl): array
     {
         // Cache keyed by locale so switching `display_metadata_language`
