@@ -32,5 +32,10 @@ final readonly class UsenetDownload
         public bool $isHistory,
         /** Retry countdown (seconds) while FETCHING an NZB from a URL, else null. */
         public ?int $waitSeconds = null,
+        /**
+         * Unix epoch the job finished, for history entries only — null when the
+         * downloader doesn't report one (and always null for queue slots).
+         */
+        public ?int $completedAt = null,
     ) {}
 }

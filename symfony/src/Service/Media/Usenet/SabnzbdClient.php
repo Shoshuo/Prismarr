@@ -280,6 +280,10 @@ class SabnzbdClient implements UsenetClientInterface
             speedBytes:     0,
             failMessage:    $fail !== '' ? $fail : null,
             isHistory:      true,
+            // SABnzbd stamps the finish time as a unix epoch in `completed`;
+            // 0 / absent means "unknown", which must stay null so the UI never
+            // renders a 1970 date.
+            completedAt:    ((int) ($s['completed'] ?? 0)) ?: null,
         );
     }
 

@@ -1,0 +1,34 @@
+{# Usenet history rows — shared by the paginated history page and the "Recent
+   history" preview on the downloads page (#47).
+
+   Context: `items` (UsenetDownload[], history entries) and `client`
+   (sabnzbd|nzbget — only used to translate NZBGet's raw failure codes).
+
+   Markup only: the .uh-* CSS lives in _history_styles.html.twig, which both
+   including pages pull into their {% block stylesheets %}. #}
+{% import '_icons.html.twig' as ico %}
+{% for item in items %}
+  {% set fail = item.failMessage %}
+  {% if fail and client == 'nzbget' %}
+    {% set _k = 'usenet.nzbget_fail.' ~ (item.rawStatus|split('/')|last|lower) %}
+    {% set _t = _k|trans %}
+    {% set fail = _t != _k ? _t : fail %}
+  {% endif %}
+  <div class="uh-row" data-status="{{ item.status }}">
+    <div class="uh-ico">
+      {% if item.status == 'failed' %}{{ ico.icon('alert-triangle', '', 15) }}
+      {% elseif item.status == 'completed' %}{{ ico.icon('check', '', 15) }}
+      {% else %}{{ ico.icon('clock', '', 15) }}{% endif %}
+    </div>
+    <div style="min-width:0;">
+      <div class="uh-name" title="{{ item.name }}">{{ item.name }}{% if item.category %}<span class="uh-tag">{{ item.category }}</span>{% endif %}</div>
+      <div class="uh-meta">{{ item.sizeBytes|prismarr_bytes }}{% if fail %} · <span class="uh-fail">{{ fail }}</span>{% endif %}</div>
+    </div>
+    <div class="uh-side">
+      <span class="uh-pill">{{ ('usenet.status.' ~ item.status)|trans }}</span>
+      {# Downloaders don't always stamp a finish time (older SABnzbd, NZBGet
+         URL/DUP stubs) — keep the column aligned with an em dash. #}
+      <div class="uh-age">{{ item.completedAt ? item.completedAt|relative_date : '—' }}</div>
+    </div>
+  </div>
+{% endfor %}

@@ -285,6 +285,10 @@ class NzbgetClient implements UsenetClientInterface
             speedBytes:     0,
             failMessage:    $status === UsenetStatus::FAILED && $raw !== '' ? $raw : null,
             isHistory:      true,
+            // NZBGet's history entries carry HistoryTime — the unix epoch the
+            // job landed in history, i.e. when it finished. Absent on some entry
+            // kinds (DUP/URL stubs), so 0 / missing stays null.
+            completedAt:    ((int) ($h['HistoryTime'] ?? 0)) ?: null,
         );
     }
 
