@@ -109,6 +109,25 @@
               </button>
             </div>
           </div>
+          {# Issue #5 — default quality profile for this instance's quick-add /
+             suggested-add flows. Options are lazy-loaded from the instance's own
+             Radarr/Sonarr when the modal opens (see the script below); the stored
+             value is rendered as a fallback option so it round-trips even if the
+             live fetch fails. Empty value = "None" (fall back to the first profile). #}
+          <div class="mb-3">
+            <label class="form-label" for="instance-edit-qp-{{ instance.id }}">{{ 'admin.instances.field.default_quality_profile'|trans }}</label>
+            <select id="instance-edit-qp-{{ instance.id }}" name="default_quality_profile_id" class="form-select"
+                    data-qp-select
+                    data-instance-slug="{{ instance.slug }}"
+                    data-service-id="{{ service_id }}"
+                    data-current="{{ instance.defaultQualityProfileId is null ? '' : instance.defaultQualityProfileId }}">
+              <option value="">{{ 'admin.instances.field.default_quality_profile_none'|trans }}</option>
+              {% if instance.defaultQualityProfileId is not null %}
+                <option value="{{ instance.defaultQualityProfileId }}" selected>#{{ instance.defaultQualityProfileId }}</option>
+              {% endif %}
+            </select>
+            <small class="form-hint">{{ 'admin.instances.field.default_quality_profile_hint'|trans }}</small>
+          </div>
           <details>
             <summary style="cursor: pointer; font-size: .85rem; color: var(--tblr-secondary);">
               {{ 'admin.instances.field.advanced'|trans }}
@@ -129,3 +148,46 @@
     </div>
   </div>
 {% endfor %}
+
+{# Issue #5 — lazy-load each instance's quality profiles into its edit-modal
+   picker when the modal opens. Kept out of the per-instance loop and guarded so
+   it binds once even though this partial is included per service (radarr/sonarr). #}
+<script>
+(function () {
+  if (window._prismarrQpInit) return;
+  window._prismarrQpInit = true;
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  document.addEventListener('show.bs.modal', function (e) {
+    var modal = e.target;
+    if (!modal || !modal.querySelector) return;
+    var sel = modal.querySelector('select[data-qp-select]');
+    if (!sel || sel.dataset.qpLoaded) return;
+    sel.dataset.qpLoaded = '1'; // fetch once per page; profiles rarely change mid-session
+    var slug    = sel.getAttribute('data-instance-slug');
+    var current = sel.getAttribute('data-current') || '';
+    var path = sel.getAttribute('data-service-id') === 'radarr'
+      ? '/medias/' + slug + '/films/quality-profiles'
+      : '/medias/' + slug + '/sonarr/quality-profiles';
+    fetch(path)
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (profiles) {
+        // On empty/failed fetch keep the server-rendered fallback options so the
+        // stored value still round-trips on save.
+        if (!Array.isArray(profiles) || !profiles.length) return;
+        var noneLabel = sel.options.length ? sel.options[0].textContent : '';
+        var html = '<option value="">' + esc(noneLabel) + '</option>';
+        profiles.forEach(function (p) {
+          var id = String(p.id);
+          html += '<option value="' + esc(id) + '"' + (id === current ? ' selected' : '') + '>'
+                + esc(p.name || id) + '</option>';
+        });
+        sel.innerHTML = html;
+      })
+      .catch(function () { /* keep fallback options */ });
+  });
+})();
+</script>

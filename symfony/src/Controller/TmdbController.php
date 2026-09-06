@@ -1179,6 +1179,9 @@ class TmdbController extends AbstractController
                 'slug'       => $inst->getSlug(),
                 'name'       => $inst->getName(),
                 'is_default' => $inst->isDefault(),
+                // Issue #5 — lets the quick-add modal preselect this instance's
+                // preferred quality profile instead of the first one returned.
+                'defaultQualityProfileId' => $inst->getDefaultQualityProfileId(),
             ];
         }
         return $out;
