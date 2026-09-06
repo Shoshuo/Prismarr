@@ -5,9 +5,9 @@
 {% block max_width %}720px{% endblock %}
 
 {% block wizard_body %}
-  <div class="wizard-eyebrow">{{ 'setup.step.managers.eyebrow'|trans }}</div>
-  <h2 class="wizard-title">{{ 'setup.step.managers.title'|trans }}</h2>
-  <p class="wizard-subtitle">{{ 'setup.step.managers.subtitle'|trans }}</p>
+  <div class="subheader mb-1">{{ 'setup.step.managers.eyebrow'|trans }}</div>
+  <h2 class="mb-1">{{ 'setup.step.managers.title'|trans }}</h2>
+  <p class="text-secondary mb-4">{{ 'setup.step.managers.subtitle'|trans }}</p>
 
   <div class="alert alert-info" style="font-size: .85rem;">
     {{ 'setup.step.managers.default_instance_hint'|trans }}
@@ -16,9 +16,9 @@
   <form action="{{ path('app_setup_managers') }}" method="post" autocomplete="off" novalidate>
     <input type="hidden" name="_csrf_token" value="{{ csrf_token('setup_managers') }}"/>
 
-    <div class="wizard-section">
-      <div class="wizard-section-title">{{ 'setup.step.managers.radarr.section'|trans }}</div>
-      <div class="wizard-section-subtitle">{{ 'setup.step.managers.radarr.subtitle'|trans }}</div>
+    <div class="mt-3">
+      <div class="hr-text hr-text-left">{{ 'setup.step.managers.radarr.section'|trans }}</div>
+      <p class="text-secondary small mb-3">{{ 'setup.step.managers.radarr.subtitle'|trans }}</p>
       <div class="row g-3">
         <div class="col-md-7">
           <label class="form-label" for="radarr_url">{{ 'setup.step.managers.fields.url'|trans }}</label>
@@ -31,18 +31,18 @@
                  placeholder="X-Api-Key" value="{{ values.radarr_api_key }}"/>
         </div>
       </div>
-      <div class="test-row">
+      <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
         <button type="button" class="btn btn-sm btn-outline-primary"
                 data-test-service="radarr"
                 data-test-csrf="{{ csrf_token('setup_test_radarr') }}"
                 data-test-fields="radarr_url,radarr_api_key">{{ 'setup.test.button'|trans }}</button>
-        <span class="test-result" data-test-result-for="radarr" aria-live="polite"></span>
+        <span data-test-result-for="radarr" aria-live="polite"></span>
       </div>
     </div>
 
-    <div class="wizard-section">
-      <div class="wizard-section-title">{{ 'setup.step.managers.sonarr.section'|trans }}</div>
-      <div class="wizard-section-subtitle">{{ 'setup.step.managers.sonarr.subtitle'|trans }}</div>
+    <div class="mt-3">
+      <div class="hr-text hr-text-left">{{ 'setup.step.managers.sonarr.section'|trans }}</div>
+      <p class="text-secondary small mb-3">{{ 'setup.step.managers.sonarr.subtitle'|trans }}</p>
       <div class="row g-3">
         <div class="col-md-7">
           <label class="form-label" for="sonarr_url">{{ 'setup.step.managers.fields.url'|trans }}</label>
@@ -55,20 +55,20 @@
                  placeholder="X-Api-Key" value="{{ values.sonarr_api_key }}"/>
         </div>
       </div>
-      <div class="test-row">
+      <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
         <button type="button" class="btn btn-sm btn-outline-primary"
                 data-test-service="sonarr"
                 data-test-csrf="{{ csrf_token('setup_test_sonarr') }}"
                 data-test-fields="sonarr_url,sonarr_api_key">{{ 'setup.test.button'|trans }}</button>
-        <span class="test-result" data-test-result-for="sonarr" aria-live="polite"></span>
+        <span data-test-result-for="sonarr" aria-live="polite"></span>
       </div>
     </div>
 
-    <div class="wizard-actions">
-      <button type="submit" name="_action" value="back" class="btn-wizard-back" formnovalidate>{{ 'setup.step.common.back'|trans }}</button>
-      <div class="wizard-actions-right">
-        <button type="submit" name="_action" value="skip" class="btn-wizard-skip" formnovalidate>{{ 'setup.step.common.skip'|trans }}</button>
-        <button type="submit" name="_action" value="save" class="btn-wizard-next">{{ 'setup.step.common.save_next'|trans }}</button>
+    <div class="d-flex align-items-center justify-content-between gap-3 mt-4 pt-4 border-top">
+      <button type="submit" name="_action" value="back" class="btn btn-outline-secondary" formnovalidate>{{ 'setup.step.common.back'|trans }}</button>
+      <div class="d-flex align-items-center gap-2">
+        <button type="submit" name="_action" value="skip" class="btn btn-link text-secondary" formnovalidate>{{ 'setup.step.common.skip'|trans }}</button>
+        <button type="submit" name="_action" value="save" class="btn btn-primary btn-wizard-accent">{{ 'setup.step.common.save_next'|trans }}</button>
       </div>
     </div>
   </form>

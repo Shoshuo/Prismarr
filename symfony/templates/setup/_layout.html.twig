@@ -60,226 +60,32 @@
       flex: 1;
     }
 
-    /* ── Stepper ── */
-    .wizard-steps {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: .5rem;
-      margin-bottom: 2rem;
+    /* ── Prismarr accent layer (deliberate — spec 2026-07-10). Everything
+       else in this wizard is stock Tabler; only these flourishes are ours. ── */
+    /* margin/padding/border-left zeroed: Tabler ships a second, unrelated
+       ".steps" doc-component whose border-left otherwise renders a stub
+       line left of step 1. */
+    .steps { margin-bottom: 2rem; margin-left: 0; padding-left: 0; border-left: 0; }
+    .steps .step-item.active::before {
+      box-shadow: 0 0 12px rgba(var(--tblr-primary-rgb), .5);
     }
-    .wizard-step {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: .4rem;
-      font-size: .7rem;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,.35);
-      text-align: center;
-      position: relative;
-      padding-top: 8px;
-    }
-    [data-bs-theme="light"] .wizard-step { color: rgba(0,0,0,.35); }
-
-    .wizard-step-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.15);
-      transition: all .15s ease;
-    }
-    [data-bs-theme="light"] .wizard-step-dot {
-      background: rgba(0,0,0,.08);
-      border-color: rgba(0,0,0,.15);
-    }
-    .wizard-step.is-done .wizard-step-dot {
-      background: #22c55e;
-      border-color: #22c55e;
+    .steps .step-item.step-done::before {
+      background-color: var(--tblr-green);
+      border-color: var(--tblr-green);
       box-shadow: 0 0 10px rgba(34,197,94,.4);
     }
-    .wizard-step.is-active .wizard-step-dot {
-      background: #6366f1;
-      border-color: #6366f1;
-      box-shadow: 0 0 12px rgba(99,102,241,.5);
-      transform: scale(1.3);
-    }
-    .wizard-step.is-active { color: #6366f1; font-weight: 600; }
-    [data-bs-theme="light"] .wizard-step.is-active { color: #4f46e5; }
-
-    .wizard-step-line {
-      position: absolute;
-      top: 12px;
-      left: 50%;
-      width: 100%;
-      height: 1px;
-      background: rgba(255,255,255,.1);
-      z-index: -1;
-    }
-    [data-bs-theme="light"] .wizard-step-line { background: rgba(0,0,0,.1); }
-    .wizard-step:last-child .wizard-step-line { display: none; }
-
-    /* ── Card ── */
-    .wizard-card {
-      background: #1c1c1c;
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
-      padding: 2rem;
-      box-shadow: 0 2px 16px rgba(0,0,0,.35);
-    }
-    [data-bs-theme="light"] .wizard-card {
-      background: #ffffff;
-      border-color: rgba(0,0,0,.08);
-      box-shadow: 0 1px 8px rgba(0,0,0,.06);
-    }
-
-    .wizard-eyebrow {
-      font-size: .72rem;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      opacity: .55;
-      margin-bottom: .4rem;
-    }
-    .wizard-title {
-      font-size: 1.4rem;
-      font-weight: 600;
-      margin-bottom: .4rem;
-      letter-spacing: -0.01em;
-    }
-    .wizard-subtitle {
-      opacity: .6;
-      margin-bottom: 1.5rem;
-      font-size: .9rem;
-      line-height: 1.5;
-    }
-
-    .form-label {
-      font-size: .78rem;
-      font-weight: 500;
-      letter-spacing: .02em;
-      opacity: .75;
-    }
-
-    .form-control, .form-select {
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(255,255,255,.09);
-      border-radius: 8px;
-      padding: .6rem .8rem;
-      transition: all .15s ease;
-      color: inherit;
-    }
-    [data-bs-theme="light"] .form-control,
-    [data-bs-theme="light"] .form-select {
-      background: rgba(0,0,0,.02);
-      border-color: rgba(0,0,0,.1);
-    }
-
-    .form-control:focus, .form-select:focus {
-      background: rgba(99, 102, 241, 0.05);
-      border-color: rgba(99, 102, 241, 0.55);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-      color: inherit;
-    }
-
-    .form-text { opacity: .55; font-size: .78rem; }
-
-    .wizard-section {
-      padding-top: 1rem;
-      margin-top: 1rem;
-      border-top: 1px solid rgba(255,255,255,.06);
-    }
-    [data-bs-theme="light"] .wizard-section { border-top-color: rgba(0,0,0,.07); }
-    .wizard-section:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
-    .wizard-section-title {
-      font-size: .82rem;
-      font-weight: 600;
-      margin-bottom: .2rem;
-    }
-    .wizard-section-subtitle {
-      font-size: .78rem;
-      opacity: .55;
-      margin-bottom: 1rem;
-    }
-
-    /* ── Actions footer ── */
-    .wizard-actions {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-top: 2rem;
-      padding-top: 1.25rem;
-      border-top: 1px solid rgba(255,255,255,.06);
-    }
-    [data-bs-theme="light"] .wizard-actions { border-top-color: rgba(0,0,0,.07); }
-    .wizard-actions-right { display: flex; gap: .75rem; align-items: center; }
-
-    /* Bouton principal (Continuer / Enregistrer) */
-    .btn-wizard-next {
+    .status .status-dot { box-shadow: 0 0 6px var(--tblr-status-color, currentColor); }
+    .btn-wizard-accent {
       background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-      border: none;
-      border-radius: 8px;
-      padding: .6rem 1.25rem;
-      font-weight: 500;
-      color: #fff;
-      font-size: .9rem;
-      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
-      transition: all .15s ease;
+      border: 0;
+      box-shadow: 0 2px 10px rgba(99, 102, 241, .3);
+      transition: transform .15s ease, box-shadow .15s ease;
     }
-    .btn-wizard-next:hover {
+    .btn-wizard-accent:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
-      color: #fff;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, .45);
     }
-    .btn-wizard-next:active { transform: translateY(0); }
-
-    /* Bouton secondaire (Précédent) — outline */
-    .btn-wizard-back {
-      background: transparent;
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 8px;
-      padding: .55rem 1rem;
-      color: inherit;
-      font-size: .88rem;
-      font-weight: 500;
-      transition: all .15s ease;
-    }
-    .btn-wizard-back:hover {
-      background: rgba(255,255,255,.05);
-      border-color: rgba(255,255,255,.25);
-      color: inherit;
-    }
-    [data-bs-theme="light"] .btn-wizard-back { border-color: rgba(0,0,0,.15); }
-    [data-bs-theme="light"] .btn-wizard-back:hover { background: rgba(0,0,0,.03); border-color: rgba(0,0,0,.25); }
-
-    /* Bouton tertiaire (Passer) — texte souligné */
-    .btn-wizard-skip {
-      background: transparent;
-      border: none;
-      color: #9ca3af;
-      font-size: .85rem;
-      font-weight: 500;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-      text-decoration-color: rgba(156,163,175,.35);
-      padding: .55rem .5rem;
-      transition: all .15s ease;
-    }
-    .btn-wizard-skip:hover {
-      color: #e4e4e7;
-      text-decoration-color: currentColor;
-    }
-    [data-bs-theme="light"] .btn-wizard-skip { color: #64748b; }
-    [data-bs-theme="light"] .btn-wizard-skip:hover { color: #1e293b; }
-
-    .alert { border-radius: 8px; font-size: .85rem; }
-    .alert-danger {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-      color: #fca5a5;
-    }
-    [data-bs-theme="light"] .alert-danger { color: #991b1b; }
+    .btn-wizard-accent:active { transform: translateY(0); }
 
     .wizard-footer {
       text-align: center;
@@ -314,32 +120,6 @@
     [data-bs-theme="light"] .theme-toggle .icon-moon { display: none; }
     [data-bs-theme="light"] .theme-toggle .icon-sun  { display: inline; }
 
-    /* ── Service badge (récap) ── */
-    .service-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      padding: .75rem 0;
-      border-bottom: 1px solid rgba(255,255,255,.05);
-    }
-    [data-bs-theme="light"] .service-row { border-bottom-color: rgba(0,0,0,.06); }
-    .service-row:last-child { border-bottom: 0; }
-    .service-row-name { font-weight: 500; }
-    .service-row-sub { font-size: .78rem; opacity: .55; margin-top: .1rem; }
-    .service-badge {
-      font-size: .7rem;
-      padding: .2rem .55rem;
-      border-radius: 999px;
-      font-weight: 500;
-      letter-spacing: .03em;
-      text-transform: uppercase;
-    }
-    .service-badge.ok { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
-    .service-badge.skipped { background: rgba(255,255,255,.05); color: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.08); }
-    [data-bs-theme="light"] .service-badge.ok { color: #16a34a; }
-    [data-bs-theme="light"] .service-badge.skipped { background: rgba(0,0,0,.04); color: rgba(0,0,0,.5); border-color: rgba(0,0,0,.08); }
-
     /* ── Welcome screen ── */
     .welcome-hero {
       text-align: center;
@@ -369,48 +149,6 @@
       font-size: 1.4rem;
       margin-bottom: .3rem;
       color: #6366f1;
-    }
-
-    /* ── Secret input (password/API key show/hide toggle) ── */
-    .secret-wrapper { position: relative; }
-    .secret-wrapper .form-control { padding-right: 2.4rem; }
-    .secret-toggle {
-      position: absolute; right: .55rem; top: 50%; transform: translateY(-50%);
-      background: transparent; border: 0; padding: 0;
-      cursor: pointer; color: inherit; opacity: .5;
-      display: inline-flex; align-items: center;
-      transition: opacity .15s ease;
-    }
-    .secret-toggle:hover { opacity: .95; }
-    .secret-toggle svg { width: 16px; height: 16px; }
-
-    /* ── Test connection result badge (button itself is Tabler-standard) ── */
-    .test-row {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      margin-top: .6rem;
-      flex-wrap: wrap;
-    }
-
-    .test-result {
-      font-size: .78rem;
-      font-weight: 500;
-      letter-spacing: .01em;
-      display: none;
-    }
-    .test-result.is-pending,
-    .test-result.is-ok,
-    .test-result.is-error { display: inline-flex; align-items: center; gap: .3rem; }
-    .test-result.is-pending { color: #9ca3af; }
-    .test-result.is-ok      { color: #4ade80; }
-    .test-result.is-error   { color: #fca5a5; }
-    [data-bs-theme="light"] .test-result.is-ok    { color: #16a34a; }
-    [data-bs-theme="light"] .test-result.is-error { color: #b91c1c; }
-    .test-result-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: currentColor;
-      box-shadow: 0 0 6px currentColor;
     }
 
     {% block extra_css %}{% endblock %}
@@ -447,16 +185,14 @@
         { key: 'finish',    label: 'setup.stepper.finish'|trans,    route: 'app_setup_finish' },
       ] %}
 
-      <div class="wizard-steps">
+      <div class="steps steps-counter">
         {% for step in steps %}
           {% set state = 'todo' %}
           {% if step.key == active_step %}{% set state = 'active' %}{% endif %}
           {% if completed_steps is defined and step.key in completed_steps %}{% set state = 'done' %}{% endif %}
-          <div class="wizard-step {% if state == 'active' %}is-active{% elseif state == 'done' %}is-done{% endif %}">
-            <div class="wizard-step-line"></div>
-            <span class="wizard-step-dot"></span>
-            <span>{{ loop.index }} · {{ step.label }}</span>
-          </div>
+          <span class="step-item {% if state == 'active' %}active{% elseif state == 'done' %}step-done{% endif %}">
+            <span class="d-none d-md-inline">{{ step.label }}</span>
+          </span>
         {% endfor %}
       </div>
 
@@ -468,8 +204,10 @@
         </div>
       {% endif %}
 
-      <div class="wizard-card">
-        {% block wizard_body %}{% endblock %}
+      <div class="card">
+        <div class="card-body">
+          {% block wizard_body %}{% endblock %}
+        </div>
       </div>
 
       <div class="wizard-footer">
@@ -487,7 +225,7 @@
       localStorage.setItem('tablerTheme', next);
     });
 
-    document.querySelectorAll('.secret-toggle').forEach(function (btn) {
+    document.querySelectorAll('[data-toggle-for]').forEach(function (btn) {
       btn.onclick = function () {
         var input = document.getElementById(btn.dataset.toggleFor);
         if (!input) return;
@@ -527,8 +265,8 @@
 
         // Reflect "pending" state with an aria-live update for screen readers.
         btn.disabled = true;
-        resultEl.className = 'test-result is-pending';
-        resultEl.innerHTML = '<span class="test-result-dot"></span><span>' + TEST_LABELS.pending + '</span>';
+        resultEl.className = 'status status-secondary';
+        resultEl.innerHTML = '<span class="status-dot status-dot-animated"></span><span>' + TEST_LABELS.pending + '</span>';
 
         var fd = new FormData();
         fd.append('_csrf_token', csrf);
@@ -553,14 +291,14 @@
           else if (res.http === 403 && !ok) cat = 'forbidden_endpoint';
 
           var label = ok ? TEST_LABELS.ok : (TEST_LABELS[cat] || TEST_LABELS.unknown);
-          resultEl.className = 'test-result ' + (ok ? 'is-ok' : 'is-error');
-          resultEl.innerHTML = '<span class="test-result-dot"></span><span></span>';
+          resultEl.className = 'status ' + (ok ? 'status-green' : 'status-red');
+          resultEl.innerHTML = '<span class="status-dot"></span><span></span>';
           // Use textContent on the inner span to avoid XSS via translation strings.
           resultEl.querySelector('span:last-child').textContent = label;
         })
         .catch(function () {
-          resultEl.className = 'test-result is-error';
-          resultEl.innerHTML = '<span class="test-result-dot"></span><span></span>';
+          resultEl.className = 'status status-red';
+          resultEl.innerHTML = '<span class="status-dot"></span><span></span>';
           resultEl.querySelector('span:last-child').textContent = TEST_LABELS.network;
         })
         .finally(function () { btn.disabled = false; });
