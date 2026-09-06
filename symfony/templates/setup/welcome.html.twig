@@ -16,24 +16,6 @@
   font-size: .8rem;
   opacity: .75;
 }
-.welcome-locale-form select {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
-  color: inherit;
-  border-radius: 6px;
-  padding: .25rem .5rem;
-  font-size: .8rem;
-  cursor: pointer;
-}
-[data-bs-theme="light"] .welcome-locale-form select {
-  background: rgba(0,0,0,.03);
-  border-color: rgba(0,0,0,.1);
-}
-.welcome-locale-form select:focus {
-  outline: none;
-  border-color: rgba(99,102,241,.55);
-  box-shadow: 0 0 0 2px rgba(99,102,241,.18);
-}
 {% endblock %}
 
 {% block wizard_body %}
@@ -41,7 +23,7 @@
     <form method="post" action="{{ path('app_setup_locale') }}" class="welcome-locale-form" data-locale-form>
       <input type="hidden" name="_csrf_token" value="{{ csrf_token('setup_locale') }}"/>
       <label for="setup-locale-select">{{ 'setup.step.welcome.language_label'|trans }}</label>
-      <select id="setup-locale-select" name="locale" onchange="this.form.submit()">
+      <select id="setup-locale-select" name="locale" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
         {% for code in supported_locales %}
           <option value="{{ code }}" {% if code == current_locale %}selected{% endif %}>
             {{ ('setup.step.welcome.language.' ~ code)|trans }}
@@ -79,9 +61,9 @@
     </div>
   </div>
 
-  <div class="wizard-actions">
+  <div class="d-flex align-items-center justify-content-between gap-3 mt-4 pt-4 border-top">
     <span></span>
-    <a href="{{ path('app_setup_admin') }}" class="btn-wizard-next">
+    <a href="{{ path('app_setup_admin') }}" class="btn btn-primary btn-wizard-accent">
       {{ 'setup.step.welcome.cta'|trans }}
     </a>
   </div>

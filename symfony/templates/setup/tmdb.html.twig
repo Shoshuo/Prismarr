@@ -3,9 +3,9 @@
 {% block title %}TMDb - Prismarr{% endblock %}
 
 {% block wizard_body %}
-  <div class="wizard-eyebrow">{{ 'setup.step.tmdb.eyebrow'|trans }}</div>
-  <h2 class="wizard-title">{{ 'setup.step.tmdb.title'|trans }}</h2>
-  <p class="wizard-subtitle">{{ 'setup.step.tmdb.subtitle'|trans|raw }}</p>
+  <div class="subheader mb-1">{{ 'setup.step.tmdb.eyebrow'|trans }}</div>
+  <h2 class="mb-1">{{ 'setup.step.tmdb.title'|trans }}</h2>
+  <p class="text-secondary mb-4">{{ 'setup.step.tmdb.subtitle'|trans|raw }}</p>
 
   <form action="{{ path('app_setup_tmdb') }}" method="post" autocomplete="off" novalidate>
     <input type="hidden" name="_csrf_token" value="{{ csrf_token('setup_tmdb') }}"/>
@@ -17,20 +17,20 @@
              value="{{ values.tmdb_api_key }}"
              autocomplete="off"/>
       <div class="form-text mt-1">{{ 'setup.step.tmdb.api_key_hint'|trans }}</div>
-      <div class="test-row">
+      <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
         <button type="button" class="btn btn-sm btn-outline-primary"
                 data-test-service="tmdb"
                 data-test-csrf="{{ csrf_token('setup_test_tmdb') }}"
                 data-test-fields="tmdb_api_key">{{ 'setup.test.button'|trans }}</button>
-        <span class="test-result" data-test-result-for="tmdb" aria-live="polite"></span>
+        <span data-test-result-for="tmdb" aria-live="polite"></span>
       </div>
     </div>
 
-    <div class="wizard-actions">
-      <button type="submit" name="_action" value="back" class="btn-wizard-back" formnovalidate>{{ 'setup.step.common.back'|trans }}</button>
-      <div class="wizard-actions-right">
-        <button type="submit" name="_action" value="skip" class="btn-wizard-skip" formnovalidate>{{ 'setup.step.common.skip'|trans }}</button>
-        <button type="submit" name="_action" value="save" class="btn-wizard-next">{{ 'setup.step.common.save_next'|trans }}</button>
+    <div class="d-flex align-items-center justify-content-between gap-3 mt-4 pt-4 border-top">
+      <button type="submit" name="_action" value="back" class="btn btn-outline-secondary" formnovalidate>{{ 'setup.step.common.back'|trans }}</button>
+      <div class="d-flex align-items-center gap-2">
+        <button type="submit" name="_action" value="skip" class="btn btn-link text-secondary" formnovalidate>{{ 'setup.step.common.skip'|trans }}</button>
+        <button type="submit" name="_action" value="save" class="btn btn-primary btn-wizard-accent">{{ 'setup.step.common.save_next'|trans }}</button>
       </div>
     </div>
   </form>
