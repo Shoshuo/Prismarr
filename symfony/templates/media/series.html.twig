@@ -341,7 +341,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   <div class="col-12 col-xl-9">
     <div class="card h-100 series-toolbar-filters">
       <div class="card-body py-2">
-        <form method="get" id="series-filter-form" action="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="d-flex flex-column gap-2">
+        <form method="get" id="series-filter-form" action="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="d-flex flex-column gap-2" data-libfilter-type="series" data-libfilter-slug="{{ current_instance.slug }}">
           <input type="hidden" name="status" id="series-filter-status" value="{{ query.status }}">
           {# Row 1: search input (fixed width) + 7 status buttons sharing the remaining width via flex-fill. #}
           <div class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap">
@@ -394,7 +394,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               {{ 'media.series.actions.search_filtered'|trans }}
             </button>
-            <a href="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="btn btn-sm btn-ghost-secondary ms-auto">{{ 'media.series.pagination.reset_filters'|trans }}</a>
+            <a href="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="btn btn-sm btn-ghost-secondary ms-auto js-libfilter-reset">{{ 'media.series.pagination.reset_filters'|trans }}</a>
           </div>
         {% endif %}
       </div>

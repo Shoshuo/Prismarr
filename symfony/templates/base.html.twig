@@ -269,6 +269,10 @@
   <link rel="stylesheet" href="{{ asset('static/tabler/css/tabler.min.css') }}"/>
   <link rel="stylesheet" href="{{ asset('static/tabler/css/tabler-themes.min.css') }}"/>
 
+  {# Library filter memory: loaded once in <head> so Turbo runs it a single
+     time; it binds its own turbo:load/DOMContentLoaded listeners. #}
+  <script defer src="{{ asset('static/js/library-filter-memory.js') }}"></script>
+
   {# Theme variables + user-picked accent — MUST be set after Tabler's own
      stylesheet, otherwise its own `:root { --tblr-primary }` rule wins the
      cascade and every page resets to Tabler's default blue.
@@ -835,7 +839,7 @@
               {% if _radarr_count <= 1 %}
                 {# Single instance — keep the legacy URL so existing bookmarks survive. #}
                 <li class="nav-item">
-                  <a class="nav-link {{ _radarr_active ? 'active' }}" href="{{ instance_path('app_media_films') }}">
+                  <a class="nav-link {{ _radarr_active ? 'active' }} js-libfilter-link" href="{{ instance_path('app_media_films') }}">
                     {{ _radarr_icon|raw }}
                     <span class="nav-link-title">Radarr</span>
                   </a>
@@ -843,7 +847,7 @@
               {% elseif _radarr_count <= 3 %}
                 {% for _inst in _radarr_instances %}
                   <li class="nav-item">
-                    <a class="nav-link {{ _radarr_active and _radarr_slug == _inst.slug ? 'active' }}"
+                    <a class="nav-link {{ _radarr_active and _radarr_slug == _inst.slug ? 'active' }} js-libfilter-link"
                        href="{{ instance_path('app_media_films', { slug: _inst.slug }) }}">
                       {{ _radarr_icon|raw }}
                       <span class="nav-link-title">{{ _inst.name }}</span>
@@ -860,7 +864,7 @@
                   </a>
                   <div class="dropdown-menu" id="radarr-instances-menu">
                     {% for _inst in _radarr_instances %}
-                      <a class="dropdown-item {{ _radarr_active and _radarr_slug == _inst.slug ? 'active' }}"
+                      <a class="dropdown-item {{ _radarr_active and _radarr_slug == _inst.slug ? 'active' }} js-libfilter-link"
                          href="{{ instance_path('app_media_films', { slug: _inst.slug }) }}">
                         {{ _inst.name }}
                       </a>
@@ -887,7 +891,7 @@
 
               {% if _sonarr_count <= 1 %}
                 <li class="nav-item">
-                  <a class="nav-link {{ _sonarr_active ? 'active' }}" href="{{ instance_path('app_media_series') }}">
+                  <a class="nav-link {{ _sonarr_active ? 'active' }} js-libfilter-link" href="{{ instance_path('app_media_series') }}">
                     {{ _sonarr_icon|raw }}
                     <span class="nav-link-title">Sonarr</span>
                   </a>
@@ -895,7 +899,7 @@
               {% elseif _sonarr_count <= 3 %}
                 {% for _inst in _sonarr_instances %}
                   <li class="nav-item">
-                    <a class="nav-link {{ _sonarr_active and _sonarr_slug == _inst.slug ? 'active' }}"
+                    <a class="nav-link {{ _sonarr_active and _sonarr_slug == _inst.slug ? 'active' }} js-libfilter-link"
                        href="{{ instance_path('app_media_series', { slug: _inst.slug }) }}">
                       {{ _sonarr_icon|raw }}
                       <span class="nav-link-title">{{ _inst.name }}</span>
@@ -912,7 +916,7 @@
                   </a>
                   <div class="dropdown-menu" id="sonarr-instances-menu">
                     {% for _inst in _sonarr_instances %}
-                      <a class="dropdown-item {{ _sonarr_active and _sonarr_slug == _inst.slug ? 'active' }}"
+                      <a class="dropdown-item {{ _sonarr_active and _sonarr_slug == _inst.slug ? 'active' }} js-libfilter-link"
                          href="{{ instance_path('app_media_series', { slug: _inst.slug }) }}">
                         {{ _inst.name }}
                       </a>
