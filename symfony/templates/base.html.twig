@@ -251,11 +251,34 @@
         }
       });
 
+      // Offcanvas cleanup shared by the two Turbo hooks below. Same problem
+      // class as modals, one twist: the mobile filter drawers navigate while
+      // still open (Apply submits the form), so without scrubbing, Turbo
+      // snapshots the page WITH .offcanvas.show + a live backdrop — and a
+      // Back restore resurrects a dimmed, scroll-locked page whose backdrop
+      // has no bound Offcanvas instance.
+      function scrubOffcanvas(root) {
+        root.querySelectorAll('.offcanvas-backdrop').forEach(function(b) { b.remove(); });
+        root.querySelectorAll('.offcanvas.show, .offcanvas-lg.show').forEach(function(o) {
+          o.classList.remove('show', 'showing', 'hiding');
+          o.style.removeProperty('visibility');
+        });
+      }
+
+      // Sanitize the page before Turbo snapshots it, so a Back restore
+      // renders the drawer closed instead of stuck open.
+      document.addEventListener('turbo:before-cache', function() {
+        scrubOffcanvas(document);
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+      });
+
       // Full cleanup on each Turbo navigation
       document.addEventListener('turbo:before-render', function() {
         document.querySelectorAll('.modal-backdrop').forEach(function(b) { b.remove(); });
         document.querySelectorAll('.modal.show').forEach(function(m) { m.classList.remove('show'); m.style.display = 'none'; });
         document.querySelectorAll('.tooltip, .popover').forEach(function(t) { t.remove(); });
+        scrubOffcanvas(document);
         document.body.classList.remove('modal-open');
         document.body.style.removeProperty('overflow');
         document.body.style.removeProperty('padding-right');

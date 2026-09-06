@@ -234,6 +234,18 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
    la page. Donne l'impression que ça réagit instantanément même sur un full
    reload de 200-500ms. */
 .library-loading { opacity: 0.5; transition: opacity 120ms ease-out; pointer-events: none; }
+
+/* ── Mobile filter drawer (responsive offcanvas) ──
+   At ≥992px Bootstrap renders .offcanvas-lg static/inline (transparent bg,
+   flex body with no padding, header hidden). Restore the desktop card chrome
+   so the ≥992px toolbar is visually + behaviourally unchanged. */
+@media (min-width: 992px) {
+  .series-toolbar-filters.offcanvas-lg { background-color: var(--tblr-bg-surface, var(--tblr-card-bg)) !important; border: var(--tblr-border-width, 1px) solid var(--tblr-border-color) !important; }
+  .series-toolbar-filters.offcanvas-lg .offcanvas-body { display: block !important; padding: .5rem 1rem !important; overflow: visible !important; }
+}
+@media (max-width: 991.98px) {
+  .series-toolbar-filters.offcanvas-lg { border: 0; border-radius: 0; height: auto !important; }
+}
 </style>
 {% endblock %}
 
@@ -337,10 +349,15 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
    (search + 7 status buttons / dropdowns) and view modes + actions right.
    Conditional row 3 inside the filters card surfaces bulk-filtered actions
    and a "reset filters" link when something is narrowed. #}
+{% set filter_count = (query.status != 'all' ? 1 : 0) + (query.q != '' ? 1 : 0) + (query.genre != '' ? 1 : 0) + (query.network != '' ? 1 : 0) + (query.sort != 'title-asc' ? 1 : 0) %}
 <div class="row g-2 mb-3 align-items-stretch series-toolbar">
   <div class="col-12 col-xl-9">
-    <div class="card h-100 series-toolbar-filters">
-      <div class="card-body py-2">
+    <div class="card h-100 series-toolbar-filters offcanvas-lg offcanvas-start" tabindex="-1" id="series-filters-drawer" aria-labelledby="series-filters-drawer-label">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="series-filters-drawer-label">{{ 'media.series.filters.drawer_title'|trans }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#series-filters-drawer" aria-label="Close"></button>
+      </div>
+      <div class="card-body offcanvas-body py-2">
         <form method="get" id="series-filter-form" action="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="d-flex flex-column gap-2">
           <input type="hidden" name="status" id="series-filter-status" value="{{ query.status }}">
           {# Row 1: search input (fixed width) + 7 status buttons sharing the remaining width via flex-fill. #}
@@ -394,9 +411,13 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               {{ 'media.series.actions.search_filtered'|trans }}
             </button>
-            <a href="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="btn btn-sm btn-ghost-secondary ms-auto">{{ 'media.series.pagination.reset_filters'|trans }}</a>
+            <a href="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="btn btn-sm btn-ghost-secondary ms-auto js-libfilter-reset">{{ 'media.series.pagination.reset_filters'|trans }}</a>
           </div>
         {% endif %}
+        <div class="series-drawer-footer d-lg-none d-flex gap-2 justify-content-end mt-2 pt-2 border-top">
+          <a href="{{ path('app_media_series', { slug: current_instance.slug }) }}" class="btn btn-ghost-secondary js-libfilter-reset">{{ 'media.series.pagination.reset_filters'|trans }}</a>
+          <button type="button" class="btn btn-primary" id="series-filters-apply">{{ 'media.series.filters.apply'|trans }}</button>
+        </div>
       </div>
     </div>
   </div>
@@ -404,6 +425,11 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     <div class="card h-100 series-toolbar-actions">
       <div class="card-body py-2">
         <div class="d-flex flex-column gap-2 align-items-stretch">
+          <button type="button" class="btn btn-sm btn-outline-secondary d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#series-filters-drawer">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            {{ 'media.series.filters.open'|trans }}
+            {% if filter_count > 0 %}<span class="badge bg-primary ms-1" id="series-filters-count">{{ filter_count }}</span>{% endif %}
+          </button>
           <div class="d-flex gap-1" id="view-mode-btns">
             <button type="button" class="btn btn-sm btn-secondary view-btn flex-fill active" data-view="grid" title="{{ 'media.series.view.grid'|trans }}">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -1257,7 +1283,14 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   var statusInput  = document.getElementById('series-filter-status');
   var shelfBuilt = false;
 
+  // Below lg the filters live in an offcanvas drawer: auto-submit-on-change is
+  // suppressed (it would navigate and destroy the open drawer). The Apply
+  // button flips _applyingFilters and calls submitFiltersForm() once.
+  var _filtersMobile = window.matchMedia('(max-width: 991.98px)');
+  var _applyingFilters = false;
+
   function submitFiltersForm() {
+    if (_filtersMobile.matches && !_applyingFilters) return;
     if (!filterForm) return;
     if (typeof filterForm.requestSubmit === 'function') {
       filterForm.requestSubmit();
@@ -1278,6 +1311,33 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   ['filter-genre', 'filter-network', 'sort-select'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('change', submitFiltersForm);
+  });
+
+  // Drawer Apply (mobile only): defer the single navigation to here.
+  var _seriesApplyBtn = document.getElementById('series-filters-apply');
+  if (_seriesApplyBtn) _seriesApplyBtn.addEventListener('click', function() {
+    _applyingFilters = true;
+    submitFiltersForm();
+  });
+
+  // Dismissing the drawer without Apply must not keep half-committed state:
+  // the pill/select handlers already wrote the form controls, but no
+  // navigation happened — the drawer would disagree with the grid for the
+  // rest of the page's life and the stale values would silently ride along
+  // on the next submit. Reset the form to its server-rendered values (= the
+  // committed URL state) and resync the status pills from the restored
+  // hidden input.
+  var _seriesDrawer = document.getElementById('series-filters-drawer');
+  // Captured at init = the server-rendered (committed URL) status. Can't be
+  // recovered later: hidden inputs are exempt from form.reset(), and writing
+  // their .value reflects straight into the attribute, so defaultValue is
+  // poisoned by the first pill tap.
+  var _committedStatus = statusInput ? statusInput.value : 'all';
+  if (_seriesDrawer) _seriesDrawer.addEventListener('hidden.bs.offcanvas', function() {
+    if (_applyingFilters || !filterForm) return;
+    filterForm.reset();
+    if (statusInput) statusInput.value = _committedStatus;
+    btnAll.forEach(function (b) { b.classList.toggle('active', (b.dataset.filter || 'all') === _committedStatus); });
   });
 
   // Debounced text search: submit after 300ms of inactivity so typing

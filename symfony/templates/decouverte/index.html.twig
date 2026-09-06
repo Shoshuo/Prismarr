@@ -487,38 +487,44 @@
       </div>
     </div>
 
-    {# Filter bar (hidden by default) #}
-    <div id="tmdb-filters" class="card mb-3" style="display:none;">
-      <div class="card-body py-2">
-        <div class="row g-2 align-items-end">
-          <div class="col-auto">
+    {# Filter drawer (offcanvas at all widths) #}
+    <div id="tmdb-filters" class="offcanvas offcanvas-start" tabindex="-1" aria-labelledby="tmdb-filters-label">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="tmdb-filters-label">{{ 'decouverte.filters.drawer_title'|trans }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tmdb-filters" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <div class="d-flex flex-column gap-3">
+          <div>
             <label class="form-label small mb-1">{{ 'decouverte.filters.type'|trans }}</label>
-            <div class="btn-group" role="group">
+            <div class="btn-group d-flex" role="group">
               <input type="radio" class="btn-check" name="filter-type" id="filter-type-movie" value="movie" checked>
               <label class="btn btn-outline-primary btn-sm" for="filter-type-movie">{{ 'decouverte.filters.movies'|trans }}</label>
               <input type="radio" class="btn-check" name="filter-type" id="filter-type-tv" value="tv">
               <label class="btn btn-outline-primary btn-sm" for="filter-type-tv">{{ 'decouverte.filters.series'|trans }}</label>
             </div>
           </div>
-          <div class="col-md-3">
+          <div>
             <label class="form-label small mb-1">{{ 'decouverte.filters.genre'|trans }}</label>
             <select class="form-select form-select-sm" id="filter-genre">
               <option value="">{{ 'decouverte.filters.all'|trans }}</option>
             </select>
           </div>
-          <div class="col-auto">
-            <label class="form-label small mb-1">{{ 'decouverte.filters.year_from'|trans }}</label>
-            <input type="number" class="form-control form-control-sm" id="filter-year-min" placeholder="1970" min="1900" max="2030" style="width:90px;">
+          <div class="d-flex gap-2">
+            <div class="flex-fill">
+              <label class="form-label small mb-1">{{ 'decouverte.filters.year_from'|trans }}</label>
+              <input type="number" class="form-control form-control-sm" id="filter-year-min" placeholder="1970" min="1900" max="2030">
+            </div>
+            <div class="flex-fill">
+              <label class="form-label small mb-1">{{ 'decouverte.filters.year_to'|trans }}</label>
+              <input type="number" class="form-control form-control-sm" id="filter-year-max" placeholder="2030" min="1900" max="2030">
+            </div>
           </div>
-          <div class="col-auto">
-            <label class="form-label small mb-1">{{ 'decouverte.filters.year_to'|trans }}</label>
-            <input type="number" class="form-control form-control-sm" id="filter-year-max" placeholder="2030" min="1900" max="2030" style="width:90px;">
-          </div>
-          <div class="col-auto" style="min-width:140px;">
+          <div>
             <label class="form-label small mb-1">{{ 'decouverte.filters.vote_min'|trans({value: '__VAL__'})|replace({'__VAL__': '<span id="filter-vote-val" class="fw-medium">0</span>'})|raw }}</label>
             <input type="range" class="form-range" id="filter-vote-min" min="0" max="10" step="0.5" value="0">
           </div>
-          <div class="col-md-2">
+          <div>
             <label class="form-label small mb-1">{{ 'decouverte.filters.sort'|trans }}</label>
             <select class="form-select form-select-sm" id="filter-sort">
               <option value="popularity.desc">{{ 'decouverte.filters.sort_options.popularity'|trans }}</option>
@@ -528,11 +534,9 @@
               <option value="revenue.desc">{{ 'decouverte.filters.sort_options.revenue'|trans }}</option>
             </select>
           </div>
-          <div class="col-auto">
-            <button type="button" class="btn btn-primary btn-sm" id="filter-apply">{{ 'decouverte.filters.apply'|trans }}</button>
-          </div>
-          <div class="col-auto">
+          <div class="d-flex gap-2 justify-content-end mt-2 pt-2 border-top">
             <button type="button" class="btn btn-ghost-secondary btn-sm" id="filter-reset">{{ 'decouverte.filters.reset'|trans }}</button>
+            <button type="button" class="btn btn-primary btn-sm" id="filter-apply">{{ 'decouverte.filters.apply'|trans }}</button>
           </div>
         </div>
       </div>
@@ -1919,11 +1923,19 @@
   var filterReset   = document.getElementById('filter-reset');
   var genresCache   = { movie: null, tv: null };
 
+  // This build ships Bootstrap under window.tabler (no window.bootstrap global),
+  // so resolve the Offcanvas class defensively rather than assuming `bootstrap`.
+  function offcanvasFor(el) {
+    var C = (window.bootstrap && window.bootstrap.Offcanvas)
+         || (window.tabler && (window.tabler.Offcanvas
+              || (window.tabler.bootstrap && window.tabler.bootstrap.Offcanvas)));
+    return C ? C.getOrCreateInstance(el) : null;
+  }
+
   filtersToggle.addEventListener('click', function() {
-    var show = filtersPanel.style.display === 'none';
-    filtersPanel.style.display = show ? '' : 'none';
-    filtersToggle.classList.toggle('active', show);
-    if (show && !genresCache.movie) loadGenres('movie');
+    var oc = offcanvasFor(filtersPanel);
+    if (oc) oc.toggle();
+    if (!genresCache.movie) loadGenres('movie');
   });
 
   function currentType() {
@@ -2017,7 +2029,11 @@
         searchGrid.innerHTML = '<div class="alert alert-danger">' + {{ 'decouverte.search.search_error'|trans|json_encode|raw }} + '</div>';
       });
   }
-  filterApply.addEventListener('click', applyFilters);
+  filterApply.addEventListener('click', function() {
+    applyFilters();
+    var oc = offcanvasFor(filtersPanel);
+    if (oc) oc.hide();
+  });
   filterReset.addEventListener('click', function() {
     filterGenre.value = '';
     filterYearMin.value = '';

@@ -999,6 +999,7 @@ decouverte:
     watchlist: Watchlist
     explorer: Explorer
   filters:
+    drawer_title: Filtres
     type: Type
     movies: Films
     series: Séries
@@ -1316,6 +1317,8 @@ media:
     filters:
       search_placeholder: "Rechercher…"
       apply: Appliquer
+      open: Filtres
+      drawer_title: Filtres
       status:
         all: Tous
         monitored: Suivis
@@ -1844,6 +1847,8 @@ media:
     filters:
       search_placeholder: "Rechercher…"
       apply: Appliquer
+      open: Filtres
+      drawer_title: Filtres
       status:
         all: Toutes
         monitored: Suivies
