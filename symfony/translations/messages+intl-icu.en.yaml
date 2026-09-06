@@ -4550,6 +4550,10 @@ prowlarr:
     indexer_added: Indexer added!
     error_add_failed: Unable to add
     error_save_failed: Unable to save
+  search:
+    grab: Grab
+    grab_sent: Sent to download client
+    grab_failed_tpl: 'Grab failed: __ERROR__'
   apps:
     title: Applications
     page_title_full: 'Applications — Prowlarr'

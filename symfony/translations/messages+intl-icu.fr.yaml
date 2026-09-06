@@ -4548,6 +4548,10 @@ prowlarr:
     indexer_added: Indexeur ajouté !
     error_add_failed: Ajout impossible
     error_save_failed: Sauvegarde impossible
+  search:
+    grab: Récupérer
+    grab_sent: Envoyé au client de téléchargement
+    grab_failed_tpl: 'Échec de la récupération : __ERROR__'
   apps:
     title: Applications
     page_title_full: 'Applications — Prowlarr'

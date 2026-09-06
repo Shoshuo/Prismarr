@@ -501,11 +501,19 @@
         infoPrivacyPrivate: {{ 'prowlarr.index.privacy_private'|trans|json_encode|raw }},
         infoPrivacySemi: {{ 'prowlarr.index.privacy_semiprivate'|trans|json_encode|raw }},
         infoPrivacyPublic: {{ 'prowlarr.index.privacy_public'|trans|json_encode|raw }},
-        listPrivacySemi: {{ 'prowlarr.index.privacy_semi'|trans|json_encode|raw }}
+        listPrivacySemi: {{ 'prowlarr.index.privacy_semi'|trans|json_encode|raw }},
+        searchColActions: {{ 'prowlarr.common.actions'|trans|json_encode|raw }},
+        searchGrabBtn: {{ 'prowlarr.search.grab'|trans|json_encode|raw }},
+        searchGrabSent: {{ 'prowlarr.search.grab_sent'|trans|json_encode|raw }},
+        searchGrabFailedTpl: {{ 'prowlarr.search.grab_failed_tpl'|trans|json_encode|raw }}
     };
 
     // ── Helpers ──
-    function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    // Issue #71 fix-round-1 — textContent→innerHTML only escapes & < > ;
+    // this page also interpolates esc() output into attribute contexts
+    // (href, data-guid, data-indexer-id), so " must be escaped too or a
+    // quote in indexer-supplied data breaks out of the attribute.
+    function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML.replace(/"/g, '&quot;'); }
     function showAlert(el, cls, msg) { el.className = 'mt-2 alert ' + cls; el.textContent = msg; el.style.display = ''; }
     // Clean the payload before sending to the Prowlarr API (remove empty selectOptions that cause type errors)
     function cleanPayload(data) {
@@ -831,11 +839,17 @@
                 countLabel = countLabel.replace('#', items.length);
                 var h = '<div class="small text-secondary mb-2">' + esc(countLabel) + '</div>';
                 h += '<div class="table-responsive pw-search-results"><table class="table table-vcenter table-sm">';
-                h += '<thead><tr><th>' + esc(_I18N.searchColTitle) + '</th><th>' + esc(_I18N.searchColIndexer) + '</th><th>' + esc(_I18N.searchColSize) + '</th><th>' + esc(_I18N.searchColSeeds) + '</th><th>' + esc(_I18N.searchColAge) + '</th></tr></thead><tbody>';
+                h += '<thead><tr><th>' + esc(_I18N.searchColTitle) + '</th><th>' + esc(_I18N.searchColIndexer) + '</th><th>' + esc(_I18N.searchColSize) + '</th><th>' + esc(_I18N.searchColSeeds) + '</th><th>' + esc(_I18N.searchColAge) + '</th><th>' + esc(_I18N.searchColActions) + '</th></tr></thead><tbody>';
                 items.forEach(function (r) {
                     var size = r.size > 0 ? (r.size / 1073741824).toFixed(2) + ' ' + _I18N.sizeUnits : '—';
                     var seeds = r.seeders !== null ? '<span class="text-success">' + r.seeders + '</span>' : '—';
-                    h += '<tr class="pw-result-row"><td class="text-truncate" style="max-width:300px;" title="' + esc(r.title||'') + '">' + esc(r.title||'—') + '</td><td><span class="badge bg-secondary-lt" style="font-size:.55rem;">' + esc(r.indexer||'—') + '</span></td><td class="text-secondary">' + size + '</td><td>' + seeds + '</td><td class="text-secondary">' + _I18N.ageDaysTpl.replace('__D__', r.age||0) + '</td></tr>';
+                    // Issue #71 — tracker title links to Prowlarr's manual-search
+                    // detail page when the indexer provided one.
+                    var titleHtml = r.infoUrl
+                        ? '<a href="' + esc(r.infoUrl) + '" target="_blank" rel="noopener">' + esc(r.title||'—') + '</a>'
+                        : esc(r.title||'—');
+                    var grabBtn = '<button type="button" class="btn btn-sm btn-outline-primary pw-grab-btn" data-guid="' + esc(r.guid||'') + '" data-indexer-id="' + esc(String(r.indexerId||0)) + '">' + esc(_I18N.searchGrabBtn) + '</button>';
+                    h += '<tr class="pw-result-row"><td class="text-truncate" style="max-width:300px;" title="' + esc(r.title||'') + '">' + titleHtml + '</td><td><span class="badge bg-secondary-lt" style="font-size:.55rem;">' + esc(r.indexer||'—') + '</span></td><td class="text-secondary">' + size + '</td><td>' + seeds + '</td><td class="text-secondary">' + _I18N.ageDaysTpl.replace('__D__', r.age||0) + '</td><td>' + grabBtn + '</td></tr>';
                 });
                 h += '</tbody></table></div>';
                 searchResults.innerHTML = h;
@@ -844,6 +858,37 @@
     }
     searchBtn.addEventListener('click', doSearch);
     searchInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });
+
+    // Delegated on the results container — rows are rebuilt on every search,
+    // so a per-row listener would be silently dropped each time.
+    searchResults.addEventListener('click', function (e) {
+        var btn = e.target.closest ? e.target.closest('.pw-grab-btn') : null;
+        if (!btn) return;
+        var guid = btn.dataset.guid || '';
+        var indexerId = parseInt(btn.dataset.indexerId, 10) || 0;
+        if (!guid || !indexerId) return;
+        btn.disabled = true;
+        fetch('/prowlarr/grab', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ guid: guid, indexerId: indexerId }),
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                var ok = d && d.ok !== false;
+                if (ok) {
+                    btn.textContent = '✓';
+                    if (window._prismarrToast) window._prismarrToast(_I18N.searchGrabSent, 'success');
+                } else {
+                    btn.disabled = false;
+                    if (window._prismarrToast) window._prismarrToast(_I18N.searchGrabFailedTpl.replace('__ERROR__', (d && d.error) || _I18N.commonError), 'danger');
+                }
+            })
+            .catch(function () {
+                btn.disabled = false;
+                if (window._prismarrToast) window._prismarrToast(_I18N.searchGrabFailedTpl.replace('__ERROR__', _I18N.commonError), 'danger');
+            });
+    });
 
     // ══ Modal Ajouter ══
     var schemaCache = null;

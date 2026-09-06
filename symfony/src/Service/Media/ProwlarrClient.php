@@ -220,12 +220,24 @@ class ProwlarrClient implements ResetInterface
             'tvdbId'      => $r['tvdbId'] ?? null,
             'categories'  => $r['categories'] ?? [],
             'downloadUrl' => $r['downloadUrl'] ?? null,
-            'infoUrl'     => $r['infoUrl'] ?? null,
+            'infoUrl'     => self::safeInfoUrl($r['infoUrl'] ?? null),
             'infoHash'    => $r['infoHash'] ?? null,
             'publishDate' => $r['publishDate'] ?? null,
             'indexerFlags' => $r['indexerFlags'] ?? [],
             'fileName'    => $r['fileName'] ?? null,
         ], $data);
+    }
+
+    /** Only http(s) URLs are safe to emit as release tracker links. */
+    private static function safeInfoUrl(mixed $url): ?string
+    {
+        return (is_string($url) && preg_match('~^https?://~i', $url) === 1) ? $url : null;
+    }
+
+    /** Grab a search result via the indexer's configured download client. */
+    public function grab(string $guid, int $indexerId): array
+    {
+        return $this->requestWithError('POST', '/api/v1/search', ['guid' => $guid, 'indexerId' => $indexerId]);
     }
 
     // ── History ───────────────────────────────────────────────────────────────
