@@ -166,4 +166,56 @@ class TransmissionClientTest extends TestCase
 
         $this->assertSame($expected, $m->invoke(null, $bytes));
     }
+
+    /**
+     * Transmission's torrent-get only returns the fields it was asked for, so
+     * every key getTorrentDetail() reads off the top-level torrent object must
+     * be present in DETAIL_FIELDS — otherwise it silently coalesces to a
+     * default (0/''/[]) instead of the real value. Regression for
+     * rateDownload/rateUpload being read (properties.dl_speed/up_speed) but
+     * not requested, which zeroed both speeds on the detail panel.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function detailFieldsReadByGetTorrentDetail(): iterable
+    {
+        // hashString/status/error are requested but not directly read inside
+        // getTorrentDetail() (deliberately not asserted here — this test is
+        // about reads without a matching request, not the reverse).
+        yield 'name'                 => ['name'];
+        yield 'downloadDir'          => ['downloadDir'];
+        yield 'totalSize'            => ['totalSize'];
+        yield 'pieceSize'            => ['pieceSize'];
+        yield 'pieceCount'           => ['pieceCount'];
+        yield 'comment'              => ['comment'];
+        yield 'uploadedEver'         => ['uploadedEver'];
+        yield 'downloadedEver'       => ['downloadedEver'];
+        yield 'uploadRatio'         => ['uploadRatio'];
+        yield 'addedDate'            => ['addedDate'];
+        yield 'doneDate'             => ['doneDate'];
+        yield 'secondsDownloading'   => ['secondsDownloading'];
+        yield 'secondsSeeding'       => ['secondsSeeding'];
+        yield 'eta'                  => ['eta'];
+        yield 'peersSendingToUs'     => ['peersSendingToUs'];
+        yield 'peersGettingFromUs'   => ['peersGettingFromUs'];
+        yield 'files'                => ['files'];
+        yield 'fileStats'            => ['fileStats'];
+        yield 'trackerStats'         => ['trackerStats'];
+        yield 'peers'                => ['peers'];
+        yield 'rateDownload (properties.dl_speed)' => ['rateDownload'];
+        yield 'rateUpload (properties.up_speed)'   => ['rateUpload'];
+    }
+
+    #[DataProvider('detailFieldsReadByGetTorrentDetail')]
+    public function testDetailFieldsCoversEveryKeyGetTorrentDetailReads(string $field): void
+    {
+        $r = new \ReflectionClassConstant(TransmissionClient::class, 'DETAIL_FIELDS');
+        $detailFields = $r->getValue();
+
+        $this->assertContains(
+            $field,
+            $detailFields,
+            sprintf('DETAIL_FIELDS is missing "%s", which getTorrentDetail() reads off the torrent object — Transmission will silently default it to 0/empty.', $field)
+        );
+    }
 }

@@ -134,6 +134,10 @@ class TransmissionClient implements ResetInterface
         'pieceSize', 'pieceCount', 'comment', 'uploadedEver', 'downloadedEver', 'uploadRatio',
         'addedDate', 'doneDate', 'secondsDownloading', 'secondsSeeding', 'eta',
         'peersSendingToUs', 'peersGettingFromUs', 'files', 'fileStats', 'trackerStats', 'peers',
+        // rateDownload/rateUpload back properties.dl_speed/up_speed below — Transmission
+        // only returns fields that were asked for, so omitting these silently zeroed
+        // both speeds on the detail panel's General tab.
+        'rateDownload', 'rateUpload',
     ];
 
     // ══════════════════════════════════════════════════════════════════════════
