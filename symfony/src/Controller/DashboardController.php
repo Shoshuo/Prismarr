@@ -547,10 +547,9 @@ class DashboardController extends AbstractController
                 $byCountry[$cc][(int) ($rd['type'] ?? 0)] = $rd['release_date'] ?? null;
             }
         }
-        $order = ['FR', 'US'];
-        foreach (array_keys($byCountry) as $cc) {
-            if (!in_array($cc, $order, true)) $order[] = $cc;
-        }
+        // Locale-led country priority (was hardcoded FR→US), then any other
+        // countries the payload contains, so an English user gets US/GB dates.
+        $order = TmdbClient::regionPriority($this->translator->getLocale(), array_keys($byCountry));
         $pick = function (array $types) use ($byCountry, $order): ?\DateTimeImmutable {
             foreach ($order as $cc) {
                 foreach ($types as $t) {
@@ -1041,10 +1040,10 @@ class DashboardController extends AbstractController
             ];
         }
 
-        // Streaming (flatrate) providers, FR-first then common fallbacks —
+        // Streaming (flatrate) providers, locale-led then common fallbacks —
         // mirrors TmdbController::pickProviders' country priority.
         $providers = [];
-        foreach (['FR', 'BE', 'LU', 'US', 'GB'] as $cc) {
+        foreach (TmdbClient::regionPriority($this->translator->getLocale()) as $cc) {
             $flat = $data['watch/providers']['results'][$cc]['flatrate'] ?? [];
             if ($flat === []) {
                 continue;
