@@ -315,7 +315,7 @@ class RadarrController extends AbstractController
             $dirs = $fs['directories'] ?? [];
 
             // Get existing movie paths
-            $movies = $this->radarr->getMovies();
+            $movies = $this->radarr->getMovies(RadarrClient::LIBRARY_TIMEOUT);
             $existingPaths = [];
             foreach ($movies as $m) {
                 $existingPaths[rtrim($m['path'] ?? '', '/')] = true;
@@ -349,7 +349,7 @@ class RadarrController extends AbstractController
         $movies = [];
         $error  = false;
         try {
-            $allMovies = $this->radarr->getMovies();
+            $allMovies = $this->radarr->getMovies(RadarrClient::LIBRARY_TIMEOUT);
             // Just title + id for the select
             $movies = array_map(fn($m) => ['id' => $m['id'], 'title' => $m['title'], 'year' => $m['year']], $allMovies);
             usort($movies, fn($a, $b) => strcmp($a['title'] ?? '', $b['title'] ?? ''));
@@ -1106,7 +1106,7 @@ class RadarrController extends AbstractController
         $error = false;
         $stats = [];
         try {
-            $movies   = $this->radarr->getMovies();
+            $movies   = $this->radarr->getMovies(RadarrClient::LIBRARY_TIMEOUT);
             $disk     = $this->radarr->getDiskSpace();
             $missing  = $this->radarr->getMissing(1, 1);
 

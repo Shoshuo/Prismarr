@@ -67,8 +67,8 @@ final class MediaLibraryRefresher implements CacheRefresherInterface
 
         try {
             $rows = $isMovies
-                ? $this->radarr->withInstance($instance)->getMovies()
-                : $this->sonarr->withInstance($instance)->getSeries();
+                ? $this->radarr->withInstance($instance)->getMovies(RadarrClient::LIBRARY_TIMEOUT)
+                : $this->sonarr->withInstance($instance)->getSeries(SonarrClient::LIBRARY_TIMEOUT);
         } catch (\Throwable $e) {
             $this->logger->warning('Library refresh failed', [
                 'key' => $key, 'exception' => $e::class, 'message' => $e->getMessage(),

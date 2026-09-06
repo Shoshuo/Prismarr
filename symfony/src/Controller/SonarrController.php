@@ -284,7 +284,7 @@ class SonarrController extends AbstractController
             $fs = $this->sonarr->getFilesystem($folder, false);
             $dirs = $fs['directories'] ?? [];
 
-            $series = $this->sonarr->getSeries();
+            $series = $this->sonarr->getSeries(SonarrClient::LIBRARY_TIMEOUT);
             $existingPaths = [];
             foreach ($series as $s) {
                 $existingPaths[rtrim($s['path'] ?? '', '/')] = true;
@@ -1025,7 +1025,7 @@ class SonarrController extends AbstractController
         $error = false;
         $stats = [];
         try {
-            $series  = $this->sonarr->getSeries();
+            $series  = $this->sonarr->getSeries(SonarrClient::LIBRARY_TIMEOUT);
             $disk    = $this->sonarr->getDiskSpace();
 
             $total      = count($series);

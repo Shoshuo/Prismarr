@@ -946,12 +946,21 @@ class MediaController extends AbstractController
 
         // Apply options — issue #5: client choice wins, else this instance's
         // configured default, else the lookup's own value, else 1 (legacy).
-        $raw['qualityProfileId'] = (int) (
-            $data['qualityProfileId']
-            ?? $this->sonarr->getInstance()?->getDefaultQualityProfileId()
-            ?? $raw['qualityProfileId']
-            ?? 1
-        );
+        // 0 is treated the same as "absent" (matches filmAdd's convention),
+        // so a client that explicitly sends qualityProfileId: 0 to mean
+        // "no preference" still falls through to the instance default
+        // instead of literally requesting profile 0.
+        $qualityProfileId = (int) ($data['qualityProfileId'] ?? 0);
+        if ($qualityProfileId === 0) {
+            $qualityProfileId = $this->sonarr->getInstance()?->getDefaultQualityProfileId() ?? 0;
+        }
+        if ($qualityProfileId === 0) {
+            $qualityProfileId = (int) ($raw['qualityProfileId'] ?? 0);
+        }
+        if ($qualityProfileId === 0) {
+            $qualityProfileId = 1;
+        }
+        $raw['qualityProfileId'] = $qualityProfileId;
         $raw['rootFolderPath'] = $data['rootFolderPath'] ?? '/jellyfin/Series';
         $raw['monitored'] = (bool) ($data['monitored'] ?? true);
         $raw['seasonFolder'] = (bool) ($data['seasonFolder'] ?? true);
