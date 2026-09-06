@@ -320,7 +320,7 @@ class SabnzbdClient implements UsenetClientInterface
      * @param array<string, string> $params
      * @return array<string, mixed>
      */
-    private function call(array $params): array
+    protected function call(array $params): array
     {
         if ($this->isBrokenOrDown()) return [];
         $this->lastError = null;
@@ -381,8 +381,20 @@ class SabnzbdClient implements UsenetClientInterface
         if ($data === []) {
             return false;
         }
-        // version/queue/history don't carry a status flag; pure actions do.
-        return ($data['status'] ?? true) !== false;
+
+        // Les actions pures renvoient toujours `status`. Son absence signale
+        // une réponse inattendue (proxy, version différente) : on échoue
+        // FERMÉ plutôt que d'annoncer un succès non vérifié à l'utilisateur.
+        if (!array_key_exists('status', $data)) {
+            $this->logger->warning('SABnzbd action response carried no status flag', [
+                'mode' => $params['mode'] ?? '?',
+                'keys' => array_keys($data),
+            ]);
+
+            return false;
+        }
+
+        return $data['status'] !== false;
     }
 
     private function uploadNzb(string $content, string $name, ?string $category): bool
