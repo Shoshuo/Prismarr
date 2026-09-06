@@ -98,6 +98,38 @@ class SabnzbdClientTest extends TestCase
         self::assertNull($d->failMessage);
     }
 
+    public function testHistorySlotExposesCompletionTimestamp(): void
+    {
+        // SABnzbd stamps each history slot with `completed` (unix epoch); the
+        // downloads page renders it as a relative "age" label (#47).
+        /** @var UsenetDownload $d */
+        $d = $this->call('normalizeHistorySlot', [
+            'nzo_id'    => 'x',
+            'name'      => 'n',
+            'status'    => 'Completed',
+            'bytes'     => 100,
+            'completed' => 1755800000,
+        ]);
+
+        self::assertSame(1755800000, $d->completedAt);
+    }
+
+    public function testHistorySlotWithoutCompletionTimestampIsNull(): void
+    {
+        // An older SABnzbd (or a partial slot) may omit `completed` — the field
+        // must read null, never 0, so the UI can fall back instead of printing
+        // "1970".
+        /** @var UsenetDownload $d */
+        $d = $this->call('normalizeHistorySlot', [
+            'nzo_id' => 'x',
+            'name'   => 'n',
+            'status' => 'Completed',
+            'bytes'  => 100,
+        ]);
+
+        self::assertNull($d->completedAt);
+    }
+
     /** @return array<string, array{string, ?int}> */
     public static function clockProvider(): array
     {

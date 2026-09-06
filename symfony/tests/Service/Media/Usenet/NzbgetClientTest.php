@@ -127,6 +127,34 @@ class NzbgetClientTest extends TestCase
         self::assertNull($d->failMessage);
     }
 
+    public function testNormalizeHistoryExposesHistoryTimeAsCompletedAt(): void
+    {
+        // NZBGet stamps each history entry with HistoryTime (unix epoch) — the
+        // moment it landed in history, i.e. when the job finished (#47).
+        /** @var UsenetDownload $d */
+        $d = $this->call('normalizeHistory', [
+            'NZBID'       => 9,
+            'Name'        => 'Timed.Release',
+            'Status'      => 'SUCCESS/ALL',
+            'FileSizeMB'  => 10,
+            'HistoryTime' => 1755800000,
+        ]);
+
+        self::assertSame(1755800000, $d->completedAt);
+    }
+
+    public function testNormalizeHistoryWithoutHistoryTimeIsNull(): void
+    {
+        /** @var UsenetDownload $d */
+        $d = $this->call('normalizeHistory', [
+            'NZBID'  => 10,
+            'Name'   => 'Undated.Release',
+            'Status' => 'SUCCESS/ALL',
+        ]);
+
+        self::assertNull($d->completedAt);
+    }
+
     public function testGetKind(): void
     {
         self::assertSame('nzbget', $this->makeClient()->getKind());

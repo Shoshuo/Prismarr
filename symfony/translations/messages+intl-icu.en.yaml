@@ -4302,6 +4302,8 @@ usenet:
     prev: Previous
     next: Next
     page_of: 'Page {current} / {total}'
+    recent_title: 'Recent history'
+    view_all: 'View all ({count})'
   empty: 'The queue is empty.'
   toolbar:
     pause_all: Pause all

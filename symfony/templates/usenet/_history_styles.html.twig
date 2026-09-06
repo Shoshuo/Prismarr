@@ -1,0 +1,29 @@
+{# Styling for the shared usenet history rows (_history_rows.html.twig).
+   Included from the {% block stylesheets %} of BOTH pages that render those
+   rows — the paginated history page and the downloads page's "Recent history"
+   preview — so the rules have a single home and neither page duplicates them.
+   Same idiom as dashboard/_plex_styles.html.twig. #}
+<style>
+.uh-list { display:flex; flex-direction:column; gap:.3rem; }
+.uh-row {
+    display:grid; grid-template-columns:30px 1fr auto; gap:.7rem; align-items:center;
+    padding:.5rem .8rem; background:var(--tblr-bg-surface);
+    border:1px solid var(--tblr-border-color); border-left:3px solid var(--tblr-border-color); border-radius:6px;
+}
+.uh-row[data-status="completed"] { border-left-color:#22c55e; }
+.uh-row[data-status="failed"]    { border-left-color:#ef4444; }
+.uh-ico { width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:7px; background:var(--tblr-bg-surface-secondary); color:var(--tblr-text-secondary); }
+.uh-ico svg { width:15px; height:15px; }
+.uh-row[data-status="completed"] .uh-ico { color:#22c55e; }
+.uh-row[data-status="failed"] .uh-ico { color:#ef4444; }
+.uh-name { font-size:.8rem; font-weight:600; color:var(--tblr-body-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.uh-meta { font-size:.7rem; color:var(--tblr-text-secondary); margin-top:2px; }
+.uh-fail { color:#ef4444; }
+.uh-tag { display:inline-block; font-size:.6rem; padding:1px 6px; border-radius:3px; font-weight:600; text-transform:uppercase; letter-spacing:.3px; background:rgba(var(--tblr-primary-rgb),.14); color:var(--tblr-primary); margin-left:.4rem; }
+.uh-side { text-align:right; font-size:.72rem; color:var(--tblr-text-secondary); white-space:nowrap; }
+.uh-pill { display:inline-block; font-size:.6rem; font-weight:700; padding:1px 7px; border-radius:3px; text-transform:uppercase; letter-spacing:.3px; background:var(--tblr-bg-surface-secondary); }
+.uh-row[data-status="completed"] .uh-pill { background:rgba(34,197,94,.15); color:#16a34a; }
+.uh-row[data-status="failed"] .uh-pill { background:rgba(239,68,68,.15); color:#dc2626; }
+/* .7rem = 11.2px — stays above PRODUCT.md's 11px mobile readability floor. */
+.uh-age { font-size:.7rem; color:var(--tblr-text-secondary); margin-top:2px; }
+</style>

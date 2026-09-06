@@ -4300,6 +4300,8 @@ usenet:
     prev: Précédent
     next: Suivant
     page_of: 'Page {current} / {total}'
+    recent_title: 'Historique récent'
+    view_all: 'Tout voir ({count})'
   empty: 'La file est vide.'
   toolbar:
     pause_all: Tout mettre en pause
