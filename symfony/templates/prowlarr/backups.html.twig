@@ -85,7 +85,7 @@
                             </td>
                             <td class="text-muted small">
                                 {% if backup.time is defined %}
-                                    {{ backup.time|date('d/m/Y H:i') }}
+                                    {{ backup.time|prismarr_datetime }}
                                 {% else %}
                                     —
                                 {% endif %}

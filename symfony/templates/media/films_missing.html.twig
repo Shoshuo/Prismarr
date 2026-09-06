@@ -81,9 +81,9 @@
           </td>
           <td class="text-muted" style="font-size:.78rem;">
             {% if m.digitalRelease is defined and m.digitalRelease %}
-              {{ m.digitalRelease|date('d/m/Y') }}
+              {{ m.digitalRelease|prismarr_date }}
             {% elseif m.inCinemas is defined and m.inCinemas %}
-              {{ m.inCinemas|date('d/m/Y') }}
+              {{ m.inCinemas|prismarr_date }}
             {% else %}
               —
             {% endif %}

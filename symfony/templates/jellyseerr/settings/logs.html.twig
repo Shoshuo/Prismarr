@@ -44,7 +44,7 @@
                     <tr data-level="{{ lvl }}">
                         <td class="text-muted small" style="font-family:monospace;font-size:.72rem;">
                             {% if log.timestamp is defined %}
-                                {{ log.timestamp|date('d/m H:i:s') }}
+                                {{ log.timestamp|prismarr_datetime(true) }}
                             {% else %}—{% endif %}
                         </td>
                         <td>

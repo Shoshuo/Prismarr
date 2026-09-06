@@ -59,7 +59,7 @@
               <span class="badge bg-blue-lt">{{ h.quality.quality.name }}</span>
             {% else %}—{% endif %}
           </td>
-          <td class="text-muted">{{ h.date ? h.date|date('d/m/Y H:i', 'Europe/Paris') : '—' }}</td>
+          <td class="text-muted">{{ h.date ? h.date|prismarr_datetime : '—' }}</td>
         </tr>
         {% else %}
         <tr><td colspan="6" class="text-center text-muted py-4">{{ 'media.series_history.empty'|trans }}</td></tr>

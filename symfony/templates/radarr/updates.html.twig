@@ -64,7 +64,7 @@
                             {{ update.version ?? '—' }}
                             {% if update.latest ?? false %}<span class="badge bg-purple-lt ms-1" style="font-size:.65rem;">{{ 'media.arr_admin.updates.latest'|trans }}</span>{% endif %}
                         </td>
-                        <td class="text-muted small">{{ update.releaseDate is defined ? update.releaseDate|date('d/m/Y') : '—' }}</td>
+                        <td class="text-muted small">{{ update.releaseDate is defined ? update.releaseDate|prismarr_date : '—' }}</td>
                         <td><span class="badge bg-secondary-lt">{{ update.branch ?? '—' }}</span></td>
                         <td>
                             {% if update.installed ?? false %}<span class="badge bg-success-lt text-success">{{ 'media.arr_admin.updates.installed'|trans }}</span>

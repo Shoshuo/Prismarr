@@ -51,7 +51,7 @@
             {% for log in logs %}
             {% set lvl = log.level|default('info')|lower %}
             <tr data-level="{{ lvl }}">
-              <td class="text-muted small">{{ log.time is defined ? log.time|date('d/m H:i:s') : '—' }}</td>
+              <td class="text-muted small">{{ log.time is defined ? log.time|prismarr_datetime(true) : '—' }}</td>
               <td>
                 {% if lvl == 'error' or lvl == 'fatal' %}
                   <span class="badge bg-danger-lt text-danger">{{ lvl }}</span>

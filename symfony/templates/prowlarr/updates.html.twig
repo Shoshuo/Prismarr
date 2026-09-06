@@ -105,7 +105,7 @@
                             </td>
                             <td class="text-muted small">
                                 {% if update.releaseDate is defined %}
-                                    {{ update.releaseDate|date('d/m/Y') }}
+                                    {{ update.releaseDate|prismarr_date }}
                                 {% else %}
                                     —
                                 {% endif %}

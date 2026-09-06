@@ -17,6 +17,7 @@ use Twig\TwigFunction;
  *   {{ item.date|prismarr_date }}            {# "21/04/2026" (per user format) #}
  *   {{ item.date|prismarr_time }}            {# "14:30" or "2:30 PM" #}
  *   {{ item.date|prismarr_datetime }}        {# "21/04/2026 · 14:30" #}
+ *   {{ item.date|prismarr_datetime(true) }}  {# "21/04/2026 · 14:30:07" (seconds) #}
  */
 class DisplayPreferencesExtension extends AbstractExtension
 {
@@ -129,14 +130,16 @@ class DisplayPreferencesExtension extends AbstractExtension
         return $this->prefs->formatDate($this->asDateTime($dt));
     }
 
-    public function filterTime(mixed $dt): ?string
+    /** `{{ d|prismarr_time }}` → "14:30"; `{{ d|prismarr_time(true) }}` → "14:30:07". */
+    public function filterTime(mixed $dt, bool $withSeconds = false): ?string
     {
-        return $this->prefs->formatTime($this->asDateTime($dt));
+        return $this->prefs->formatTime($this->asDateTime($dt), $withSeconds);
     }
 
-    public function filterDateTime(mixed $dt): ?string
+    /** `{{ d|prismarr_datetime(true) }}` adds seconds to the time half. */
+    public function filterDateTime(mixed $dt, bool $withSeconds = false): ?string
     {
-        return $this->prefs->formatDateTime($this->asDateTime($dt));
+        return $this->prefs->formatDateTime($this->asDateTime($dt), $withSeconds);
     }
 
     public function pref(string $key): mixed

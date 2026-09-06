@@ -135,27 +135,34 @@ class DisplayPreferencesService implements ResetInterface
 
     /**
      * Formatted time string according to the user's chosen time format.
+     *
+     * $withSeconds is opt-in so the common case stays "14:30" / "2:30 PM";
+     * log and command tables that genuinely need second precision pass true.
      */
-    public function formatTime(?\DateTimeInterface $dt): ?string
+    public function formatTime(?\DateTimeInterface $dt, bool $withSeconds = false): ?string
     {
         if ($dt === null) {
             return null;
         }
         $dt = $this->toUserTimezone($dt);
 
-        return $this->getTimeFormat() === '12h' ? $dt->format('g:i A') : $dt->format('H:i');
+        $fmt = $this->getTimeFormat() === '12h'
+            ? ($withSeconds ? 'g:i:s A' : 'g:i A')
+            : ($withSeconds ? 'H:i:s' : 'H:i');
+
+        return $dt->format($fmt);
     }
 
     /**
      * Date + time combined, honoring both format preferences.
      */
-    public function formatDateTime(?\DateTimeInterface $dt): ?string
+    public function formatDateTime(?\DateTimeInterface $dt, bool $withSeconds = false): ?string
     {
         if ($dt === null) {
             return null;
         }
 
-        return $this->formatDate($dt) . ' · ' . $this->formatTime($dt);
+        return $this->formatDate($dt) . ' · ' . $this->formatTime($dt, $withSeconds);
     }
 
     private function toUserTimezone(\DateTimeInterface $dt): \DateTimeImmutable
