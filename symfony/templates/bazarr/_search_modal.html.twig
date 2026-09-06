@@ -1,0 +1,357 @@
+{# Shared subtitle-search modal. Delegated click handler catches any
+   [data-bazarr-search][data-kind][data-id] trigger app-wide — the movie
+   "missing" badge (media/_subtitle_badge.html.twig) and the
+   per-episode Search buttons on the series-detail page
+   (bazarr/series_detail.html.twig) both emit that contract without knowing
+   about this modal. The same delegate also owns two sibling contracts:
+   [data-bazarr-nav] (an <a> that must navigate without waking the toggler it
+   sits inside) and [data-bazarr-auto][data-kind][data-id] ("search missing"
+   for a whole movie/series). All three are contained in the CAPTURE phase —
+   see the long comment on the listener at the bottom of this file.
+
+   Tabler doesn't expose window.bootstrap (see dashboard/_plex_info_modal.html.twig),
+   so — same pattern as that modal — we open by clicking a hidden
+   data-bs-toggle trigger and close via the standard data-bs-dismiss button;
+   Bootstrap's data-api (bundled inside tabler.min.js) does the rest. No
+   window.tabler.Modal / window.bootstrap.Modal resolution needed for the
+   common path; doDownload()'s close still falls back to manual class
+   toggling in the unlikely event the data-api didn't attach.
+
+   Include exactly ONCE, admin-gated, from base.html.twig. #}
+<button type="button" class="d-none" data-bazarr-search-trigger data-bs-toggle="modal" data-bs-target="#bazarr-search-modal"></button>
+<div class="modal modal-blur fade" id="bazarr-search-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ 'bazarr.modal.title'|trans }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="bazarr-search-status" class="d-none"></div>
+        <div class="table-responsive">
+          <table class="table table-vcenter card-table">
+            <thead>
+              <tr>
+                <th>{{ 'bazarr.modal.columns.provider'|trans }}</th>
+                <th>{{ 'bazarr.modal.columns.language'|trans }}</th>
+                <th class="text-center">{{ 'bazarr.modal.columns.hi'|trans }}</th>
+                <th class="text-center">{{ 'bazarr.modal.columns.forced'|trans }}</th>
+                <th>{{ 'bazarr.modal.columns.score'|trans }}</th>
+                <th>{{ 'bazarr.modal.columns.release'|trans }}</th>
+                <th>{{ 'bazarr.modal.columns.uploader'|trans }}</th>
+                <th class="text-end">{{ 'bazarr.modal.columns.actions'|trans }}</th>
+              </tr>
+            </thead>
+            <tbody id="bazarr-search-results-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  if (window._prismarrBazarrSearchInit) return;
+  window._prismarrBazarrSearchInit = true;
+
+  var I18N = {
+    no_results:  {{ 'bazarr.modal.no_results'|trans|json_encode|raw }},
+    searching:   {{ 'bazarr.modal.searching'|trans|json_encode|raw }},
+    downloading: {{ 'bazarr.modal.downloading'|trans|json_encode|raw }},
+    success:     {{ 'bazarr.modal.success'|trans|json_encode|raw }},
+    error:       {{ 'bazarr.modal.error'|trans|json_encode|raw }},
+    download:    {{ 'bazarr.modal.download'|trans|json_encode|raw }},
+    autoStarted: {{ 'bazarr.auto.started'|trans|json_encode|raw }}
+  };
+
+  function modalEl()   { return document.getElementById('bazarr-search-modal'); }
+  function triggerEl() { return document.querySelector('[data-bazarr-search-trigger]'); }
+  function tbodyEl()   { return document.getElementById('bazarr-search-results-tbody'); }
+  function statusEl()  { return document.getElementById('bazarr-search-status'); }
+
+  function setStatus(msg, isError) {
+    var s = statusEl();
+    if (!s) return;
+    if (!msg) { s.className = 'd-none'; s.textContent = ''; return; }
+    s.className = 'text-center py-4 ' + (isError ? 'text-danger' : 'text-secondary');
+    s.textContent = msg;
+  }
+
+  // Truthy-ish coercion mirroring BazarrClient::downloadBody() server-side —
+  // search results can carry real booleans or Bazarr's own "True"/"False"
+  // strings depending on version.
+  function isTruthy(v) {
+    return v === true || v === 'True' || v === '1' || v === 1;
+  }
+
+  function normalizeLanguage(lang) {
+    if (lang && typeof lang === 'object') {
+      return lang.name || lang.code2 || lang.code3 || '';
+    }
+    return lang || '';
+  }
+
+  function normalizeRelease(info) {
+    if (Array.isArray(info)) return info.join(', ');
+    return info || '';
+  }
+
+  var searchToken = 0;
+
+  function renderRows(kind, itemId, results) {
+    var tbody = tbodyEl();
+    if (!tbody) return;
+    if (!results || !results.length) {
+      tbody.innerHTML = '';
+      tbody._bazarrRows = null;
+      setStatus(I18N.no_results, false);
+      return;
+    }
+    setStatus('', false);
+    tbody._bazarrRows = results;
+    tbody.setAttribute('data-kind', kind);
+    tbody.setAttribute('data-item-id', String(itemId));
+    tbody.innerHTML = results.map(function (r, idx) {
+      var lang = window.escHtml(normalizeLanguage(r.language));
+      var release = normalizeRelease(r.release_info);
+      var hi = isTruthy(r.hearing_impaired) ? '&#10003;' : '';
+      var forced = isTruthy(r.forced) ? '&#10003;' : '';
+      var score = r.score === null || r.score === undefined ? '' : window.escHtml(r.score);
+      return '<tr>'
+        + '<td>' + window.escHtml(r.provider || '') + '</td>'
+        + '<td>' + lang + '</td>'
+        + '<td class="text-center">' + hi + '</td>'
+        + '<td class="text-center">' + forced + '</td>'
+        + '<td>' + score + '</td>'
+        + '<td class="text-truncate" style="max-width:240px;" title="' + window.escHtml(release) + '">' + window.escHtml(release) + '</td>'
+        + '<td>' + window.escHtml(r.uploader || '') + '</td>'
+        + '<td class="text-end"><button type="button" class="btn btn-sm btn-primary" data-bazarr-download data-idx="' + idx + '">' + window.escHtml(I18N.download) + '</button></td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  function doSearch(kind, id) {
+    var trigger = triggerEl();
+    if (!trigger) return;
+    var token = ++searchToken;
+    var tbody = tbodyEl();
+    if (tbody) { tbody.innerHTML = ''; tbody._bazarrRows = null; }
+    setStatus(I18N.searching, false);
+    trigger.click();
+
+    fetch('/bazarr/api/search/' + encodeURIComponent(kind) + '/' + encodeURIComponent(id), {
+      headers: { 'X-Requested-With': 'fetch' },
+      credentials: 'same-origin'
+    })
+      .then(function (r) {
+        var ct = r.headers.get('content-type') || '';
+        if (!r.ok || ct.indexOf('application/json') === -1) { throw new Error('bad-response'); }
+        return r.json();
+      })
+      .then(function (data) {
+        if (token !== searchToken) return; // a newer search superseded this one
+        if (!data || data.ok !== true) { throw new Error((data && data.error) || 'search-failed'); }
+        renderRows(kind, id, data.results || []);
+      })
+      .catch(function () {
+        if (token !== searchToken) return;
+        var tb = tbodyEl();
+        if (tb) { tb.innerHTML = ''; tb._bazarrRows = null; }
+        setStatus(I18N.error, true);
+      });
+  }
+
+  // The global quick-look (templates/_quicklook.html.twig) hand-rolls its own
+  // show/hide: it appends a `.modal-backdrop.fade.show.ql-backdrop-el` and puts
+  // `modal-open` on <body>. Both of those are shared surfaces, so this modal has
+  // to leave the quick-look's bookkeeping alone when it closes on top of it.
+  function quicklookOpen() {
+    var ql = document.getElementById('ql-modal');
+    return !!(ql && ql.classList.contains('show'));
+  }
+
+  function closeModal() {
+    var m = modalEl();
+    if (!m) return;
+    var dismiss = m.querySelector('[data-bs-dismiss="modal"]');
+    if (dismiss) { dismiss.click(); return; }
+    // Manual fallback in case the data-api never attached to this element.
+    m.classList.remove('show');
+    m.style.display = 'none';
+    m.removeAttribute('aria-modal');
+    if (!quicklookOpen()) { document.body.classList.remove('modal-open'); }
+    // Never sweep away the quick-look's own backdrop — only Bootstrap-owned ones.
+    document.querySelectorAll('.modal-backdrop:not(.ql-backdrop-el)').forEach(function (b) { b.remove(); });
+  }
+
+  // Bootstrap's hide() drops `modal-open` from <body> unconditionally, taking
+  // the quick-look's marker with it when this modal was stacked on top of a
+  // still-open quick-look. Re-adding it keeps that marker consistent for
+  // anything that reads it. It does NOT scroll-lock anything: Bootstrap 5 locks
+  // scroll with an inline `overflow: hidden` on <body>, and no CSS in this app
+  // (Tabler included) styles `.modal-open` at all — the quick-look only ever
+  // set the class, so there was never a lock here to restore.
+  // Delegated on `document` rather than bound to the element: Turbo replaces
+  // the <body> on every visit, and the init guard above keeps this script from
+  // re-running, so an element-bound listener would be lost after the first
+  // navigation. Bootstrap 5 dispatches its lifecycle events with
+  // `bubbles: true`, so document sees them.
+  document.addEventListener('hidden.bs.modal', function (e) {
+    if (!e.target || e.target.id !== 'bazarr-search-modal') return;
+    if (quicklookOpen()) { document.body.classList.add('modal-open'); }
+  });
+
+  function doDownload(kind, itemId, row, btn) {
+    var origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    setStatus(I18N.downloading, false);
+
+    var idField = kind === 'movie' ? 'radarrid' : 'episodeid';
+    var params = {};
+    params[idField] = itemId;
+    params.hi = isTruthy(row.hearing_impaired) ? '1' : '0';
+    params.forced = isTruthy(row.forced) ? '1' : '0';
+    params.original_format = isTruthy(row.original_format) ? '1' : '0';
+    params.provider = row.provider || '';
+    params.subtitle = row.subtitle || '';
+
+    fetch('/bazarr/api/download/' + kind, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'fetch'
+      },
+      credentials: 'same-origin',
+      body: new URLSearchParams(params).toString()
+    })
+      .then(function (r) {
+        var ct = r.headers.get('content-type') || '';
+        if (ct.indexOf('application/json') === -1) { throw new Error('bad-response'); }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data || data.ok !== true) { throw new Error((data && data.error) || 'download-failed'); }
+        setStatus('', false);
+        if (window._prismarrToast) window._prismarrToast(I18N.success, 'success');
+        closeModal();
+      })
+      .catch(function () {
+        setStatus('', false);
+        if (window._prismarrToast) window._prismarrToast(I18N.error, 'danger');
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      });
+  }
+
+  // Ask Bazarr to run its own "search missing" pass for a whole movie/series.
+  // Fire-and-forget from the UI's point of view: Bazarr queues the work, so we
+  // only confirm that it started and hand the button back.
+  function doAutoSearch(kind, id, btn) {
+    var origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    function restore() {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+    }
+
+    fetch('/bazarr/api/auto/' + encodeURIComponent(kind) + '/' + encodeURIComponent(id), {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'fetch' },
+      credentials: 'same-origin'
+    })
+      .then(function (r) {
+        var ct = r.headers.get('content-type') || '';
+        if (ct.indexOf('application/json') === -1) { throw new Error('bad-response'); }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data || data.ok !== true) { throw new Error((data && data.error) || 'auto-failed'); }
+        if (window._prismarrToast) window._prismarrToast(I18N.autoStarted, 'success');
+        restore();
+      })
+      .catch(function () {
+        if (window._prismarrToast) window._prismarrToast(I18N.error, 'danger');
+        restore();
+      });
+  }
+
+  // ── Delegated triggers, CAPTURE phase (deliberate) ────────────────────────
+  // Every Bazarr affordance below is rendered *inside* something else that
+  // already owns the click: the Films/Series poster card is a Bootstrap modal
+  // toggler (`data-bs-toggle="modal"`), the films/series table rows re-dispatch
+  // the click onto their card (`card.click()`), and the quick-look tiles have
+  // their own document-level delegate. Bootstrap's data-api listener also sits
+  // on `document` and ignores `defaultPrevented`, so neither `preventDefault()`
+  // nor a bubble-phase `stopPropagation()` can contain a badge click.
+  // Registering in the capture phase and calling `stopImmediatePropagation()`
+  // kills the event at the top of the tree, before it ever descends to the card
+  // or bubbles back to the data-api. The modal still opens because doSearch()
+  // clicks the hidden `[data-bazarr-search-trigger]`, which dispatches a fresh
+  // event the data-api is free to handle.
+  document.addEventListener('click', function (e) {
+    var target = e.target;
+    if (!target || typeof target.closest !== 'function') return;
+
+    // Bulk-select mode owns the whole grid. Films/Series each register their own
+    // CAPTURE-phase handler on the `.media-grid` element (films.html.twig ~4470,
+    // series.html.twig ~1759) that turns any card click into a selection toggle
+    // — and `document` capture runs *before* an element capture further down the
+    // tree, so containing the click here would swallow it: the badge would stop
+    // toggling selection, and on Series it would Turbo.visit away and throw the
+    // in-progress multi-selection out. While the grid is in select mode we stay
+    // out of the way entirely and let the grid handler have the click.
+    if (target.closest('.media-grid.select-mode')) return;
+
+    var searchTrigger = target.closest('[data-bazarr-search]');
+    if (searchTrigger) {
+      var kind = searchTrigger.getAttribute('data-kind');
+      var id = searchTrigger.getAttribute('data-id');
+      if (!kind || !id) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      doSearch(kind, id);
+      return;
+    }
+
+    // Series "missing" badge: a real <a> to the Bazarr series page. Contained
+    // the same way so the surrounding card can't open its detail modal at the
+    // same time, then navigated by hand (Turbo when it's around, plain href
+    // otherwise) since preventDefault() cancelled the browser's own follow.
+    var navLink = target.closest('[data-bazarr-nav]');
+    if (navLink) {
+      var href = navLink.getAttribute('href');
+      if (!href) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (window.Turbo && window.Turbo.visit) { window.Turbo.visit(href); } else { window.location.href = href; }
+      return;
+    }
+
+    var autoBtn = target.closest('[data-bazarr-auto]');
+    if (autoBtn) {
+      var autoKind = autoBtn.getAttribute('data-kind');
+      var autoId = autoBtn.getAttribute('data-id');
+      if (!autoKind || !autoId) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (autoBtn.disabled) return;
+      doAutoSearch(autoKind, autoId, autoBtn);
+      return;
+    }
+
+    var downloadBtn = target.closest('[data-bazarr-download]');
+    if (downloadBtn) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      var tbody = tbodyEl();
+      var rows = tbody && tbody._bazarrRows;
+      var idx = parseInt(downloadBtn.getAttribute('data-idx'), 10);
+      if (!rows || !rows[idx]) return;
+      doDownload(tbody.getAttribute('data-kind'), tbody.getAttribute('data-item-id'), rows[idx], downloadBtn);
+    }
+  }, true);
+})();
+</script>

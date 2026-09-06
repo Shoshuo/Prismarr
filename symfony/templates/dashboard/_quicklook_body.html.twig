@@ -18,6 +18,7 @@
       <h2 class="ql-title">{{ ql.title }}{% if ql.year %} <span class="ql-year">({{ ql.year }})</span>{% endif %}</h2>
       <div class="ql-meta">
         {% if ql.statusBadge %}<span class="ql-badge is-{{ ql.statusBadge.kind }}">{{ ql.statusBadge.label }}</span>{% endif %}
+        {% if ql.radarrId is defined and ql.radarrId %}{{ include('media/_subtitle_badge.html.twig', { kind: 'movie', id: ql.radarrId, st_override: subtitle_status_single('movie', ql.radarrId) }) }}{% elseif ql.sonarrId is defined and ql.sonarrId %}{{ include('media/_subtitle_badge.html.twig', { kind: 'series', id: ql.sonarrId }) }}{% endif %}
         {% if ql.rating %}<span class="ql-rating">{{ ico.icon('star-filled', '', 14) }} {{ ql.rating|round(1) }}/10</span>{% endif %}
         {% if ql.metaLine %}<span>{{ ql.metaLine }}</span>{% endif %}
         {% for g in ql.genres %}<span class="ql-chip">{{ g }}</span>{% endfor %}

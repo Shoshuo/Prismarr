@@ -4,6 +4,7 @@ namespace App\Tests\Controller;
 
 use App\Controller\MediaController;
 use App\Service\ConfigService;
+use App\Service\Media\BazarrSubtitleIndex;
 use App\Service\Media\MediaLibraryCache;
 use App\Service\Media\ProwlarrClient;
 use App\Service\Media\QBittorrentClient;
@@ -40,6 +41,7 @@ class MediaReleasesSearchTest extends TestCase
             new NullLogger(),
             $this->createMock(TranslatorInterface::class),
             $this->createMock(MediaLibraryCache::class),
+            $this->createMock(BazarrSubtitleIndex::class),
         );
         // Empty container so AbstractController::json() falls back to a plain
         // JsonResponse instead of looking up the serializer service.

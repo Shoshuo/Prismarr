@@ -1,4 +1,10 @@
 #!/command/with-contenv sh
 sleep 3
 # Drop privileges: the messenger worker runs as www-data (UID 82).
-exec s6-setuidgid www-data php /var/www/html/bin/console messenger:consume async --time-limit=3600 --memory-limit=256M -v
+# 512M, not 256M: one library refresh decodes a whole Radarr/Sonarr payload
+# (thousands of rows, ~120-180 MB peak on a large library). At 256M the
+# consumer would recycle after nearly every refresh; php.ini's own
+# memory_limit (1024M) is the real ceiling — unless an
+# operator sets PHP_MEMORY_LIMIT (see init.sh), which can push php.ini's own
+# limit below this consumer's 512M and make it the effective ceiling instead.
+exec s6-setuidgid www-data php /var/www/html/bin/console messenger:consume async --time-limit=3600 --memory-limit=512M -v

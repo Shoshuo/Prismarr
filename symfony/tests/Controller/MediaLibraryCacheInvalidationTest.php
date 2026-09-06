@@ -5,6 +5,7 @@ namespace App\Tests\Controller;
 use App\Controller\MediaController;
 use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
+use App\Service\Media\BazarrSubtitleIndex;
 use App\Service\Media\MediaLibraryCache;
 use App\Service\Media\ProwlarrClient;
 use App\Service\Media\QBittorrentClient;
@@ -44,6 +45,7 @@ class MediaLibraryCacheInvalidationTest extends TestCase
             new NullLogger(),
             $this->createMock(TranslatorInterface::class),
             $cache,
+            $this->createMock(BazarrSubtitleIndex::class),
         );
         $container = $this->createMock(ContainerInterface::class);
         $container->method('has')->willReturn(false);

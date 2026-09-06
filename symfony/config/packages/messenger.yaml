@@ -13,6 +13,7 @@ framework:
             failed: 'doctrine://default?queue_name=failed'
             sync: 'sync://'
 
-        # No active async routing for now — future Prismarr messages
-        # (notifications, scheduled tasks) will be added here.
-        routing: {}
+        # Cache refreshes run in the messenger-worker s6 service so a slow
+        # upstream fetch never occupies a FrankenPHP web worker.
+        routing:
+            App\Message\RefreshCacheKey: async

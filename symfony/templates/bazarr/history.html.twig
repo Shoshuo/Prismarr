@@ -1,0 +1,112 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'bazarr.title'|trans }}{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+{% endblock %}
+
+{% block body %}
+<div class="page-header d-print-none">
+  <div class="row align-items-center">
+    <div class="col">
+      <h2 class="page-title">{{ 'bazarr.title'|trans }}</h2>
+      <div class="text-secondary">{{ 'bazarr.subtitle'|trans }}</div>
+    </div>
+    <div class="col-auto ms-auto">
+      {% include 'bazarr/_nav.html.twig' %}
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+
+    {% if error %}
+      {% include 'error/_service_banner.html.twig' with { service: 'Bazarr', wizard_route: 'admin_settings_index', configured_url: service_url, reason: 'unreachable' } %}
+    {% else %}
+      <div class="row row-cards">
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">{{ 'bazarr.history.movies_title'|trans }}</h3>
+            </div>
+            {% if history_movies is empty %}
+              <div class="card-body">
+                <div class="empty">
+                  <p class="empty-title">{{ 'bazarr.history.empty'|trans }}</p>
+                </div>
+              </div>
+            {% else %}
+              <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                  <thead>
+                    <tr>
+                      <th>{{ 'bazarr.history.column_title'|trans }}</th>
+                      <th>{{ 'bazarr.history.column_action'|trans }}</th>
+                      <th>{{ 'bazarr.history.column_provider'|trans }}</th>
+                      <th>{{ 'bazarr.history.column_language'|trans }}</th>
+                      <th>{{ 'bazarr.history.column_date'|trans }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in history_movies %}
+                      <tr>
+                        <td>{{ item.title|default('—') }}</td>
+                        <td>{{ item.action|default('—') }}</td>
+                        <td>{{ item.provider|default('—') }}</td>
+                        <td>{% if item.language is iterable %}{{ item.language.name|default('—') }}{% else %}{{ item.language|default('—') }}{% endif %}</td>
+                        <td>{{ item.raw_timestamp is defined and item.raw_timestamp ? item.raw_timestamp|relative_date : (item.parsed_timestamp|default(item.timestamp|default('—'))) }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">{{ 'bazarr.history.episodes_title'|trans }}</h3>
+            </div>
+            {% if history_episodes is empty %}
+              <div class="card-body">
+                <div class="empty">
+                  <p class="empty-title">{{ 'bazarr.history.empty'|trans }}</p>
+                </div>
+              </div>
+            {% else %}
+              <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                  <thead>
+                    <tr>
+                      <th>{{ 'bazarr.history.column_title'|trans }}</th>
+                      <th>{{ 'bazarr.history.column_action'|trans }}</th>
+                      <th>{{ 'bazarr.history.column_provider'|trans }}</th>
+                      <th>{{ 'bazarr.history.column_language'|trans }}</th>
+                      <th>{{ 'bazarr.history.column_date'|trans }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in history_episodes %}
+                      <tr>
+                        <td>{{ item.seriesTitle|default('—') }} — {{ item.episodeTitle|default('—') }} {% if item.episode_number is defined %}({{ item.episode_number }}){% endif %}</td>
+                        <td>{{ item.action|default('—') }}</td>
+                        <td>{{ item.provider|default('—') }}</td>
+                        <td>{% if item.language is iterable %}{{ item.language.name|default('—') }}{% else %}{{ item.language|default('—') }}{% endif %}</td>
+                        <td>{{ item.raw_timestamp is defined and item.raw_timestamp ? item.raw_timestamp|relative_date : (item.parsed_timestamp|default(item.timestamp|default('—'))) }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

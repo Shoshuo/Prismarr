@@ -31,6 +31,7 @@ class ConfigExtension extends AbstractExtension
         'nzbget'      => 'nzbget_url',
         'gluetun'     => 'gluetun_url',
         'tautulli'    => 'tautulli_url',
+        'bazarr'      => 'bazarr_url',
     ];
 
     /** Services backed by service_instance instead of a flat setting. */

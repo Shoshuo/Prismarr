@@ -1,0 +1,118 @@
+{#
+  Compact landing overview: stat tiles +
+  a "most missing" poster row, replacing the two long Wanted tables this page
+  used to scroll through. The full sortable/filterable lists still live on
+  the Movies/Series tabs (bazarr/_grid.html.twig) — this page is a
+  glanceable summary that links out to them.
+
+  This partial's CSS lives in bazarr/_shell.html.twig's stylesheets block
+  (loaded once, in <head>), not here — every view's markup is wholly
+  replaced on each frame swap, so a <style> tag in this file would be torn
+  down and recreated (and briefly duplicated) on every navigation back to
+  the Wanted tab. Cards are plain <div>s (not <a>) — each one carries a real
+  <button data-bazarr-auto> as a SIBLING of the optional series-detail <a>,
+  never nested inside it, so the auto-search affordance this page is now the
+  primary home for stays valid HTML and reachable via the shared delegated
+  handler in bazarr/_search_modal.html.twig.
+
+  error and warming states are handled by bazarr/_bare.html.twig before this
+  partial is ever included — this file only renders the ready state.
+#}
+      <div class="row row-cards mb-3">
+        <div class="col-sm-6 col-lg-4">
+          <div class="card card-sm">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <span class="bg-primary text-white avatar">{{ counts.movies }}</span>
+                </div>
+                <div class="col">
+                  <div class="text-secondary">{{ 'bazarr.stat.movies_wanted'|trans }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+          <div class="card card-sm">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <span class="bg-azure text-white avatar">{{ counts.episodes }}</span>
+                </div>
+                <div class="col">
+                  <div class="text-secondary">{{ 'bazarr.stat.episodes_wanted'|trans }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+          <div class="card card-sm">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <span class="bg-green text-white avatar">{{ counts.providers }}</span>
+                </div>
+                <div class="col">
+                  <div class="text-secondary">{{ 'bazarr.stat.providers'|trans }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title mb-0">{{ 'bazarr.landing.most_missing_title'|trans }}</h3>
+          <div class="card-actions">
+            {# These stay inside the frame's own view set (Movies/Series), so
+               unlike the series-detail/settings links elsewhere on this page
+               they target the frame + advance history, same as the pill nav,
+               instead of escaping to _top. #}
+            <a href="{{ path('app_bazarr_movies') }}" data-turbo-frame="bazarr-view" data-turbo-action="advance" class="btn btn-sm btn-outline-secondary">{{ 'bazarr.landing.view_movies'|trans }}</a>
+            <a href="{{ path('app_bazarr_series') }}" data-turbo-frame="bazarr-view" data-turbo-action="advance" class="btn btn-sm btn-outline-secondary">{{ 'bazarr.landing.view_series'|trans }}</a>
+          </div>
+        </div>
+
+        {% if most_missing is empty %}
+          <div class="card-body">
+            <div class="empty">
+              <p class="empty-title">{{ 'bazarr.landing.empty'|trans }}</p>
+            </div>
+          </div>
+        {% else %}
+          <div class="card-body">
+            <div class="bazarr-missing-row">
+              {% for item in most_missing %}
+                <div class="bz-missing-card">
+                  <div class="media-card is-static">
+                    {% if item.poster %}
+                      <img src="{{ item.poster }}" alt="{{ item.title }}" loading="lazy">
+                    {% else %}
+                      <div class="no-poster">{{ item.title }}</div>
+                    {% endif %}
+                    <span class="badge poster-chip is-warning bazarr-chip" title="{{ 'bazarr.badge.missing_count'|trans({count: item.missingCount}) }}">{{ 'bazarr.badge.missing_count'|trans({count: item.missingCount}) }}</span>
+                    <div class="card-overlay">
+                      <div class="card-title-text" title="{{ item.title }}">
+                        {%- if item.kind == 'series' and item.id is not null -%}
+                          <a href="{{ path('app_bazarr_series_detail', {seriesId: item.id}) }}" data-bazarr-nav data-turbo-frame="_top">{{ item.title }}</a>
+                        {%- else -%}
+                          {{ item.title }}
+                        {%- endif -%}
+                      </div>
+                      {% if item.year %}<div class="card-year">{{ item.year }}</div>{% endif %}
+                    </div>
+                  </div>
+                  {% if item.id is not null %}
+                    <div class="bz-missing-footer">
+                      <button type="button" class="btn btn-sm btn-ghost-primary w-100" data-bazarr-auto data-kind="{{ item.kind }}" data-id="{{ item.id }}">{{ 'bazarr.auto.button'|trans }}</button>
+                    </div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>

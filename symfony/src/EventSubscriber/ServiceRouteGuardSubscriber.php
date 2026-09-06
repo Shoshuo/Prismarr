@@ -30,7 +30,14 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 class ServiceRouteGuardSubscriber implements EventSubscriberInterface
 {
     /**
-     * @var array<string, array{service: string, service_id: string, keys?: list<string>, instance_type?: string, wizard: string, index: string}>
+     * `exclude_prefix` (optional) carves a sub-tree out of the rule's own
+     * route prefix: matching routes are left completely alone by this guard.
+     * Used for JSON API endpoints, which must answer with their controller's
+     * JSON error shape — a 302 to an HTML page turns a background fetch into
+     * an unparseable response, silently drops POST bodies, and leaks a flash
+     * message into the next page the user happens to load.
+     *
+     * @var array<string, array{service: string, service_id: string, keys?: list<string>, instance_type?: string, exclude_prefix?: string, wizard: string, index: string}>
      */
     private const RULES = [
         'radarr_'           => ['service' => 'Radarr',      'service_id' => 'radarr',      'instance_type' => ServiceInstance::TYPE_RADARR,    'wizard' => 'app_setup_managers',  'index' => 'app_media_films'],
@@ -49,6 +56,7 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         'app_transmission'  => ['service' => 'Transmission', 'service_id' => 'transmission', 'keys' => ['transmission_url'],                   'wizard' => 'app_setup_downloads', 'index' => 'app_transmission_index'],
         'tmdb_'             => ['service' => 'TMDb',        'service_id' => 'tmdb',        'keys' => ['tmdb_api_key'],                         'wizard' => 'app_setup_tmdb',      'index' => 'tmdb_index'],
         'app_tautulli_index' => ['service' => 'Tautulli',   'service_id' => 'tautulli',    'keys' => ['tautulli_url', 'tautulli_api_key'],      'wizard' => 'admin_settings_index', 'index' => 'app_tautulli_index'],
+        'app_bazarr_'       => ['service' => 'Bazarr',      'service_id' => 'bazarr',      'keys' => ['bazarr_url', 'bazarr_api_key'],          'exclude_prefix' => 'app_bazarr_api_', 'wizard' => 'admin_settings_index', 'index' => 'app_bazarr_index'],
     ];
 
     public function __construct(
@@ -133,14 +141,20 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * @return array{service: string, service_id: string, keys?: list<string>, instance_type?: string, wizard: string, index: string}|null
+     * @return array{service: string, service_id: string, keys?: list<string>, instance_type?: string, exclude_prefix?: string, wizard: string, index: string}|null
      */
     private function matchRule(string $route): ?array
     {
         foreach (self::RULES as $prefix => $rule) {
-            if (str_starts_with($route, $prefix)) {
-                return $rule;
+            if (!str_starts_with($route, $prefix)) {
+                continue;
             }
+            // Carve-out wins over the rule it belongs to: the route is exempt
+            // from the guard entirely (see RULES' doc block).
+            if (isset($rule['exclude_prefix']) && str_starts_with($route, $rule['exclude_prefix'])) {
+                return null;
+            }
+            return $rule;
         }
         return null;
     }

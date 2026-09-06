@@ -1,0 +1,18 @@
+{#
+  Frame-only response body. This file MUST emit the <turbo-frame> element
+  itself: Turbo matches the replacement by finding id="bazarr-view" in the
+  response. A bare inner fragment leaves the frame empty.
+#}
+<turbo-frame id="bazarr-view">
+  {% if error %}
+    {% include 'error/_service_banner.html.twig' with { service: 'Bazarr', wizard_route: 'admin_settings_index', configured_url: service_url, reason: 'unreachable' } %}
+  {% elseif warming|default(false) %}
+    {% include 'bazarr/_warming.html.twig' %}
+  {% elseif view == 'movies' %}
+    {% include 'bazarr/_grid.html.twig' with { kind: 'movie', cards: cards, languages: languages } only %}
+  {% elseif view == 'series' %}
+    {% include 'bazarr/_grid.html.twig' with { kind: 'series', cards: cards, languages: languages } only %}
+  {% else %}
+    {% include 'bazarr/index.html.twig' %}
+  {% endif %}
+</turbo-frame>

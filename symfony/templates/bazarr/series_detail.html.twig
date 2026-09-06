@@ -1,0 +1,83 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ series_title|default('bazarr.series_detail.title'|trans) }}{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+{% endblock %}
+
+{% block body %}
+<div class="page-header d-print-none">
+  <div class="row align-items-center">
+    <div class="col">
+      <div class="mb-1">
+        <a href="{{ path('app_bazarr_series') }}" class="text-secondary">&laquo; {{ 'bazarr.series_detail.back'|trans }}</a>
+      </div>
+      <h2 class="page-title">{{ series_title|default('bazarr.series_detail.title'|trans ~ ' #' ~ series_id) }}</h2>
+    </div>
+    <div class="col-auto ms-auto">
+      {% include 'bazarr/_nav.html.twig' %}
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+
+    {% if error %}
+      {% include 'error/_service_banner.html.twig' with { service: 'Bazarr', wizard_route: 'admin_settings_index', configured_url: service_url, reason: 'unreachable' } %}
+    {% else %}
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">{{ 'bazarr.series_detail.title'|trans }}</h3>
+        </div>
+        {% if episodes is empty %}
+          <div class="card-body">
+            <div class="empty">
+              <p class="empty-title">{{ 'bazarr.series_detail.empty'|trans }}</p>
+            </div>
+          </div>
+        {% else %}
+          <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+              <thead>
+                <tr>
+                  <th>{{ 'bazarr.series_detail.column_season'|trans }}</th>
+                  <th>{{ 'bazarr.series_detail.column_episode'|trans }}</th>
+                  <th>{{ 'bazarr.series_detail.column_title'|trans }}</th>
+                  <th>{{ 'bazarr.series_detail.column_language'|trans }}</th>
+                  <th>{{ 'bazarr.series_detail.column_status'|trans }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ep in episodes %}
+                  <tr>
+                    <td>{{ ep.season|default('—') }}</td>
+                    <td>{{ ep.episode|default('—') }}</td>
+                    <td>{{ ep.title|default('—') }}</td>
+                    <td>{{ ep.audio_language is iterable ? ep.audio_language|column('name')|join(', ') : '—' }}</td>
+                    <td>
+                      {% if ep.missing_subtitles is iterable and ep.missing_subtitles|length > 0 %}
+                        {% if ep.sonarrEpisodeId|default(null) is not null %}
+                          <button type="button" class="btn btn-sm btn-outline-primary" data-bazarr-search data-kind="episode" data-id="{{ ep.sonarrEpisodeId }}">
+                            {{ 'bazarr.series_detail.search'|trans }}
+                          </button>
+                        {% else %}
+                          <span class="text-secondary">—</span>
+                        {% endif %}
+                      {% else %}
+                        <span class="badge bg-green-lt">{{ 'bazarr.series_detail.complete'|trans }}</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
