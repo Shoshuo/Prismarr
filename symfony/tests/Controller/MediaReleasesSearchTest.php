@@ -91,4 +91,64 @@ class MediaReleasesSearchTest extends TestCase
         $this->assertSame(200, $res->getStatusCode());
         $this->assertSame('[]', $res->getContent());
     }
+
+    /**
+     * @return array<int, array<string, mixed>> five rows exercising every
+     *   `safeInfoUrl()` branch: a plain https URL (kept), a missing key
+     *   (null), a `javascript:` URL (rejected — XSS vector), an uppercase
+     *   `HTTPS://` scheme (kept — case-insensitive), and a non-string value
+     *   (rejected).
+     */
+    private function infoUrlFixtureRows(): array
+    {
+        return [
+            ['guid' => 'a', 'indexerId' => 1, 'title' => 'Release A', 'infoUrl' => 'https://tracker.example/torrent/1'],
+            ['guid' => 'b', 'indexerId' => 2, 'title' => 'Release B'],
+            ['guid' => 'c', 'indexerId' => 3, 'title' => 'Release C', 'infoUrl' => 'javascript:alert(1)'],
+            ['guid' => 'd', 'indexerId' => 4, 'title' => 'Release D', 'infoUrl' => 'HTTPS://tracker.example/x'],
+            ['guid' => 'e', 'indexerId' => 5, 'title' => 'Release E', 'infoUrl' => 42],
+        ];
+    }
+
+    private function assertInfoUrlFixtureRowsMappedSafely(array $rows): void
+    {
+        $this->assertSame('https://tracker.example/torrent/1', $rows[0]['infoUrl']);
+        $this->assertNull($rows[1]['infoUrl']);
+        $this->assertNull($rows[2]['infoUrl'], 'javascript: URL must not reach the frontend as infoUrl');
+        $this->assertSame('HTTPS://tracker.example/x', $rows[3]['infoUrl'], 'uppercase scheme must still be accepted');
+        $this->assertNull($rows[4]['infoUrl'], 'non-string infoUrl must map to null');
+    }
+
+    public function testFilmReleasesMapsInfoUrlFromRadarrPayload(): void
+    {
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('getMovie')->willReturn(null);
+        $radarr->method('getReleasesForMovie')->willReturn($this->infoUrlFixtureRows());
+
+        $res = $this->controller(radarr: $radarr)->filmReleases(1);
+        $this->assertSame(200, $res->getStatusCode());
+        $this->assertInfoUrlFixtureRowsMappedSafely(json_decode($res->getContent(), true));
+    }
+
+    public function testEpisodeReleasesMapsInfoUrlFromSonarrPayload(): void
+    {
+        $sonarr = $this->createMock(SonarrClient::class);
+        $sonarr->method('getEpisode')->willReturn(null);
+        $sonarr->method('getEpisodeReleases')->willReturn($this->infoUrlFixtureRows());
+
+        $res = $this->controller(sonarr: $sonarr)->episodeReleases(1);
+        $this->assertSame(200, $res->getStatusCode());
+        $this->assertInfoUrlFixtureRowsMappedSafely(json_decode($res->getContent(), true));
+    }
+
+    public function testSeasonReleasesMapsInfoUrlFromSonarrPayload(): void
+    {
+        $sonarr = $this->createMock(SonarrClient::class);
+        $sonarr->method('getSerie')->willReturn(null);
+        $sonarr->method('getSeasonReleases')->willReturn($this->infoUrlFixtureRows());
+
+        $res = $this->controller(sonarr: $sonarr)->seasonReleases(1, 1);
+        $this->assertSame(200, $res->getStatusCode());
+        $this->assertInfoUrlFixtureRowsMappedSafely(json_decode($res->getContent(), true));
+    }
 }

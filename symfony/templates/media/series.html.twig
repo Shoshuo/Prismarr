@@ -3632,10 +3632,14 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
       else if (r.fullSeason && r.episodeRequested) sceneColor = '#f59e0b';
       else sceneColor = '#6b7280';
 
+      var titleHtml = r.infoUrl
+        ? '<a href="' + esc(r.infoUrl) + '" target="_blank" rel="noopener" class="text-reset">' + esc(r.title) + '</a>'
+        : esc(r.title);
+
       tr.innerHTML =
         '<td class="text-truncate" style="max-width:200px" title="' + esc(r.title) + '">' +
           (approved ? '' : '<span class="text-danger me-1" title="' + esc(rejTip) + '">&#10007;</span>') +
-          esc(r.title) +
+          titleHtml +
         '</td>' +
         '<td class="text-nowrap text-muted small">' + esc(r.indexer) + '</td>' +
         '<td class="text-nowrap"><span class="badge bg-blue-lt">' + esc(r.quality) + '</span></td>' +
