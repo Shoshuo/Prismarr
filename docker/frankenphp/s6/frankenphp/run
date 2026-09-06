@@ -9,5 +9,65 @@ fi
 # Caddy needs a writable HOME for its internal data store (XDG paths).
 # var/caddy is created and chowned by init.sh.
 export HOME=/var/www/html/var/caddy
+
+# ── FrankenPHP worker mode (opt-in, default OFF) ────────────────────────
+# Worker mode boots the Symfony kernel once and keeps it resident, so requests
+# skip the per-request kernel bootstrap. Controlled by PRISMARR_WORKER:
+#   unset / "" / 0 / false / no / off  → OFF (classic per-request mode)
+#   1  (or true / yes / on)            → ON, FrankenPHP's default count (2x CPU)
+#   a positive integer N (e.g. 4)      → ON, with N resident workers
+#   anything else                      → OFF + a warning (fail closed: worker
+#                                        mode changes request-isolation
+#                                        semantics, so it must never be
+#                                        enabled by a typo)
+# PRISMARR_WORKER_NUM, if set to a positive integer, overrides the count; any
+# other value is ignored with a warning — it is interpolated into the
+# Caddyfile, so an unvalidated value would fail Caddy's parse and take the
+# whole container down. The directive is injected into the global
+# `frankenphp { }` block via the {$PRISMARR_WORKER_DIRECTIVE} placeholder; an
+# unset/OFF value leaves it empty — byte-for-byte the classic path. Symfony
+# 8's default runtime auto-detects FrankenPHP's worker loop (FRANKENPHP_WORKER)
+# — no APP_RUNTIME / extra package needed.
+_pw_on=""
+_pw_count=""
+case "${PRISMARR_WORKER:-}" in
+  ''|0|false|False|FALSE|no|No|NO|off|Off|OFF)
+    : ;;  # classic — leave the directive empty
+  1|true|True|TRUE|yes|Yes|YES|on|On|ON)
+    _pw_on=1 ;;
+  *[!0-9]*)
+    # Unrecognized non-integer → fail CLOSED (classic mode), say so.
+    echo "[prismarr] WARNING: unrecognized PRISMARR_WORKER='${PRISMARR_WORKER}' — worker mode stays OFF (use 1/true/on or a worker count)" ;;
+  *)
+    # Pure integer (>1 → also the worker count; 0 was handled above).
+    _pw_on=1
+    [ "${PRISMARR_WORKER}" -gt 1 ] && _pw_count="${PRISMARR_WORKER}" ;;
+esac
+if [ -n "${_pw_on}" ]; then
+  # Optional count override — accepted only as a pure positive integer, since
+  # this value lands verbatim inside the Caddyfile.
+  case "${PRISMARR_WORKER_NUM:-}" in
+    '') : ;;
+    0|*[!0-9]*)
+      echo "[prismarr] WARNING: ignoring invalid PRISMARR_WORKER_NUM='${PRISMARR_WORKER_NUM}' (must be a positive integer)" ;;
+    *)
+      _pw_count="${PRISMARR_WORKER_NUM}" ;;
+  esac
+  if [ -n "${_pw_count}" ]; then
+    export PRISMARR_WORKER_DIRECTIVE="worker /var/www/html/public/index.php ${_pw_count}"
+  else
+    export PRISMARR_WORKER_DIRECTIVE="worker /var/www/html/public/index.php"
+  fi
+fi
+
+# Log the decision so worker status is visible in the container log (the
+# FrankenPHP process runs as www-data / non-dumpable, so its env can't be
+# inspected from outside, and FrankenPHP doesn't log worker startup at info).
+if [ -n "${PRISMARR_WORKER_DIRECTIVE:-}" ]; then
+  echo "[prismarr] FrankenPHP worker mode ENABLED — ${PRISMARR_WORKER_DIRECTIVE}"
+else
+  echo "[prismarr] FrankenPHP worker mode disabled (classic per-request; set PRISMARR_WORKER=1)"
+fi
+
 # Drop privileges: FrankenPHP and all PHP scripts run as www-data (UID 82).
 exec s6-setuidgid www-data frankenphp run --config /etc/caddy/Caddyfile

@@ -45,6 +45,14 @@ services:
       # itself. Setting it drops X-Frame-Options. (Issue #25.)
       # PRISMARR_FRAME_ANCESTORS: https://organizr.example.com
 
+      # FrankenPHP/Symfony worker mode (opt-in, OFF by default). Set to 1 to
+      # keep the Symfony kernel resident across requests (skips the per-request
+      # bootstrap for faster responses). Toggling needs no image rebuild. Leave
+      # unset for the classic per-request mode.
+      # PRISMARR_WORKER: 1
+      # Optional worker/thread count when PRISMARR_WORKER=1 (default: 2x CPU).
+      # PRISMARR_WORKER_NUM: 4
+
     # Persistent volume — contains SQLite DB, .env.local, sessions, cache.
     volumes:
       - prismarr_data:/var/www/html/var/data

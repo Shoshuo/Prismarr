@@ -237,6 +237,8 @@ rotate or back them up manually.
 | `TZ` | `UTC` | Container time zone (e.g. `Europe/Paris`, `Pacific/Honolulu`). Drives both the OS clock and the PHP date helpers — see issue [#12](https://github.com/Shoshuo/Prismarr/issues/12) |
 | `PHP_MEMORY_LIMIT` | `1024M` | PHP memory ceiling per request. Bump (e.g. `2048M`, `-1` for unlimited) if you have a very large Radarr / Sonarr library — see issue [#13](https://github.com/Shoshuo/Prismarr/issues/13) |
 | `PHP_MAX_EXECUTION_TIME` | `120` | PHP wall-time ceiling per request, in seconds. Bump alongside `PHP_MEMORY_LIMIT` if the films / series page times out |
+| `PRISMARR_WORKER` | _(unset)_ | Enables FrankenPHP/Symfony **worker mode** — the kernel is booted once and kept resident, skipping the per-request bootstrap for faster responses. Set to `1` (or `true`) for the default worker count, or to a number (e.g. `4`) to run that many workers. Off by default / `0` / `false` = classic per-request mode; no image rebuild needed to toggle |
+| `PRISMARR_WORKER_NUM` | _(2× CPU)_ | Optional explicit worker-thread count; overrides the count when `PRISMARR_WORKER` is enabled. Leave unset to use FrankenPHP's default (2× the available CPUs) |
 
 ### Persistent data
 
