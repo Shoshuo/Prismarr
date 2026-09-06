@@ -123,21 +123,27 @@
   .service-card + .service-card { margin-top: 1rem; }
   .service-card:focus-within { border-color: rgba(var(--tblr-primary-rgb),.55); }
 
-  /* Two-column layout for the service cards so the list doesn't grow into a
-     very tall single column. Collapses to one column under ~700px; the grid
-     gap replaces the stacked margin, and align-items:start keeps a short card
-     from stretching to match a tall neighbour. */
+  /* Two-column layout for the service cards. CSS multi-column (not grid) so
+     cards pack tightly by height: grid allocates every row track to its
+     tallest card, leaving dead space beside/below a short card and an empty
+     column when the card count is odd. Columns
+     flow cards into balanced stacks with no row tracks, so no gaps.
+     `columns: 2 320px` = at most 2 columns, each ≥320px → drops to one column
+     under ~660px, matching the old auto-fit responsive behaviour. */
   .service-grid-2col {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 1rem;
-    align-items: start;
+    columns: 2 320px;
+    column-gap: 1rem;
   }
-  .service-grid-2col .service-card { margin-top: 0; }
+  .service-grid-2col .service-card {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    /* Keep a card whole — never split one across a column break. */
+    break-inside: avoid;
+  }
   /* Multi-instance cards (Radarr/Sonarr) hold a 6-column table that can't fit
-     a half-width column, so they span the full row; only the simple URL+key
+     a half-width column, so they span both columns; only the simple URL+key
      cards share the two columns. */
-  .service-grid-2col .service-card--wide { grid-column: 1 / -1; }
+  .service-grid-2col .service-card--wide { column-span: all; }
   /* The 6-column instance table can't shrink to phone width, so let it scroll
      horizontally inside the card instead of overflowing the layout. */
   .instance-list { overflow-x: auto; }
