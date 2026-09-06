@@ -139,6 +139,18 @@ class ProwlarrController extends AbstractController
         return $this->json($results);
     }
 
+    #[Route('/grab', name: 'grab', methods: ['POST'])]
+    public function grab(Request $request): JsonResponse
+    {
+        $data = $request->toArray();
+        $guid = (string) ($data['guid'] ?? '');
+        $indexerId = (int) ($data['indexerId'] ?? 0);
+        if ($guid === '' || $indexerId <= 0) {
+            return $this->json(['ok' => false, 'error' => 'invalid_request'], 400);
+        }
+        return $this->json($this->prowlarr->grab($guid, $indexerId));
+    }
+
     // ── History ────────────────────────────────────────────────────────────
 
     #[Route('/history', name: 'history', methods: ['GET'])]
