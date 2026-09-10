@@ -18,7 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-08-29
 
 ### Added
-- **Library filters are remembered per instance.** The films and series pages now persist their last-used filter set (status, quality/genre/language/network, sort — deliberately not the typed search text or page number) in `localStorage`, keyed per instance and per library type, and restore it when you return via the sidebar or the Films/Series nav buttons: sidebar links are rewritten to carry the saved query directly, and a bare direct visit redirects once onto the saved set. The "reset filters" links clear the saved state. Deep links with explicit query params always win over the remembered set — including `?open=` quick-look deep links, which the script reads from the Navigation Timing entry so the page's own `history.replaceState` cleanup can't disguise them as bare visits.
 
 ### Changed
 - **Setup wizard rebuilt on stock Tabler primitives.** The first-run wizard's bespoke step/status/section markup and ~268 lines of custom CSS are replaced with Tabler's own `steps`, `status`, `hr-text` and `input-group` components, so the wizard inherits the same theme, spacing and dark-mode behaviour as the rest of the app instead of maintaining a parallel style. No change to the wizard's fields, validation, per-service connection tests or flow — purely a markup/CSS consolidation.
