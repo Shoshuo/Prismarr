@@ -714,6 +714,7 @@ class TautulliClient implements ResetInterface
                 'title'            => self::str($r['title'] ?? ($r['full_title'] ?? null)),
                 'grandparentTitle' => self::str($r['grandparent_title'] ?? null),
                 'year'             => self::str($r['year'] ?? null),
+                'episodeCode'      => self::episodeCode($mediaType, $r['parent_media_index'] ?? null, $r['media_index'] ?? null),
                 'posterPath'       => self::pickPoster($r, $mediaType),
                 // Display name only — never username (Plex login) or email.
                 'userDisplayName'  => self::str($r['friendly_name'] ?? ($r['user'] ?? null)),
@@ -1044,6 +1045,10 @@ class TautulliClient implements ResetInterface
             // "Movie (year)"); fall back to the bare title if it's missing.
             'title'            => self::str($s['full_title'] ?? ($s['title'] ?? null)),
             'grandparentTitle' => self::str($s['grandparent_title'] ?? null),
+            // Bare episode name + "S02E05" so episode cards can render
+            // "Show · S02E05 · Episode" instead of the season-less full_title.
+            'episodeTitle'     => self::str($s['title'] ?? null),
+            'episodeCode'      => self::episodeCode(self::str($s['media_type'] ?? null), $s['parent_media_index'] ?? null, $s['media_index'] ?? null),
             'year'             => self::str($s['year'] ?? null),
             'mediaType'        => self::str($s['media_type'] ?? null),
             // Plex metadata path (e.g. /library/metadata/123/thumb/456) — NOT a
@@ -1127,6 +1132,20 @@ class TautulliClient implements ResetInterface
     private static function toMbps(int $kbps): float
     {
         return $kbps > 0 ? round($kbps / 1000, 1) : 0.0;
+    }
+
+    /**
+     * "S02E05" label for an episode from Tautulli's parent_media_index
+     * (season) / media_index (episode), which arrive as ints or numeric
+     * strings ("" for movies). Season is optional ("E07"); no episode → null.
+     */
+    public static function episodeCode(?string $mediaType, mixed $season, mixed $episode): ?string
+    {
+        if ($mediaType !== 'episode' || !is_numeric($episode)) {
+            return null;
+        }
+        $ep = sprintf('E%02d', (int) $episode);
+        return is_numeric($season) ? sprintf('S%02d', (int) $season) . $ep : $ep;
     }
 
     /** Coerce a Tautulli scalar to a trimmed string, or null when absent/empty. */

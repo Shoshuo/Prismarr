@@ -108,6 +108,41 @@ class TautulliClientTest extends TestCase
         self::assertSame(36.4, $s['progressPercent']);
     }
 
+    public function testEpisodeSessionCarriesSeasonEpisodeCode(): void
+    {
+        $data = $this->fixtureData();
+        $data['sessions'][0]['media_type']         = 'episode';
+        $data['sessions'][0]['full_title']         = 'Tulsa King - Triad';
+        $data['sessions'][0]['title']              = 'Triad';
+        $data['sessions'][0]['grandparent_title']  = 'Tulsa King';
+        $data['sessions'][0]['parent_media_index'] = '2';
+        $data['sessions'][0]['media_index']        = '5';
+        $s = TautulliClient::normalizeActivity($data)['sessions'][0];
+
+        self::assertSame('S02E05', $s['episodeCode']);
+        self::assertSame('Triad', $s['episodeTitle']);
+        self::assertSame('Tulsa King', $s['grandparentTitle']);
+    }
+
+    public function testMovieSessionHasNoEpisodeCode(): void
+    {
+        $data = $this->fixtureData();
+        $data['sessions'][0]['parent_media_index'] = '';
+        $data['sessions'][0]['media_index']        = '';
+        $s = TautulliClient::normalizeActivity($data)['sessions'][0];
+
+        self::assertNull($s['episodeCode']);
+    }
+
+    public function testEpisodeCodeFormatting(): void
+    {
+        self::assertSame('E07', TautulliClient::episodeCode('episode', null, '7'));
+        self::assertSame('S00E01', TautulliClient::episodeCode('episode', '0', '1'));
+        self::assertSame('S01E120', TautulliClient::episodeCode('episode', 1, 120));
+        self::assertNull(TautulliClient::episodeCode('episode', '3', ''));
+        self::assertNull(TautulliClient::episodeCode('movie', '1', '2'));
+    }
+
     public function testStripsPrivateFields(): void
     {
         $out = TautulliClient::normalizeActivity($this->fixtureData());
@@ -359,6 +394,8 @@ class TautulliClientTest extends TestCase
                     'grandparent_title' => "Tom Clancy's Jack Ryan",
                     'grandparent_thumb' => '/library/metadata/100/thumb/2',
                     'thumb'             => '/library/metadata/777/thumb/3',
+                    'parent_media_index'=> 1,
+                    'media_index'       => 4,
                     'friendly_name'     => 'nDanDan',
                     'username'          => 'plexlogin_secret',
                     'date'              => 1781370000,
@@ -387,6 +424,14 @@ class TautulliClientTest extends TestCase
         self::assertSame('episode', $out[1]['mediaType']);
         self::assertSame("Tom Clancy's Jack Ryan", $out[1]['grandparentTitle']);
         self::assertSame('/library/metadata/100/thumb/2', $out[1]['posterPath']);
+    }
+
+    public function testNormalizeHistoryEpisodeCarriesSeasonEpisodeCode(): void
+    {
+        $out = TautulliClient::normalizeHistory($this->historyFixture());
+        self::assertNull($out[0]['episodeCode']);
+        self::assertSame('S01E04', $out[1]['episodeCode']);
+        self::assertSame('Ghost War', $out[1]['title']);
     }
 
     public function testNormalizeHistoryNeverLeaksPlexLogin(): void

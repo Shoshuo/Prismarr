@@ -9,7 +9,7 @@
   </div>
   <div class="plex-session-main">
     <div class="plex-session-title text-truncate">
-      {% if h.mediaType == 'episode' and h.grandparentTitle %}{{ h.grandparentTitle }}{% else %}{{ h.title }}{% endif %}
+      {% if h.mediaType == 'episode' and h.grandparentTitle %}{{ h.grandparentTitle }}{% if h.episodeCode %} <span class="plex-session-ep">{{ h.episodeCode }}</span>{% endif %}{% if h.title %} · {{ h.title }}{% endif %}{% else %}{{ h.title }}{% endif %}
       {% if h.year %}<span class="plex-session-year">({{ h.year }})</span>{% endif %}
     </div>
     <div class="plex-session-meta text-truncate">
