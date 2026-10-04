@@ -730,7 +730,7 @@ class DashboardController extends AbstractController implements ResetInterface
             }
         }
 
-        $labels = ['prowlarr' => 'Prowlarr', 'jellyseerr' => 'Seerr', 'qbittorrent' => 'qBittorrent', 'tmdb' => 'TMDb', 'tautulli' => 'Tautulli'];
+        $labels = ['prowlarr' => 'Prowlarr', 'jellyseerr' => 'Seerr', 'qbittorrent' => 'qBittorrent', 'transmission' => 'Transmission', 'tmdb' => 'TMDb', 'tautulli' => 'Tautulli'];
         foreach ($labels as $service => $label) {
             try {
                 $s = $this->health->statusFor($service);

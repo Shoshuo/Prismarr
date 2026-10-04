@@ -1,7 +1,7 @@
 {% extends 'base.html.twig' %}
 {% import '_icons.html.twig' as ico %}
 {% block title %}{{ 'transmission.page_title'|trans }}{% endblock %}
-{% block page_title %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d7302f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3.5 4.2 6 7.4 6 10.5a6 6 0 1 1 -12 0c0 -3.1 2.5 -6.3 6 -10.5z"/></svg> {{ 'transmission.page_title'|trans }}{% endblock %}
+{% block page_title %}<img src="{{ asset('img/services/transmission.svg') }}" width="20" height="20" alt=""> {{ 'transmission.page_title'|trans }}{% endblock %}
 {# Always a full reload in/out of this page — see qbittorrent/index.html.twig
    for why (shared torrent-page poller timer + Turbo closure survival). #}
 {% block head_meta %}<meta name="turbo-visit-control" content="reload">{% endblock %}

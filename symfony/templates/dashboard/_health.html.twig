@@ -15,9 +15,12 @@
       prowlarr:    '#E88D1A',
       jellyseerr:  '#a259ff',
       qbittorrent: '#2f67ba',
+      transmission: '#d7302f',
       tmdb:        '#01B4E4',
       tautulli:    '#e5a00d',
     } %}
+    {# Services whose logo is shown in the chip (public/img/services/<id>.svg). #}
+    {% set service_logos = ['transmission'] %}
     {% set status_dot = {
       up:        'is-up',
       slow:      'is-slow',
