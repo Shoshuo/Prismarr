@@ -192,4 +192,16 @@ class TautulliControllerTest extends AbstractWebTestCase
         $this->client->request('GET', '/tautulli/api/quicklook/abc');
         self::assertResponseStatusCodeSame(404);
     }
+
+    /** The topbar health indicator lists Tautulli: null (not configured) here. */
+    public function testTopbarHealthListsTautulli(): void
+    {
+        $this->client->request('GET', '/api/health/services');
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($data);
+        self::assertArrayHasKey('tautulli', $data['services']);
+        self::assertNull($data['services']['tautulli']);
+    }
 }
