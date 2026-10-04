@@ -253,7 +253,7 @@ class DashboardControllerTest extends TestCase
             $this->createMock(TranslatorInterface::class),
             $this->createMock(CacheInterface::class),
             $this->createMock(TautulliClient::class), new DashboardLayoutService($this->createMock(ConfigService::class)),
-            $client,
+            transmission: $client,
         );
 
         // Empty body → the card hides itself client-side.
