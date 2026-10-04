@@ -473,9 +473,13 @@
 {% endblock %}
 
 {% block body %}
-{%- set now_ymd = 'today'|date('Y-m-d') -%}
-{%- set tomorrow_ymd = '+1 day'|date('Y-m-d') -%}
-{%- set hour = 'now'|date('H')|number_format -%}
+{#- Anchor to the admin display timezone (same zone prismarr_time uses for the
+    hero clock) — raw |date follows PHP's process zone ($TZ or UTC), which made
+    the greeting disagree with the clock beside it (upstream #112). -#}
+{%- set display_tz = display_pref('timezone') -%}
+{%- set now_ymd = 'today'|date('Y-m-d', display_tz) -%}
+{%- set tomorrow_ymd = '+1 day'|date('Y-m-d', display_tz) -%}
+{%- set hour = 'now'|date('H', display_tz)|number_format -%}
 {%- set greeting_key = hour < 5 ? 'dashboard.greeting.evening' : (hour < 12 ? 'dashboard.greeting.morning' : (hour < 18 ? 'dashboard.greeting.afternoon' : 'dashboard.greeting.evening')) -%}
 {%- set greeting = greeting_key|trans -%}
 {%- set user = app.user -%}
@@ -503,7 +507,7 @@
     <div class="hero hero-noBg">
       <div class="hero-fade"></div>
       <div class="hero-inner">
-        {% set weekday = ['dashboard.weekdays.mon','dashboard.weekdays.tue','dashboard.weekdays.wed','dashboard.weekdays.thu','dashboard.weekdays.fri','dashboard.weekdays.sat','dashboard.weekdays.sun']['now'|date('N') - 1]|trans %}
+        {% set weekday = ['dashboard.weekdays.mon','dashboard.weekdays.tue','dashboard.weekdays.wed','dashboard.weekdays.thu','dashboard.weekdays.fri','dashboard.weekdays.sat','dashboard.weekdays.sun']['now'|date('N', display_tz) - 1]|trans %}
         <p class="hero-kicker">{{ weekday }} · {{ 'now'|prismarr_date }} · {{ 'now'|prismarr_time }}</p>
         <h1 class="hero-greeting">{{ greeting }}, {{ username }}</h1>
         <div data-dash-widget="hero" data-dash-url="{{ path('app_dashboard_widget_hero') }}" data-dash-body>
