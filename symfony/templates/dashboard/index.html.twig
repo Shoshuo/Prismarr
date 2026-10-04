@@ -612,6 +612,19 @@
     if (window._dashPlexTimer) { clearInterval(window._dashPlexTimer); }
     window._dashPlexTimer = setInterval(refreshPlex, 10000);
 
+    // Transmission widget: same 10s live refresh (speeds/progress move fast).
+    function refreshTransmission() {
+      if (document.hidden) return;
+      var node = document.querySelector('[data-dash-widget="transmission"][data-dash-url]');
+      if (!node) return;
+      fetch(node.dataset.dashUrl, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+        .then(function (r) { return r.ok ? r.text() : ''; })
+        .then(function (html) { if ((html || '').trim()) applyFragment(node, html); })
+        .catch(function () {});
+    }
+    if (window._dashTrsTimer) { clearInterval(window._dashTrsTimer); }
+    window._dashTrsTimer = setInterval(refreshTransmission, 10000);
+
     // Plex widget tabs: client-side pane toggle, remembers the active tab so the
     // 10s fragment refresh doesn't snap the user back to "Now playing".
     function applyPlexTab(scope) {
@@ -640,6 +653,7 @@
     document.addEventListener('turbo:before-render', function () {
       if (window._dashHealthTimer) { clearInterval(window._dashHealthTimer); window._dashHealthTimer = null; }
       if (window._dashPlexTimer) { clearInterval(window._dashPlexTimer); window._dashPlexTimer = null; }
+      if (window._dashTrsTimer) { clearInterval(window._dashTrsTimer); window._dashTrsTimer = null; }
     });
 
   })();

@@ -1,0 +1,45 @@
+{# Async-hydrated fragment — Transmission transfer summary, rendered by
+   DashboardController::widgetTransmission into the card's [data-dash-body].
+   Re-fetched on a 10s interval (see index.html.twig). Reuses the .plex-summary
+   strip styles (dashboard/_plex_styles.html.twig). Fails open: an unreachable
+   Transmission renders a neutral message and keeps the card intact. #}
+{% if trs_error %}
+  <div class="text-center text-secondary py-4">{{ 'dashboard.transmission.unreachable'|trans }}</div>
+{% else %}
+  <div class="plex-summary">
+    <div class="plex-stat">
+      <div class="plex-stat-value">{{ trs_stats.downloading }}</div>
+      <div class="plex-stat-label">{{ 'dashboard.transmission.downloading'|trans }}</div>
+    </div>
+    <div class="plex-stat">
+      <div class="plex-stat-value">{{ trs_stats.seeding }}</div>
+      <div class="plex-stat-label">{{ 'dashboard.transmission.seeding'|trans }}</div>
+    </div>
+    <div class="plex-stat">
+      <div class="plex-stat-value">{{ trs_stats.paused }}</div>
+      <div class="plex-stat-label">{{ 'dashboard.transmission.paused'|trans }}</div>
+    </div>
+    <div class="plex-bw">
+      <span class="text-blue" title="{{ 'dashboard.transmission.dl_speed'|trans }}">↓ {{ trs_stats.dl_speed|prismarr_speed }}</span>
+      <span class="text-green" title="{{ 'dashboard.transmission.up_speed'|trans }}">↑ {{ trs_stats.up_speed|prismarr_speed }}</span>
+    </div>
+  </div>
+
+  {% if trs_active is empty %}
+    <div class="text-center text-secondary py-2">{{ 'dashboard.transmission.empty'|trans }}</div>
+  {% else %}
+    <div class="d-flex flex-column gap-2">
+      {% for t in trs_active %}
+        <div>
+          <div class="d-flex justify-content-between gap-2 small">
+            <span class="text-truncate" title="{{ t.name }}">{{ t.name }}</span>
+            <span class="text-secondary text-nowrap">{{ t.progress }}% · ↓ {{ t.dlspeed|prismarr_speed }}</span>
+          </div>
+          <div class="progress progress-sm mt-1">
+            <div class="progress-bar" style="width: {{ t.progress }}%; background-color: #d7302f;" role="progressbar" aria-valuenow="{{ t.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endif %}

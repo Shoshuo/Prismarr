@@ -424,6 +424,16 @@ dashboard:
     discover_cta: 'Discover →'
   recent:
     title: Recently added to your library
+  transmission:
+    title: Transmission transfers
+    open_cta: 'Open →'
+    downloading: Downloading
+    seeding: Seeding
+    paused: Paused
+    dl_speed: Download speed
+    up_speed: Upload speed
+    empty: Nothing downloading right now
+    unreachable: Unable to reach Transmission
   plex:
     title: Current Plex activity
     settings_cta: 'Settings →'

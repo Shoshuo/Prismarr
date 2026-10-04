@@ -6,10 +6,10 @@ use PHPUnit\Framework\TestCase;
 
 final class DashboardSectionsTest extends TestCase
 {
-    public function testDefaultOrderIsTheSevenKnownSections(): void
+    public function testDefaultOrderIsTheEightKnownSections(): void
     {
         self::assertSame(
-            ['upcoming', 'requests', 'health', 'plex', 'watchlist', 'trending', 'recent'],
+            ['upcoming', 'requests', 'health', 'plex', 'transmission', 'watchlist', 'trending', 'recent'],
             DashboardSections::DEFAULT_ORDER,
         );
     }

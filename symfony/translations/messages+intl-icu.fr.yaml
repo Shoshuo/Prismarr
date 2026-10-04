@@ -423,6 +423,16 @@ dashboard:
     discover_cta: 'Découverte →'
   recent:
     title: Ajouts récents à votre bibliothèque
+  transmission:
+    title: Transferts Transmission
+    open_cta: 'Ouvrir →'
+    downloading: En téléchargement
+    seeding: En partage
+    paused: En pause
+    dl_speed: Vitesse de téléchargement
+    up_speed: Vitesse d'envoi
+    empty: Aucun téléchargement en cours
+    unreachable: Impossible de joindre Transmission
   plex:
     title: Activité Plex en cours
     settings_cta: 'Réglages →'

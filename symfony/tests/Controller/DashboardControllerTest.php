@@ -13,6 +13,7 @@ use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TautulliClient;
 use App\Service\Media\TmdbClient;
+use App\Service\Media\TransmissionClient;
 use App\Service\ServiceInstanceProvider;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
@@ -230,6 +231,34 @@ class DashboardControllerTest extends TestCase
         // Unknown id, instance lookup returns null → null view-model.
         $instances->method('getBySlug')->willReturn(null);
         self::assertNull($m->invoke($controller, 'series', 'sonarr-1', 999));
+    }
+
+    public function testTransmissionWidgetIsEmptyWhenUnconfiguredOrClientMissing(): void
+    {
+        $health = $this->createMock(HealthService::class);
+        $health->method('isConfigured')->willReturnCallback(fn(string $s) => $s !== 'transmission');
+
+        $trs = $this->createMock(TransmissionClient::class);
+        $trs->expects(self::never())->method('getTorrents');
+
+        $build = fn(?TransmissionClient $client) => new DashboardController(
+            $health,
+            $this->createMock(RadarrClient::class),
+            $this->createMock(SonarrClient::class),
+            $this->createMock(JellyseerrClient::class),
+            $this->createMock(TmdbClient::class),
+            $this->createMock(WatchlistItemRepository::class),
+            $this->createMock(ServiceInstanceProvider::class),
+            new NullLogger(),
+            $this->createMock(TranslatorInterface::class),
+            $this->createMock(CacheInterface::class),
+            $this->createMock(TautulliClient::class), new DashboardLayoutService($this->createMock(ConfigService::class)),
+            $client,
+        );
+
+        // Empty body → the card hides itself client-side.
+        self::assertSame('', $build($trs)->widgetTransmission()->getContent());
+        self::assertSame('', $build(null)->widgetTransmission()->getContent());
     }
 
     public function testServicesHealthExpandsOneChipPerInstance(): void

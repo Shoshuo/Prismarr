@@ -1,0 +1,25 @@
+{# Transmission transfers — self-gates on transmission config. #}
+<div data-section-key="transmission">
+{% if services_configured.transmission|default(false) %}
+<div class="row row-cards mb-3">
+  <div class="col-12" data-dash-widget="transmission" data-dash-url="{{ path('app_dashboard_widget_transmission') }}">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="card-title">
+          <span class="card-title-icon">
+            <img src="{{ asset('img/services/transmission.svg') }}" width="16" height="16" alt="">
+          </span>
+          {{ 'dashboard.transmission.title'|trans }}
+        </h3>
+        <div class="card-actions">
+          <a href="{{ path('app_transmission_index') }}" class="dash-action-btn">{{ 'dashboard.transmission.open_cta'|trans }}</a>
+        </div>
+      </div>
+      <div class="card-body" data-dash-body>
+        <div class="text-center text-secondary py-4"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+</div>

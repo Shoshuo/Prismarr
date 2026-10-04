@@ -97,6 +97,12 @@ class TransmissionClient implements ResetInterface
         return $this->lastError;
     }
 
+    /** True once a call this request failed or was short-circuited by the breaker. */
+    public function isUnavailable(): bool
+    {
+        return $this->serviceUnavailable;
+    }
+
     private function recordError(string $method, int $code, string $message): void
     {
         $this->lastError = ['code' => $code, 'method' => $method, 'path' => '/transmission/rpc', 'message' => $message];
