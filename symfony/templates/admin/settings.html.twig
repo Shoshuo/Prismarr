@@ -810,6 +810,7 @@
                     <select id="prismarr_ui" name="prismarr_ui" class="form-select form-select-sm">
                       <option value="fr" {% if display_values.display_language == 'fr' %}selected{% endif %}>Français</option>
                       <option value="en" {% if display_values.display_language == 'en' %}selected{% endif %}>English</option>
+                      <option value="it" {% if display_values.display_language == 'it' %}selected{% endif %}>Italiano</option>
                     </select>
                     <small class="text-secondary d-block mt-1">{{ 'admin.languages.prismarr_ui_help'|trans }}</small>
                   </div>
@@ -820,6 +821,7 @@
                     <select id="prismarr_metadata" name="prismarr_metadata" class="form-select form-select-sm">
                       <option value="fr-FR" {% if display_values.display_metadata_language == 'fr-FR' %}selected{% endif %}>Français (fr-FR)</option>
                       <option value="en-US" {% if display_values.display_metadata_language == 'en-US' %}selected{% endif %}>English (en-US)</option>
+                      <option value="it-IT" {% if display_values.display_metadata_language == 'it-IT' %}selected{% endif %}>Italiano (it-IT)</option>
                     </select>
                     <small class="text-secondary d-block mt-1">{{ 'admin.languages.prismarr_metadata_help'|trans }}</small>
                   </div>

@@ -7,6 +7,8 @@ use App\Service\DisplayPreferencesService;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 
@@ -61,6 +63,37 @@ class LocaleSubscriberTest extends TestCase
         ($this->subscriber('en'))->onKernelRequest($event);
 
         $this->assertSame('en', $request->getLocale());
+    }
+
+    public function testItalianQueryParamWinsOverPreference(): void
+    {
+        $request = Request::create('/?_locale=it');
+
+        ($this->subscriber('en'))->onKernelRequest($this->event($request));
+
+        $this->assertSame('it', $request->getLocale());
+    }
+
+    public function testItalianPreferenceUsedWhenNoOverride(): void
+    {
+        $request = Request::create('/');
+
+        ($this->subscriber('it'))->onKernelRequest($this->event($request));
+
+        $this->assertSame('it', $request->getLocale());
+    }
+
+    public function testItalianSessionWinsOverPreference(): void
+    {
+        $request = Request::create('/setup/welcome');
+        $session = new Session(new MockArraySessionStorage());
+        $session->start();
+        $session->set(LocaleSubscriber::SESSION_KEY, 'it');
+        $request->setSession($session);
+
+        ($this->subscriber('en'))->onKernelRequest($this->event($request));
+
+        $this->assertSame('it', $request->getLocale());
     }
 
     public function testFallbackWhenAllSourcesMissing(): void

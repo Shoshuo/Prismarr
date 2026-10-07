@@ -118,6 +118,7 @@ topbar:
     options:
       fr: Français
       en: English
+      it: Italiano
     use_default: Utiliser la langue de l'instance
   health:
     title: Santé des services
@@ -238,6 +239,7 @@ setup:
       language:
         en: English
         fr: Français
+        it: Italiano
     admin:
       eyebrow: 'Étape 2 sur 7'
       title: Créez votre compte administrateur
@@ -874,6 +876,7 @@ admin:
       options:
         fr: Français
         en: English
+        it: Italiano
     metadata_language:
       label: Langue des métadonnées
       help: 'Langue demandée à TMDb pour les titres, résumés et images. S''applique à tous les utilisateurs. Radarr/Sonarr/Seerr restent à configurer dans leur propre interface (synchronisation automatique prévue en v1.1).'

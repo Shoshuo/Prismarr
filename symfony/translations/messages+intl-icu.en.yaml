@@ -119,6 +119,7 @@ topbar:
     options:
       fr: Français
       en: English
+      it: Italiano
     use_default: Use instance default language
   health:
     title: Services health
@@ -239,6 +240,7 @@ setup:
       language:
         en: English
         fr: Français
+        it: Italiano
     admin:
       eyebrow: 'Step 2 of 7'
       title: Create your admin account
@@ -875,6 +877,7 @@ admin:
       options:
         fr: Français
         en: English
+        it: Italiano
     metadata_language:
       label: Metadata language
       help: 'Language requested from TMDb for titles, overviews and images. Applies to everyone. Radarr/Sonarr/Seerr still have to be configured in their own UI (automatic sync planned for v1.1).'

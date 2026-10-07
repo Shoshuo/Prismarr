@@ -114,6 +114,20 @@ class SetupControllerTest extends TestCase
         $this->assertStringContainsString('app_setup_tmdb', $response->getTargetUrl());
     }
 
+    public function testLocaleStoresItalianInSession(): void
+    {
+        $request = $this->postRequest(['locale' => 'it']);
+        $controller = $this->newController(
+            $this->createMock(UserRepository::class),
+            $this->createMock(EntityManagerInterface::class),
+        );
+
+        $response = $controller->locale($request);
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('it', $request->getSession()->get('_locale'));
+    }
+
     public function testAdminRaceRedirectsToLoginOnUniqueConstraint(): void
     {
         $users = $this->createMock(UserRepository::class);
