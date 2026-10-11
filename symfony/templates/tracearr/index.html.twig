@@ -1,0 +1,313 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'tracearr.title'|trans }}{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+{% include 'dashboard/_plex_styles.html.twig' %}
+<style>
+  .plex-poster-sm { width: 34px; height: 51px; }
+  .plex-hist-cell { display: flex; gap: .5rem; align-items: center; min-width: 0; }
+  .plex-hist-cell-main { min-width: 0; }
+  .plex-hist-cell-title { font-size: .8rem; font-weight: 600; }
+  .plex-hist-cell-meta { font-size: .72rem; }
+  .plex-range .btn.active { background: var(--tblr-primary); color: #fff; }
+  .tracearr-chart-wrap { position: relative; height: 240px; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="page-header d-print-none">
+  <div class="row align-items-center">
+    <div class="col"><h2 class="page-title">{{ 'tracearr.title'|trans }}</h2></div>
+    <div class="col-auto">
+      <div class="btn-group plex-range" role="group" data-tracearr-period>
+        <button type="button" class="btn btn-sm" data-period="week" aria-pressed="false">{{ 'tracearr.period.week'|trans }}</button>
+        <button type="button" class="btn btn-sm active" data-period="month" aria-pressed="true">{{ 'tracearr.period.month'|trans }}</button>
+        <button type="button" class="btn btn-sm" data-period="year" aria-pressed="false">{{ 'tracearr.period.year'|trans }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+
+    {# 1. Now playing — server-rendered, then polled #}
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="card-title">{{ 'tracearr.section.now_playing'|trans }}</h3></div>
+      <div class="card-body" data-tracearr-now>
+        {% include 'tracearr/_now_playing.html.twig' with {activity: activity} only %}
+      </div>
+    </div>
+
+    {# 2. Overview tiles #}
+    <div class="mb-3" data-tracearr-stats>
+      <div class="text-center text-secondary py-4"><span class="spinner-border"></span></div>
+    </div>
+
+    {# 3. Plays over time #}
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="card-title">{{ 'tracearr.section.plays'|trans }}</h3></div>
+      <div class="card-body">
+        <div id="tracearr-plays-wrap" class="tracearr-chart-wrap"><canvas id="tracearr-plays"></canvas></div>
+        <div data-tracearr-plays-empty class="text-center text-secondary py-4" style="display:none;">{{ 'tracearr.charts.empty'|trans }}</div>
+      </div>
+    </div>
+
+    {# 4. Activity patterns #}
+    <div class="row row-cards mb-3">
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header"><h3 class="card-title">{{ 'tracearr.section.activity_hour'|trans }}</h3></div>
+          <div class="card-body">
+            <div id="tracearr-hour-wrap" class="tracearr-chart-wrap"><canvas id="tracearr-hour"></canvas></div>
+            <div data-tracearr-hour-empty class="text-center text-secondary py-4" style="display:none;">{{ 'tracearr.charts.empty'|trans }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card h-100">
+          <div class="card-header"><h3 class="card-title">{{ 'tracearr.section.activity_dow'|trans }}</h3></div>
+          <div class="card-body">
+            <div id="tracearr-dow-wrap" class="tracearr-chart-wrap"><canvas id="tracearr-dow"></canvas></div>
+            <div data-tracearr-dow-empty class="text-center text-secondary py-4" style="display:none;">{{ 'tracearr.charts.empty'|trans }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# 5. Platforms + quality split #}
+    <div class="row row-cards mb-3">
+      <div class="col-lg-8">
+        <div class="card h-100">
+          <div class="card-header"><h3 class="card-title">{{ 'tracearr.section.platforms'|trans }}</h3></div>
+          <div class="card-body">
+            <div id="tracearr-platforms-wrap" class="tracearr-chart-wrap"><canvas id="tracearr-platforms"></canvas></div>
+            <div data-tracearr-platforms-empty class="text-center text-secondary py-4" style="display:none;">{{ 'tracearr.charts.empty'|trans }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card h-100">
+          <div class="card-header"><h3 class="card-title">{{ 'tracearr.section.quality'|trans }}</h3></div>
+          <div class="card-body">
+            <div id="tracearr-quality-wrap" class="tracearr-chart-wrap"><canvas id="tracearr-quality"></canvas></div>
+            <div data-tracearr-quality-empty class="text-center text-secondary py-4" style="display:none;">{{ 'tracearr.charts.empty'|trans }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# 6. Concurrent streams #}
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="card-title">{{ 'tracearr.section.concurrent'|trans }}</h3></div>
+      <div class="card-body">
+        <div id="tracearr-concurrent-wrap" class="tracearr-chart-wrap"><canvas id="tracearr-concurrent"></canvas></div>
+        <div data-tracearr-concurrent-empty class="text-center text-secondary py-4" style="display:none;">{{ 'tracearr.charts.empty'|trans }}</div>
+      </div>
+    </div>
+
+    {# 7. History — dense grid, paged #}
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="card-title">{{ 'tracearr.section.history'|trans }}</h3></div>
+      <div class="card-body">
+        <div class="row row-cards g-2" data-tracearr-history>
+          <div class="col-12 text-center text-secondary py-4"><span class="spinner-border"></span></div>
+        </div>
+        <div class="text-center mt-3">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-tracearr-history-more style="display:none;">{{ 'tracearr.history.load_more'|trans }}</button>
+        </div>
+      </div>
+    </div>
+
+    {# 8. Users overview #}
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="card-title">{{ 'tracearr.section.users'|trans }}</h3></div>
+      <div class="card-body" data-tracearr-users>
+        <div class="text-center text-secondary py-4"><span class="spinner-border"></span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="{{ asset('static/chart/chart.umd.min.js') }}"></script>
+<script>
+(function () {
+  var URLS = {
+    now:     '{{ path('app_tracearr_api_now_playing') }}',
+    stats:   '{{ path('app_tracearr_api_stats') }}',
+    charts:  '{{ path('app_tracearr_api_charts') }}',
+    history: '{{ path('app_tracearr_api_history') }}',
+    users:   '{{ path('app_tracearr_api_users') }}'
+  };
+  var period = 'month';
+  var historyCursor = null;
+  var charts = {};
+
+  var QUALITY_LABELS = {
+    directPlay:   '{{ 'dashboard.plex.decision.direct_play'|trans|e('js') }}',
+    directStream: '{{ 'dashboard.plex.decision.direct_stream'|trans|e('js') }}',
+    transcode:    '{{ 'dashboard.plex.decision.transcode'|trans|e('js') }}'
+  };
+  var SERIES_COLORS = {
+    'Plays': '#6366f1',
+    'Direct Play': '#22c55e', 'Direct Stream': '#0ea5e9', 'Transcode': '#f59e0b'
+  };
+
+  function frag(sel) { return document.querySelector(sel); }
+
+  function get(url) {
+    return fetch(url, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' });
+  }
+
+  function loadFragment(url, target) {
+    return get(url)
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (html) { if (target) target.innerHTML = html; return html; })
+      .catch(function () { return ''; });
+  }
+
+  function refreshNow() {
+    if (document.hidden) return;
+    loadFragment(URLS.now, frag('[data-tracearr-now]'));
+  }
+
+  function drawChart(id, block, opts) {
+    opts = opts || {};
+    var wrap = frag('#tracearr-' + id + '-wrap');
+    var empty = frag('[data-tracearr-' + id + '-empty]');
+    var hasData = block && block.series && block.series.length && block.categories && block.categories.length;
+    if (wrap) wrap.style.display = hasData ? '' : 'none';
+    if (empty) empty.style.display = hasData ? 'none' : '';
+    if (charts[id]) { charts[id].destroy(); charts[id] = null; }
+    if (!hasData) return;
+
+    var datasets = block.series.map(function (s) {
+      var c = SERIES_COLORS[s.name] || '#94a3b8';
+      return { label: s.name, data: s.data, backgroundColor: c, borderColor: c, borderRadius: 3, borderSkipped: false };
+    });
+    charts[id] = new Chart(frag('#tracearr-' + id), {
+      type: 'bar',
+      data: { labels: block.categories, datasets: datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        indexAxis: opts.horizontal ? 'y' : 'x',
+        plugins: { legend: { display: datasets.length > 1 } },
+        scales: {
+          x: { stacked: true, beginAtZero: true, ticks: opts.horizontal ? { precision: 0 } : {} },
+          y: { stacked: true, beginAtZero: true, ticks: opts.horizontal ? {} : { precision: 0 } }
+        }
+      }
+    });
+  }
+
+  function drawQuality(q) {
+    var wrap = frag('#tracearr-quality-wrap');
+    var empty = frag('[data-tracearr-quality-empty]');
+    var hasData = q && q.total > 0;
+    if (wrap) wrap.style.display = hasData ? '' : 'none';
+    if (empty) empty.style.display = hasData ? 'none' : '';
+    if (charts.quality) { charts.quality.destroy(); charts.quality = null; }
+    if (!hasData) return;
+
+    charts.quality = new Chart(frag('#tracearr-quality'), {
+      type: 'doughnut',
+      data: {
+        labels: [QUALITY_LABELS.directPlay, QUALITY_LABELS.directStream, QUALITY_LABELS.transcode],
+        datasets: [{
+          data: [q.directPlay, q.directStream, q.transcode],
+          backgroundColor: ['#22c55e', '#0ea5e9', '#f59e0b'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: { callbacks: { label: function (ctx) {
+            var pct = [q.directPlayPercent, q.directStreamPercent, q.transcodePercent][ctx.dataIndex];
+            return ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+          } } }
+        }
+      }
+    });
+  }
+
+  function refreshCharts() {
+    get(URLS.charts + '?period=' + period)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        d = d || {};
+        drawChart('plays', d.plays);
+        drawChart('hour', d.hour);
+        drawChart('dow', d.dow);
+        drawChart('platforms', d.platforms, { horizontal: true });
+        drawChart('concurrent', d.concurrent);
+        drawQuality(d.quality);
+      })
+      .catch(function () {});
+  }
+
+  function loadHistory(append) {
+    if (!append) historyCursor = null;
+    get(URLS.history + (historyCursor ? '?cursor=' + encodeURIComponent(historyCursor) : ''))
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (html) {
+        var box = frag('[data-tracearr-history]');
+        var more = frag('[data-tracearr-history-more]');
+        if (!box) return;
+        var trimmed = (html || '').trim();
+        if (append) box.insertAdjacentHTML('beforeend', trimmed);
+        else box.innerHTML = trimmed !== '' ? trimmed : '<div class="col-12 text-center text-secondary py-4">{{ 'tracearr.history.empty'|trans|e('js') }}</div>';
+        // The fragment carries the next cursor in a hidden sentinel; consume it.
+        var sentinel = box.querySelector('[data-tracearr-next-cursor]');
+        historyCursor = sentinel ? sentinel.getAttribute('data-tracearr-next-cursor') : null;
+        if (sentinel) sentinel.remove();
+        if (more) more.style.display = historyCursor ? '' : 'none';
+      })
+      .catch(function () {
+        var more = frag('[data-tracearr-history-more]');
+        if (more) more.style.display = 'none';
+      });
+  }
+
+  var periodBar = frag('[data-tracearr-period]');
+  if (periodBar) {
+    periodBar.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-period]');
+      if (!btn) return;
+      period = btn.getAttribute('data-period');
+      periodBar.querySelectorAll('[data-period]').forEach(function (b) {
+        var on = b === btn;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      refreshCharts();
+    });
+  }
+
+  var moreBtn = frag('[data-tracearr-history-more]');
+  if (moreBtn) moreBtn.addEventListener('click', function () { loadHistory(true); });
+
+  loadFragment(URLS.stats, frag('[data-tracearr-stats]'));
+  refreshCharts();
+  loadHistory(false);
+  loadFragment(URLS.users, frag('[data-tracearr-users]'));
+
+  // Now-playing poll (singleton across Turbo re-exec).
+  if (window._tracearrNowTimer) clearInterval(window._tracearrNowTimer);
+  window._tracearrNowTimer = setInterval(refreshNow, 10000);
+  if (!window._tracearrNowCleanupBound) {
+    window._tracearrNowCleanupBound = true;
+    document.addEventListener('turbo:before-render', function () {
+      if (window._tracearrNowTimer) { clearInterval(window._tracearrNowTimer); window._tracearrNowTimer = null; }
+    });
+  }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,29 @@
+{# Per-user overview. `users` = TracearrClient::normalizeUsers() rows. #}
+{% if users is empty %}
+  <div class="text-center text-secondary py-4">{{ 'tracearr.users.empty'|trans }}</div>
+{% else %}
+<div class="table-responsive">
+  <table class="table table-vcenter card-table">
+    <thead>
+      <tr>
+        <th>{{ 'tracearr.users.col.user'|trans }}</th>
+        <th>{{ 'tracearr.users.col.server'|trans }}</th>
+        <th>{{ 'tracearr.users.col.last_seen'|trans }}</th>
+        <th class="text-end">{{ 'tracearr.users.col.plays'|trans }}</th>
+        <th class="text-end">{{ 'tracearr.users.col.trust'|trans }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td class="text-truncate">{{ u.displayName ?? '—' }}</td>
+        <td class="text-truncate text-secondary">{{ u.serverName ?? '—' }}</td>
+        <td class="text-secondary">{{ u.lastSeen > 0 ? (u.lastSeen|relative_date) : '—' }}</td>
+        <td class="text-end">{{ u.plays }}</td>
+        <td class="text-end">{{ u.trustScore ?? '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}

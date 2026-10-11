@@ -436,6 +436,7 @@ dashboard:
     unreachable: Unable to reach Transmission
   plex:
     title: Current Plex activity
+    title_tracearr: Current media activity
     settings_cta: 'Settings →'
     streams: Streams
     mbps: Mbps
@@ -465,6 +466,10 @@ dashboard:
       unconfigured: Tautulli is not configured
       unreachable: Unable to reach Tautulli
       auth: Invalid Tautulli API key or unauthorized
+    error_tracearr:
+      unconfigured: Tracearr is not configured
+      unreachable: Unable to reach Tracearr
+      auth: Invalid Tracearr API key or unauthorized
     tab:
       now: Now playing
       recent: Recently watched
@@ -583,6 +588,44 @@ tautulli:
     items: '{count, plural, one {# item} other {# items}}'
     episodes: '{count, plural, one {# episode} other {# episodes}}'
 
+tracearr:
+  title: Tracearr Activity
+  period:
+    week: 7 days
+    month: 30 days
+    year: 1 year
+  section:
+    now_playing: Now playing
+    plays: Plays over time
+    activity_hour: Plays by hour of day
+    activity_dow: Plays by day of week
+    platforms: Plays by platform
+    quality: Stream quality
+    concurrent: Concurrent streams
+    history: History
+    users: Users
+  now_playing:
+    empty: Nothing is playing right now.
+  stats:
+    today_plays: Plays today
+    watch_time_today: Hours watched today
+    active_users_today: Active users today
+    plays_30d: Plays (30 days)
+    total_users: Users
+    violations_7d: Violations (7 days)
+  charts:
+    empty: No play data for this period
+  history:
+    load_more: Load more
+    empty: No watch history yet.
+  users:
+    empty: No user activity yet.
+    col:
+      user: User
+      server: Server
+      last_seen: Last seen
+      plays: Plays
+      trust: Trust score
 profile:
   title: My profile
   identity:
@@ -703,6 +746,7 @@ admin:
       gluetun: 'VPN / port forwarding'
       tautulli: 'Plex activity (via Tautulli)'
       bazarr: 'Subtitle manager (via Bazarr)'
+      tracearr: 'Plex / Jellyfin / Emby activity (via Tracearr)'
     sidebar_toggle: Menu
     sidebar_toggle_title: Show in sidebar
     status:
@@ -876,6 +920,13 @@ admin:
       options:
         comfortable: Comfortable (default)
         compact: Compact
+    activity_source:
+      label: Live activity source
+      help: 'Service feeding the dashboard "current activity" widget and the sidebar streaming pill when both Tautulli and Tracearr are configured. Falls back to the other one if the chosen service is not set up.'
+      options:
+        auto: Automatic (Tautulli first)
+        tautulli: Tautulli
+        tracearr: Tracearr
     page_size:
       label: Items per page
       help: 'Number of films or series listed per page on the library views. Larger pages render slower but show more at once.'

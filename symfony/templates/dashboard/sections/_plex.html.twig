@@ -1,6 +1,6 @@
-{# Current Plex activity (Tautulli) — self-gates on tautulli config. #}
+{# Current Plex activity (Tautulli, else Tracearr) — self-gates on either config. #}
 <div data-section-key="plex">
-{% if services_configured.tautulli %}
+{% if services_configured.tautulli or services_configured.tracearr|default(false) %}
 <div class="row row-cards mb-3">
   <div class="col-12" id="plex-activity" data-dash-widget="plex" data-dash-url="{{ path('app_dashboard_widget_plex') }}">
     <div class="card h-100">
@@ -9,7 +9,8 @@
           <span class="card-title-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8l4 -16l3 8h4"/></svg>
           </span>
-          {{ 'dashboard.plex.title'|trans }}
+          {# Tracearr also covers Jellyfin / Emby → neutral title for it. #}
+          {{ (activity_source() == 'tracearr' ? 'dashboard.plex.title_tracearr' : 'dashboard.plex.title')|trans }}
         </h3>
         <div class="card-actions">
           <a href="{{ path('admin_settings_index') }}" class="dash-action-btn">{{ 'dashboard.plex.settings_cta'|trans }}</a>

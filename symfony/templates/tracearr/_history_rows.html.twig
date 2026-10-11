@@ -1,0 +1,28 @@
+{# History grid cells. `history` = TracearrClient::normalizeHistory() rows,
+   `next_cursor` = the next page's cursor (null on the last page), carried in a
+   hidden sentinel for the "Load more" JS. Renders nothing when empty. Cells
+   with a TMDb match open the app-global quick-look. #}
+{% import '_icons.html.twig' as ico %}
+{% for h in history %}
+  <div class="col-6 col-md-4">
+    {% set ql = h.quickLook %}
+    <{{ ql ? 'a' : 'div' }} class="plex-hist-cell{{ ql ? ' plex-clickable text-reset text-decoration-none' }}"
+      {%- if ql %} href="{{ path('tmdb_index', {detail: ql.type ~ '/' ~ ql.id}) }}" data-ql-trigger data-ql-source="tmdb" data-ql-type="{{ ql.type }}" data-ql-id="{{ ql.id }}"{% endif %}>
+      <div class="plex-poster plex-poster-sm">
+        {{ ico.icon(h.mediaType == 'movie' ? 'movie' : 'device-tv', '', 18) }}
+        {% if h.posterPath and h.posterServerId %}<img class="plex-poster-img" src="{{ path('app_tracearr_api_image', {server: h.posterServerId, img: h.posterPath}) }}" alt="" loading="lazy">{% endif %}
+      </div>
+      <div class="plex-hist-cell-main">
+        <div class="plex-hist-cell-title text-truncate" title="{{ h.title }}">
+          {{ h.title ?? 'dashboard.plex.unknown_title'|trans }}{% if h.year and h.mediaType == 'movie' %} <span class="plex-session-year">({{ h.year }})</span>{% endif %}
+        </div>
+        <div class="plex-hist-cell-meta text-secondary text-truncate">
+          {{ [h.userDisplayName, h.platform, h.watchedAt > 0 ? h.watchedAt|relative_date : null]|filter(v => v is not null)|join(' · ') }}
+        </div>
+      </div>
+    </{{ ql ? 'a' : 'div' }}>
+  </div>
+{% endfor %}
+{% if history is not empty and next_cursor|default(null) %}
+  <div class="d-none" data-tracearr-next-cursor="{{ next_cursor }}"></div>
+{% endif %}

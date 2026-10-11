@@ -1,5 +1,7 @@
 {# One live Plex session card. Expects `s` (a normalized session). Carries the
-   info-modal triggers when a ratingKey is present. #}
+   info-modal triggers when a ratingKey is present. Tracearr sessions carry a
+   `posterServerId` key and stream their poster through the Tracearr proxy;
+   their `quickLook` {type, id} opens the app-global TMDb quick-look. #}
 {% import '_icons.html.twig' as ico %}
 {% set state = (s.state|default(''))|lower %}
 {% set state_known = state in ['playing', 'paused', 'buffering'] %}
@@ -7,23 +9,25 @@
 {% set dec = (s.transcodeDecision|default(''))|lower %}
 {% set dec_label = {'direct play': 'dashboard.plex.decision.direct_play', 'copy': 'dashboard.plex.decision.direct_stream', 'transcode': 'dashboard.plex.decision.transcode'} %}
 {% set dec_cls = {'direct play': 'bg-green-lt text-green', 'copy': 'bg-azure-lt text-azure', 'transcode': 'bg-orange-lt text-orange'} %}
+{% set ql = s.quickLook|default(null) %}
+{% set ql_attrs = ql ? ' href="' ~ path('tmdb_index', {detail: ql.type ~ '/' ~ ql.id})|e('html_attr') ~ '" data-ql-trigger data-ql-source="tmdb" data-ql-type="' ~ ql.type|e('html_attr') ~ '" data-ql-id="' ~ ql.id ~ '"' : '' %}
 <div class="plex-session">
-  <div class="plex-poster {% if s.ratingKey %}plex-clickable{% endif %}"
+  <{{ ql ? 'a' : 'div' }} class="plex-poster {% if s.ratingKey or ql %}plex-clickable{% endif %}"{{ ql_attrs|raw }}
        {% if s.ratingKey %}data-plex-rating-key="{{ s.ratingKey }}" data-plex-player="{{ s.player }}" data-plex-device="{{ s.device }}" role="button" tabindex="0"{% endif %}>
     {{ ico.icon(s.mediaType == 'movie' ? 'movie' : 'device-tv', '', 22) }}
     {% if s.posterPath %}
-      <img class="plex-poster-img" src="{{ path('app_tautulli_api_image', {img: s.posterPath}) }}" alt="" loading="lazy">
+      <img class="plex-poster-img" src="{{ s.posterServerId is defined ? path('app_tracearr_api_image', {server: s.posterServerId, img: s.posterPath}) : path('app_tautulli_api_image', {img: s.posterPath}) }}" alt="" loading="lazy">
     {% endif %}
-  </div>
+  </{{ ql ? 'a' : 'div' }}>
   <div class="plex-session-main">
-    <div class="plex-session-title text-truncate {% if s.ratingKey %}plex-clickable{% endif %}"
+    <{{ ql ? 'a' : 'div' }} class="plex-session-title text-truncate {% if s.ratingKey or ql %}plex-clickable{% endif %}{{ ql ? ' d-block text-reset text-decoration-none' }}"{{ ql_attrs|raw }}
          {% if s.ratingKey %}data-plex-rating-key="{{ s.ratingKey }}" data-plex-player="{{ s.player }}" data-plex-device="{{ s.device }}" role="button" tabindex="0"{% endif %}>
       {% if s.mediaType == 'episode' and s.grandparentTitle %}
         {{- s.grandparentTitle }}{% if s.episodeCode %} <span class="plex-session-ep">{{ s.episodeCode }}</span>{% endif %}{% if s.episodeTitle %} · {{ s.episodeTitle }}{% endif %}
       {%- else %}
         {{- s.title ?? 'dashboard.plex.unknown_title'|trans }}
       {%- endif %}{% if s.year %} <span class="plex-session-year">({{ s.year }})</span>{% endif %}
-    </div>
+    </{{ ql ? 'a' : 'div' }}>
     <div class="plex-session-meta text-truncate">
       {%- set meta = [s.userDisplayName, s.product, s.player, s.device]|filter(v => v is not null) -%}
       {{ meta|join(' · ') }}
@@ -31,6 +35,7 @@
     <div class="plex-badges">
       {% if state %}<span class="badge {{ state_cls[state]|default('bg-secondary-lt') }}">{{ state_known ? ('dashboard.plex.state.' ~ state)|trans : state|capitalize }}</span>{% endif %}
       {% if dec %}<span class="badge {{ dec_cls[dec]|default('bg-secondary-lt') }}">{{ dec_label[dec] is defined ? dec_label[dec]|trans : dec|capitalize }}</span>{% endif %}
+      {% if s.serverType|default(null) %}<span class="badge bg-secondary-lt">{{ {plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby'}[s.serverType]|default(s.serverType|capitalize) }}</span>{% endif %}
       {% if s.location %}<span class="badge bg-secondary-lt text-uppercase">{{ s.location }}</span>{% endif %}
       {% if s.quality %}<span class="badge bg-secondary-lt">{{ s.quality }}</span>{% endif %}
       {% if s.dynamicRange %}<span class="badge bg-secondary-lt text-uppercase">{{ s.dynamicRange }}</span>{% endif %}

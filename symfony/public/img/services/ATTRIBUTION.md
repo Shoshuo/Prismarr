@@ -11,6 +11,10 @@ from the **Dashboard Icons** collection:
 Tautulli's brand amber (`#e5a00d`); it is not taken from the Dashboard
 Icons set.
 
+`tracearr.svg` is the Tracearr shield mark from the Tracearr web UI
+(https://github.com/connorgallopo/tracearr, AGPL-3.0), with its Tailwind
+theme classes resolved to fixed colours (`#0b1a2e`, `#162840`, `#19cee6`).
+
 `deluge.svg` — original minimal droplet drawn for Prismarr (Deluge brand
 color #3e7bbf), not the official Deluge logo.
 

@@ -834,7 +834,8 @@
           </a>
         </div>
 
-        {% if service_visible_in_sidebar('tautulli') %}
+        {% set plex_pill_source = activity_source() %}
+        {% if plex_pill_source and service_visible_in_sidebar(plex_pill_source) %}
         {# Live Plex streaming pill — hidden until the poller finds active streams. #}
         <a href="{{ path('app_dashboard') }}#plex-activity" id="sidebar-plex-pill" class="sidebar-plex-pill" style="display:none;">
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13 -8z"/></svg>
@@ -1165,6 +1166,22 @@
                   </svg>
                 </span>
                 <span class="nav-link-title">{{ 'sidebar.nav.bazarr'|trans }}</span>
+              </a>
+            </li>
+            {% endif %}
+
+            {% if service_visible_in_sidebar('tracearr') %}
+            <li class="nav-item">
+              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_tracearr_' ? 'active' }}"
+                 href="{{ path('app_tracearr_index') }}">
+                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                       fill="none" stroke="#19cee6" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round" class="icon">
+                    <path d="M3 12h4l3 8l4 -16l3 8h4"/>
+                  </svg>
+                </span>
+                <span class="nav-link-title">Tracearr</span>
               </a>
             </li>
             {% endif %}
@@ -3115,14 +3132,17 @@
      Tautulli has no sidebar nav entry, so the pill is rendered unconditionally
      and hidden by default; this poller reveals it when streams are active and
      stops itself entirely when Tautulli isn't configured (so it doesn't poke a
-     disabled service every 30s).
+     disabled service every 30s). Fed by Tautulli, or by Tracearr when only
+     Tracearr is set up — same priority as the dashboard widget; both
+     activity endpoints answer the same {enabled, configured, streamCount}.
      ══════════════════════════════════════════════════════════════════════════ #}
-  {% if service_visible_in_sidebar('tautulli') %}
+  {% set plex_pill_source = activity_source() %}
+  {% if plex_pill_source and service_visible_in_sidebar(plex_pill_source) %}
   <script>
   (function () {
     var pill = document.getElementById('sidebar-plex-pill');
     if (!pill) return;
-    var URL = '{{ path('app_tautulli_api_activity') }}';
+    var URL = '{{ plex_pill_source == 'tautulli' ? path('app_tautulli_api_activity') : path('app_tracearr_api_activity') }}';
     var INTERVAL = 30000;
     function tick() {
       if (document.hidden) return;
@@ -3208,12 +3228,12 @@
       var SERVICE_LABELS = {
         radarr: 'Radarr', sonarr: 'Sonarr', prowlarr: 'Prowlarr',
         jellyseerr: 'Seerr', qbittorrent: 'qBittorrent', transmission: 'Transmission',
-        sabnzbd: 'SABnzbd', nzbget: 'NZBGet', tmdb: 'TMDb', tautulli: 'Tautulli',
+        sabnzbd: 'SABnzbd', nzbget: 'NZBGet', tmdb: 'TMDb', tautulli: 'Tautulli', tracearr: 'Tracearr',
       };
       // v1.1.0 — radarr/sonarr can have multiple instances; we render
       // each instance on its own row instead of a single aggregate row.
       var INSTANCE_TYPES = ['radarr', 'sonarr'];
-      var FLAT_SERVICES = ['tmdb', 'prowlarr', 'jellyseerr', 'qbittorrent', 'transmission', 'sabnzbd', 'nzbget', 'tautulli'];
+      var FLAT_SERVICES = ['tmdb', 'prowlarr', 'jellyseerr', 'qbittorrent', 'transmission', 'sabnzbd', 'nzbget', 'tautulli', 'tracearr'];
       var dot   = document.getElementById('topbar-health-dot');
       var summ  = document.getElementById('topbar-health-summary');
       var list  = document.getElementById('topbar-health-list');
@@ -3268,7 +3288,7 @@
           });
         });
         // Remaining flat services.
-        ['prowlarr', 'jellyseerr', 'qbittorrent', 'transmission', 'sabnzbd', 'nzbget', 'tautulli'].forEach(function (id) {
+        ['prowlarr', 'jellyseerr', 'qbittorrent', 'transmission', 'sabnzbd', 'nzbget', 'tautulli', 'tracearr'].forEach(function (id) {
           html += rowFor(SERVICE_LABELS[id], services[id]);
         });
         list.innerHTML = html;

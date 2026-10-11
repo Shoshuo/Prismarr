@@ -1,6 +1,6 @@
 {# Stream-summary strip: stream count + Direct Play/Stream/Transcode badges +
    total/LAN/WAN bandwidth. `plex` is the getActivity() envelope. Shared by the
-   dashboard widget (_plex_activity) and the Tautulli page (_now_playing). The
+   dashboard widget (_plex_activity) and the Tautulli / Tracearr pages (_now_playing). The
    .plex-summary CSS lives in dashboard/_plex_styles.html.twig (loaded on both). #}
 {% import '_icons.html.twig' as ico %}
 <div class="plex-summary">
@@ -13,9 +13,16 @@
     {% if plex.directStreamCount > 0 %}<span class="badge bg-azure-lt text-azure">{{ 'dashboard.plex.summary.direct_stream'|trans({count: plex.directStreamCount}) }}</span>{% endif %}
     {% if plex.transcodeCount > 0 %}<span class="badge bg-orange-lt text-orange">{{ 'dashboard.plex.summary.transcode'|trans({count: plex.transcodeCount}) }}</span>{% endif %}
   </div>
+  {% if plex.bandwidth is defined %}
   <div class="plex-bw">
     <span title="{{ 'dashboard.plex.bandwidth.total'|trans }}">{{ ico.icon('activity', '', 14) }} {{ plex.bandwidth.totalMbps }} {{ 'dashboard.plex.mbps'|trans }}</span>
     <span class="text-secondary">{{ 'dashboard.plex.bandwidth.lan'|trans }} {{ plex.bandwidth.lanMbps }}</span>
     <span class="text-secondary">{{ 'dashboard.plex.bandwidth.wan'|trans }} {{ plex.bandwidth.wanMbps }}</span>
   </div>
+  {% elseif plex.totalBitrate|default(null) %}
+  {# Tracearr: one pre-formatted total ("2.7 Mbps"), no LAN/WAN split. #}
+  <div class="plex-bw">
+    <span title="{{ 'dashboard.plex.bandwidth.total'|trans }}">{{ ico.icon('activity', '', 14) }} {{ plex.totalBitrate }}</span>
+  </div>
+  {% endif %}
 </div>

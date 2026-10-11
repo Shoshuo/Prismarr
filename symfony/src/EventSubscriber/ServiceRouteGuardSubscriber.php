@@ -57,6 +57,7 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         'tmdb_'             => ['service' => 'TMDb',        'service_id' => 'tmdb',        'keys' => ['tmdb_api_key'],                         'wizard' => 'app_setup_tmdb',      'index' => 'tmdb_index'],
         'app_tautulli_index' => ['service' => 'Tautulli',   'service_id' => 'tautulli',    'keys' => ['tautulli_url', 'tautulli_api_key'],      'wizard' => 'admin_settings_index', 'index' => 'app_tautulli_index'],
         'app_bazarr_'       => ['service' => 'Bazarr',      'service_id' => 'bazarr',      'keys' => ['bazarr_url', 'bazarr_api_key'],          'exclude_prefix' => 'app_bazarr_api_', 'wizard' => 'admin_settings_index', 'index' => 'app_bazarr_index'],
+        'app_tracearr_index' => ['service' => 'Tracearr',   'service_id' => 'tracearr',    'keys' => ['tracearr_url', 'tracearr_api_key'],      'wizard' => 'admin_settings_index', 'index' => 'app_tracearr_index'],
     ];
 
     public function __construct(

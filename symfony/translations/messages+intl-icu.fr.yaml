@@ -435,6 +435,7 @@ dashboard:
     unreachable: Impossible de joindre Transmission
   plex:
     title: Activité Plex en cours
+    title_tracearr: Activité média en cours
     settings_cta: 'Réglages →'
     streams: Flux
     mbps: Mbps
@@ -464,6 +465,10 @@ dashboard:
       unconfigured: Tautulli n'est pas configuré
       unreachable: Tautulli est injoignable
       auth: Clé API Tautulli invalide ou non autorisée
+    error_tracearr:
+      unconfigured: Tracearr n'est pas configuré
+      unreachable: Tracearr est injoignable
+      auth: Clé API Tracearr invalide ou non autorisée
     tab:
       now: En cours
       recent: Vus récemment
@@ -582,6 +587,44 @@ tautulli:
     items: '{count, plural, one {# élément} other {# éléments}}'
     episodes: '{count, plural, one {# épisode} other {# épisodes}}'
 
+tracearr:
+  title: Activité Tracearr
+  period:
+    week: 7 jours
+    month: 30 jours
+    year: 1 an
+  section:
+    now_playing: En cours de lecture
+    plays: Lectures dans le temps
+    activity_hour: Lectures par heure
+    activity_dow: Lectures par jour de la semaine
+    platforms: Lectures par plateforme
+    quality: Qualité des flux
+    concurrent: Flux simultanés
+    history: Historique
+    users: Utilisateurs
+  now_playing:
+    empty: Aucune lecture en cours.
+  stats:
+    today_plays: Lectures aujourd'hui
+    watch_time_today: Heures regardées aujourd'hui
+    active_users_today: Utilisateurs actifs aujourd'hui
+    plays_30d: Lectures (30 jours)
+    total_users: Utilisateurs
+    violations_7d: Violations (7 jours)
+  charts:
+    empty: Aucune donnée de lecture sur cette période
+  history:
+    load_more: Charger plus
+    empty: Aucun historique pour l'instant.
+  users:
+    empty: Aucune activité utilisateur pour l'instant.
+    col:
+      user: Utilisateur
+      server: Serveur
+      last_seen: Vu pour la dernière fois
+      plays: Lectures
+      trust: Score de confiance
 profile:
   title: Mon profil
   identity:
@@ -702,6 +745,7 @@ admin:
       gluetun: 'VPN / port forwarding'
       tautulli: 'Activité Plex (via Tautulli)'
       bazarr: 'Gestionnaire de sous-titres (via Bazarr)'
+      tracearr: 'Activité Plex / Jellyfin / Emby (via Tracearr)'
     sidebar_toggle: Menu
     sidebar_toggle_title: Afficher dans le menu latéral
     status:
@@ -875,6 +919,13 @@ admin:
       options:
         comfortable: Confortable (défaut)
         compact: Compacte
+    activity_source:
+      label: Source de l'activité en direct
+      help: 'Service qui alimente le widget « activité en cours » du tableau de bord et la pastille de lecture de la barre latérale quand Tautulli et Tracearr sont tous deux configurés. Bascule sur l''autre si le service choisi n''est pas configuré.'
+      options:
+        auto: Automatique (Tautulli d'abord)
+        tautulli: Tautulli
+        tracearr: Tracearr
     page_size:
       label: Éléments par page
       help: 'Nombre de films ou séries listés par page dans les vues bibliothèque. Plus la page est grande, plus le rendu est lent mais plus on voit d''items.'

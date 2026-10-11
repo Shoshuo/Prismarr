@@ -1,0 +1,21 @@
+{# Overview tiles. `stats` = TracearrClient::normalizeStats() shape. #}
+{% set tiles = [
+  {value: stats.todayPlays,       label: 'tracearr.stats.today_plays'},
+  {value: stats.watchTimeHours,   label: 'tracearr.stats.watch_time_today'},
+  {value: stats.activeUsersToday, label: 'tracearr.stats.active_users_today'},
+  {value: stats.plays30d,         label: 'tracearr.stats.plays_30d'},
+  {value: stats.totalUsers,       label: 'tracearr.stats.total_users'},
+  {value: stats.violations7d,     label: 'tracearr.stats.violations_7d'},
+] %}
+<div class="row row-cards">
+  {% for t in tiles %}
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="card card-sm h-100">
+        <div class="card-body">
+          <div class="h2 mb-0">{{ t.value }}</div>
+          <div class="text-secondary small">{{ t.label|trans }}</div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>

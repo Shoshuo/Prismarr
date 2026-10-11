@@ -1,11 +1,15 @@
 {# One watch-history row. Expects `h` (a normalized history row) with an integer
-   `watchedAt` (Unix epoch seconds; 0/absent = unknown → time label omitted). #}
+   `watchedAt` (Unix epoch seconds; 0/absent = unknown → time label omitted).
+   Tracearr rows carry `posterServerId` and stream through its proxy; their
+   `quickLook` {type, id} opens the app-global TMDb quick-look. #}
 {% import '_icons.html.twig' as ico %}
-<div class="plex-session {% if h.ratingKey %}plex-clickable{% endif %}"
-     {% if h.ratingKey %}data-plex-rating-key="{{ h.ratingKey }}" role="button" tabindex="0"{% endif %}>
+{% set ql = h.quickLook|default(null) %}
+<{{ ql ? 'a' : 'div' }} class="plex-session {% if h.ratingKey or ql %}plex-clickable{% endif %}{{ ql ? ' text-reset text-decoration-none' }}"
+     {% if h.ratingKey %}data-plex-rating-key="{{ h.ratingKey }}" role="button" tabindex="0"{% endif %}
+     {%- if ql %} href="{{ path('tmdb_index', {detail: ql.type ~ '/' ~ ql.id}) }}" data-ql-trigger data-ql-source="tmdb" data-ql-type="{{ ql.type }}" data-ql-id="{{ ql.id }}"{% endif %}>
   <div class="plex-poster">
     {{ ico.icon(h.mediaType == 'movie' ? 'movie' : 'device-tv', '', 22) }}
-    {% if h.posterPath %}<img class="plex-poster-img" src="{{ path('app_tautulli_api_image', {img: h.posterPath}) }}" alt="" loading="lazy">{% endif %}
+    {% if h.posterPath %}<img class="plex-poster-img" src="{{ h.posterServerId is defined ? path('app_tracearr_api_image', {server: h.posterServerId, img: h.posterPath}) : path('app_tautulli_api_image', {img: h.posterPath}) }}" alt="" loading="lazy">{% endif %}
   </div>
   <div class="plex-session-main">
     <div class="plex-session-title text-truncate">
@@ -19,4 +23,4 @@
       <div class="progress plex-progress"><div class="progress-bar" style="width: {{ h.percentComplete }}%"></div></div>
     {% endif %}
   </div>
-</div>
+</{{ ql ? 'a' : 'div' }}>

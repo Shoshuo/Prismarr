@@ -116,6 +116,7 @@ queued for later.
 - **Discovery:** TMDb landing page with recommendations and trending, watchlist, an explorer with filters, and deep-links into your library.
 - **Plex activity (Tautulli):** optional read-only page (now playing, watch stats, graphs, history) plus a "Current Plex activity" dashboard widget. The API key stays server-side and responses are sanitised.
 - **Subtitles (Bazarr):** optional admin-only page with Wanted / Movies / Series / History views, plus a per-title subtitle badge on the Films and Series pages, in the quick-look modal and in `Ctrl+K` results — click a badge to search and download a subtitle without leaving Prismarr. Refreshes happen off the request path, so the badges cost nothing to render.
+- **Tracearr:** optional read-only page for Plex / Jellyfin / Emby activity (now playing, overview stats, graphs, history, users) via Tracearr's public API. The API key stays server-side and responses are sanitised.
 - **Theming:** a full instance theme chosen in `/admin/settings → Display` from a catalogue of glance-style presets (HSL colour model resolved to CSS variables server-side, light and dark). The default reproduces the previous dark look exactly.
 - **Preferences:** accent colour, UI density, timezone, date format, English / French UI, settings export / import (credentials always stripped).
 - **Security:** Symfony auth with login rate-limiter, non-root container, dynamic CSP, SSRF protection on user-provided URLs, CSRF on every mutation.

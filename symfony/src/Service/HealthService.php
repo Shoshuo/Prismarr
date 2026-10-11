@@ -12,6 +12,7 @@ use App\Service\Media\RadarrClient;
 use App\Service\Media\ServiceHealthCache;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TautulliClient;
+use App\Service\Media\TracearrClient;
 use App\Service\Media\TmdbClient;
 use App\Service\Media\TransmissionClient;
 use App\Service\Media\Usenet\NzbgetClient;
@@ -82,6 +83,8 @@ class HealthService implements ResetInterface
         // Bazarr (subtitle management) — nullable + last, same
         // legacy-test-constructor reason as the clients above.
         private readonly ?BazarrClient      $bazarr = null,
+        // Tracearr — nullable + last, same legacy-test-constructor reason.
+        private readonly ?TracearrClient $tracearr = null,
     ) {}
 
     /**
@@ -252,6 +255,7 @@ class HealthService implements ResetInterface
             'sabnzbd'     => $this->sabnzbd?->ping() ?? false,
             'nzbget'      => $this->nzbget?->ping() ?? false,
             'tautulli'    => $this->tautulli?->ping() ?? false,
+            'tracearr'    => $this->tracearr?->ping() ?? false,
             'transmission' => $this->transmission?->ping() ?? false,
             'bazarr'      => $this->bazarr?->ping() ?? false,
             default       => true,
@@ -270,7 +274,7 @@ class HealthService implements ResetInterface
      * (issue #15). Radarr/Sonarr are absent on purpose — they enable/disable
      * per instance via the `enabled` flag on `service_instance`.
      */
-    public const TOGGLEABLE_SERVICES = ['prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr'];
+    public const TOGGLEABLE_SERVICES = ['prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr'];
 
     public function isConfigured(string $service): bool
     {
@@ -328,6 +332,9 @@ class HealthService implements ResetInterface
             // X-API-KEY-authenticated, including /system/status).
             'bazarr' =>
                 $this->config->has('bazarr_url') && $this->config->has('bazarr_api_key'),
+            // Tracearr's public API is Bearer-token only — URL + key both required.
+            'tracearr' =>
+                $this->config->has('tracearr_url') && $this->config->has('tracearr_api_key'),
             default => true,
         };
     }
@@ -354,7 +361,7 @@ class HealthService implements ResetInterface
         if ($service === null) {
             $this->statusCache = [];
             if ($this->serviceHealthCache !== null) {
-                foreach (['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr'] as $svc) {
+                foreach (['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr'] as $svc) {
                     $this->serviceHealthCache->clear($svc);
                 }
             }
@@ -686,6 +693,17 @@ class HealthService implements ResetInterface
                 return [
                     'url'     => rtrim($url, '/') . '/api/system/status',
                     'headers' => ['X-API-KEY: ' . $key, 'Accept: application/json'],
+                ];
+            }
+            case 'tracearr': {
+                $url = $get('tracearr_url');
+                $key = $get('tracearr_api_key');
+                if ($url === '' || $key === '') return null;
+                // /health is the cheapest key-authenticated public endpoint:
+                // a bad or revoked token answers 401 → `auth`.
+                return [
+                    'url'     => rtrim($url, '/') . TracearrClient::API_BASE . '/health',
+                    'headers' => ['Authorization: Bearer ' . $key, 'Accept: application/json'],
                 ];
             }
             case 'nzbget': {

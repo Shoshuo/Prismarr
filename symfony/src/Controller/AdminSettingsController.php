@@ -102,6 +102,10 @@ class AdminSettingsController extends AbstractController
             ['key' => 'bazarr_url',     'type' => 'text',     'label' => 'admin.field.url',     'placeholder' => 'http://host.docker.internal:6767'],
             ['key' => 'bazarr_api_key', 'type' => 'password', 'label' => 'admin.field.api_key'],
         ],
+        'tracearr' => [
+            ['key' => 'tracearr_url',     'type' => 'text',     'label' => 'admin.field.url',     'placeholder' => 'http://host.docker.internal:3000'],
+            ['key' => 'tracearr_api_key', 'type' => 'password', 'label' => 'admin.field.api_key', 'placeholder' => 'trr_pub_…'],
+        ],
     ];
 
     /**
@@ -151,6 +155,7 @@ class AdminSettingsController extends AbstractController
         'gluetun'     => 'Gluetun',
         'tautulli'    => 'Tautulli',
         'bazarr'      => 'Bazarr',
+        'tracearr'    => 'Tracearr',
     ];
 
     /**
@@ -302,6 +307,19 @@ class AdminSettingsController extends AbstractController
                 '0'  => 'admin.display.transmission_refresh.options.0',
             ],
             'help' => 'admin.display.transmission_refresh.help',
+        ],
+        // Live-activity source for the dashboard widget + sidebar pill
+        // (read by ActivitySource). `auto` = Tautulli first, then Tracearr.
+        'display_activity_source' => [
+            'label'   => 'admin.display.activity_source.label',
+            'type'    => 'select',
+            'default' => 'auto',
+            'options' => [
+                'auto'     => 'admin.display.activity_source.options.auto',
+                'tautulli' => 'admin.display.activity_source.options.tautulli',
+                'tracearr' => 'admin.display.activity_source.options.tracearr',
+            ],
+            'help' => 'admin.display.activity_source.help',
         ],
         'display_ui_density' => [
             'label'   => 'admin.display.ui_density.label',
@@ -560,6 +578,7 @@ class AdminSettingsController extends AbstractController
             'nzbget'                                     => ['nzbget_url', 'nzbget_user', 'nzbget_password'],
             'tautulli'                                   => ['tautulli_url', 'tautulli_api_key'],
             'bazarr'                                     => ['bazarr_url', 'bazarr_api_key'],
+            'tracearr'                                   => ['tracearr_url', 'tracearr_api_key'],
             default                                      => [],
         };
         $overrides = [];
@@ -608,7 +627,7 @@ class AdminSettingsController extends AbstractController
     public function healthInvalidate(string $service): JsonResponse
     {
         $service = strtolower($service);
-        $allowed = ['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr'];
+        $allowed = ['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr'];
         if (!in_array($service, $allowed, true)) {
             return new JsonResponse(['ok' => false], 400);
         }

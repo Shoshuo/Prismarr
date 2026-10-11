@@ -1,0 +1,13 @@
+{# Live stream cards for the Tracearr page. `activity` is the
+   TracearrClient::getActivity() envelope. Session cards reuse the shared
+   Plex summary strip + card (both handle Tracearr's shape). #}
+{% if activity.error or not activity.connected or activity.sessions is empty %}
+  <div class="text-center text-secondary py-4">{{ 'tracearr.now_playing.empty'|trans }}</div>
+{% else %}
+  {% include 'dashboard/_plex_summary.html.twig' with {plex: activity} only %}
+  <div class="plex-sessions">
+    {% for s in activity.sessions %}
+      {% include 'dashboard/_plex_session_card.html.twig' with {s: s} only %}
+    {% endfor %}
+  </div>
+{% endif %}

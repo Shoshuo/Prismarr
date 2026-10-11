@@ -4,6 +4,8 @@
    TautulliClient::getActivity() — no secrets, no raw payload. Fails open: the
    error/empty states below keep the card intact when Tautulli is down. #}
 {% set active_tab = plex_tab|default('now') %}
+{# Error strings name the feeding service (Tautulli by default, Tracearr as fallback). #}
+{% set err_prefix = plex_source|default('tautulli') == 'tracearr' ? 'dashboard.plex.error_tracearr.' : 'dashboard.plex.error.' %}
 <ul class="nav nav-tabs plex-tabs" data-plex-tabs>
   <li class="nav-item"><a href="#" class="nav-link {{ active_tab == 'now' ? 'active' }}" data-plex-tab="now">{{ 'dashboard.plex.tab.now'|trans }}{% if plex.streamCount > 0 %} <span class="badge bg-green-lt text-green ms-1">{{ plex.streamCount }}</span>{% endif %}</a></li>
   <li class="nav-item"><a href="#" class="nav-link {{ active_tab == 'recent' ? 'active' }}" data-plex-tab="recent">{{ 'dashboard.plex.tab.recent'|trans }}</a></li>
@@ -11,11 +13,11 @@
 
 <div class="plex-pane" data-plex-pane="now" {% if active_tab != 'now' %}style="display:none"{% endif %}>
 {% if plex.error == 'unconfigured' %}
-  <div class="text-center text-secondary py-4">{{ 'dashboard.plex.error.unconfigured'|trans }}</div>
+  <div class="text-center text-secondary py-4">{{ (err_prefix ~ 'unconfigured')|trans }}</div>
 {% elseif plex.error == 'auth' %}
-  <div class="text-center text-secondary py-4">{{ 'dashboard.plex.error.auth'|trans }}</div>
+  <div class="text-center text-secondary py-4">{{ (err_prefix ~ 'auth')|trans }}</div>
 {% elseif plex.error == 'unreachable' or not plex.connected %}
-  <div class="text-center text-secondary py-4">{{ 'dashboard.plex.error.unreachable'|trans }}</div>
+  <div class="text-center text-secondary py-4">{{ (err_prefix ~ 'unreachable')|trans }}</div>
 {% elseif plex.sessions is empty %}
   <div class="text-center text-secondary py-4">{{ 'dashboard.plex.empty'|trans }}</div>
 {% else %}

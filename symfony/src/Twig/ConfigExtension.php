@@ -3,6 +3,7 @@
 namespace App\Twig;
 
 use App\Entity\ServiceInstance;
+use App\Service\ActivitySource;
 use App\Service\ConfigService;
 use App\Service\HealthService;
 use App\Service\ServiceInstanceProvider;
@@ -32,6 +33,7 @@ class ConfigExtension extends AbstractExtension
         'gluetun'     => 'gluetun_url',
         'tautulli'    => 'tautulli_url',
         'bazarr'      => 'bazarr_url',
+        'tracearr'    => 'tracearr_url',
     ];
 
     /** Services backed by service_instance instead of a flat setting. */
@@ -56,6 +58,7 @@ class ConfigExtension extends AbstractExtension
             new TwigFunction('service_instances', [$this, 'getServiceInstances']),
             new TwigFunction('instance_path', [$this, 'instancePath']),
             new TwigFunction('current_slug', [$this, 'currentSlug']),
+            new TwigFunction('activity_source', [$this, 'activitySource']),
         ];
     }
 
@@ -177,6 +180,22 @@ class ConfigExtension extends AbstractExtension
             return false;
         }
         return $this->config->get('sidebar_hide_' . $service) !== '1';
+    }
+
+    /**
+     * Which service feeds live activity (sidebar pill), honouring the admin
+     * preference via ActivitySource (auto = Tautulli first). Same rule as
+     * DashboardController::activitySource() (HealthService::isConfigured):
+     * URL + API key both required, so the pill and the dashboard widget never
+     * poll different services. HealthService itself isn't injected — it would
+     * eagerly build every client on each page render.
+     */
+    public function activitySource(): ?string
+    {
+        return ActivitySource::resolve(
+            $this->config->get(ActivitySource::SETTING),
+            fn(string $service) => $this->isServiceConfigured($service) && $this->config->has($service . '_api_key'),
+        );
     }
 
     /**

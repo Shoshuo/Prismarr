@@ -191,4 +191,26 @@ class ConfigExtensionTest extends TestCase
         $ext = $this->extensionWithHideFlag([], ['calendar']);
         $this->assertFalse($ext->isFeatureVisibleInSidebar('calendar'));
     }
+
+    /**
+     * The sidebar pill must follow the dashboard widget's rule: a Tautulli URL
+     * without its API key is NOT a usable source, so Tracearr wins.
+     */
+    public function testActivitySourceSkipsTautulliWithoutApiKey(): void
+    {
+        $ext = $this->extension(['tautulli_url', 'tracearr_url', 'tracearr_api_key']);
+        $this->assertSame('tracearr', $ext->activitySource());
+    }
+
+    public function testActivitySourcePrefersTautulli(): void
+    {
+        $ext = $this->extension(['tautulli_url', 'tautulli_api_key', 'tracearr_url', 'tracearr_api_key']);
+        $this->assertSame('tautulli', $ext->activitySource());
+    }
+
+    public function testActivitySourceNullWhenNothingUsable(): void
+    {
+        $ext = $this->extension(['tautulli_url', 'tracearr_url']);
+        $this->assertNull($ext->activitySource());
+    }
 }
