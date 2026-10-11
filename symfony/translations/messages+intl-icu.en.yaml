@@ -643,11 +643,10 @@ admin:
     title: External services
     description: 'URLs and API keys for the services Prismarr drives. Use <em>Test</em> to validate connectivity after changes.'
     group:
-      discovery: Discovery
-      managers: Managers
       indexers: Indexers & requests
       downloads: Downloads
       monitoring: Monitoring
+      media: 'Media'
     subtitle:
       tmdb: Movie & TV discovery, watchlist
       radarr: Movie manager
@@ -675,6 +674,18 @@ admin:
     test: Test
     enabled: Enabled
     enabled_title: 'When off, Prismarr stops polling this service and treats it as not configured. URL and API key are kept.'
+    search_placeholder: 'Search services'
+    add_label: 'Add'
+    none_connected: 'No service connected yet. Add one below to get started.'
+    no_match: 'No service matches your search.'
+    instances_count: '{count, plural, one {# instance} other {# instances}}'
+    state:
+      checking: 'Checking…'
+      up: 'Operational'
+      down: 'Unreachable'
+      unknown: 'Not checked'
+      disabled: 'Disabled'
+      new: 'Not configured'
   instances:
     add: '+ Add a {service} instance'
     empty:
@@ -975,6 +986,8 @@ admin:
     no_releases: 'No release information available right now (GitHub API unreachable).'
     installed: Installed
 
+  dirty_one: '1 unsaved change'
+  dirty_other: '__N__ unsaved changes'
 decouverte:
   title: Discover
   search_placeholder: 'Search a movie or TV show on TMDb…'

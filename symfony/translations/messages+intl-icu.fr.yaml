@@ -642,11 +642,10 @@ admin:
     title: Services externes
     description: 'URLs et clés API des services que Prismarr pilote. Utilisez <em>Tester</em> pour valider la connectivité après modification.'
     group:
-      discovery: Découverte
-      managers: Gestionnaires
       indexers: Indexeurs & requêtes
       downloads: Téléchargements
       monitoring: Supervision
+      media: 'Médias'
     subtitle:
       tmdb: Découverte films & séries, watchlist
       radarr: Gestionnaire de films
@@ -674,6 +673,18 @@ admin:
     test: Tester
     enabled: Activé
     enabled_title: "Désactivé, Prismarr arrête de tester ce service et le considère comme non configuré. L'URL et la clé API sont conservées."
+    search_placeholder: 'Rechercher un service'
+    add_label: 'Ajouter'
+    none_connected: 'Aucun service connecté pour l''instant. Ajoutez-en un ci-dessous pour commencer.'
+    no_match: 'Aucun service ne correspond à votre recherche.'
+    instances_count: '{count, plural, one {# instance} other {# instances}}'
+    state:
+      checking: 'Vérification…'
+      up: 'Opérationnel'
+      down: 'Injoignable'
+      unknown: 'Non vérifié'
+      disabled: 'Désactivé'
+      new: 'Non configuré'
   instances:
     add: '+ Ajouter une instance {service}'
     empty:
@@ -974,6 +985,8 @@ admin:
     no_releases: 'Aucune information de release disponible pour le moment (API GitHub injoignable).'
     installed: Installée
 
+  dirty_one: '1 modification non enregistrée'
+  dirty_other: '__N__ modifications non enregistrées'
 decouverte:
   title: Découverte
   search_placeholder: 'Rechercher un film ou une série sur TMDb…'

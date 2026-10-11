@@ -123,32 +123,6 @@
   .service-card + .service-card { margin-top: 1rem; }
   .service-card:focus-within { border-color: rgba(var(--tblr-primary-rgb),.55); }
 
-  /* Two-column layout for the service cards. CSS multi-column (not grid) so
-     cards pack tightly by height: grid allocates every row track to its
-     tallest card, leaving dead space beside/below a short card and an empty
-     column when the card count is odd. Columns
-     flow cards into balanced stacks with no row tracks, so no gaps.
-     `columns: 2 320px` = at most 2 columns, each ≥320px → drops to one column
-     under ~660px, matching the old auto-fit responsive behaviour. */
-  .service-grid-2col {
-    columns: 2 320px;
-    column-gap: 1rem;
-  }
-  .service-grid-2col .service-card {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    /* Keep a card whole — never split one across a column break. */
-    break-inside: avoid;
-  }
-  /* Multi-instance cards (Radarr/Sonarr) hold a 6-column table that can't fit
-     a half-width column, so they span both columns; only the simple URL+key
-     cards share the two columns. */
-  .service-grid-2col .service-card--wide { column-span: all; }
-  /* The 6-column instance table can't shrink to phone width, so let it scroll
-     horizontally inside the card instead of overflowing the layout. */
-  .instance-list { overflow-x: auto; }
-  .instance-list > table { min-width: 640px; }
-
   .service-card-head {
     display: flex;
     align-items: center;
@@ -174,6 +148,62 @@
   .service-card-title { font-weight: 600; font-size: 1rem; margin: 0; line-height: 1.2; }
   .service-card-sub { font-size: .78rem; color: var(--tblr-secondary); margin: .1rem 0 0 0; }
   .service-card-actions { margin-left: auto; display: flex; align-items: center; gap: .5rem; }
+
+  /* ── Services section: grouped, collapsible rows (see _services_list) ── */
+  .svc-head { display: flex; justify-content: flex-end; margin: -.25rem 0 .75rem; }
+  .svc-search { position: relative; width: 220px; max-width: 100%; }
+  .svc-search svg { position: absolute; left: .6rem; top: 50%; transform: translateY(-50%); color: var(--tblr-secondary); pointer-events: none; }
+  .svc-search input { padding-left: 2rem; }
+  .svc-group + .svc-group { margin-top: 1.1rem; }
+  .svc-group-label { font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--tblr-secondary); margin: 0 0 .45rem .1rem; }
+  .svc-list { border: 1px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,.02); }
+  [data-bs-theme="light"] .svc-list { border-color: rgba(0,0,0,.08); background: #fff; }
+  .svc-item + .svc-item, .svc-list > .svc-add { border-top: 1px solid rgba(255,255,255,.06); }
+  [data-bs-theme="light"] .svc-item + .svc-item, [data-bs-theme="light"] .svc-list > .svc-add { border-top-color: rgba(0,0,0,.06); }
+  .svc-row { display: flex; align-items: center; gap: .75rem; width: 100%; padding: .65rem .9rem; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; }
+  .svc-row:hover { background: rgba(var(--tblr-primary-rgb), .05); }
+  .svc-item.is-open > .svc-row { background: rgba(var(--tblr-primary-rgb), .07); }
+  .svc-logo { flex: 0 0 30px; width: 30px; height: 30px; border-radius: 7px; background: #fff; padding: 4px; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--brand, #cbd5e1) 55%, transparent); }
+  .svc-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .svc-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .svc-name { font-weight: 600; font-size: .92rem; line-height: 1.2; }
+  .svc-sub { font-size: .76rem; color: var(--tblr-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .svc-status { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; color: var(--tblr-secondary); white-space: nowrap; }
+  .svc-status.is-up { color: #22c55e; }
+  .svc-status.is-down { color: #ef4444; }
+  .svc-dot { width: 8px; height: 8px; border-radius: 50%; background: #6b7280; flex: 0 0 8px; }
+  .is-up > .svc-dot, .svc-dot.is-up { background: #22c55e; }
+  .is-down > .svc-dot, .svc-dot.is-down { background: #ef4444; }
+  .svc-chevron { flex: 0 0 auto; color: var(--tblr-secondary); transition: transform .15s ease; }
+  .svc-item.is-open .svc-chevron { transform: rotate(180deg); }
+  .svc-body { padding: .35rem .9rem .9rem calc(.9rem + 30px + .75rem); background: rgba(var(--tblr-primary-rgb), .03); }
+  .svc-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .75rem 1rem; }
+  .svc-fields .field-row { margin-bottom: 0; }
+  .svc-actions { display: flex; align-items: center; gap: .75rem; margin-top: .85rem; }
+  .svc-actions .form-check-label { font-size: .8rem; color: var(--tblr-secondary); }
+  .svc-add { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; padding: .6rem .9rem; }
+  .svc-add-label { font-size: .78rem; color: var(--tblr-secondary); margin-right: .2rem; }
+  .svc-add-btn { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; padding: .3rem .65rem .3rem .45rem; border: 1px dashed rgba(255,255,255,.22); border-radius: 6px; background: none; color: var(--tblr-body-color); cursor: pointer; }
+  [data-bs-theme="light"] .svc-add-btn { border-color: rgba(0,0,0,.2); }
+  .svc-add-btn:hover { border-color: var(--tblr-primary); color: var(--tblr-primary); }
+  .svc-add-btn img { width: 16px; height: 16px; object-fit: contain; background: #fff; border-radius: 3px; padding: 1px; }
+  .svc-empty-hint, .svc-no-match { font-size: .85rem; color: var(--tblr-secondary); margin: .25rem 0 1rem; }
+  .inst-list { display: flex; flex-direction: column; gap: .15rem; }
+  .inst-row { display: flex; align-items: center; gap: .6rem; padding: .4rem 0; }
+  .inst-row + .inst-row { border-top: 1px solid rgba(255,255,255,.05); }
+  [data-bs-theme="light"] .inst-row + .inst-row { border-top-color: rgba(0,0,0,.05); }
+  .inst-row.is-disabled .inst-main { opacity: .55; }
+  .inst-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .inst-name { font-weight: 500; font-size: .86rem; }
+  .inst-url { font-family: var(--tblr-font-monospace); font-size: .74rem; color: var(--tblr-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .inst-default { font-size: .7rem; font-weight: 600; padding: .15rem .5rem; border-radius: 4px; background: rgba(var(--tblr-primary-rgb), .15); color: var(--tblr-primary); }
+  .inst-empty { font-size: .82rem; color: var(--tblr-secondary); margin: .25rem 0; }
+  .inst-add { align-self: flex-start; margin-top: .4rem; }
+  @media (max-width: 640px) {
+    .svc-body { padding-left: .9rem; }
+    .inst-row { flex-wrap: wrap; }
+    .inst-main { flex-basis: calc(100% - 1.5rem); }
+  }
 
   .sidebar-visibility-grid {
     display: grid;
@@ -239,9 +269,10 @@
     position: sticky; bottom: 0;
     padding: 1rem 0 1.5rem;
     background: linear-gradient(to top, var(--tblr-body-bg) 65%, transparent);
-    display: flex; justify-content: flex-end; gap: .5rem;
+    display: flex; justify-content: flex-end; align-items: center; gap: .75rem;
     margin-top: 1rem;
   }
+  .settings-dirty { font-size: .85rem; color: var(--tblr-primary); }
 
   /* Display preferences grid inside the "Affichage" card */
   .display-grid {
@@ -459,141 +490,16 @@
             'emby':        { icon_bg: '#52b54b', subtitle: 'admin.services.subtitle.emby'|trans },
           } %}
 
-          {% set groupings = {
-            ('admin.services.group.discovery'|trans):  ['tmdb'],
-            ('admin.services.group.managers'|trans):   ['radarr', 'sonarr'],
-            ('admin.services.group.indexers'|trans):   ['prowlarr', 'jellyseerr'],
-            ('admin.services.group.downloads'|trans):  ['qbittorrent', 'deluge', 'transmission', 'gluetun', 'sabnzbd', 'nzbget'],
-            ('admin.services.group.monitoring'|trans): ['tautulli', 'bazarr', 'tracearr', 'emby'],
-          } %}
-
           {# ─── Section 1 : Services externes ─────────────────────── #}
           <section id="section-services" class="settings-group" data-section>
             <div class="settings-group-title">{{ 'admin.services.title'|trans }}</div>
             <p class="settings-group-desc">{{ 'admin.services.description'|trans|raw }}</p>
 
-            {% for group_label, service_ids in groupings %}
-              <div style="font-size:.75rem; color:var(--tblr-secondary); font-weight:600; margin: 1.25rem 0 .6rem;">
-                {{ group_label }}
-              </div>
-
-              <div class="service-grid-2col">
-              {% for service_id in service_ids %}
-                {% set meta = service_meta[service_id] %}
-                {# v1.1.0 — radarr/sonarr render as a multi-instance list,
-                   not a single URL+API-key form. #}
-                {% if service_id in ['radarr', 'sonarr'] %}
-                  {% include 'admin/_instance_card.html.twig' with {
-                    service_id:    service_id,
-                    service_label: service_labels[service_id],
-                    instances:     instances_by_type[service_id]|default([]),
-                    meta:          meta,
-                  } only %}
-                {% else %}
-                {% set fields = groups[service_id] %}
-                <div class="service-card" data-service-card="{{ service_id }}">
-                  <div class="service-card-head">
-                    <div class="service-card-icon service-card-icon--logo" style="--brand: {{ meta.icon_bg }};">
-                      <img src="{{ asset('img/services/' ~ service_id ~ '.svg') }}"
-                           alt="{{ service_labels[service_id] }}" width="24" height="24" loading="lazy">
-                    </div>
-                    <div>
-                      <p class="service-card-title">{{ service_labels[service_id] }}</p>
-                      <p class="service-card-sub">{{ meta.subtitle }}</p>
-                    </div>
-                    <div class="service-card-actions">
-                      {# Issue #15 — per-service kill switch. Only the flat-config
-                         services have it; radarr/sonarr enable/disable per
-                         instance. Unchecked box isn't POSTed → disabled. #}
-                      {% if service_id in ['tmdb', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr', 'emby'] %}
-                        <label class="form-check form-switch m-0 me-2" style="padding-left:2.4em;"
-                               title="{{ 'admin.services.enabled_title'|trans }}">
-                          <input class="form-check-input" type="checkbox"
-                                 name="{{ service_id }}_enabled" value="1"
-                                 {{ (service_enabled[service_id] ?? true) ? 'checked' : '' }}>
-                          <span class="form-check-label" style="font-size:.78rem; color:var(--tblr-secondary);">{{ 'admin.services.enabled'|trans }}</span>
-                        </label>
-                      {% endif %}
-                      {# Gluetun has no health probe in HealthService::probeFor() —
-                         it would always come back "unknown". Hide the test
-                         affordance until/unless we add a real Gluetun probe. #}
-                      {% if service_id != 'gluetun' %}
-                        {# v1.1.0 — same compact button as the per-instance
-                           Test: lightning icon + state-driven colour, no
-                           separate pill. JS handler updates label/class. #}
-                        <button type="button"
-                                class="btn btn-sm btn-outline-secondary admin-settings-test"
-                                data-service="{{ service_id }}">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                               fill="none" stroke="currentColor" stroke-width="2"
-                               stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"/>
-                          </svg>
-                          <span data-service-test-label="{{ service_id }}">{{ 'admin.services.test'|trans }}</span>
-                        </button>
-                      {% endif %}
-                    </div>
-                  </div>
-
-                  {% for field in fields %}
-                    <div class="field-row" data-field-key="{{ field.key }}">
-                      <label for="{{ field.key }}">{{ field.label|trans }}</label>
-                      {% if field.type == 'password' %}
-                        <div class="secret-wrapper">
-                          <input type="password"
-                                 id="{{ field.key }}"
-                                 name="{{ field.key }}"
-                                 class="form-control"
-                                 value="{{ values[field.key] ?? '' }}"
-                                 autocomplete="off"
-                                 spellcheck="false"
-                                 {% if field.placeholder is defined %}placeholder="{{ field.placeholder }}"{% endif %}/>
-                          <button type="button" class="secret-toggle" aria-label="{{ 'setup.step.admin.toggle_visibility'|trans }}"
-                                  data-toggle-for="{{ field.key }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                 fill="none" stroke="currentColor" stroke-width="2"
-                                 stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/>
-                              <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/>
-                            </svg>
-                          </button>
-                        </div>
-                      {% else %}
-                        <input type="text"
-                               id="{{ field.key }}"
-                               name="{{ field.key }}"
-                               class="form-control"
-                               value="{{ values[field.key] ?? '' }}"
-                               autocomplete="off"
-                               spellcheck="false"
-                               {% if field.placeholder is defined %}placeholder="{{ field.placeholder }}"{% endif %}/>
-                      {% endif %}
-
-                      {# Clear button — opt-in via FIELDS[].clearable. Used
-                         for qBit user/password where leaving the field empty
-                         is a legitimate setup (reverse proxy injects auth,
-                         issue #10). Submits a hidden _clear_<key>=1 alongside
-                         the form so AdminSettingsController::saveSubmitted()
-                         sets the BDD value to null instead of treating empty
-                         as "unchanged". #}
-                      {% if field.clearable ?? false %}
-                        <input type="hidden" id="_clear_{{ field.key }}" name="_clear_{{ field.key }}" value="0">
-                        <button type="button" class="field-clear" data-clear-for="{{ field.key }}">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                               fill="none" stroke="currentColor" stroke-width="2"
-                               stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 7l16 0M10 11l0 6M14 11l0 6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12M9 7V4a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
-                          </svg>
-                          <span>{{ 'admin.field.clear'|trans }}</span>
-                        </button>
-                      {% endif %}
-                    </div>
-                  {% endfor %}
-                </div>
-                {% endif %}
-              {% endfor %}
-              </div>
-            {% endfor %}
+            {% include 'admin/_services_list.html.twig' with {
+              groups: groups, service_labels: service_labels, values: values,
+              service_enabled: service_enabled, instances_by_type: instances_by_type,
+              service_meta: service_meta,
+            } only %}
           </section>
 
           {# ─── Section 2: Display / user preferences ──── #}
@@ -773,6 +679,7 @@
              leaving the Save button orphaned. Backup + About
              render their own buttons below, outside the main form. #}
           <div class="settings-footer" data-settings-footer>
+            <span class="settings-dirty" data-settings-dirty hidden></span>
             <button type="submit" class="btn btn-primary">{{ 'admin.save'|trans }}</button>
           </div>
         </form>
@@ -1305,6 +1212,113 @@
           if (row)   row.classList.add('is-cleared');
         };
       });
+
+      // ── Services section: rows, add buttons, search, live status ─────
+      function svcSetOpen(item, open) {
+        var body = item.querySelector('.svc-body');
+        var row = item.querySelector('[data-svc-toggle]');
+        item.classList.toggle('is-open', open);
+        if (body) body.hidden = !open;
+        if (row) row.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+      document.querySelectorAll('[data-svc-toggle]').forEach(function (row) {
+        row.onclick = function () {
+          var item = row.closest('.svc-item');
+          if (item) svcSetOpen(item, !item.classList.contains('is-open'));
+        };
+      });
+      document.querySelectorAll('[data-svc-add-for]').forEach(function (btn) {
+        btn.onclick = function () {
+          var item = document.querySelector('.svc-item[data-service-card="' + btn.dataset.svcAddFor + '"]');
+          if (!item) return;
+          item.hidden = false;
+          item.classList.remove('is-available');
+          svcSetOpen(item, true);
+          var bar = btn.closest('[data-svc-add]');
+          btn.remove();
+          if (bar && !bar.querySelector('[data-svc-add-for]')) bar.remove();
+          var first = item.querySelector('.svc-body input:not([type=hidden]):not([type=checkbox])');
+          if (first) first.focus();
+        };
+      });
+      var svcSearch = document.querySelector('[data-svc-search]');
+      if (svcSearch) {
+        svcSearch.oninput = function () {
+          var q = svcSearch.value.trim().toLowerCase();
+          var anyVisible = false;
+          document.querySelectorAll('[data-svc-group]').forEach(function (group) {
+            var groupVisible = false;
+            group.querySelectorAll('.svc-item:not(.is-available), [data-svc-add-for]').forEach(function (el) {
+              var match = q === '' || (el.dataset.svcName || '').indexOf(q) !== -1;
+              el.style.display = match ? '' : 'none';
+              if (match) groupVisible = true;
+            });
+            var bar = group.querySelector('[data-svc-add]');
+            if (bar) bar.style.display = bar.querySelector('[data-svc-add-for]:not([style*="none"])') ? '' : 'none';
+            group.style.display = groupVisible ? '' : 'none';
+            if (groupVisible) anyVisible = true;
+          });
+          var none = document.querySelector('[data-svc-no-match]');
+          if (none) none.hidden = anyVisible;
+        };
+      }
+      var SVC_STATE = {
+        up:   {{ 'admin.services.state.up'|trans|json_encode|raw }},
+        down: {{ 'admin.services.state.down'|trans|json_encode|raw }},
+        unknown: {{ 'admin.services.state.unknown'|trans|json_encode|raw }}
+      };
+      function svcPaint(el, state) {
+        var cls = state === true ? 'is-up' : (state === false ? 'is-down' : '');
+        el.classList.remove('is-up', 'is-down');
+        if (cls) el.classList.add(cls);
+        var text = el.querySelector('[data-svc-status-text]');
+        if (text) text.textContent = state === true ? SVC_STATE.up : (state === false ? SVC_STATE.down : SVC_STATE.unknown);
+      }
+      if (document.querySelector('[data-svc-status], [data-svc-instance-status]')) {
+        fetch('{{ path('api_health_services') }}', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (data) {
+            if (!data) return;
+            var services = data.services || {};
+            document.querySelectorAll('[data-svc-status]').forEach(function (el) {
+              svcPaint(el, services[el.dataset.svcStatus]);
+            });
+            var bySlug = {};
+            ['radarr', 'sonarr'].forEach(function (type) {
+              ((data.instances || {})[type] || []).forEach(function (i) { bySlug[type + ':' + i.slug] = i.state; });
+            });
+            document.querySelectorAll('[data-svc-instance-status]').forEach(function (el) {
+              svcPaint(el, bySlug[el.dataset.svcInstanceStatus]);
+            });
+          })
+          .catch(function () {});
+      }
+
+      // ── Unsaved-changes counter on the save bar ─────────────────────
+      var settingsForm = document.querySelector('form[action="{{ path('admin_settings_index') }}"]');
+      var dirtyEl = document.querySelector('[data-settings-dirty]');
+      var DIRTY_ONE = {{ 'admin.dirty_one'|trans|json_encode|raw }};
+      var DIRTY_OTHER = {{ 'admin.dirty_other'|trans|json_encode|raw }};
+      function countDirty() {
+        if (!settingsForm || !dirtyEl) return;
+        var n = 0;
+        settingsForm.querySelectorAll('input, select, textarea').forEach(function (el) {
+          if (el.type === 'hidden' || el.type === 'submit' || el.type === 'button' || el.type === 'search' || !el.name) return;
+          if (el.type === 'checkbox' || el.type === 'radio') { if (el.checked !== el.defaultChecked) n++; }
+          else if (el.tagName === 'SELECT') {
+            var changed = false;
+            Array.prototype.forEach.call(el.options, function (o) { if (o.selected !== o.defaultSelected) changed = true; });
+            if (changed) n++;
+          }
+          else if (el.value !== el.defaultValue) n++;
+        });
+        dirtyEl.hidden = n === 0;
+        dirtyEl.textContent = n === 1 ? DIRTY_ONE : DIRTY_OTHER.replace('__N__', n);
+      }
+      if (settingsForm) {
+        settingsForm.addEventListener('input', countDirty);
+        settingsForm.addEventListener('change', countDirty);
+      }
 
       // ── Color swatches picker ───────────────────────────────────────
       document.querySelectorAll('.color-swatches').forEach(function (group) {

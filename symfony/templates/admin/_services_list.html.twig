@@ -1,0 +1,155 @@
+{#
+  Services section of /admin/settings: one compact, collapsible row per
+  connected service, grouped by category, with the not-yet-configured
+  services offered as "Add" buttons. Every input keeps its historical
+  name/id, so the single settings form, saveSubmitted() and the Test
+  buttons (which read inputs by id) work unchanged.
+
+  Inputs: groups, service_labels, values, service_enabled,
+          instances_by_type, service_meta
+#}
+{% import '_icons.html.twig' as ico %}
+
+{% set groupings = [
+  { label: 'admin.services.group.media'|trans,      ids: ['tmdb', 'radarr', 'sonarr'] },
+  { label: 'admin.services.group.indexers'|trans,   ids: ['prowlarr', 'jellyseerr'] },
+  { label: 'admin.services.group.downloads'|trans,  ids: ['qbittorrent', 'deluge', 'transmission', 'sabnzbd', 'nzbget', 'gluetun'] },
+  { label: 'admin.services.group.monitoring'|trans, ids: ['tautulli', 'tracearr', 'emby', 'bazarr'] },
+] %}
+{% set toggleable = ['tmdb', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr', 'emby'] %}
+
+<div class="svc-head">
+  <div class="svc-search">
+    {{ ico.icon('search', '', 15) }}
+    <input type="search" class="form-control form-control-sm" placeholder="{{ 'admin.services.search_placeholder'|trans }}"
+           aria-label="{{ 'admin.services.search_placeholder'|trans }}" data-svc-search>
+  </div>
+</div>
+
+{# Connected = a saved URL / API key (enabled or not), or at least one
+   Radarr/Sonarr instance. Computed with filters on purpose: a variable
+   updated inside a Twig for loop does not survive the loop. #}
+{% set connected_all = groupings|map(g => g.ids)|reduce((carry, ids) => carry|merge(ids), [])|filter(id =>
+    id in ['radarr', 'sonarr']
+      ? (instances_by_type[id]|default([]))|length > 0
+      : ((values[id ~ '_url'] ?? '') != '' or (values[id ~ '_api_key'] ?? '') != '')) %}
+
+{% if connected_all is empty %}
+  <p class="svc-empty-hint">{{ 'admin.services.none_connected'|trans }}</p>
+{% endif %}
+
+{% for group in groupings %}
+  {% set connected_ids = group.ids|filter(id => id in connected_all) %}
+  {% set available_ids = group.ids|filter(id => id not in connected_all) %}
+  <div class="svc-group" data-svc-group>
+    <div class="svc-group-label">{{ group.label }}</div>
+    <div class="svc-list">
+      {# Connected services first, then the not-yet-configured ones (hidden
+         until their "Add" button is used, but still in the form). #}
+      {% for id in connected_ids|merge(available_ids) %}
+        {% set meta = service_meta[id] %}
+        {% set connected = id in connected_ids %}
+        {% set label = service_labels[id] %}
+        {% set instances = instances_by_type[id]|default([]) %}
+        <div class="svc-item{{ connected ? '' : ' is-available' }}" data-service-card="{{ id }}"
+             data-svc-name="{{ label|lower }} {{ meta.subtitle|lower }}" {{ connected ? '' : 'hidden' }}>
+          <button type="button" class="svc-row" aria-expanded="false" data-svc-toggle>
+            <span class="svc-logo" style="--brand: {{ meta.icon_bg }};">
+              <img src="{{ asset('img/services/' ~ id ~ '.svg') }}" alt="" width="22" height="22" loading="lazy">
+            </span>
+            <span class="svc-main">
+              <span class="svc-name">{{ label }}</span>
+              <span class="svc-sub">
+                {% if id in ['radarr', 'sonarr'] and instances|length > 0 %}
+                  {{ 'admin.services.instances_count'|trans({ count: instances|length }) }}
+                {% elseif connected and (values[id ~ '_url'] ?? '') != '' %}
+                  {{ values[id ~ '_url'] }}
+                {% else %}
+                  {{ meta.subtitle }}
+                {% endif %}
+              </span>
+            </span>
+            {% if not connected %}
+              <span class="svc-status is-muted">{{ 'admin.services.state.new'|trans }}</span>
+            {% elseif id in toggleable and not (service_enabled[id] ?? true) %}
+              <span class="svc-status is-muted">{{ 'admin.services.state.disabled'|trans }}</span>
+            {% elseif id == 'gluetun' %}
+              <span class="svc-status is-muted"></span>
+            {% else %}
+              <span class="svc-status" data-svc-status="{{ id }}"><span class="svc-dot"></span><span data-svc-status-text>{{ 'admin.services.state.checking'|trans }}</span></span>
+            {% endif %}
+            {{ ico.icon('chevron-down', 'svc-chevron', 18) }}
+          </button>
+
+          <div class="svc-body" hidden>
+            {% if id in ['radarr', 'sonarr'] %}
+              {% include 'admin/_instance_rows.html.twig' with {
+                service_id: id, service_label: label, instances: instances,
+              } only %}
+            {% else %}
+              <div class="svc-fields">
+                {% for field in groups[id] %}
+                  <div class="field-row" data-field-key="{{ field.key }}">
+                    <label for="{{ field.key }}">{{ field.label|trans }}</label>
+                    {% if field.type == 'password' %}
+                      <div class="secret-wrapper">
+                        <input type="password" id="{{ field.key }}" name="{{ field.key }}" class="form-control"
+                               value="{{ values[field.key] ?? '' }}" autocomplete="off" spellcheck="false"
+                               {% if field.placeholder is defined %}placeholder="{{ field.placeholder }}"{% endif %}/>
+                        <button type="button" class="secret-toggle" aria-label="{{ 'setup.step.admin.toggle_visibility'|trans }}"
+                                data-toggle-for="{{ field.key }}">{{ ico.icon('eye', '', 16) }}</button>
+                      </div>
+                    {% else %}
+                      <input type="text" id="{{ field.key }}" name="{{ field.key }}" class="form-control"
+                             value="{{ values[field.key] ?? '' }}" autocomplete="off" spellcheck="false"
+                             {% if field.placeholder is defined %}placeholder="{{ field.placeholder }}"{% endif %}/>
+                    {% endif %}
+                    {% if field.clearable ?? false %}
+                      <input type="hidden" id="_clear_{{ field.key }}" name="_clear_{{ field.key }}" value="0">
+                      <button type="button" class="field-clear" data-clear-for="{{ field.key }}">
+                        {{ ico.icon('trash', '', 14) }}<span>{{ 'admin.field.clear'|trans }}</span>
+                      </button>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="svc-actions">
+                {% if id != 'gluetun' %}
+                  {# Gluetun has no health probe (HealthService::probeFor()). #}
+                  <button type="button" class="btn btn-sm btn-outline-secondary admin-settings-test" data-service="{{ id }}">
+                    {{ ico.icon('bolt', '', 14) }}
+                    <span data-service-test-label="{{ id }}">{{ 'admin.services.test'|trans }}</span>
+                  </button>
+                {% endif %}
+                <span class="flex-fill"></span>
+                {% if id in toggleable %}
+                  {# Issue #15 — per-service kill switch; an unchecked box is not POSTed → disabled. #}
+                  <label class="form-check form-switch m-0" title="{{ 'admin.services.enabled_title'|trans }}">
+                    <input class="form-check-input" type="checkbox" name="{{ id }}_enabled" value="1"
+                           {{ (service_enabled[id] ?? true) ? 'checked' : '' }}>
+                    <span class="form-check-label">{{ 'admin.services.enabled'|trans }}</span>
+                  </label>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+
+      {% if available_ids is not empty %}
+        <div class="svc-add" data-svc-add>
+          <span class="svc-add-label">{{ 'admin.services.add_label'|trans }}</span>
+          {% for id in available_ids %}
+            <button type="button" class="svc-add-btn" data-svc-add-for="{{ id }}"
+                    data-svc-name="{{ service_labels[id]|lower }} {{ service_meta[id].subtitle|lower }}">
+              <img src="{{ asset('img/services/' ~ id ~ '.svg') }}" alt="" width="16" height="16" loading="lazy">
+              {{ service_labels[id] }}
+            </button>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endfor %}
+
+<p class="svc-no-match" hidden data-svc-no-match>{{ 'admin.services.no_match'|trans }}</p>

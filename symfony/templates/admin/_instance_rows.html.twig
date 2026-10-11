@@ -1,0 +1,73 @@
+{#
+  Compact instance list for Radarr / Sonarr inside the Services section.
+  Keeps every data-instance-* hook used by the inline JS of settings.html.twig
+  (set-default, toggle-enabled, test, delete) and the Bootstrap modal targets
+  rendered by _instance_modals.html.twig (outside the main form).
+
+  Inputs: service_id ('radarr' | 'sonarr'), service_label, instances
+#}
+{% import '_icons.html.twig' as ico %}
+{% set enabled_count = instances|filter(i => i.enabled)|length %}
+
+<div class="inst-list">
+  {% for instance in instances %}
+    <div class="inst-row{{ instance.enabled ? '' : ' is-disabled' }}" data-instance-row="{{ instance.id }}">
+      <span class="svc-dot" data-svc-instance-status="{{ service_id }}:{{ instance.slug }}"></span>
+      <div class="inst-main">
+        <span class="inst-name">{{ instance.name }}</span>
+        <span class="inst-url">{{ instance.url }}</span>
+      </div>
+      {% if instance.default %}
+        <span class="inst-default">{{ 'admin.instances.badge.default'|trans }}</span>
+      {% else %}
+        <button type="button" class="btn btn-sm btn-ghost-secondary"
+                data-instance-action="set-default"
+                data-instance-url="{{ path('admin_instances_set_default', { id: instance.id }) }}"
+                data-instance-csrf="{{ csrf_token('admin_instance_default_' ~ instance.id) }}">
+          {{ 'admin.instances.action.set_default'|trans }}
+        </button>
+      {% endif %}
+      <label class="form-check form-switch m-0" title="{{ 'admin.instances.col.enabled'|trans }}">
+        <input class="form-check-input" type="checkbox" {% if instance.enabled %}checked{% endif %}
+               aria-label="{{ 'admin.instances.col.enabled'|trans }}"
+               data-instance-action="toggle-enabled"
+               data-instance-url="{{ path('admin_instances_toggle_enabled', { id: instance.id }) }}"
+               data-instance-csrf="{{ csrf_token('admin_instance_toggle_' ~ instance.id) }}"
+               data-instance-service="{{ service_label }}"
+               {% if instance.enabled and enabled_count == 1 %}data-instance-is-last-enabled="1"{% endif %}>
+      </label>
+      <button type="button" class="btn btn-sm btn-outline-secondary instance-test-btn"
+              data-instance-action="test"
+              data-instance-id="{{ instance.id }}"
+              data-instance-url="{{ path('admin_instances_test', { id: instance.id }) }}"
+              data-instance-csrf="{{ csrf_token('admin_instance_test_' ~ instance.id) }}">
+        {{ ico.icon('bolt', '', 14) }}
+        <span data-instance-test-label="{{ instance.id }}">{{ 'admin.services.test'|trans }}</span>
+      </button>
+      <button type="button" class="btn btn-sm btn-icon btn-ghost-secondary"
+              data-bs-toggle="modal" data-bs-target="#instance-edit-modal-{{ instance.id }}"
+              title="{{ 'admin.instances.action.edit'|trans }}" aria-label="{{ 'admin.instances.action.edit'|trans }}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4"/><path d="M13.5 6.5l4 4"/>
+        </svg>
+      </button>
+      <button type="button" class="btn btn-sm btn-icon btn-ghost-danger"
+              data-instance-action="delete"
+              data-instance-name="{{ instance.name }}"
+              data-instance-service="{{ service_label }}"
+              data-instance-url="{{ path('admin_instances_delete', { id: instance.id }) }}"
+              data-instance-csrf="{{ csrf_token('admin_instance_delete_' ~ instance.id) }}"
+              {% if instance.enabled and enabled_count == 1 %}data-instance-is-last-enabled="1"{% endif %}
+              title="{{ 'admin.instances.action.delete'|trans }}" aria-label="{{ 'admin.instances.action.delete'|trans }}">
+        {{ ico.icon('trash', '', 16) }}
+      </button>
+    </div>
+  {% else %}
+    <p class="inst-empty">{{ 'admin.instances.empty.subtitle'|trans({ '%service%': service_label }) }}</p>
+  {% endfor %}
+
+  <button type="button" class="svc-add-btn inst-add" data-bs-toggle="modal" data-bs-target="#instance-add-modal-{{ service_id }}">
+    {{ 'admin.instances.add'|trans({ '%service%': service_label }) }}
+  </button>
+</div>
