@@ -928,7 +928,7 @@
               {% set _radarr_slug = app.request.attributes.get('slug') %}
               {% set _radarr_icon %}
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg width="24" height="24" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" class="icon"><g transform="translate(70 21)"><path d="M105.3 154.9L112.8 869.5C52.7 877 7.5 846.9 7.5 786.8L0 192.6C0 4.5 173-40.6 278.3 34.6L812.3 343C887.5 395.6 902.6 493.4 865 561.1C857.5 508.5 834.9 478.4 789.8 448.3L188 109.8C142.9 79.7 105.3 87.2 105.3 154.9Z" fill="#FFC230"/><path d="M0 376.1C45.1 391.1 90.3 383.6 127.9 361L744.6 0C782.2 52.7 774.7 105.3 729.6 135.4L210.6 436.3C135.4 473.9 37.6 436.3 0 376.1Z" transform="translate(60.2 531)" fill="#FFC230"/><path d="M0 413.7L368.6 203.1L7.5 0L0 413.7Z" transform="translate(240.7 282.8)" fill="#FFC230"/></g></svg>
+                  <img src="{{ asset('img/services/radarr.svg') }}" width="24" height="24" alt="" class="icon">
                 </span>
               {% endset %}
 
@@ -981,7 +981,7 @@
               {% set _sonarr_slug = app.request.attributes.get('slug') %}
               {% set _sonarr_icon %}
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg width="24" height="24" viewBox="0 0 216.7 216.9" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M194.65 42.5l-22.4 22.4C159.15 78 158 89.4 158 109.5c0 17.93 2.85 34.35 16.2 47.7l19 18.95c-2.5 3.07-5.2 6.07-8.1 9-.7.83-1.48 1.6-2.35 2.3-2.53 2.5-5.17 4.82-7.9 6.95l-17.55-17.55c-15.6-15.6-28-17.1-48.6-17.1-19.77 0-33.22 1.82-47.7 16.3l-18.55 18.6c-3.77-2.87-7.33-6.03-10.7-9.5-2.8-2.8-5.42-5.67-7.85-8.6l19.15-19.2c13.85-13.85 16.1-29.92 16.1-47.85 0-17.5-2.87-33.82-15.6-46.55L22.45 43.85c2.83-3.6 5.92-7.07 9.25-10.4 2.93-2.87 5.93-5.55 9-8.05L61.1 43.85C74.1 56.85 90.77 60.2 108.7 60.2c18.47 0 35.08-3.58 48.6-17.1l19.3-19.25c2.9 2.37 5.73 4.93 8.5 7.7 3.47 3.53 6.65 7.18 9.55 10.95z" fill="#0CF"/><circle cx="108.35" cy="108.45" r="29.5" fill="#0CF" opacity=".8"/></svg>
+                  <img src="{{ asset('img/services/sonarr.svg') }}" width="24" height="24" alt="" class="icon">
                 </span>
               {% endset %}
 
@@ -1027,7 +1027,7 @@
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'prowlarr_' ? 'active' }}"
                  href="{{ path('prowlarr_index') }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224 224-100.3 224-224S379.7 32 256 32zm0 400c-97 0-176-79-176-176S159 80 256 80s176 79 176 176-79 176-176 176z" fill="#E88D1A"/><path d="M256 120c-75 0-136 61-136 136s61 136 136 136 136-61 136-136-61-136-136-136zm0 224c-48.6 0-88-39.4-88-88s39.4-88 88-88 88 39.4 88 88-39.4 88-88 88z" fill="#E88D1A"/><circle cx="256" cy="256" r="48" fill="#E88D1A"/></svg>
+                  <img src="{{ asset('img/services/prowlarr.svg') }}" width="24" height="24" alt="" class="icon">
                 </span>
                 <span class="nav-link-title">Prowlarr</span>
               </a>
@@ -1039,7 +1039,7 @@
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'jellyseerr_' ? 'active' }}"
                  href="{{ path('jellyseerr_index') }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M256 48C141.1 48 48 141.1 48 256s93.1 208 208 208 208-93.1 208-208S370.9 48 256 48zm0 368c-88.4 0-160-71.6-160-160S167.6 96 256 96s160 71.6 160 160-71.6 160-160 160z" fill="#a259ff"/><circle cx="256" cy="256" r="80" fill="#a259ff"/></svg>
+                  <img src="{{ asset('img/services/jellyseerr.svg') }}" width="24" height="24" alt="" class="icon">
                 </span>
                 <span class="nav-link-title d-flex align-items-center">Seerr
                   <span id="sidebar-seerr-badge" class="sidebar-dl-badge" style="display:none;">0</span>
@@ -1053,12 +1053,7 @@
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_qbittorrent_' ? 'active' }}"
                  href="{{ path('app_qbittorrent_index') }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="#2f67ba" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/>
-                    <path d="M7 11l5 5l5 -5"/><path d="M12 4l0 12"/>
-                  </svg>
+                  <img src="{{ asset('img/services/qbittorrent.svg') }}" width="24" height="24" alt="" class="icon">
                 </span>
                 <span class="nav-link-title d-flex align-items-center">{{ 'sidebar.nav.qbittorrent'|trans }}
                   <span id="sidebar-qbt-badge" class="sidebar-dl-badge" style="display:none;">0</span>
@@ -1072,11 +1067,7 @@
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_deluge_' ? 'active' }}"
                  href="{{ path('app_deluge_index') }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="#3e7bbf" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 3c3.5 4.2 6 7.4 6 10.5a6 6 0 1 1 -12 0c0 -3.1 2.5 -6.3 6 -10.5z"/>
-                  </svg>
+                  <img src="{{ asset('img/services/deluge.svg') }}" width="24" height="24" alt="" class="icon">
                 </span>
                 <span class="nav-link-title d-flex align-items-center">{{ 'sidebar.nav.deluge'|trans }}
                   <span id="sidebar-deluge-badge" class="sidebar-dl-badge" style="display:none;">0</span>
@@ -1104,12 +1095,7 @@
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_usenet_' and app.request.attributes.get('client') == 'sabnzbd' ? 'active' }}"
                  href="{{ path('app_usenet_index', {client: 'sabnzbd'}) }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="#ffa000" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/>
-                    <path d="M7 11l5 5l5 -5"/><path d="M12 4l0 12"/>
-                  </svg>
+                  <img src="{{ asset('img/services/sabnzbd.svg') }}" width="24" height="24" alt="" class="icon">
                 </span>
                 <span class="nav-link-title d-flex align-items-center">SABnzbd
                   <span id="sidebar-sabnzbd-badge" class="sidebar-dl-badge" style="display:none;">0</span>
@@ -1123,12 +1109,7 @@
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_usenet_' and app.request.attributes.get('client') == 'nzbget' ? 'active' }}"
                  href="{{ path('app_usenet_index', {client: 'nzbget'}) }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="#1f9c3a" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/>
-                    <path d="M7 11l5 5l5 -5"/><path d="M12 4l0 12"/>
-                  </svg>
+                  <img src="{{ asset('img/services/nzbget.svg') }}" width="24" height="24" alt="" class="icon">
                 </span>
                 <span class="nav-link-title d-flex align-items-center">NZBGet
                   <span id="sidebar-nzbget-badge" class="sidebar-dl-badge" style="display:none;">0</span>
@@ -1142,11 +1123,7 @@
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_tautulli_' ? 'active' }}"
                  href="{{ path('app_tautulli_index') }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="#e5a00d" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M3 12h4l3 8l4 -16l3 8h4"/>
-                  </svg>
+                  <img src="{{ asset('img/services/tautulli.svg') }}" width="24" height="24" alt="" class="icon">
                 </span>
                 <span class="nav-link-title">Tautulli</span>
               </a>
@@ -1158,12 +1135,7 @@
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_bazarr_' ? 'active' }}"
                  href="{{ path('app_bazarr_index') }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="#be4bdb" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <rect x="3" y="5" width="18" height="14" rx="2"/>
-                    <path d="M7 15h2"/><path d="M11 15h6"/>
-                  </svg>
+                  <img src="{{ asset('img/services/bazarr.svg') }}" width="24" height="24" alt="" class="icon">
                 </span>
                 <span class="nav-link-title">{{ 'sidebar.nav.bazarr'|trans }}</span>
               </a>
@@ -1175,11 +1147,7 @@
               <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_tracearr_' ? 'active' }}"
                  href="{{ path('app_tracearr_index') }}">
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                       fill="none" stroke="#19cee6" stroke-width="2"
-                       stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M3 12h4l3 8l4 -16l3 8h4"/>
-                  </svg>
+                  <img src="{{ asset('img/services/tracearr.svg') }}" width="24" height="24" alt="" class="icon">
                 </span>
                 <span class="nav-link-title">Tracearr</span>
               </a>
