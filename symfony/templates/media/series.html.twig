@@ -2068,22 +2068,22 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
       var statusLabel = item.trackedState === 'importing' ? SERIES_I18N.queue_status_import : (item.status || '—');
 
       html += '<tr>';
-      html += '<td><div class="fw-medium" style="font-size:.82rem;">' + (item.seriesTitle || '—') + '</div>';
-      html += '<div class="text-muted" style="font-size:.75rem;">' + (item.episode || '—') + '</div></td>';
-      html += '<td><span class="badge bg-blue-lt" style="font-size:.7rem;">' + (item.quality || '—') + '</span></td>';
+      html += '<td><div class="fw-medium" style="font-size:.82rem;">' + esc(item.seriesTitle || '—') + '</div>';
+      html += '<div class="text-muted" style="font-size:.75rem;">' + esc(item.episode || '—') + '</div></td>';
+      html += '<td><span class="badge bg-blue-lt" style="font-size:.7rem;">' + esc(item.quality || '—') + '</span></td>';
       html += '<td style="min-width:120px"><div class="d-flex align-items-center gap-2">';
       html += '<div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:' + pct + '%"></div></div>';
       html += '<span class="text-muted" style="font-size:.75rem;">' + pct + '%</span></div>';
       html += '<div class="text-muted" style="font-size:.7rem;">' + fmtSize(item.size - item.sizeleft) + ' / ' + fmtSize(item.size) + '</div></td>';
       // Status + messages
       html += '<td>';
-      html += '<span class="badge ' + statusClass + '" style="font-size:.7rem;">' + statusLabel + '</span>';
+      html += '<span class="badge ' + statusClass + '" style="font-size:.7rem;">' + esc(statusLabel) + '</span>';
       if (item.statusMessages && item.statusMessages.length > 0) {
         var firstMsg = item.statusMessages[0].title || '';
         var allMsgs = item.statusMessages.map(function(m) {
           return (m.title || '') + (m.messages && m.messages.length ? ': ' + m.messages.join(', ') : '');
         }).join('\n');
-        html += '<div class="text-danger" style="font-size:.7rem;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + allMsgs.replace(/"/g, '&quot;') + '">' + firstMsg + '</div>';
+        html += '<div class="text-danger" style="font-size:.7rem;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(allMsgs) + '">' + esc(firstMsg) + '</div>';
       }
       html += '</td>';
 
@@ -2321,19 +2321,19 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     var meta = '';
     if (card.dataset.year) meta += '<span class="text-white-50 fw-medium">' + card.dataset.year + '</span>';
     if (card.dataset.runtime) meta += '<span class="text-white-50">' + card.dataset.runtime + ' min</span>';
-    if (card.dataset.certification) meta += '<span class="badge bg-dark text-white-50">' + card.dataset.certification + '</span>';
+    if (card.dataset.certification) meta += '<span class="badge bg-dark text-white-50">' + esc(card.dataset.certification) + '</span>';
     if (card.dataset.ratings && parseFloat(card.dataset.ratings) > 0) {
       meta += '<span style="display:inline-flex;align-items:center;gap:3px;color:#f5c518;font-size:.85rem;">';
       meta += '<svg width="14" height="14" viewBox="0 0 24 24" fill="#f5c518" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>';
       meta += parseFloat(card.dataset.ratings).toFixed(1) + '</span>';
     }
-    if (card.dataset.network) meta += '<span class="text-white-50">' + card.dataset.network + '</span>';
+    if (card.dataset.network) meta += '<span class="text-white-50">' + esc(card.dataset.network) + '</span>';
     document.getElementById('modal-serie-meta').innerHTML = meta;
 
     // Genres (in header)
     var genres = '';
     (card.dataset.genres || '').split(', ').forEach(function(g) {
-      if (g) genres += '<span class="badge bg-dark text-white-50" style="font-size:.65rem;">' + g + '</span>';
+      if (g) genres += '<span class="badge bg-dark text-white-50" style="font-size:.65rem;">' + esc(g) + '</span>';
     });
     document.getElementById('modal-serie-genres').innerHTML = genres;
 
