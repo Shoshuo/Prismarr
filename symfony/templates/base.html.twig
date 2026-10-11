@@ -3227,13 +3227,13 @@
     (function () {
       var SERVICE_LABELS = {
         radarr: 'Radarr', sonarr: 'Sonarr', prowlarr: 'Prowlarr',
-        jellyseerr: 'Seerr', qbittorrent: 'qBittorrent', transmission: 'Transmission',
-        sabnzbd: 'SABnzbd', nzbget: 'NZBGet', tmdb: 'TMDb', tautulli: 'Tautulli', tracearr: 'Tracearr',
+        jellyseerr: 'Seerr', qbittorrent: 'qBittorrent', deluge: 'Deluge', transmission: 'Transmission',
+        sabnzbd: 'SABnzbd', nzbget: 'NZBGet', tmdb: 'TMDb', tautulli: 'Tautulli', tracearr: 'Tracearr', emby: 'Emby', bazarr: 'Bazarr',
       };
       // v1.1.0 — radarr/sonarr can have multiple instances; we render
       // each instance on its own row instead of a single aggregate row.
       var INSTANCE_TYPES = ['radarr', 'sonarr'];
-      var FLAT_SERVICES = ['tmdb', 'prowlarr', 'jellyseerr', 'qbittorrent', 'transmission', 'sabnzbd', 'nzbget', 'tautulli', 'tracearr'];
+      var FLAT_SERVICES = ['tmdb', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'sabnzbd', 'nzbget', 'tautulli', 'tracearr', 'emby', 'bazarr'];
       var dot   = document.getElementById('topbar-health-dot');
       var summ  = document.getElementById('topbar-health-summary');
       var list  = document.getElementById('topbar-health-list');
@@ -3288,7 +3288,7 @@
           });
         });
         // Remaining flat services.
-        ['prowlarr', 'jellyseerr', 'qbittorrent', 'transmission', 'sabnzbd', 'nzbget', 'tautulli', 'tracearr'].forEach(function (id) {
+        ['prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'sabnzbd', 'nzbget', 'tautulli', 'tracearr', 'emby', 'bazarr'].forEach(function (id) {
           html += rowFor(SERVICE_LABELS[id], services[id]);
         });
         list.innerHTML = html;

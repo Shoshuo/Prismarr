@@ -13,7 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class HealthController extends AbstractController
 {
     /** Single-instance services — kept on the legacy flat ping API. */
-    private const FLAT_SERVICES = ['prowlarr', 'jellyseerr', 'qbittorrent', 'transmission', 'sabnzbd', 'nzbget', 'tmdb', 'tautulli', 'tracearr'];
+    private const FLAT_SERVICES = ['prowlarr', 'jellyseerr', 'qbittorrent', 'transmission', 'sabnzbd', 'nzbget', 'tmdb', 'tautulli', 'tracearr', 'deluge', 'bazarr', 'emby'];
 
     #[Route('/api/health', name: 'api_health', methods: ['GET'])]
     public function health(Connection $db): JsonResponse
