@@ -87,7 +87,7 @@ class ServiceRouteGuardSubscriberTest extends TestCase
 
         $response = $event->getResponse();
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('/_route/admin_settings_index#section-services', $response->getTargetUrl());
+        $this->assertSame('/_route/app_configure_services', $response->getTargetUrl());
     }
 
     public function testDisabledServiceRedirectsHomeEvenWhenCredentialsArePresent(): void
@@ -190,7 +190,7 @@ class ServiceRouteGuardSubscriberTest extends TestCase
 
         $response = $event->getResponse();
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('/_route/admin_settings_index#section-services', $response->getTargetUrl());
+        $this->assertSame('/_route/app_configure_services', $response->getTargetUrl());
     }
 
     public function testTmdbPrefixMatches(): void
@@ -200,7 +200,7 @@ class ServiceRouteGuardSubscriberTest extends TestCase
 
         $response = $event->getResponse();
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('/_route/admin_settings_index#section-services', $response->getTargetUrl());
+        $this->assertSame('/_route/app_configure_services', $response->getTargetUrl());
     }
 
     public function testQbittorrentPrefixMatches(): void
@@ -210,7 +210,7 @@ class ServiceRouteGuardSubscriberTest extends TestCase
 
         $response = $event->getResponse();
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('/_route/admin_settings_index#section-services', $response->getTargetUrl());
+        $this->assertSame('/_route/app_configure_services', $response->getTargetUrl());
     }
 
     public function testDelugeUnconfiguredRedirectsToServicesSettings(): void
@@ -220,7 +220,7 @@ class ServiceRouteGuardSubscriberTest extends TestCase
 
         $response = $event->getResponse();
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('/_route/admin_settings_index#section-services', $response->getTargetUrl());
+        $this->assertSame('/_route/app_configure_services', $response->getTargetUrl());
     }
 
     public function testTransmissionUnconfiguredRedirectsToServicesSettings(): void
@@ -230,7 +230,7 @@ class ServiceRouteGuardSubscriberTest extends TestCase
 
         $response = $event->getResponse();
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('/_route/admin_settings_index#section-services', $response->getTargetUrl());
+        $this->assertSame('/_route/app_configure_services', $response->getTargetUrl());
     }
 
     public function testDelugeConfiguredLetsThrough(): void

@@ -68,7 +68,7 @@
            (bazarr/_bare.html.twig's error branch) — the settings page is not
            one of that frame's views, so the link must always escape to a
            full-page visit. A no-op everywhere else this banner is used. #}
-        <a href="{{ path('admin_settings_index') }}#section-services" data-turbo-frame="_top" class="btn btn-sm {{ _is_config ? 'btn-primary' : 'btn-outline-danger' }}">
+        <a href="{{ path('app_configure_services') }}" data-turbo-frame="_top" class="btn btn-sm {{ _is_config ? 'btn-primary' : 'btn-outline-danger' }}">
           {{ _is_config ? 'error.service_banner.cta_configure'|trans({service: service}) : 'error.service_banner.cta_edit'|trans }}
         </a>
         {% if not _is_config %}

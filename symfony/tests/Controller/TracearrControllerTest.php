@@ -18,7 +18,7 @@ class TracearrControllerTest extends AbstractWebTestCase
     public function testIndexRedirectsWhenUnconfigured(): void
     {
         $this->client->request('GET', '/tracearr');
-        self::assertResponseRedirects('/admin/settings#section-services');
+        self::assertResponseRedirects('/services/configurer');
     }
 
     public function testActivityEndpointReportsUnconfigured(): void

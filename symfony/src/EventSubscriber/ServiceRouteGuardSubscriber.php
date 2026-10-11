@@ -2,7 +2,6 @@
 
 namespace App\EventSubscriber;
 
-use App\Controller\SetupController;
 use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
 use App\Service\HealthService;
@@ -120,7 +119,10 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         // 1. Service not configured → Services section of the settings page
         if (!$this->isConfigured($rule)) {
             $this->flash($event, $this->translator->trans('error.service_not_configured.service_unavailable_flash', ['service' => $rule['service']]));
-            $event->setResponse(new RedirectResponse($this->urls->generate('admin_settings_index') . SetupController::SERVICES_FRAGMENT));
+            // app_configure_services sends admins to the Services settings and
+            // everyone else home: this guard runs before the firewall and cannot
+            // check roles itself.
+            $event->setResponse(new RedirectResponse($this->urls->generate('app_configure_services')));
             return;
         }
 

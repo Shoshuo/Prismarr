@@ -64,6 +64,22 @@ class HomeController extends AbstractController
     }
 
     /**
+     * Single target for every "configure this service" link (route guard,
+     * service banner, empty-home cards). Admins land on the Services
+     * settings; anyone else would hit a 403 there, so they go home instead.
+     * The route guard runs before the firewall and cannot check roles itself.
+     */
+    #[Route('/services/configurer', name: 'app_configure_services', methods: ['GET'])]
+    public function configureServices(): Response
+    {
+        if ($this->isGranted('ROLE_ADMIN')) {
+            return $this->redirect($this->generateUrl('admin_settings_index') . SetupController::SERVICES_FRAGMENT);
+        }
+
+        return $this->redirectToRoute('app_home');
+    }
+
+    /**
      * Resolve the admin's preference to a [routeName, params] tuple, or null
      * if the preferred target isn't currently reachable (service not configured,
      * no tracked "last visited" yet, etc.) — in which case the caller falls
