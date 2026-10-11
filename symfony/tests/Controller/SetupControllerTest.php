@@ -35,6 +35,9 @@ class SetupControllerTest extends TestCase
     /** @var array<string, string> settings written through SettingRepository::set() */
     private array $written = [];
 
+    /** @var array<string, mixed> context of the last rendered template */
+    private array $rendered = [];
+
     private function newController(
         UserRepository $users,
         EntityManagerInterface $em,
@@ -66,7 +69,10 @@ class SetupControllerTest extends TestCase
         $csrf->method('isTokenValid')->willReturn($csrfValid);
 
         $twig = $this->createMock(\Twig\Environment::class);
-        $twig->method('render')->willReturn('<html>rendered</html>');
+        $twig->method('render')->willReturnCallback(function (string $tpl, array $ctx = []) {
+            $this->rendered = $ctx;
+            return '<html>rendered</html>';
+        });
 
         $stack = new RequestStack();
         $stack->push($request ?? $this->getRequest());
@@ -245,5 +251,41 @@ class SetupControllerTest extends TestCase
 
         $this->assertSame('/_route/app_home', $controller->root($this->getRequest())->getTargetUrl());
         $this->assertSame('/_route/app_home', $controller->welcome($this->getRequest())->getTargetUrl());
+    }
+
+    public function testAdminStepShowsWelcomeAsDone(): void
+    {
+        $this->newController($this->usersCount(0), $this->createMock(EntityManagerInterface::class))->admin(
+            $this->getRequest(),
+            $this->createMock(UserPasswordHasherInterface::class),
+            $this->createMock(Security::class),
+        );
+
+        $this->assertSame('admin', $this->rendered['active_step'] ?? null);
+        $this->assertSame(['welcome'], $this->rendered['completed_steps'] ?? null);
+    }
+
+    /** Closing a half-done install must not adopt a (possibly anonymous) visitor's language. */
+    public function testRootDoesNotPromoteTheVisitorLocaleWhenClosingAHalfDoneInstall(): void
+    {
+        $request = $this->getRequest();
+        $request->getSession()->set(LocaleSubscriber::SESSION_KEY, 'fr');
+
+        $this->newController($this->usersCount(1), $this->createMock(EntityManagerInterface::class), request: $request)
+            ->root($request);
+
+        $this->assertSame('1', $this->written[SetupController::SETUP_DONE_KEY] ?? null);
+        $this->assertArrayNotHasKey('display_language', $this->written);
+    }
+
+    /** After setup, /setup/locale must not let a session override the saved language. */
+    public function testLocaleIsClosedOnceSetupIsDone(): void
+    {
+        $request = $this->postRequest(['locale' => 'fr']);
+        $response = $this->newController($this->usersCount(1), $this->createMock(EntityManagerInterface::class), $this->settingsWithSetupDone(), $request)
+            ->locale($request);
+
+        $this->assertSame('/_route/app_home', $response->getTargetUrl());
+        $this->assertFalse($request->getSession()->has(LocaleSubscriber::SESSION_KEY));
     }
 }

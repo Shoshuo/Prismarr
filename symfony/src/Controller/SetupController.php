@@ -52,7 +52,9 @@ class SetupController extends AbstractController
         // An admin exists but setup was never marked done (an install left
         // mid-way through the old multi-step wizard): there is nothing left
         // to ask, so close the wizard and hand over to the settings page.
-        $this->completeSetup($request);
+        // The visitor may not be the admin, so their session locale is not
+        // promoted to the instance-wide language here.
+        $this->completeSetup($request, promoteLocale: false);
 
         return $this->redirectToServices();
     }
@@ -82,6 +84,9 @@ class SetupController extends AbstractController
     #[Route('/locale', name: 'app_setup_locale', methods: ['POST'])]
     public function locale(Request $request): Response
     {
+        if ($redirect = $this->guardSetupNotCompleted()) {
+            return $redirect;
+        }
         if (!$this->isCsrfTokenValid('setup_locale', (string) $request->request->get('_csrf_token'))) {
             return new Response('', 400);
         }
@@ -153,7 +158,7 @@ class SetupController extends AbstractController
 
         return $this->render('setup/admin.html.twig', [
             'active_step'     => 'admin',
-            'completed_steps' => $this->completedSteps(),
+            'completed_steps' => ['welcome'],
             'errors'          => $errors,
             'email'           => $email,
             'display_name'    => $displayName,
@@ -169,11 +174,11 @@ class SetupController extends AbstractController
      * (otherwise a later change in /admin/settings would be shadowed by the
      * session value in LocaleSubscriber).
      */
-    private function completeSetup(Request $request): void
+    private function completeSetup(Request $request, bool $promoteLocale = true): void
     {
         $session = $request->getSession();
         $sessionLocale = $session->get(LocaleSubscriber::SESSION_KEY);
-        if (is_string($sessionLocale) && in_array($sessionLocale, LocaleSubscriber::SUPPORTED, true)) {
+        if ($promoteLocale && is_string($sessionLocale) && in_array($sessionLocale, LocaleSubscriber::SUPPORTED, true)) {
             $this->settings->set('display_language', $sessionLocale);
             $session->remove(LocaleSubscriber::SESSION_KEY);
         }
