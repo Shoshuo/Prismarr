@@ -68,9 +68,9 @@
 
 ## About
 
-**Prismarr** brings qBittorrent, Radarr, Sonarr, Prowlarr, Seerr and
-TMDb together in a single modern Symfony interface. No more juggling six
-tabs to manage your library.
+**Prismarr** brings Radarr, Sonarr, Prowlarr, Seerr, your download
+clients and TMDb together in a single modern Symfony interface. No more
+juggling tabs to manage your library.
 
 It's not a replacement for Radarr or Sonarr - those run side by side and
 keep doing what they do best. Prismarr is the unified control surface:
@@ -112,7 +112,7 @@ queued for later.
 - **Movies & Series:** Radarr and Sonarr libraries with five view modes, **multiple instances side by side** (1080p / 4K / Anime, each first-class in the UI), global `Ctrl+K` search and a quick-add modal with a per-instance target picker.
 - **Unified calendar:** movie and episode releases merged across instances, deduped by `tmdbId` / `tvdbId`, with month / week / day views and iCal export.
 - **Dashboard:** hero spotlight, upcoming releases, pending Seerr requests, live service health, watchlist, trending and latest additions. Paints instantly, each widget hydrates on its own.
-- **Downloads:** full qBittorrent dashboard (server-side pagination, sorting, filters, drag-and-drop upload) plus dedicated SABnzbd and NZBGet pages. Optional Gluetun integration.
+- **Downloads:** full qBittorrent dashboard (server-side pagination, sorting, filters, drag-and-drop upload), Deluge and Transmission pages, and dedicated SABnzbd and NZBGet pages, plus an optional Transmission dashboard widget. Optional Gluetun integration.
 - **Discovery:** TMDb landing page with recommendations and trending, watchlist, an explorer with filters, and deep-links into your library.
 - **Plex activity (Tautulli):** optional read-only page (now playing, watch stats, graphs, history) plus a "Current Plex activity" dashboard widget. The API key stays server-side and responses are sanitised.
 - **Subtitles (Bazarr):** optional admin-only page with Wanted / Movies / Series / History views, plus a per-title subtitle badge on the Films and Series pages, in the quick-look modal and in `Ctrl+K` results — click a badge to search and download a subtitle without leaving Prismarr. Refreshes happen off the request path, so the badges cost nothing to render.
@@ -129,8 +129,10 @@ queued for later.
 ### Requirements
 
 - Docker and Docker Compose
-- At least one of: qBittorrent, Radarr, Sonarr, Prowlarr, Seerr
+- At least one of: Radarr, Sonarr, Prowlarr, Seerr, or a download client
+  (qBittorrent, Deluge, Transmission, SABnzbd, NZBGet)
 - Optional: Gluetun if qBittorrent runs behind a VPN
+- Optional: Tautulli, Tracearr or Emby for playback activity, Bazarr for subtitles
 - Optional: a TMDb API key (free) to enable the Discovery page
 
 ### Install
