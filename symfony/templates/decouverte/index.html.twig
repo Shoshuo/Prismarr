@@ -189,6 +189,9 @@
     font-size: .6rem; font-weight: 700; margin-left: .15rem;
   }
   .srch-status { font-size: .85rem; color: var(--tblr-secondary); margin: 0 0 .75rem .1rem; }
+  .srch-correction { font-size: .95rem; margin: 0 0 .35rem .1rem; }
+  .srch-inline-link { background: none; border: 0; padding: 0; color: var(--tblr-primary); font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .srch-correction .srch-inline-link.is-quiet { font-weight: 400; color: var(--tblr-secondary); }
   .srch-label { font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--tblr-secondary); margin: 1.25rem 0 .6rem .1rem; }
   .srch-best {
     position: relative; border-radius: 1rem; overflow: hidden; margin-bottom: .5rem;
@@ -527,6 +530,7 @@
     </div>
 
     <div id="srch-results" class="mb-4" hidden>
+      <div class="srch-correction" id="srch-correction" hidden></div>
       <div class="srch-status" id="srch-status" aria-live="polite"></div>
       <div id="srch-person-head" hidden></div>
       <div id="srch-best"></div>
@@ -1815,6 +1819,7 @@
   var srchResults    = document.getElementById('srch-results');
   var srchHome       = document.getElementById('srch-home');
   var srchStatus     = document.getElementById('srch-status');
+  var srchCorrection = document.getElementById('srch-correction');
   var srchBest       = document.getElementById('srch-best');
   var srchPeopleWrap = document.getElementById('srch-people-wrap');
   var srchPeople     = document.getElementById('srch-people');
@@ -1843,10 +1848,13 @@
     filmography: {{ 'decouverte.srch.filmography'|trans|json_encode|raw }},
     back:        {{ 'decouverte.srch.back'|trans|json_encode|raw }},
     allGenres:   {{ 'decouverte.srch.all_genres'|trans|json_encode|raw }},
+    didYouMean:  {{ 'decouverte.srch.did_you_mean'|trans|json_encode|raw }},
+    showingFor:  {{ 'decouverte.srch.showing_for'|trans|json_encode|raw }},
+    searchInstead: {{ 'decouverte.srch.search_instead'|trans|json_encode|raw }},
     film:        TMDB_I18N.type_film,
     series:      TMDB_I18N.type_series
   };
-  var srch = { type: 'all', page: 1, totalPages: 1, abort: null, timer: null };
+  var srch = { type: 'all', page: 1, totalPages: 1, abort: null, timer: null, exact: false };
   var srchGenresCache = { movie: null, tv: null };
 
   function srchFiltersActive() {
@@ -1857,12 +1865,14 @@
   function srchShowHome(show) {
     srchHome.hidden = !show;
     srchResults.hidden = show;
+    if (show) srchCorrection.hidden = true;
   }
 
   function srchParams(page) {
     var p = new URLSearchParams({ type: srch.type, sort: srchSort.value, page: String(page || 1) });
     var q = srchInput.value.trim();
     if (q) p.set('q', q);
+    if (q && srch.exact) p.set('exact', '1');
     if (srchGenre.value) p.set('genre', srchGenre.value);
     if (srchYearMin.value) p.set('year_min', srchYearMin.value);
     if (srchYearMax.value) p.set('year_max', srchYearMax.value);
@@ -1909,9 +1919,26 @@
     }).join('');
   }
 
+  function srchCorrectionHTML(d) {
+    if (d.corrected_from && d.corrected_to) {
+      return escHtml(SRCH_I18N.showingFor).replace('__S__', '<strong>' + escHtml(d.corrected_to) + '</strong>')
+        + ' <button type="button" class="srch-inline-link is-quiet" data-srch-exact="' + escHtml(d.corrected_from) + '">'
+        + escHtml(SRCH_I18N.searchInstead.replace('__Q__', d.corrected_from)) + '</button>';
+    }
+    if (d.suggestion) {
+      return escHtml(SRCH_I18N.didYouMean).replace('__S__', '<button type="button" class="srch-inline-link" data-srch-suggest="' + escHtml(d.suggestion) + '">' + escHtml(d.suggestion) + '</button>');
+    }
+    return '';
+  }
+
   function srchRender(d, append) {
     var results = d.results || [];
     srchPersonHead.hidden = true;
+    if (!append) {
+      var corr = srchCorrectionHTML(d);
+      srchCorrection.innerHTML = corr;
+      srchCorrection.hidden = corr === '';
+    }
     if (!append) {
       srchBest.innerHTML = d.best ? srchBestHTML(d.best) : '';
       srchPeople.innerHTML = srchPeopleHTML(d.people || []);
@@ -1983,6 +2010,7 @@
 
   function srchOpenPerson(id, name) {
     srchShowHome(false);
+    srchCorrection.hidden = true;
     srchBest.innerHTML = '';
     srchPeopleWrap.hidden = true;
     srchGridLabel.hidden = true;
@@ -2007,7 +2035,7 @@
   }
 
   if (srchInput) {
-    srchInput.addEventListener('input', srchSchedule);
+    srchInput.addEventListener('input', function () { srch.exact = false; srchSchedule(); });
     srchInput.addEventListener('search', function () { srchRun(false); });
     [srchGenre, srchVote, srchSort, srchHideOwned].forEach(function (el) { el.addEventListener('change', function () { srchRun(false); }); });
     [srchYearMin, srchYearMax].forEach(function (el) { el.addEventListener('input', srchSchedule); });
@@ -2031,7 +2059,11 @@
     srchResults.addEventListener('click', function (e) {
       var person = e.target.closest('[data-srch-person]');
       if (person) { srchOpenPerson(person.dataset.srchPerson, person.dataset.srchPersonName); return; }
-      if (e.target.closest('[data-srch-back]')) srchRun(false);
+      if (e.target.closest('[data-srch-back]')) { srchRun(false); return; }
+      var sugg = e.target.closest('[data-srch-suggest]');
+      if (sugg) { srchInput.value = sugg.dataset.srchSuggest; srch.exact = false; srchRun(false); return; }
+      var exact = e.target.closest('[data-srch-exact]');
+      if (exact) { srchInput.value = exact.dataset.srchExact; srch.exact = true; srchRun(false); }
     });
     // "/" focuses the search box from anywhere on the page (not while typing).
     document.addEventListener('keydown', function (e) {

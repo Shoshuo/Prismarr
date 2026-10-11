@@ -402,4 +402,55 @@ class TmdbControllerTest extends TestCase
         self::assertSame('tv', $data['results'][0]['type']);
         self::assertSame(3, $data['total_pages']);
     }
+
+    private function typoTmdb(): TmdbClient
+    {
+        $interstellar = ['media_type' => 'movie', 'id' => 157336, 'title' => 'Interstellar', 'popularity' => 150, 'vote_count' => 35000, 'release_date' => '2014-11-05', 'genre_ids' => [878]];
+        $tmdb = $this->createMock(TmdbClient::class);
+        $tmdb->method('searchMulti')->willReturnCallback(fn(string $q) => match (strtolower($q)) {
+            'interstelar' => ['page' => 1, 'total_pages' => 1, 'results' => []],
+            'inte', 'interstellar' => ['page' => 1, 'total_pages' => 1, 'results' => [$interstellar]],
+            'interstellr' => ['page' => 1, 'total_pages' => 1, 'results' => [
+                ['media_type' => 'movie', 'id' => 5, 'title' => 'Stellar Docs', 'popularity' => 1, 'release_date' => '2020-01-01'],
+            ]],
+            default => ['page' => 1, 'total_pages' => 1, 'results' => []],
+        });
+        $tmdb->method('getGenresMovies')->willReturn(['genres' => [['id' => 878, 'name' => 'Science-Fiction']]]);
+
+        return $tmdb;
+    }
+
+    public function testSmartSearchCorrectsATypoWithNoResult(): void
+    {
+        $res = $this->smartSearchController($this->typoTmdb())
+            ->smartSearch(new \Symfony\Component\HttpFoundation\Request(['q' => 'interstelar']));
+        $data = json_decode((string) $res->getContent(), true);
+
+        self::assertSame(157336, $data['best']['id']);
+        self::assertSame('interstelar', $data['corrected_from']);
+        self::assertSame('Interstellar', $data['corrected_to']);
+        self::assertNull($data['suggestion']);
+    }
+
+    public function testSmartSearchOnlySuggestsWhenSomethingWasFound(): void
+    {
+        $res = $this->smartSearchController($this->typoTmdb())
+            ->smartSearch(new \Symfony\Component\HttpFoundation\Request(['q' => 'interstellr']));
+        $data = json_decode((string) $res->getContent(), true);
+
+        self::assertSame(5, $data['best']['id'], 'the literal results stay');
+        self::assertNull($data['corrected_from']);
+        self::assertSame('Interstellar', $data['suggestion']);
+    }
+
+    public function testSmartSearchExactSkipsTheCorrection(): void
+    {
+        $res = $this->smartSearchController($this->typoTmdb())
+            ->smartSearch(new \Symfony\Component\HttpFoundation\Request(['q' => 'interstelar', 'exact' => '1']));
+        $data = json_decode((string) $res->getContent(), true);
+
+        self::assertNull($data['best']);
+        self::assertNull($data['suggestion']);
+        self::assertNull($data['corrected_from']);
+    }
 }

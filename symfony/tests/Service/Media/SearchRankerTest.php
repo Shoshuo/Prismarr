@@ -70,6 +70,27 @@ final class SearchRankerTest extends TestCase
         self::assertSame(['New', 'Old', 'Undated'], array_map(fn($i) => $i['title'] ?? $i['name'], SearchRanker::sort($items, 'newest')));
     }
 
+    public function testSuggestFixesTypos(): void
+    {
+        $candidates = ['Interstellar', 'Inception', 'Interview with the Vampire'];
+        self::assertSame('Interstellar', SearchRanker::suggest('interstelar', $candidates));
+        self::assertSame('Inception', SearchRanker::suggest('incepsion', $candidates));
+        self::assertSame('Christopher Nolan', SearchRanker::suggest('cristopher nolan', ['Christopher Nolan', 'Chris Nolan Jr']));
+    }
+
+    public function testSuggestMatchesTheLeadingWordsOfALongerTitle(): void
+    {
+        self::assertSame('The Matrix', SearchRanker::suggest('the mtrix', ['The Matrix Reloaded', 'The Mask']));
+    }
+
+    public function testSuggestStaysQuietWhenNothingIsCloseOrTheQueryIsCorrect(): void
+    {
+        self::assertNull(SearchRanker::suggest('interstellar', ['Interstellar', 'Inception']), 'already a real title');
+        self::assertNull(SearchRanker::suggest('zzzzqqq', ['Interstellar']), 'nothing close');
+        self::assertNull(SearchRanker::suggest('dun', ['Dune']), 'too short to correct');
+        self::assertNull(SearchRanker::suggest('alien', ['Aliens', 'Alien']), 'a real title among the candidates wins over a near one');
+    }
+
     public function testFilters(): void
     {
         $movie = ['media_type' => 'movie', 'title' => 'X', 'genre_ids' => [28, 12], 'release_date' => '2015-05-01', 'vote_average' => 7.4];

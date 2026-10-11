@@ -262,7 +262,7 @@ home:
     subtitle: Aucun service n'est encore configuré. Choisissez une section pour commencer.
     cards:
       discovery:
-        title: Découverte (TMDb)
+        title: 'Recherche (TMDb)'
         subtitle: Films & séries tendance, watchlist.
       managers:
         title: Radarr & Sonarr
@@ -328,7 +328,7 @@ dashboard:
     view_all: 'Tout voir →'
   trending:
     title: Tendances de la semaine
-    discover_cta: 'Découverte →'
+    discover_cta: 'Recherche →'
   recent:
     title: Ajouts récents à votre bibliothèque
   transmission:
@@ -415,7 +415,7 @@ dashboard:
     cta_discover: '▶ Découvrir'
   quicklook:
     manage: 'Gérer'
-    discover: 'Voir dans Découverte'
+    discover: 'Voir dans Recherche'
     close: 'Fermer'
     runtime: '{min} min'
     seasons: '{count} saisons'
@@ -647,7 +647,7 @@ admin:
       monitoring: Supervision
       media: 'Médias'
     subtitle:
-      tmdb: Découverte films & séries, watchlist
+      tmdb: 'Recherche films & séries, watchlist'
       radarr: Gestionnaire de films
       sonarr: Gestionnaire de séries
       prowlarr: Agrégateur d'indexeurs
@@ -737,7 +737,7 @@ admin:
     prismarr_ui_label: Langue de l'interface
     prismarr_ui_help: 'Langue affichée dans Prismarr. Les utilisateurs ne peuvent pas changer leur propre langue (paramètre admin uniquement).'
     prismarr_metadata_label: Langue des métadonnées TMDb
-    prismarr_metadata_help: 'Langue des titres, synopsis et fiches récupérées depuis TMDb (pour la page Découverte et les fiches enrichies).'
+    prismarr_metadata_help: 'Langue des titres, synopsis et fiches récupérées depuis TMDb (pour la page Recherche et les fiches enrichies).'
     services_section: Services connectés
     col_instance: Instance
     radarr_ui_label: Langue UI
@@ -775,7 +775,7 @@ admin:
       help: Page affichée à la connexion.
       options:
         dashboard: Tableau de bord
-        discovery: Découverte (TMDb)
+        discovery: 'Recherche (TMDb)'
         films: Films
         series: Séries
         qbittorrent: Téléchargements
@@ -988,7 +988,7 @@ admin:
   dirty_one: '1 modification non enregistrée'
   dirty_other: '__N__ modifications non enregistrées'
 decouverte:
-  title: Découverte
+  title: 'Recherche'
   search_placeholder: 'Rechercher un film ou une série sur TMDb…'
   actions:
     filters: Filtres
@@ -1159,7 +1159,7 @@ decouverte:
     type_film: Film
     type_tv: Série
     empty_title: Watchlist vide
-    empty_message: 'Ajoutez des films et séries depuis la <a href="{path}">page Découverte</a>.'
+    empty_message: 'Ajoutez des films et séries depuis la <a href="{path}">page Recherche</a>.'
     remove_confirm: 'Retirer "{title}" de la watchlist ?'
     removed_toast: Retiré de la watchlist
     added_toast: Ajouté à la watchlist
@@ -1179,7 +1179,7 @@ decouverte:
     title: Explorer
     subtitle: 'Filtrer TMDb par genre, année, note, langue, popularité.'
     no_results: Aucun résultat pour ces filtres.
-    back_to_discover: Découverte
+    back_to_discover: 'Recherche'
     section:
       type: Type
       genre: Genre
@@ -1240,6 +1240,9 @@ decouverte:
     others: 'Autres résultats'
     filmography: 'Filmographie'
     back: 'Retour aux résultats'
+    did_you_mean: 'Vouliez-vous dire __S__ ?'
+    showing_for: 'Résultats pour __S__.'
+    search_instead: 'Rechercher plutôt « __Q__ »'
 media:
   api:
     tag_still_used: 'Ce tag est encore utilisé. Retirez-le de tous les films avant de le supprimer.'
@@ -5617,7 +5620,7 @@ user:
     already_exists: Un compte existe déjà avec cet email.
 
 watchlist_page:
-  back_to_discover: Découverte
+  back_to_discover: 'Recherche'
   count_titles: '{count, plural, one {# titre} other {# titres}}'
   films_suffix: films
   series_suffix: séries

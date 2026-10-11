@@ -161,6 +161,55 @@ final class SearchRanker
         return array_map(fn(array $k) => $k['item'], $keyed);
     }
 
+    /**
+     * "Did you mean": the candidate title closest to a mistyped query, by
+     * edit distance on normalized text (a 4–7 letter query tolerates one
+     * typo, 8–11 two, longer three). A candidate is also compared on its
+     * first words only, so "the mtrix" can suggest "The Matrix" from "The
+     * Matrix Reloaded". Null when nothing is close enough, or when the query
+     * already matches a candidate exactly.
+     *
+     * @param list<string> $candidates titles or names, most relevant first
+     */
+    public static function suggest(string $query, array $candidates): ?string
+    {
+        $nq = self::normalize($query);
+        if (strlen($nq) < 4) {
+            return null;
+        }
+        $maxDistance = max(1, intdiv(strlen($nq), 4));
+        $queryWords = count(explode(' ', $nq));
+
+        $best = null;
+        $bestDistance = PHP_INT_MAX;
+        foreach ($candidates as $candidate) {
+            if (!is_string($candidate) || trim($candidate) === '') {
+                continue;
+            }
+            $words = preg_split('/\s+/u', trim($candidate)) ?: [];
+            $variants = [$candidate];
+            if (count($words) > $queryWords) {
+                $variants[] = rtrim(implode(' ', array_slice($words, 0, $queryWords)), " :,.-");
+            }
+            foreach ($variants as $variant) {
+                $nv = self::normalize($variant);
+                if ($nv === '' || abs(strlen($nv) - strlen($nq)) > $maxDistance) {
+                    continue;
+                }
+                $d = levenshtein($nq, $nv);
+                if ($d === 0) {
+                    return null; // the query is already a real title
+                }
+                if ($d < $bestDistance) {
+                    $bestDistance = $d;
+                    $best = $variant;
+                }
+            }
+        }
+
+        return $bestDistance <= $maxDistance ? $best : null;
+    }
+
     /** @param list<string> $words */
     private static function hasAllWords(string $haystack, array $words): bool
     {
