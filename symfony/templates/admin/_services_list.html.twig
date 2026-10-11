@@ -6,7 +6,7 @@
   buttons (which read inputs by id) work unchanged.
 
   Inputs: groups, service_labels, values, service_enabled,
-          instances_by_type, service_meta
+          instances_by_type, service_meta, toggleable (HealthService::TOGGLEABLE_SERVICES)
 #}
 {% import '_icons.html.twig' as ico %}
 
@@ -16,7 +16,6 @@
   { label: 'admin.services.group.downloads'|trans,  ids: ['qbittorrent', 'deluge', 'transmission', 'sabnzbd', 'nzbget', 'gluetun'] },
   { label: 'admin.services.group.monitoring'|trans, ids: ['tautulli', 'tracearr', 'emby', 'bazarr'] },
 ] %}
-{% set toggleable = ['tmdb', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr', 'emby'] %}
 
 <div class="svc-head">
   <div class="svc-search">

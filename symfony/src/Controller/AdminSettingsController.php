@@ -426,6 +426,7 @@ class AdminSettingsController extends AbstractController
             'service_labels'     => self::SERVICE_LABELS,
             'values'             => $this->loadValues(),
             'service_enabled'    => $this->loadServiceEnabled(),
+            'toggleable_services' => HealthService::TOGGLEABLE_SERVICES,
             'sidebar_visibility' => $this->loadSidebarVisibility(),
             'internal_features'  => self::INTERNAL_FEATURES,
             'display_options'    => self::DISPLAY_OPTIONS,
@@ -633,7 +634,7 @@ class AdminSettingsController extends AbstractController
     public function healthInvalidate(string $service): JsonResponse
     {
         $service = strtolower($service);
-        $allowed = ['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr', 'emby'];
+        $allowed = array_merge(['radarr', 'sonarr'], HealthService::TOGGLEABLE_SERVICES);
         if (!in_array($service, $allowed, true)) {
             return new JsonResponse(['ok' => false], 400);
         }

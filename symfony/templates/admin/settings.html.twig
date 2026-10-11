@@ -498,6 +498,7 @@
             {% include 'admin/_services_list.html.twig' with {
               groups: groups, service_labels: service_labels, values: values,
               service_enabled: service_enabled, instances_by_type: instances_by_type,
+              toggleable: toggleable_services,
               service_meta: service_meta,
             } only %}
           </section>
