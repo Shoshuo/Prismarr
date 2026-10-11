@@ -290,9 +290,10 @@ class SonarrClient implements ResetInterface
     public function bulkDeleteSeries(array $ids, bool $deleteFiles = false, bool $addImportExclusion = false): bool
     {
         return $this->deleteWithBody('/api/v3/series/editor', [
-            'seriesIds'          => $ids,
-            'deleteFiles'        => $deleteFiles,
-            'addImportExclusion' => $addImportExclusion,
+            'seriesIds'              => $ids,
+            'deleteFiles'            => $deleteFiles,
+            // Sonarr's editor key; an unknown key is silently ignored.
+            'addImportListExclusion' => $addImportExclusion,
         ]);
     }
 
@@ -1933,7 +1934,7 @@ class SonarrClient implements ResetInterface
         return true;
     }
 
-    private function deleteWithBody(string $path, array $body): bool
+    protected function deleteWithBody(string $path, array $body): bool
     {
         if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;

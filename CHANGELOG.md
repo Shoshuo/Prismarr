@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Transmission now shows its real logo.** The sidebar entry and the Transmission page title use the Dashboard Icons `transmission.svg` (already shipped for the admin settings card) instead of the generic red droplet, and Transmission gets its own chip — with its logo — in the dashboard's services-health widget.
 
+### Fixed
+- **Bulk delete works again on Films, and honours the exclusion box on Series.** The Films multi-select delete called Radarr's non-existent `/api/v3/movie/bulk` (a 404, so nothing was deleted); it now uses `/api/v3/movie/editor` with Radarr's `addImportExclusion` key. The Series bulk delete already hit the right endpoint but sent `addImportExclusion` instead of Sonarr's `addImportListExclusion`, so the "add import list exclusion" option was silently ignored.
+
 ## [1.2.0] - 2026-08-29
 
 ### Added

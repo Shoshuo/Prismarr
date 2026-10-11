@@ -1167,7 +1167,8 @@ class RadarrClient implements ResetInterface
 
     public function bulkDeleteMovies(array $ids, bool $deleteFiles = false, bool $addExclusion = false): bool
     {
-        return $this->deleteWithBody('/api/v3/movie/bulk', ['movieIds' => $ids, 'deleteFiles' => $deleteFiles, 'addExclusion' => $addExclusion]);
+        // Radarr's bulk delete lives on the movie editor; /movie/bulk is a 404.
+        return $this->deleteWithBody('/api/v3/movie/editor', ['movieIds' => $ids, 'deleteFiles' => $deleteFiles, 'addImportExclusion' => $addExclusion]);
     }
 
     // ── MovieFile Update ──────────────────────────────────────────────────────
@@ -1799,7 +1800,7 @@ class RadarrClient implements ResetInterface
         return true;
     }
 
-    private function deleteWithBody(string $path, array $body): bool
+    protected function deleteWithBody(string $path, array $body): bool
     {
         if ($this->health->isDown(self::SERVICE_KEY, $this->instance?->getSlug())) {
             $this->serviceUnavailable = true;
