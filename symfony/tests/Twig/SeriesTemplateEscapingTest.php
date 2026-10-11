@@ -43,4 +43,16 @@ class SeriesTemplateEscapingTest extends TestCase
             $this->assertStringContainsString($escaped, $src);
         }
     }
+
+    public function testShelfCardsEscapeDatasetValues(): void
+    {
+        $src = (string) file_get_contents(__DIR__ . '/../../templates/media/series.html.twig');
+
+        foreach (["+ item.title + '</div>'", "src=\"' + item.poster + '\""] as $raw) {
+            $this->assertStringNotContainsString($raw, $src, 'unescaped sink: ' . $raw);
+        }
+        foreach (['window.escHtml(item.title)', 'window.escHtml(item.poster)', 'window.escHtml(item.id)'] as $escaped) {
+            $this->assertStringContainsString($escaped, $src);
+        }
+    }
 }

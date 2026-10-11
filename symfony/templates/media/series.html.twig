@@ -1508,9 +1508,10 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
       g.items.forEach(function(item) {
         var barColor = item.percent === 100 ? '#22c55e' : (item.percent > 0 ? '#ef4444' : '#6b7280');
         if (item.status === 'continuing' && item.percent === 100) barColor = '#38bdf8';
-        html += '<div class="shelf-card" data-id="' + item.id + '">';
-        html += item.poster ? '<img src="' + item.poster + '" alt="" loading="lazy">' : '<div style="width:100%;aspect-ratio:2/3;background:var(--tblr-bg-surface-secondary);"></div>';
-        html += '<div class="shelf-title">' + item.title + '</div>';
+        // dataset values come back decoded: escape before re-splicing into HTML.
+        html += '<div class="shelf-card" data-id="' + window.escHtml(item.id) + '">';
+        html += item.poster ? '<img src="' + window.escHtml(item.poster) + '" alt="" loading="lazy">' : '<div style="width:100%;aspect-ratio:2/3;background:var(--tblr-bg-surface-secondary);"></div>';
+        html += '<div class="shelf-title">' + window.escHtml(item.title) + '</div>';
         html += '<div class="shelf-bar" style="background:' + barColor + ';"></div>';
         html += '</div>';
       });
