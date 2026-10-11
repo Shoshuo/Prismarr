@@ -270,9 +270,10 @@ class EmbyClient implements ResetInterface
             return null; // 404 = item has no poster; 401 = key revoked
         }
 
-        // Only ever hand back a genuine image — never an error envelope or HTML.
-        $contentType = strtolower(trim(explode(';', $type)[0]));
-        if (!str_starts_with($contentType, 'image/') || !is_string($body) || $body === '') {
+        // Only ever hand back a genuine raster image — never an error
+        // envelope, HTML or an SVG (see ProxiedImage).
+        $contentType = ProxiedImage::rasterContentType($type);
+        if ($contentType === null || !is_string($body) || $body === '') {
             return null;
         }
 

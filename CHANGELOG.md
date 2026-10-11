@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Bulk delete works again on Films, and honours the exclusion box on Series.** The Films multi-select delete called Radarr's non-existent `/api/v3/movie/bulk` (a 404, so nothing was deleted); it now uses `/api/v3/movie/editor` with Radarr's `addImportExclusion` key. The Series bulk delete already hit the right endpoint but sent `addImportExclusion` instead of Sonarr's `addImportListExclusion`, so the "add import list exclusion" option was silently ignored.
 - Settings: the Tautulli card's Test button always answered "Fill in the URL and credentials first" because the service was missing from the Test button's field map; it now tests the URL and API key like the other cards.
+- **Sub-path deployments: a few links and calls still ignored the reverse-proxy prefix.** The Bazarr search/download/auto actions and subtitle chips, the Prowlarr grab button, the instance quality-profile list and the "open in library" jump from the qBittorrent / Deluge / Transmission pages built root-relative URLs; they now go through the base path like the rest of the app.
+- **Series shelf view escapes titles and posters.** The shelf cards re-inserted the series title and poster URL as raw HTML; they are now escaped like the Films shelf.
+- **Poster proxies only pass raster images.** The Tautulli (and new Emby / Tracearr) poster proxies served any `image/*` type from Prismarr's own origin, SVG included; they now accept JPEG, PNG, WebP, GIF, AVIF and BMP only.
 
 ## [1.2.0] - 2026-08-29
 
