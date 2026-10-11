@@ -58,7 +58,7 @@ class DashboardControllerTest extends TestCase
     }
 
     /**
-     * Construction helper: threads radarr/sonarr, libraryCache and the
+     * Construction helper: threads radarr/sonarr, libraryIndex and the
      * enabled-instance provider through named parameters; every other
      * argument falls back to whatever the
      * neighbouring positional constructions above already pass. Defaults
@@ -79,7 +79,7 @@ class DashboardControllerTest extends TestCase
         ?CacheInterface $cache = null,
         ?TautulliClient $tautulli = null,
         ?\App\Service\DashboardLayoutService $layout = null,
-        ?\App\Service\Media\MediaLibraryCache $libraryCache = null,
+        ?\App\Service\Media\LibraryIndexCache $libraryIndex = null,
     ): DashboardController {
         if ($instances === null) {
             $instances = $this->createMock(ServiceInstanceProvider::class);
@@ -102,14 +102,14 @@ class DashboardControllerTest extends TestCase
             $cache ?? $this->createMock(CacheInterface::class),
             $tautulli ?? $this->createMock(TautulliClient::class),
             $layout ?? new \App\Service\DashboardLayoutService($this->createMock(\App\Service\ConfigService::class)),
-            libraryCache: $libraryCache,
+            libraryIndex: $libraryIndex,
         );
         $this->attachRouter($controller);
 
         return $controller;
     }
 
-    public function testDashboardMoviesComeFromTheSharedLibraryCacheAndStayInstanceTagged(): void
+    private function swrCache(): \App\Service\Cache\StaleWhileRevalidateCache
     {
         $pool = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
         $bus  = new class implements \Symfony\Component\Messenger\MessageBusInterface {
@@ -118,22 +118,82 @@ class DashboardControllerTest extends TestCase
                 return new \Symfony\Component\Messenger\Envelope($message);
             }
         };
-        $swr     = new \App\Service\Cache\StaleWhileRevalidateCache($pool, $pool, $bus, new \Psr\Log\NullLogger());
-        $library = new \App\Service\Media\MediaLibraryCache($swr);
 
-        // Pre-warm the SHARED per-slug entry the Films page also reads.
-        $swr->write('media.movies.radarr-1', [['id' => 42, 'title' => 'X', 'fanart' => 'f']], \App\Service\Media\MediaLibraryCache::HARD_TTL);
+        return new \App\Service\Cache\StaleWhileRevalidateCache($pool, $pool, $bus, new \Psr\Log\NullLogger());
+    }
+
+    public function testDashboardMoviesComeFromTheSharedLibraryIndexAndStayInstanceTagged(): void
+    {
+        $swr = $this->swrCache();
+        // Pre-warm the SHARED per-slug slim index Discover / search also read.
+        $swr->write('media.index.movies.radarr-1', [['id' => 42, 'title' => 'X', 'fanart' => 'f']], \App\Service\Media\LibraryIndexCache::HARD_TTL);
 
         $radarr = $this->createMock(\App\Service\Media\RadarrClient::class);
-        $radarr->expects($this->never())->method('getMovies'); // warm shared entry ⇒ no upstream call
+        $radarr->expects($this->never())->method('getRawMovies'); // warm shared entry ⇒ no upstream call
+        $radarr->expects($this->never())->method('getMovies');
+        $index = new \App\Service\Media\LibraryIndexCache($swr, $radarr, $this->createMock(SonarrClient::class));
 
-        $controller = $this->makeController(radarr: $radarr, libraryCache: $library);
+        $controller = $this->makeController(radarr: $radarr, libraryIndex: $index);
 
         $rows = (new \ReflectionMethod($controller, 'movies'))->invoke($controller);
 
         $this->assertCount(1, $rows);
         $this->assertSame(42, $rows[0]['id']);
         $this->assertSame('radarr-1', $rows[0]['_instanceSlug'], 'dashboard rows must stay instance-tagged');
+    }
+
+    public function testRecentAdditionsAreTheNewestIndexRowsWithParsedDates(): void
+    {
+        $swr = $this->swrCache();
+        $swr->write('media.index.movies.radarr-1', [
+            ['id' => 1, 'title' => 'Old',    'added' => '2020-01-01T00:00:00Z', 'hasFile' => true],
+            ['id' => 2, 'title' => 'Newest', 'added' => '2026-09-01T00:00:00Z', 'hasFile' => false],
+            ['id' => 3, 'title' => 'NoDate', 'added' => null,                   'hasFile' => false],
+            ['id' => 4, 'title' => 'Mid',    'added' => '2024-06-01T12:00:00Z', 'hasFile' => true],
+        ], \App\Service\Media\LibraryIndexCache::HARD_TTL);
+        $index = new \App\Service\Media\LibraryIndexCache($swr, $this->createMock(RadarrClient::class), $this->createMock(SonarrClient::class));
+
+        $translator = $this->createMock(TranslatorInterface::class);
+        $translator->method('trans')->willReturnCallback(fn(string $k) => $k);
+        $controller = $this->makeController(translator: $translator, libraryIndex: $index);
+
+        $items = (new \ReflectionMethod($controller, 'recentAdditions'))->invoke($controller);
+
+        $this->assertSame(['Newest', 'Mid', 'Old', 'NoDate'], array_column($items, 'title'));
+        $this->assertInstanceOf(\DateTimeImmutable::class, $items[0]['addedAt']);
+        $this->assertSame('2026-09-01', $items[0]['addedAt']->format('Y-m-d'));
+        $this->assertNull($items[3]['addedAt']);
+    }
+
+    public function testHeroSpotlightFetchesTheChosenLibraryMovieInFull(): void
+    {
+        $swr = $this->swrCache();
+        $swr->write('media.index.movies.radarr-1', [
+            ['id' => 42, 'title' => 'Dune', 'fanart' => 'https://img/fan.jpg', 'hasFile' => true],
+        ], \App\Service\Media\LibraryIndexCache::HARD_TTL);
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('withInstance')->willReturnSelf();
+        $radarr->expects($this->once())->method('getMovie')->with(42)->willReturn([
+            'id' => 42, 'title' => 'Dune', 'fanart' => 'https://img/fan.jpg', 'hasFile' => true,
+            'overview' => 'Paul Atreides arrives on Arrakis.', 'runtime' => 155, 'genres' => ['Science Fiction'],
+        ]);
+        $index = new \App\Service\Media\LibraryIndexCache($swr, $radarr, $this->createMock(SonarrClient::class));
+
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getEnabled')->willReturnCallback(
+            fn(string $type): array => $type === ServiceInstance::TYPE_RADARR ? [$this->instance('radarr-1', 'Radarr')] : []
+        );
+        $instances->method('getBySlug')->willReturn($this->instance('radarr-1', 'Radarr'));
+        $translator = $this->createMock(TranslatorInterface::class);
+        $translator->method('trans')->willReturnCallback(fn(string $k) => $k);
+
+        $controller = $this->makeController(radarr: $radarr, instances: $instances, translator: $translator, libraryIndex: $index);
+        $vm = (new ReflectionMethod($controller, 'pickHeroSpotlight'))->invoke($controller, []);
+
+        self::assertSame('library', $vm['source']);
+        self::assertSame('Paul Atreides arrives on Arrakis.', $vm['overview']);
+        self::assertSame(155, $vm['runtime']);
+        self::assertSame(42, $vm['qlId']);
     }
 
     public function testQuickLookLibraryBuildsMovieViewModel(): void
@@ -160,7 +220,8 @@ class DashboardControllerTest extends TestCase
 
         $radarr = $this->createMock(RadarrClient::class);
         $radarr->method('withInstance')->willReturnSelf();
-        $radarr->method('getMovies')->willReturn([$movieRow]);
+        $radarr->method('getMovie')->willReturnCallback(fn(int $id) => $id === $movieRow['id'] ? $movieRow : null);
+        $instances->method('getBySlug')->willReturn($this->instance('radarr-1', 'Radarr'));
 
         $translator = $this->createMock(TranslatorInterface::class);
         $translator->method('trans')->willReturnCallback(
@@ -208,7 +269,8 @@ class DashboardControllerTest extends TestCase
         );
         $sonarr = $this->createMock(SonarrClient::class);
         $sonarr->method('withInstance')->willReturnSelf();
-        $sonarr->method('getSeries')->willReturn([$seriesRow]);
+        $sonarr->method('getSerie')->willReturnCallback(fn(int $id) => $id === $seriesRow['id'] ? $seriesRow : null);
+        $instances->method('getBySlug')->willReturn($this->instance('sonarr-1', 'Sonarr'));
         $translator = $this->createMock(TranslatorInterface::class);
         $translator->method('trans')->willReturnCallback(fn(string $k) => $k);
 
@@ -228,8 +290,7 @@ class DashboardControllerTest extends TestCase
         self::assertSame('monitored', $vm['statusBadge']['kind']);
         self::assertStringContainsString('open=7', $vm['actionUrl']);
 
-        // Unknown id, instance lookup returns null → null view-model.
-        $instances->method('getBySlug')->willReturn(null);
+        // Unknown id: the instance has no such series → null view-model.
         self::assertNull($m->invoke($controller, 'series', 'sonarr-1', 999));
     }
 
@@ -475,7 +536,7 @@ class DashboardControllerTest extends TestCase
         );
         $radarr = $this->createMock(RadarrClient::class);
         $radarr->method('withInstance')->willReturnSelf();
-        $radarr->method('getMovies')->willReturn([
+        $radarr->method('getRawMovies')->willReturn([
             ['tmdbId' => 693134, 'id' => 42, 'hasFile' => true, 'monitored' => true],
         ]);
         $translator = $this->createMock(TranslatorInterface::class);
@@ -549,7 +610,8 @@ class DashboardControllerTest extends TestCase
         );
         $radarr = $this->createMock(RadarrClient::class);
         $radarr->method('withInstance')->willReturnSelf();
-        $radarr->method('getMovies')->willReturn([$movieRow]);
+        $radarr->method('getMovie')->willReturnCallback(fn(int $id) => $id === $movieRow['id'] ? $movieRow : null);
+        $instances->method('getBySlug')->willReturn($this->instance('radarr-1', 'Radarr'));
         $translator = $this->createMock(TranslatorInterface::class);
         $translator->method('trans')->willReturnCallback(fn(string $k, array $p = []) => $k);
 
@@ -659,7 +721,8 @@ class DashboardControllerTest extends TestCase
         );
         $sonarr = $this->createMock(SonarrClient::class);
         $sonarr->method('withInstance')->willReturnSelf();
-        $sonarr->method('getSeries')->willReturn([$seriesRow]);
+        $sonarr->method('getSerie')->willReturnCallback(fn(int $id) => $id === $seriesRow['id'] ? $seriesRow : null);
+        $instances->method('getBySlug')->willReturn($this->instance('sonarr-1', 'Sonarr'));
         $translator = $this->createMock(TranslatorInterface::class);
         $translator->method('trans')->willReturnCallback(fn(string $k, array $p = []) => $k);
 
@@ -701,7 +764,8 @@ class DashboardControllerTest extends TestCase
         );
         $sonarr = $this->createMock(SonarrClient::class);
         $sonarr->method('withInstance')->willReturnSelf();
-        $sonarr->method('getSeries')->willReturn([$seriesRow]);
+        $sonarr->method('getSerie')->willReturnCallback(fn(int $id) => $id === $seriesRow['id'] ? $seriesRow : null);
+        $instances->method('getBySlug')->willReturn($this->instance('sonarr-1', 'Sonarr'));
         $translator = $this->createMock(TranslatorInterface::class);
         $translator->method('trans')->willReturnCallback(fn(string $k, array $p = []) => $k);
 

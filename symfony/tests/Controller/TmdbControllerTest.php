@@ -121,12 +121,12 @@ class TmdbControllerTest extends TestCase
 
         // Two Radarr instances, both own the same tmdbId, only inst-a is default.
         $radarrA = $this->createMock(RadarrClient::class);
-        $radarrA->method('getMovies')->willReturn([
+        $radarrA->method('getRawMovies')->willReturn([
             ['id' => 11, 'tmdbId' => 9999, 'hasFile' => true,  'monitored' => true],
             ['id' => 12, 'tmdbId' => 1234, 'hasFile' => false, 'monitored' => true],
         ]);
         $radarrB = $this->createMock(RadarrClient::class);
-        $radarrB->method('getMovies')->willReturn([
+        $radarrB->method('getRawMovies')->willReturn([
             ['id' => 21, 'tmdbId' => 9999, 'hasFile' => false, 'monitored' => true],
         ]);
         $radarrAutowired = $this->createMock(RadarrClient::class);
@@ -187,9 +187,9 @@ class TmdbControllerTest extends TestCase
         ]);
 
         $radarrA = $this->createMock(RadarrClient::class);
-        $radarrA->method('getMovies')->willReturn([]); // empty library
+        $radarrA->method('getRawMovies')->willReturn([]); // empty library
         $radarrB = $this->createMock(RadarrClient::class);
-        $radarrB->method('getMovies')->willReturn([]);
+        $radarrB->method('getRawMovies')->willReturn([]);
         $radarrAutowired = $this->createMock(RadarrClient::class);
         $sonarrAutowired = $this->createMock(SonarrClient::class);
 
@@ -286,11 +286,11 @@ class TmdbControllerTest extends TestCase
         // tmdbId 100 is mirrored on both Radarr instances; tmdbId 200 is on B only.
         // After dedup, recommendations should be requested once per tmdbId, not 3 times.
         $radarrA = $this->createMock(RadarrClient::class);
-        $radarrA->method('getMovies')->willReturn([
+        $radarrA->method('getRawMovies')->willReturn([
             ['id' => 1, 'tmdbId' => 100, 'added' => '2026-04-01T00:00:00Z', 'hasFile' => true,  'monitored' => true],
         ]);
         $radarrB = $this->createMock(RadarrClient::class);
-        $radarrB->method('getMovies')->willReturn([
+        $radarrB->method('getRawMovies')->willReturn([
             ['id' => 2, 'tmdbId' => 100, 'added' => '2026-05-01T00:00:00Z', 'hasFile' => false, 'monitored' => true], // duplicate
             ['id' => 3, 'tmdbId' => 200, 'added' => '2026-04-15T00:00:00Z', 'hasFile' => false, 'monitored' => true],
         ]);
@@ -327,7 +327,7 @@ class TmdbControllerTest extends TestCase
     private function smartSearchController(TmdbClient $tmdb, array $ownedTmdbIds = []): TmdbController
     {
         $radarr = $this->createMock(RadarrClient::class);
-        $radarr->method('getMovies')->willReturn(array_map(
+        $radarr->method('getRawMovies')->willReturn(array_map(
             fn(int $id) => ['id' => 100 + $id, 'tmdbId' => $id, 'hasFile' => true, 'monitored' => true],
             $ownedTmdbIds,
         ));

@@ -66,11 +66,19 @@ class MediaLibraryCache
         return $this->fetchCached($this->key('series', $slug), $fetch);
     }
 
-    /** Drop the cached list for an instance after a mutating action. Hard delete: the next read blocks. */
+    /**
+     * Drop the cached list for an instance after a mutating action. Hard
+     * delete: the next read blocks. The instance's slim LibraryIndexCache
+     * entry is only marked stale — it feeds "in library" badges and counts,
+     * where a few seconds of staleness beats a blocking full refetch.
+     */
     public function invalidate(string $type, string $slug): void
     {
         $kind = $type === 'sonarr' ? 'series' : 'movies';
         $this->swr->delete($this->key($kind, $slug));
+        $indexKey = LibraryIndexCache::key($kind, $slug);
+        $this->swr->markStale($indexKey, LibraryIndexCache::SOFT_TTL, LibraryIndexCache::HARD_TTL);
+        $this->swr->requestRefresh($indexKey);
     }
 
     /**
