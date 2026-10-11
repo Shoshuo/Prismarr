@@ -70,8 +70,6 @@ class HealthService implements ResetInterface
         // Tautulli (current Plex activity) — nullable + last for the same
         // legacy-test-constructor reason as the Usenet clients above.
         private readonly ?TautulliClient   $tautulli = null,
-        // Emby (current playback activity) — same nullable + last convention.
-        private readonly ?EmbyClient       $emby = null,
         // Shared status cache (cache.app). Without it the 10 s memo lives
         // only in $statusCache, which classic-mode FrankenPHP discards with
         // the request — every topbar poll then re-pings every service.
@@ -88,6 +86,8 @@ class HealthService implements ResetInterface
         private readonly ?BazarrClient      $bazarr = null,
         // Tracearr — nullable + last, same legacy-test-constructor reason.
         private readonly ?TracearrClient $tracearr = null,
+        // Emby (current playback activity) — same nullable + last convention.
+        private readonly ?EmbyClient       $emby = null,
     ) {}
 
     /**
