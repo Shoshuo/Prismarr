@@ -11,14 +11,14 @@
   function openEmbyItem(t) {
     var itemId = t.getAttribute('data-emby-item-id');
     if (!itemId) return;
-    fetch('/emby/api/quicklook/' + encodeURIComponent(itemId), { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+    fetch((window.BASE_PATH || '') + '/emby/api/quicklook/' + encodeURIComponent(itemId), { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         var ghost = document.querySelector('[data-plex-ql-ghost]');
         if (!d || !d.id || (d.type !== 'movie' && d.type !== 'tv') || !ghost) return;
         ghost.setAttribute('data-ql-type', d.type);
         ghost.setAttribute('data-ql-id', String(d.id));
-        ghost.setAttribute('href', '/decouverte?detail=' + d.type + '/' + d.id);
+        ghost.setAttribute('href', (window.BASE_PATH || '') + '/decouverte?detail=' + d.type + '/' + d.id);
         ghost.click();
       })
       .catch(function () {});

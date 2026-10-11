@@ -182,7 +182,7 @@ a.media-card, .media-card[data-bazarr-search] { cursor: pointer; }
         var el;
         if (kind === 'series' && c.seriesId !== null && c.seriesId !== undefined) {
           el = document.createElement('a');
-          el.href = '/bazarr/series/' + encodeURIComponent(c.seriesId);
+          el.href = (window.BASE_PATH || '') + '/bazarr/series/' + encodeURIComponent(c.seriesId);
           el.className = 'media-card';
           // The series-detail page is a separate full page, not one of the
           // views inside #bazarr-view — every link INTO the frame targets

@@ -2438,7 +2438,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
 
   function loadEpisodeSubtitles(seriesId) {
     if (!window.PRISMARR_IS_ADMIN || !seriesId) return;
-    fetch('/bazarr/api/subtitles/series/' + encodeURIComponent(seriesId), {
+    fetch((window.BASE_PATH || '') + '/bazarr/api/subtitles/series/' + encodeURIComponent(seriesId), {
       headers: { 'X-Requested-With': 'fetch' },
       credentials: 'same-origin'
     })

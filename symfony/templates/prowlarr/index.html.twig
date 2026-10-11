@@ -869,7 +869,7 @@
         var indexerId = parseInt(btn.dataset.indexerId, 10) || 0;
         if (!guid || !indexerId) return;
         btn.disabled = true;
-        fetch('/prowlarr/grab', {
+        fetch((window.BASE_PATH || '') + '/prowlarr/grab', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: JSON.stringify({ guid: guid, indexerId: indexerId }),

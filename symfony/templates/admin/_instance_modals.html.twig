@@ -170,8 +170,8 @@
     var slug    = sel.getAttribute('data-instance-slug');
     var current = sel.getAttribute('data-current') || '';
     var path = sel.getAttribute('data-service-id') === 'radarr'
-      ? '/medias/' + slug + '/films/quality-profiles'
-      : '/medias/' + slug + '/sonarr/quality-profiles';
+      ? (window.BASE_PATH || '') + '/medias/' + slug + '/films/quality-profiles'
+      : (window.BASE_PATH || '') + '/medias/' + slug + '/sonarr/quality-profiles';
     fetch(path)
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (profiles) {

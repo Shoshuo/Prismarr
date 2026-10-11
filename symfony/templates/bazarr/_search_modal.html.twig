@@ -139,7 +139,7 @@
     setStatus(I18N.searching, false);
     trigger.click();
 
-    fetch('/bazarr/api/search/' + encodeURIComponent(kind) + '/' + encodeURIComponent(id), {
+    fetch((window.BASE_PATH || '') + '/bazarr/api/search/' + encodeURIComponent(kind) + '/' + encodeURIComponent(id), {
       headers: { 'X-Requested-With': 'fetch' },
       credentials: 'same-origin'
     })
@@ -216,7 +216,7 @@
     params.provider = row.provider || '';
     params.subtitle = row.subtitle || '';
 
-    fetch('/bazarr/api/download/' + kind, {
+    fetch((window.BASE_PATH || '') + '/bazarr/api/download/' + kind, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -257,7 +257,7 @@
       btn.innerHTML = origHtml;
     }
 
-    fetch('/bazarr/api/auto/' + encodeURIComponent(kind) + '/' + encodeURIComponent(id), {
+    fetch((window.BASE_PATH || '') + '/bazarr/api/auto/' + encodeURIComponent(kind) + '/' + encodeURIComponent(id), {
       method: 'POST',
       headers: { 'X-Requested-With': 'fetch' },
       credentials: 'same-origin'

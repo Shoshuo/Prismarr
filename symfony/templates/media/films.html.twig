@@ -1841,7 +1841,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
   function loadFilmSubtitles(movieId) {
     if (!window.PRISMARR_IS_ADMIN || !movieId) return;
-    fetch('/bazarr/api/subtitles/movie/' + encodeURIComponent(movieId), {
+    fetch((window.BASE_PATH || '') + '/bazarr/api/subtitles/movie/' + encodeURIComponent(movieId), {
       headers: { 'X-Requested-With': 'fetch' },
       credentials: 'same-origin'
     })

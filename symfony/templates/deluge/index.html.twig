@@ -1583,7 +1583,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             .then(function(r){ return r.json(); })
             .then(function(d){
                 if (d && d.found && d.url) {
-                    window.location.href = d.url;
+                    window.location.href = (window.BASE_PATH || '') + d.url;
                 } else {
                     tag.innerHTML = original;
                     if (window._prismarrToast) window._prismarrToast(tpl(QBT_I18N.toast.cat_resolve_no_match_tpl, { NAME: (name || '').substring(0, 50) }), 'warning');
