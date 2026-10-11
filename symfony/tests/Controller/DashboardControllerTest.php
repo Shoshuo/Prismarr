@@ -261,6 +261,36 @@ class DashboardControllerTest extends TestCase
         self::assertSame('', $build(null)->widgetTransmission()->getContent());
     }
 
+    /** Every HealthCatalog service gets a chip once configured — no hardcoded subset. */
+    public function testServicesHealthCoversEveryCatalogService(): void
+    {
+        $health = $this->createMock(HealthService::class);
+        $health->method('statusFor')->willReturn(['status' => 'up', 'latencyMs' => 5]);
+
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getEnabled')->willReturn([]);
+
+        $controller = new DashboardController(
+            $health,
+            $this->createMock(RadarrClient::class),
+            $this->createMock(SonarrClient::class),
+            $this->createMock(JellyseerrClient::class),
+            $this->createMock(TmdbClient::class),
+            $this->createMock(WatchlistItemRepository::class),
+            $instances,
+            new NullLogger(),
+            $this->createMock(TranslatorInterface::class),
+            $this->createMock(CacheInterface::class),
+            $this->createMock(TautulliClient::class), new DashboardLayoutService($this->createMock(ConfigService::class)),
+        );
+
+        $m = new ReflectionMethod(DashboardController::class, 'servicesHealth');
+        $chips = $m->invoke($controller);
+
+        self::assertSame(array_keys(\App\Service\HealthCatalog::FLAT_SERVICES), array_column($chips, 'id'));
+        self::assertSame(array_values(\App\Service\HealthCatalog::FLAT_SERVICES), array_column($chips, 'name'));
+    }
+
     public function testServicesHealthExpandsOneChipPerInstance(): void
     {
         $health = $this->createMock(HealthService::class);

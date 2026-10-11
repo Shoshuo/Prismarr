@@ -3193,15 +3193,13 @@
   <script>
     // Topbar health indicator — lazy-loaded state + auto-refresh 60s.
     (function () {
-      var SERVICE_LABELS = {
-        radarr: 'Radarr', sonarr: 'Sonarr', prowlarr: 'Prowlarr',
-        jellyseerr: 'Seerr', qbittorrent: 'qBittorrent', deluge: 'Deluge', transmission: 'Transmission',
-        sabnzbd: 'SABnzbd', nzbget: 'NZBGet', tmdb: 'TMDb', tautulli: 'Tautulli', tracearr: 'Tracearr', emby: 'Emby', bazarr: 'Bazarr',
-      };
+      // Flat services come from HealthCatalog (same list as the API and the
+      // dashboard widget), so a new service shows up here without JS edits.
+      var FLAT_LABELS = {{ health_flat_services()|json_encode|raw }};
+      var SERVICE_LABELS = Object.assign({ radarr: 'Radarr', sonarr: 'Sonarr' }, FLAT_LABELS);
       // v1.1.0 — radarr/sonarr can have multiple instances; we render
       // each instance on its own row instead of a single aggregate row.
       var INSTANCE_TYPES = ['radarr', 'sonarr'];
-      var FLAT_SERVICES = ['tmdb', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'sabnzbd', 'nzbget', 'tautulli', 'tracearr', 'emby', 'bazarr'];
       var dot   = document.getElementById('topbar-health-dot');
       var summ  = document.getElementById('topbar-health-summary');
       var list  = document.getElementById('topbar-health-list');
@@ -3255,9 +3253,9 @@
             html += rowFor(inst.name, inst.state);
           });
         });
-        // Remaining flat services.
-        ['prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'sabnzbd', 'nzbget', 'tautulli', 'tracearr', 'emby', 'bazarr'].forEach(function (id) {
-          html += rowFor(SERVICE_LABELS[id], services[id]);
+        // Remaining flat services, in catalog order.
+        Object.keys(FLAT_LABELS).forEach(function (id) {
+          if (id !== 'tmdb') html += rowFor(FLAT_LABELS[id], services[id]);
         });
         list.innerHTML = html;
       }

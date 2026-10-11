@@ -5,6 +5,7 @@ namespace App\Twig;
 use App\Entity\ServiceInstance;
 use App\Service\ActivitySource;
 use App\Service\ConfigService;
+use App\Service\HealthCatalog;
 use App\Service\HealthService;
 use App\Service\ServiceInstanceProvider;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -54,6 +55,7 @@ class ConfigExtension extends AbstractExtension
     {
         return [
             new TwigFunction('service_configured', [$this, 'isServiceConfigured']),
+            new TwigFunction('health_flat_services', static fn(): array => HealthCatalog::FLAT_SERVICES),
             new TwigFunction('service_visible_in_sidebar', [$this, 'isServiceVisibleInSidebar']),
             new TwigFunction('feature_visible_in_sidebar', [$this, 'isFeatureVisibleInSidebar']),
             new TwigFunction('service_instances', [$this, 'getServiceInstances']),

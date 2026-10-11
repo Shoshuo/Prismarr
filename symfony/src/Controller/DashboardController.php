@@ -6,6 +6,7 @@ use App\Entity\ServiceInstance;
 use App\Repository\Media\WatchlistItemRepository;
 use App\Service\ActivitySource;
 use App\Service\ConfigService;
+use App\Service\HealthCatalog;
 use App\Service\HealthService;
 use App\Service\Media\JellyseerrClient;
 use App\Service\Media\MediaLibraryCache;
@@ -822,7 +823,7 @@ class DashboardController extends AbstractController implements ResetInterface
             }
         }
 
-        $labels = ['prowlarr' => 'Prowlarr', 'jellyseerr' => 'Seerr', 'qbittorrent' => 'qBittorrent', 'transmission' => 'Transmission', 'tmdb' => 'TMDb', 'tautulli' => 'Tautulli', 'tracearr' => 'Tracearr', 'emby' => 'Emby'];
+        $labels = HealthCatalog::FLAT_SERVICES;
         foreach ($labels as $service => $label) {
             try {
                 $s = $this->health->statusFor($service);

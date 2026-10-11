@@ -20,9 +20,13 @@
       tautulli:    '#e5a00d',
       tracearr:    '#19cee6',
       emby:        '#52b54b',
+      deluge:      '#3e7bbf',
+      sabnzbd:     '#ffa000',
+      nzbget:      '#1f9c3a',
+      bazarr:      '#be4bdb',
     } %}
     {# Services whose logo is shown in the chip (public/img/services/<id>.svg). #}
-    {% set service_logos = ['transmission'] %}
+    {% set service_logos = ['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'sabnzbd', 'nzbget', 'tmdb', 'tautulli', 'tracearr', 'emby', 'bazarr'] %}
     {% set status_dot = {
       up:        'is-up',
       slow:      'is-slow',
@@ -33,6 +37,9 @@
     {% for chip in services_health %}
       <div class="service-chip">
         <span class="service-chip-dot {{ status_dot[chip.status]|default('is-unk') }}"></span>
+        {% if chip.id in service_logos %}
+          <img src="{{ asset('img/services/' ~ chip.id ~ '.svg') }}" width="20" height="20" alt="" class="service-chip-logo">
+        {% endif %}
         <div class="flex-fill">
           <div class="service-chip-name" style="color: {{ service_colors[chip.id]|default('#888') }};">{{ chip.name }}</div>
           <div class="service-chip-state">
