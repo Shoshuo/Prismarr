@@ -12,6 +12,8 @@
 symfony/var/cache/
 symfony/var/log/
 symfony/var/sessions/
+symfony/var/share/
+symfony/var/caddy/
 
 # Données persistantes (vont dans le volume Docker)
 symfony/var/data/
