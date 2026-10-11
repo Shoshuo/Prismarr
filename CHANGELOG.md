@@ -5,6 +5,11 @@ All notable changes to Prismarr are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Prowlarr manual search returned nothing (and flagged Prowlarr down) when indexers were slow.** A search fans out to every enabled indexer and only answers once the slowest has replied — 7–20 s with a dozen indexers — but it went through the client's default 8 s timeout, so most searches came back empty, and the read timeout also opened the cross-request circuit breaker, showing Prowlarr as down everywhere for the breaker window. Search now gets a 90 s budget (`ProwlarrClient::SEARCH_TIMEOUT`), and, as for Radarr/Sonarr since #41, a read timeout after a successful connect fails only that call instead of opening the breaker.
+
 ## [1.3.0] - 2026-10-21
 
 ### Security

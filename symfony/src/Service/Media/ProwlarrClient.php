@@ -197,11 +197,20 @@ class ProwlarrClient implements ResetInterface
 
     // ── Search ────────────────────────────────────────────────────────────────
 
+    /**
+     * Budget for a manual search. Prowlarr fans the query out to every
+     * enabled indexer and only answers once the slowest one has replied (or
+     * hit Prowlarr's own per-indexer timeout): 7–20 s is normal with a dozen
+     * indexers, so the default 8 s turned most searches into "no results".
+     * Kept under PHP's default 120 s max_execution_time.
+     */
+    public const SEARCH_TIMEOUT = 90;
+
     public function search(string $query, ?int $indexerId = null, string $type = 'search', int $limit = 100): array
     {
         $params = ['query' => $query, 'type' => $type, 'limit' => $limit];
         if ($indexerId !== null) $params['indexerIds'] = $indexerId;
-        $data = $this->get('/api/v1/search', $params);
+        $data = $this->get('/api/v1/search', $params, self::SEARCH_TIMEOUT);
         if ($data === null) return [];
 
         return array_map(fn($r) => [
@@ -619,7 +628,7 @@ class ProwlarrClient implements ResetInterface
 
     // ── HTTP ──────────────────────────────────────────────────────────────────
 
-    private function get(string $path, array $params = []): ?array
+    private function get(string $path, array $params = [], int $timeout = 8): ?array
     {
         if ($this->health->isDown(self::SERVICE_KEY)) {
             $this->serviceUnavailable = true;
@@ -640,7 +649,7 @@ class ProwlarrClient implements ResetInterface
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
-            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_TIMEOUT        => $timeout,
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_NOSIGNAL       => 1,
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Accept: application/json'],
@@ -649,14 +658,24 @@ class ProwlarrClient implements ResetInterface
         $body = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $err  = curl_error($ch);
+        $errno     = curl_errno($ch);
+        $connected = curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
         curl_close($ch);
 
         if ($body === false || $code !== 200) {
             $this->logger->warning("ProwlarrClient GET {$path} → HTTP {$code} {$err}");
             $this->recordError('GET', $path, (int) $code, is_string($body) ? $body : '', $err);
             if ($err !== '' || (int) $code === 0) {
+                // Same rule as RadarrClient::get() (issue #41): a read
+                // timeout after a successful connect means "slow answer"
+                // (a long indexer fan-out), not "dead service" — it fails
+                // this call and short-circuits the rest of the request, but
+                // must not open the cross-request breaker and flag Prowlarr
+                // down everywhere.
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY);
+                if (!($errno === CURLE_OPERATION_TIMEDOUT && $connected)) {
+                    $this->health->markDown(self::SERVICE_KEY);
+                }
             }
             return null;
         }
