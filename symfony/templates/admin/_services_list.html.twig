@@ -51,9 +51,9 @@
         {% set connected = id in connected_ids %}
         {% set label = service_labels[id] %}
         {% set instances = instances_by_type[id]|default([]) %}
-        <div class="svc-item{{ connected ? '' : ' is-available' }}" data-service-card="{{ id }}"
+        <div class="svc-item{{ connected ? ' is-open' : ' is-available' }}" data-service-card="{{ id }}"
              data-svc-name="{{ label|lower }} {{ meta.subtitle|lower }}" {{ connected ? '' : 'hidden' }}>
-          <button type="button" class="svc-row" aria-expanded="false" data-svc-toggle>
+          <button type="button" class="svc-row" aria-expanded="{{ connected ? 'true' : 'false' }}" data-svc-toggle>
             <span class="svc-logo" style="--brand: {{ meta.icon_bg }};">
               <img src="{{ asset('img/services/' ~ id ~ '.svg') }}" alt="" width="22" height="22" loading="lazy">
             </span>
@@ -81,7 +81,8 @@
             {{ ico.icon('chevron-down', 'svc-chevron', 18) }}
           </button>
 
-          <div class="svc-body" hidden>
+          {# Connected services start expanded; a click on the row folds them. #}
+          <div class="svc-body"{{ connected ? '' : ' hidden' }}>
             {% if id in ['radarr', 'sonarr'] %}
               {% include 'admin/_instance_rows.html.twig' with {
                 service_id: id, service_label: label, instances: instances,
