@@ -66,7 +66,7 @@ sidebar:
     qbittorrent: qBittorrent
     deluge: Deluge
     transmission: Transmission
-    discovery: Découverte
+    discovery: 'Recherche'
     calendar: Calendrier
     radarr: Radarr
     sonarr: Sonarr
@@ -1005,12 +1005,6 @@ decouverte:
     year_to: à
     vote_min: 'Note min : {value}/10'
     sort: Tri
-    sort_options:
-      popularity: 'Popularité ↓'
-      vote_avg: 'Note ↓'
-      vote_count: 'Nb avis ↓'
-      release: 'Date sortie ↓'
-      revenue: 'Recettes ↓'
     apply: Appliquer
     reset: Réinitialiser
   search:
@@ -1226,6 +1220,26 @@ decouverte:
       unmonitored: Non suivi
     page: 'Page {current} / {total}'
 
+  srch:
+    placeholder: 'Rechercher un film, une série, un acteur ou un réalisateur'
+    shortcut: 'Appuyez sur / pour rechercher'
+    all_genres: 'Tous les genres'
+    rating: 'Note'
+    any_rating: 'Toutes les notes'
+    sort:
+      relevance: 'Plus pertinents'
+      popularity: 'Plus populaires'
+      vote: 'Mieux notés'
+      newest: 'Plus récents'
+    hide_owned: 'Masquer ce que j''ai'
+    people: 'Personnes'
+    more: 'Charger plus'
+    count: '__N__ résultats'
+    browse: 'Exploration avec vos filtres'
+    best: 'Meilleur résultat'
+    others: 'Autres résultats'
+    filmography: 'Filmographie'
+    back: 'Retour aux résultats'
 media:
   api:
     tag_still_used: 'Ce tag est encore utilisé. Retirez-le de tous les films avant de le supprimer.'

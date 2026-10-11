@@ -7,6 +7,7 @@ use App\Entity\ServiceInstance;
 use App\Repository\Media\WatchlistItemRepository;
 use App\Service\ConfigService;
 use App\Service\Media\RadarrClient;
+use App\Service\Media\SearchRanker;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TmdbClient;
 use App\Service\ServiceInstanceProvider;
@@ -731,6 +732,184 @@ class TmdbController extends AbstractController
             'page'        => $data['page']        ?? 1,
             'total_pages' => $data['total_pages'] ?? 1,
         ]);
+    }
+
+    /**
+     * Search page backend. With a query: TMDb multi-search (two pages), people
+     * pulled out, movies/series filtered and ranked by SearchRanker, the top
+     * hit returned as "best" with its genres. Without a query but with
+     * filters: a TMDb discover browse. Every item carries its library status.
+     */
+    #[Route('/decouverte/recherche', name: 'tmdb_smart_search', methods: ['GET'])]
+    public function smartSearch(Request $request): JsonResponse
+    {
+        $type = (string) $request->query->get('type', 'all');
+        if (!in_array($type, ['all', 'movie', 'tv'], true)) {
+            $type = 'all';
+        }
+        $sort = (string) $request->query->get('sort', 'relevance');
+        if (!in_array($sort, SearchRanker::SORTS, true)) {
+            $sort = 'relevance';
+        }
+        $yearOf = static function (mixed $v): ?int {
+            $y = (int) $v;
+            return $y >= 1870 && $y <= 2100 ? $y : null;
+        };
+        $filters = [
+            'type'     => $type,
+            'genre'    => ($g = (int) $request->query->get('genre', 0)) > 0 ? $g : null,
+            'year_min' => $yearOf($request->query->get('year_min')),
+            'year_max' => $yearOf($request->query->get('year_max')),
+            'vote_min' => max(0.0, min(10.0, (float) $request->query->get('vote_min', 0))),
+        ];
+        $hideOwned = $request->query->getBoolean('hide_owned');
+        $query = trim((string) $request->query->get('q', ''));
+
+        try {
+            $library = $this->buildLibraryIndex();
+
+            if (mb_strlen($query) >= 2) {
+                [$terms, $yearHint] = SearchRanker::splitYear($query);
+                $raw = [];
+                $people = [];
+                $seen = [];
+                $first = $this->tmdb->searchMulti($terms, 1);
+                $pages = [$first];
+                if (($first['total_pages'] ?? 1) > 1) {
+                    $pages[] = $this->tmdb->searchMulti($terms, 2);
+                }
+                foreach ($pages as $data) {
+                    foreach ($data['results'] ?? [] as $r) {
+                        if (($r['media_type'] ?? '') === 'person') {
+                            if (count($people) < 6 && !empty($r['name'])) {
+                                $people[] = [
+                                    'id'      => (int) ($r['id'] ?? 0),
+                                    'name'    => (string) $r['name'],
+                                    'profile' => TmdbClient::posterUrl($r['profile_path'] ?? null, 'w185'),
+                                    'known'   => (string) ($r['known_for_department'] ?? ''),
+                                    'titles'  => array_values(array_filter(array_map(
+                                        fn($k) => $k['title'] ?? $k['name'] ?? null,
+                                        array_slice($r['known_for'] ?? [], 0, 3),
+                                    ))),
+                                ];
+                            }
+                            continue;
+                        }
+                        $t = SearchRanker::type($r);
+                        $key = $t . '_' . ($r['id'] ?? 0);
+                        if ($t === null || isset($seen[$key]) || !SearchRanker::matches($r, $filters)) {
+                            continue;
+                        }
+                        $seen[$key] = true;
+                        $raw[] = $r;
+                    }
+                }
+
+                $ranked = SearchRanker::sort($raw, $sort, SearchRanker::normalize($terms), $yearHint);
+                $results = $this->enrich($ranked, $library);
+                if ($hideOwned) {
+                    $results = array_values(array_filter($results, fn($it) => !$it['in_library']));
+                }
+
+                $best = null;
+                if ($results !== []) {
+                    $best = array_shift($results);
+                    $rawBest = $this->findRaw($ranked, $best['type'], $best['id']);
+                    $best['genres'] = $this->genreNames($best['type'], $rawBest['genre_ids'] ?? []);
+                    $best['original_title'] = $rawBest['original_title'] ?? $rawBest['original_name'] ?? null;
+                }
+
+                return $this->json([
+                    'mode'    => 'search',
+                    'best'    => $best,
+                    'results' => $results,
+                    'people'  => $people,
+                    'total'   => count($results) + ($best ? 1 : 0),
+                ]);
+            }
+
+            // No query: browse with the filters (both types when "all").
+            $page = max(1, min(500, $request->query->getInt('page', 1)));
+            $items = [];
+            $totalPages = 1;
+            foreach ($type === 'all' ? ['movie', 'tv'] : [$type] as $t) {
+                $params = ['page' => $page, 'sort_by' => $this->discoverSort($sort, $t)];
+                if ($filters['genre']) {
+                    $params['with_genres'] = $filters['genre'];
+                }
+                $dateField = $t === 'movie' ? 'primary_release_date' : 'first_air_date';
+                if ($filters['year_min']) {
+                    $params[$dateField . '.gte'] = $filters['year_min'] . '-01-01';
+                }
+                if ($filters['year_max']) {
+                    $params[$dateField . '.lte'] = $filters['year_max'] . '-12-31';
+                } elseif ($sort === 'newest') {
+                    $params[$dateField . '.lte'] = date('Y-m-d'); // released, not announced
+                }
+                if ($filters['vote_min'] > 0 || $sort === 'vote') {
+                    $params['vote_average.gte'] = $filters['vote_min'];
+                    $params['vote_count.gte'] = 100; // a 10/10 from 3 votes is noise
+                }
+                $data = $t === 'movie' ? $this->tmdb->discoverMovies($params) : $this->tmdb->discoverTv($params);
+                foreach ($data['results'] ?? [] as $r) {
+                    $r['media_type'] = $t;
+                    $items[] = $r;
+                }
+                $totalPages = max($totalPages, min(500, (int) ($data['total_pages'] ?? 1)));
+            }
+            $items = SearchRanker::sort($items, $sort === 'relevance' ? 'popularity' : $sort);
+            $results = $this->enrich($items, $library);
+            if ($hideOwned) {
+                $results = array_values(array_filter($results, fn($it) => !$it['in_library']));
+            }
+
+            return $this->json([
+                'mode'        => 'discover',
+                'best'        => null,
+                'results'     => $results,
+                'people'      => [],
+                'page'        => $page,
+                'total_pages' => $totalPages,
+            ]);
+        } catch (\Throwable $e) {
+            $this->logger->warning('TMDb smart search failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+
+            return $this->json(['mode' => 'error', 'best' => null, 'results' => [], 'people' => []], 502);
+        }
+    }
+
+    private function discoverSort(string $sort, string $type): string
+    {
+        return match ($sort) {
+            'vote'   => 'vote_average.desc',
+            'newest' => $type === 'movie' ? 'primary_release_date.desc' : 'first_air_date.desc',
+            default  => 'popularity.desc',
+        };
+    }
+
+    /**
+     * @param list<array<string, mixed>> $raw
+     * @return array<string, mixed>
+     */
+    private function findRaw(array $raw, string $type, int $id): array
+    {
+        foreach ($raw as $r) {
+            if (SearchRanker::type($r) === $type && (int) ($r['id'] ?? 0) === $id) {
+                return $r;
+            }
+        }
+        return [];
+    }
+
+    /**
+     * @param list<int|string> $ids
+     * @return list<string>
+     */
+    private function genreNames(string $type, array $ids): array
+    {
+        $list = ($type === 'movie' ? $this->tmdb->getGenresMovies() : $this->tmdb->getGenresTv())['genres'] ?? [];
+        $map = array_column($list, 'name', 'id');
+        return array_values(array_filter(array_map(fn($id) => $map[(int) $id] ?? null, $ids)));
     }
 
     // ─── Enriched discovery ─────────────────────────────────

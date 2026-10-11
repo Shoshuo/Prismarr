@@ -67,7 +67,7 @@ sidebar:
     qbittorrent: qBittorrent
     deluge: Deluge
     transmission: Transmission
-    discovery: Discover
+    discovery: 'Search'
     calendar: Calendar
     radarr: Radarr
     sonarr: Sonarr
@@ -1006,12 +1006,6 @@ decouverte:
     year_to: to
     vote_min: 'Min rating: {value}/10'
     sort: Sort
-    sort_options:
-      popularity: 'Popularity ↓'
-      vote_avg: 'Rating ↓'
-      vote_count: 'Reviews ↓'
-      release: 'Release date ↓'
-      revenue: 'Revenue ↓'
     apply: Apply
     reset: Reset
   search:
@@ -1227,6 +1221,26 @@ decouverte:
       unmonitored: Unmonitored
     page: 'Page {current} / {total}'
 
+  srch:
+    placeholder: 'Search a movie, a series, an actor or a director'
+    shortcut: 'Press / to search'
+    all_genres: 'All genres'
+    rating: 'Rating'
+    any_rating: 'Any rating'
+    sort:
+      relevance: 'Most relevant'
+      popularity: 'Most popular'
+      vote: 'Top rated'
+      newest: 'Newest'
+    hide_owned: 'Hide what I have'
+    people: 'People'
+    more: 'Load more'
+    count: '__N__ results'
+    browse: 'Browsing with your filters'
+    best: 'Best match'
+    others: 'Other results'
+    filmography: 'Filmography'
+    back: 'Back to results'
 media:
   api:
     tag_still_used: 'This tag is still in use. Remove it from all movies before deleting it.'
