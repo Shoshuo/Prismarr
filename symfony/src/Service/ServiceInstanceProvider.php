@@ -246,7 +246,7 @@ class ServiceInstanceProvider implements ResetInterface
         // Defense in depth — even though every cURL call is already pinned to
         // CURLPROTO_HTTP|HTTPS, reject obviously invalid URLs at write time
         // so the row never lands in the DB. Same helper that guards the
-        // /setup/test/<service> SSRF path; reasons surfaced verbatim
+        // settings Test-connection probes; reasons surfaced verbatim
         // ('scheme', 'host', 'link-local', …) so the admin form can map them.
         if (($reason = HealthService::urlBlockedReason($url)) !== null) {
             throw new \InvalidArgumentException(sprintf('Invalid instance URL (%s).', $reason));

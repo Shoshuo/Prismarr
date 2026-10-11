@@ -175,14 +175,12 @@
 
     <div class="wizard-container">
 
+      {# The last step is the Services section of /admin/settings itself:
+         the wizard only creates the admin, then hands over there. #}
       {% set steps = [
-        { key: 'welcome',   label: 'setup.stepper.welcome'|trans,   route: 'app_setup_welcome' },
-        { key: 'admin',     label: 'setup.stepper.admin'|trans,     route: 'app_setup_admin' },
-        { key: 'tmdb',      label: 'setup.stepper.tmdb'|trans,      route: 'app_setup_tmdb' },
-        { key: 'managers',  label: 'setup.stepper.managers'|trans,  route: 'app_setup_managers' },
-        { key: 'indexers',  label: 'setup.stepper.indexers'|trans,  route: 'app_setup_indexers' },
-        { key: 'downloads', label: 'setup.stepper.downloads'|trans, route: 'app_setup_downloads' },
-        { key: 'finish',    label: 'setup.stepper.finish'|trans,    route: 'app_setup_finish' },
+        { key: 'welcome',  label: 'setup.stepper.welcome'|trans },
+        { key: 'admin',    label: 'setup.stepper.admin'|trans },
+        { key: 'services', label: 'setup.stepper.services'|trans },
       ] %}
 
       <div class="steps steps-counter">
@@ -218,7 +216,6 @@
   </div>
 
   <script>
-    var BASE = window.BASE_PATH;
     document.getElementById('theme-toggle').addEventListener('click', function() {
       var current = document.documentElement.getAttribute('data-bs-theme');
       var next = current === 'dark' ? 'light' : 'dark';
@@ -231,78 +228,6 @@
         var input = document.getElementById(btn.dataset.toggleFor);
         if (!input) return;
         input.type = input.type === 'password' ? 'text' : 'password';
-      };
-    });
-
-    // ── Wizard "Test connection" buttons ──
-    // Each [data-test-service] button POSTs the current form values for the
-    // service it tests to /setup/test/<service>, displays {ok, category} as
-    // a small inline badge. Strict no-fetch beyond the controlled endpoint:
-    // we never echo the credentials back, and the JSON response holds no
-    // upstream body.
-    var TEST_LABELS = {
-      ok:           {{ 'setup.test.ok'|trans|json_encode|raw }},
-      pending:      {{ 'setup.test.testing'|trans|json_encode|raw }},
-      network:      {{ 'setup.test.category.network'|trans|json_encode|raw }},
-      auth:         {{ 'setup.test.category.auth'|trans|json_encode|raw }},
-      host_whitelist: {{ 'setup.test.category.host_whitelist'|trans|json_encode|raw }},
-      forbidden:    {{ 'setup.test.category.forbidden'|trans|json_encode|raw }},
-      not_found:    {{ 'setup.test.category.not_found'|trans|json_encode|raw }},
-      server_error: {{ 'setup.test.category.server_error'|trans|json_encode|raw }},
-      unconfigured: {{ 'setup.test.category.unconfigured'|trans|json_encode|raw }},
-      unknown:      {{ 'setup.test.category.unknown'|trans|json_encode|raw }},
-      csrf:         {{ 'setup.test.error.csrf'|trans|json_encode|raw }},
-      forbidden_endpoint: {{ 'setup.test.error.forbidden'|trans|json_encode|raw }},
-      rate_limited: {{ 'setup.test.error.rate_limited'|trans|json_encode|raw }}
-    };
-
-    document.querySelectorAll('[data-test-service]').forEach(function (btn) {
-      btn.onclick = function () {
-        var svc = btn.dataset.testService;
-        var fields = (btn.dataset.testFields || '').split(',').filter(Boolean);
-        var csrf = btn.dataset.testCsrf || '';
-        var resultEl = document.querySelector('[data-test-result-for="' + svc + '"]');
-        if (!resultEl) return;
-
-        // Reflect "pending" state with an aria-live update for screen readers.
-        btn.disabled = true;
-        resultEl.className = 'status status-secondary';
-        resultEl.innerHTML = '<span class="status-dot status-dot-animated"></span><span>' + TEST_LABELS.pending + '</span>';
-
-        var fd = new FormData();
-        fd.append('_csrf_token', csrf);
-        fields.forEach(function (f) {
-          var input = document.getElementById(f);
-          if (input) fd.append(f, input.value || '');
-        });
-
-        fetch(BASE + '/setup/test/' + svc, {
-          method: 'POST',
-          body: fd,
-          credentials: 'same-origin',
-          headers: { 'Accept': 'application/json' }
-        })
-        .then(function (r) { return r.json().then(function (j) { return { http: r.status, body: j }; }); })
-        .then(function (res) {
-          var ok = res.body && res.body.ok === true;
-          var cat = (res.body && res.body.category) ? res.body.category : 'unknown';
-          // 429 / 403 envelopes use distinct labels so the user knows it's a
-          // rate-limit or post-setup lockout rather than an upstream error.
-          if (res.http === 429) cat = 'rate_limited';
-          else if (res.http === 403 && !ok) cat = 'forbidden_endpoint';
-
-          var label = ok ? TEST_LABELS.ok : (TEST_LABELS[cat] || TEST_LABELS.unknown);
-          resultEl.className = 'status ' + (ok ? 'status-green' : 'status-red');
-          resultEl.innerHTML = '<span class="status-dot"></span><span></span>';
-          // Use textContent on the inner span to avoid XSS via translation strings.
-          resultEl.querySelector('span:last-child').textContent = label;
-        })
-        .catch(function () {
-          resultEl.className = 'status status-red';
-          resultEl.innerHTML = '<span class="status-dot"></span><span></span>';
-          resultEl.querySelector('span:last-child').textContent = TEST_LABELS.network;
-        })
-        .finally(function () { btn.disabled = false; });
       };
     });
   </script>

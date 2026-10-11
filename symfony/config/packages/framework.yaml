@@ -11,18 +11,6 @@ framework:
         - x-forwarded-port
         - x-forwarded-prefix
 
-    # Rate limit the wizard "Test connection" endpoint. The endpoint is
-    # PUBLIC_ACCESS while setup is in progress (no admin yet) and issues a
-    # cURL to a user-supplied URL — so without a limiter, an attacker reaching
-    # the port during the install window could brute-force scan the LAN and
-    # cloud metadata endpoints. 30 attempts/min per client is plenty for a
-    # human tweaking URLs and tight enough to neuter scripted scans.
-    rate_limiter:
-        setup_test:
-            policy: 'sliding_window'
-            limit: 30
-            interval: '1 minute'
-
     # Persistent sessions in var/data/sessions so they survive container
     # recreations (the var/data path is the one volume mounted in production).
     # Dedicated cookie name to coexist with other apps on the same domain (e.g. Argos)

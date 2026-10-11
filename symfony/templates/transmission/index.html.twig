@@ -286,7 +286,6 @@ body[data-bs-theme="dark"] .trs-torrent-list[data-view="table"] .trs-cell-progre
 {% if error %}
   {% include 'error/_service_banner.html.twig' with {
     service: 'Transmission',
-    wizard_route: 'app_setup_downloads',
     configured_url: service_url,
     reason: 'unreachable'
   } %}

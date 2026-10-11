@@ -23,7 +23,7 @@
   <div class="container-xl">
 
     {% if error %}
-      {% include 'error/_service_banner.html.twig' with { service: 'Bazarr', wizard_route: 'admin_settings_index', configured_url: service_url, reason: 'unreachable' } %}
+      {% include 'error/_service_banner.html.twig' with { service: 'Bazarr', configured_url: service_url, reason: 'unreachable' } %}
     {% else %}
       <div class="row row-cards">
         <div class="col-lg-6">

@@ -213,18 +213,12 @@ setup:
     email_invalid: Email invalide.
     password_too_short: Le mot de passe doit faire au moins 8 caractères.
     password_mismatch: Les deux mots de passe ne correspondent pas.
-  flash:
-    welcome: 'Prismarr est prêt. Bienvenue !'
-  nav:
-    step: 'Étape {current}/{total}'
   stepper:
     welcome: Accueil
     admin: Compte
-    tmdb: TMDb
-    managers: Gestion médias
-    indexers: Indexeurs
-    downloads: Téléchargement
-    finish: Finalisation
+    services: Services
+  flash:
+    connect_services: Votre compte admin est prêt. Connectez vos services ci-dessous pour commencer.
   step:
     welcome:
       title: Bienvenue sur Prismarr
@@ -240,7 +234,7 @@ setup:
         en: English
         fr: Français
     admin:
-      eyebrow: 'Étape 2 sur 7'
+      eyebrow: 'Étape 2 sur 3'
       title: Créez votre compte administrateur
       subtitle: 'Ce compte aura accès à toute la configuration de Prismarr. Vous pourrez créer d''autres utilisateurs plus tard depuis l''administration.'
       email: Adresse email
@@ -252,101 +246,15 @@ setup:
       toggle_visibility: Afficher/masquer
       back: '← Précédent'
       cta: 'Créer le compte →'
-    tmdb:
-      eyebrow: 'Étape 3 sur 7 · Optionnel'
-      title: The Movie Database (TMDb)
-      subtitle: 'Nécessaire pour la page <strong>Découverte</strong> (films & séries tendance, recommandations, watchlist). Créez une clé gratuite sur <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org</a>. Si vous passez cette étape, la Découverte sera désactivée.'
-      api_key: Clé API v3
-      api_key_hint: 'Version v3 uniquement — la v4 (token Bearer) n''est pas encore supportée.'
-    managers:
-      eyebrow: 'Étape 4 sur 7 · Optionnel'
-      title: Gestionnaires médias
-      subtitle: 'Radarr gère votre bibliothèque de films, Sonarr gère les séries. Vous pouvez configurer les deux, un seul, ou passer cette étape.'
-      default_instance_hint: 'Ce sera votre instance Radarr / Sonarr par défaut. Vous pourrez en ajouter d''autres plus tard depuis /admin/settings — pratique si vous avez un Radarr 1080p séparé d''un Radarr 4K, ou un Sonarr classique et un Sonarr animes.'
-      radarr:
-        section: '🎬 Radarr — Films'
-        subtitle: Service de gestion automatisée des films.
-      sonarr:
-        section: '📺 Sonarr — Séries'
-        subtitle: Service de gestion automatisée des séries TV.
-      fields:
-        url: URL
-        api_key: Clé API
-    indexers:
-      eyebrow: 'Étape 5 sur 7 · Optionnel'
-      title: Indexeurs & requêtes
-      subtitle: 'Prowlarr centralise vos indexeurs trackers. Seerr permet aux utilisateurs de faire des demandes de films et séries qui sont ensuite envoyées à Radarr/Sonarr.'
-      prowlarr:
-        section: '🔎 Prowlarr — Indexeurs'
-        subtitle: Agrégateur d'indexeurs compatible Radarr/Sonarr.
-      jellyseerr:
-        section: '🙋 Seerr — Requêtes utilisateurs'
-        subtitle: Interface de requêtes pour les utilisateurs finaux.
-    downloads:
-      eyebrow: 'Étape 6 sur 7 · Optionnel'
-      title: Client de téléchargement
-      subtitle: 'qBittorrent est votre client BitTorrent. Gluetun est un routeur VPN optionnel qui tourne devant qBittorrent pour masquer votre IP.'
-      qbittorrent:
-        section: '⬇️ qBittorrent'
-        subtitle: Authentification via l'interface Web UI de qBittorrent.
-        user: Utilisateur
-        password: Mot de passe
-        reverse_proxy_hint: 'Laissez l''utilisateur et le mot de passe vides si qBittorrent est derrière un reverse proxy qui injecte lui-même l''authentification (qui, traefik forward auth, …).'
-      deluge:
-        section: Deluge
-        subtitle: "Client torrent (Web UI) — utilisé pour l'onglet Deluge."
-        password: Mot de passe Web UI
-        reverse_proxy_hint: 'Laissez le mot de passe vide si Deluge est derrière un reverse proxy authentifiant qui injecte la session.'
-      transmission:
-        section: '⬇️ Transmission'
-        subtitle: Authentification via l'interface RPC de Transmission.
-        user: Utilisateur
-        password: Mot de passe
-        reverse_proxy_hint: 'Laissez l''utilisateur et le mot de passe vides si Transmission est derrière un reverse proxy qui injecte lui-même l''authentification, ou si l''authentification RPC est désactivée.'
-      usenet_optional: 'Usenet — optionnel'
-      sabnzbd:
-        section: 'SABnzbd'
-        subtitle: 'Client de téléchargement Usenet. Nécessite l''URL et la clé API.'
-        api_key: 'Clé API'
-      nzbget:
-        section: 'NZBGet'
-        subtitle: 'Client de téléchargement Usenet. Utilisateur et mot de passe optionnels (reverse proxy / auth désactivée sur le LAN).'
-      gluetun:
-        section: 'Gluetun'
-        section_suffix: 'VPN — optionnel'
-        subtitle: 'Laissez vide si qBittorrent ne passe pas par un VPN.'
-        url: URL (Control Server)
-        api_key: Clé API
-        api_key_optional: (optionnel)
-        api_key_placeholder: 'Valeur X-API-Key si le Control Server est protégé'
-    finish:
-      eyebrow: 'Étape 7 sur 7'
-      title: 'Tout est prêt !'
-      subtitle: 'Voici un récapitulatif de la configuration. Vous pourrez modifier ou ajouter des services à tout moment depuis l''administration.'
-      badge_configured: Configuré
-      badge_skipped: Ignoré
-      cta: 'Lancer Prismarr →'
-    common:
-      back: '← Précédent'
-      skip: Passer cette étape
-      save_next: 'Enregistrer et continuer →'
   test:
-    button: Tester la connexion
-    testing: Test en cours…
-    ok: Connecté
     category:
       network: Service injoignable
       auth: Clé API ou mot de passe incorrect
-      host_whitelist: 'Hôte bloqué par SABnzbd (ajoutez-le au host_whitelist)'
       forbidden: Accès refusé (403)
       not_found: Endpoint introuvable (404)
       server_error: Erreur du service (5xx)
       unconfigured: Renseignez l'URL et les identifiants d'abord
       unknown: Réponse inattendue
-    error:
-      csrf: 'Session expirée, rafraîchissez la page'
-      forbidden: Le setup est déjà terminé
-      rate_limited: Trop de tests, patientez un instant
 
 home:
   welcome:

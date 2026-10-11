@@ -147,7 +147,7 @@ class BazarrTemplateGuardTest extends TestCase
 
         $banner = (string) file_get_contents(self::TEMPLATE_ROOT . 'error/_service_banner.html.twig');
         $this->assertMatchesRegularExpression(
-            '/<a href="\{\{ path\(_target_route\) \}\}" data-turbo-frame="_top"/',
+            '/<a href="\{\{ path\(\'admin_settings_index\'\) \}\}#section-services" data-turbo-frame="_top"/',
             $banner,
             '_service_banner.html.twig: the CTA anchor must carry data-turbo-frame="_top" - it renders inside the Bazarr frame',
         );

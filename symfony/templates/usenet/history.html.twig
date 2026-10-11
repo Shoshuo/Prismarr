@@ -16,7 +16,7 @@
 </div>
 
 {% if error %}
-  {% include 'error/_service_banner.html.twig' with {service: client_label, wizard_route: 'app_setup_downloads', reason: 'unreachable'} %}
+  {% include 'error/_service_banner.html.twig' with {service: client_label, reason: 'unreachable'} %}
 {% elseif items is empty %}
   <div class="card"><div class="card-body text-center text-muted py-5">{{ 'usenet.history.empty'|trans }}</div></div>
 {% else %}

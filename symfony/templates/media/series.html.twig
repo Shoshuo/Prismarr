@@ -314,7 +314,6 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
 {% if error %}
   {% include 'error/_service_banner.html.twig' with {
     service: 'Sonarr',
-    wizard_route: 'app_setup_managers',
     configured_url: service_url,
     reason: 'unreachable'
   } %}

@@ -318,7 +318,6 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 {% if error %}
   {% include 'error/_service_banner.html.twig' with {
     service: 'Radarr',
-    wizard_route: 'app_setup_managers',
     configured_url: service_url,
     reason: 'unreachable'
   } %}

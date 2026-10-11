@@ -81,9 +81,9 @@ and one settings page where every API key lives - never on disk in plain
 text and never in environment variables.
 
 The whole thing ships as a single Docker container with SQLite inside.
-First boot opens a 7-step wizard: create the admin, plug your services in,
-done. No external database, no Redis, no per-service `.env` files. Pull
-the image, mount one volume, you're up.
+First boot asks for a language and an admin account, then drops you on the
+Services settings to plug your services in. No external database, no Redis,
+no per-service `.env` files. Pull the image, mount one volume, you're up.
 
 ---
 
@@ -191,12 +191,10 @@ docker compose up -d
 ```
 
 **Step 3.** Open `http://localhost:7070` in your browser. The setup wizard
-will guide you through:
-
-- admin account creation
-- TMDb API key (optional)
-- Radarr / Sonarr / Prowlarr / Seerr URLs and keys
-- qBittorrent + Gluetun (optional)
+asks for the interface language and creates the admin account, then opens
+`/admin/settings` on the Services section, where you add TMDb, Radarr,
+Sonarr, Prowlarr, Seerr, your download clients and the optional services.
+Each card has a Test button.
 
 `APP_SECRET` and `MERCURE_JWT_SECRET` are auto-generated on first boot and
 persisted in the `prismarr_data` volume. No `.env` editing required.
@@ -217,7 +215,7 @@ ports:
 
 Everything is configured from the UI:
 
-- **First boot**: the 7-step setup wizard at `/setup`
+- **First boot**: the setup wizard at `/setup` (language + admin account)
 - **Later**: the Settings page at `/admin/settings` (admin only)
 
 External service credentials (TMDb / Radarr / Sonarr / Prowlarr / Seerr

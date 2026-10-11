@@ -40,7 +40,6 @@
 {% if error %}
   {% include 'error/_service_banner.html.twig' with {
     service: 'Prowlarr',
-    wizard_route: 'app_setup_indexers',
     configured_url: service_url,
     reason: 'unreachable'
   } %}

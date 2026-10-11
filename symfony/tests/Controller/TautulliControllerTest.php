@@ -71,7 +71,7 @@ class TautulliControllerTest extends AbstractWebTestCase
     {
         $this->client->request('GET', '/tautulli');
 
-        self::assertResponseRedirects('/admin/settings');
+        self::assertResponseRedirects('/admin/settings#section-services');
     }
 
     /**
