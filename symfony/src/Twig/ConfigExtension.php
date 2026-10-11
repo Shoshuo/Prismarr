@@ -34,6 +34,7 @@ class ConfigExtension extends AbstractExtension
         'tautulli'    => 'tautulli_url',
         'bazarr'      => 'bazarr_url',
         'tracearr'    => 'tracearr_url',
+        'emby'        => 'emby_url',
     ];
 
     /** Services backed by service_instance instead of a flat setting. */

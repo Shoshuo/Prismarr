@@ -482,6 +482,14 @@ dashboard:
       cast: 'Distribution :'
       studio: 'Studio :'
       tech: Flux
+  emby:
+    title: Activité Emby en cours
+    settings_cta: 'Réglages →'
+    empty: Aucun flux Emby en cours
+    error:
+      unconfigured: Emby n'est pas configuré
+      unreachable: Emby est injoignable
+      auth: Clé API Emby invalide ou non autorisée
   type:
     film: Film
     series: Série
@@ -746,6 +754,7 @@ admin:
       tautulli: 'Activité Plex (via Tautulli)'
       bazarr: 'Gestionnaire de sous-titres (via Bazarr)'
       tracearr: 'Activité Plex / Jellyfin / Emby (via Tracearr)'
+      emby: 'Lecture Emby en cours'
     sidebar_toggle: Menu
     sidebar_toggle_title: Afficher dans le menu latéral
     status:

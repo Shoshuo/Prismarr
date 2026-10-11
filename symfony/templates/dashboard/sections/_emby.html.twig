@@ -1,0 +1,26 @@
+{# Current Emby activity — self-gates on emby config. Same card shell as the
+   Plex section so the two media-server widgets look identical. #}
+<div data-section-key="emby">
+{% if services_configured.emby %}
+<div class="row row-cards mb-3">
+  <div class="col-12" id="emby-activity" data-dash-widget="emby" data-dash-url="{{ path('app_dashboard_widget_emby') }}">
+    <div class="card h-100">
+      <div class="card-header">
+        <h3 class="card-title">
+          <span class="card-title-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8l4 -16l3 8h4"/></svg>
+          </span>
+          {{ 'dashboard.emby.title'|trans }}
+        </h3>
+        <div class="card-actions">
+          <a href="{{ path('admin_settings_index') }}" class="dash-action-btn">{{ 'dashboard.emby.settings_cta'|trans }}</a>
+        </div>
+      </div>
+      <div class="card-body" data-dash-body>
+        <div class="text-center text-secondary py-4"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+</div>

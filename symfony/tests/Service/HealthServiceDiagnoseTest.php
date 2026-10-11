@@ -207,6 +207,39 @@ class HealthServiceDiagnoseTest extends TestCase
         self::assertStringNotContainsString('mode=version', $probe['url']);
     }
 
+    public function testEmbyNeedsUrlAndKey(): void
+    {
+        $config = $this->createMock(ConfigService::class);
+        $config->method('get')->willReturn(null);
+        $config->method('has')->willReturnCallback(fn(string $k) => $k === 'emby_url');
+        self::assertFalse($this->makeService($config)->isConfigured('emby'));
+
+        $config = $this->createMock(ConfigService::class);
+        $config->method('get')->willReturn(null);
+        $config->method('has')->willReturnCallback(fn(string $k) => in_array($k, ['emby_url', 'emby_api_key'], true));
+        self::assertTrue($this->makeService($config)->isConfigured('emby'));
+    }
+
+    // The Emby probe MUST hit an authenticated endpoint. /System/Info/Public
+    // answers 200 for any key, so a broken key would test green; /System/Info
+    // rejects a bad X-Emby-Token with 401. The key travels in a header, never
+    // in the URL. A base URL with or without the /emby prefix must work.
+    public function testEmbyProbeIsAuthenticatedAndKeepsKeyOutOfUrl(): void
+    {
+        $probe = $this->probeFor('emby', ['emby_url' => 'http://emby:8096', 'emby_api_key' => 'k3y']);
+        self::assertNotNull($probe);
+        self::assertSame('http://emby:8096/emby/System/Info', $probe['url']);
+        self::assertStringNotContainsString('Public', $probe['url']);
+        self::assertStringNotContainsString('k3y', $probe['url']);
+        self::assertContains('X-Emby-Token: k3y', $probe['headers'] ?? []);
+
+        $probe = $this->probeFor('emby', ['emby_url' => 'http://emby:8096/emby/', 'emby_api_key' => 'k3y']);
+        self::assertNotNull($probe);
+        self::assertSame('http://emby:8096/emby/System/Info', $probe['url']);
+
+        self::assertNull($this->probeFor('emby', ['emby_url' => 'http://emby:8096', 'emby_api_key' => '']));
+    }
+
     /**
      * @param array<string, ?string> $overrides
      * @return array{url: string, headers?: array<int,string>, method?: string, body?: string}|null

@@ -1,0 +1,23 @@
+{# Async-hydrated fragment — current Emby playback, rendered by
+   DashboardController::widgetEmby into the card's [data-dash-body] and
+   re-fetched every 10s (see index.html.twig). `emby` is the sanitized shape
+   from EmbyClient::getActivity() — same keys as the Plex widget, so the
+   summary strip and the .plex-* styles are shared. Fails open: the error /
+   empty states keep the card intact when Emby is down. #}
+{% if emby.error == 'unconfigured' %}
+  <div class="text-center text-secondary py-4">{{ 'dashboard.emby.error.unconfigured'|trans }}</div>
+{% elseif emby.error == 'auth' %}
+  <div class="text-center text-secondary py-4">{{ 'dashboard.emby.error.auth'|trans }}</div>
+{% elseif emby.error == 'unreachable' or not emby.connected %}
+  <div class="text-center text-secondary py-4">{{ 'dashboard.emby.error.unreachable'|trans }}</div>
+{% elseif emby.sessions is empty %}
+  <div class="text-center text-secondary py-4">{{ 'dashboard.emby.empty'|trans }}</div>
+{% else %}
+  {% include 'dashboard/_plex_summary.html.twig' with {plex: emby} only %}
+
+  <div class="plex-sessions">
+    {% for s in emby.sessions %}
+      {% include 'dashboard/_emby_session_card.html.twig' with {s: s} only %}
+    {% endfor %}
+  </div>
+{% endif %}

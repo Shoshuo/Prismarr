@@ -13,6 +13,7 @@ use App\Service\Media\ServiceHealthCache;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TautulliClient;
 use App\Service\Media\TracearrClient;
+use App\Service\Media\EmbyClient;
 use App\Service\Media\TmdbClient;
 use App\Service\Media\TransmissionClient;
 use App\Service\Media\Usenet\NzbgetClient;
@@ -69,6 +70,8 @@ class HealthService implements ResetInterface
         // Tautulli (current Plex activity) — nullable + last for the same
         // legacy-test-constructor reason as the Usenet clients above.
         private readonly ?TautulliClient   $tautulli = null,
+        // Emby (current playback activity) — same nullable + last convention.
+        private readonly ?EmbyClient       $emby = null,
         // Shared status cache (cache.app). Without it the 10 s memo lives
         // only in $statusCache, which classic-mode FrankenPHP discards with
         // the request — every topbar poll then re-pings every service.
@@ -256,6 +259,7 @@ class HealthService implements ResetInterface
             'nzbget'      => $this->nzbget?->ping() ?? false,
             'tautulli'    => $this->tautulli?->ping() ?? false,
             'tracearr'    => $this->tracearr?->ping() ?? false,
+            'emby'        => $this->emby?->ping() ?? false,
             'transmission' => $this->transmission?->ping() ?? false,
             'bazarr'      => $this->bazarr?->ping() ?? false,
             default       => true,
@@ -274,7 +278,7 @@ class HealthService implements ResetInterface
      * (issue #15). Radarr/Sonarr are absent on purpose — they enable/disable
      * per instance via the `enabled` flag on `service_instance`.
      */
-    public const TOGGLEABLE_SERVICES = ['prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr'];
+    public const TOGGLEABLE_SERVICES = ['prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr', 'emby'];
 
     public function isConfigured(string $service): bool
     {
@@ -335,6 +339,10 @@ class HealthService implements ResetInterface
             // Tracearr's public API is Bearer-token only — URL + key both required.
             'tracearr' =>
                 $this->config->has('tracearr_url') && $this->config->has('tracearr_api_key'),
+            // Emby needs both the URL and an API key (every endpoint the
+            // widget uses, /Sessions included, is token-authenticated).
+            'emby' =>
+                $this->config->has('emby_url') && $this->config->has('emby_api_key'),
             default => true,
         };
     }
@@ -361,7 +369,7 @@ class HealthService implements ResetInterface
         if ($service === null) {
             $this->statusCache = [];
             if ($this->serviceHealthCache !== null) {
-                foreach (['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr'] as $svc) {
+                foreach (['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr', 'emby'] as $svc) {
                     $this->serviceHealthCache->clear($svc);
                 }
             }
@@ -704,6 +712,23 @@ class HealthService implements ResetInterface
                 return [
                     'url'     => rtrim($url, '/') . TracearrClient::API_BASE . '/health',
                     'headers' => ['Authorization: Bearer ' . $key, 'Accept: application/json'],
+                ];
+            }
+            case 'emby': {
+                $url = $get('emby_url');
+                $key = $get('emby_api_key');
+                if ($url === '' || $key === '') return null;
+                // /System/Info validates the key: Emby answers 401 on a bad
+                // X-Emby-Token, which diagnoseFromResponse() maps to `auth`.
+                // (/System/Info/Public would answer 200 for any key.) The key
+                // travels in a header so it never lands in an access log.
+                $base = rtrim($url, '/');
+                if (!str_ends_with(strtolower($base), '/emby')) {
+                    $base .= '/emby';
+                }
+                return [
+                    'url'     => $base . '/System/Info',
+                    'headers' => ['Accept: application/json', 'X-Emby-Token: ' . $key],
                 ];
             }
             case 'nzbget': {

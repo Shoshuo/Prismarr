@@ -106,6 +106,10 @@ class AdminSettingsController extends AbstractController
             ['key' => 'tracearr_url',     'type' => 'text',     'label' => 'admin.field.url',     'placeholder' => 'http://host.docker.internal:3000'],
             ['key' => 'tracearr_api_key', 'type' => 'password', 'label' => 'admin.field.api_key', 'placeholder' => 'trr_pub_…'],
         ],
+        'emby' => [
+            ['key' => 'emby_url',     'type' => 'text',     'label' => 'admin.field.url',     'placeholder' => 'http://host.docker.internal:8096'],
+            ['key' => 'emby_api_key', 'type' => 'password', 'label' => 'admin.field.api_key'],
+        ],
     ];
 
     /**
@@ -156,6 +160,7 @@ class AdminSettingsController extends AbstractController
         'tautulli'    => 'Tautulli',
         'bazarr'      => 'Bazarr',
         'tracearr'    => 'Tracearr',
+        'emby'        => 'Emby',
     ];
 
     /**
@@ -579,6 +584,7 @@ class AdminSettingsController extends AbstractController
             'tautulli'                                   => ['tautulli_url', 'tautulli_api_key'],
             'bazarr'                                     => ['bazarr_url', 'bazarr_api_key'],
             'tracearr'                                   => ['tracearr_url', 'tracearr_api_key'],
+            'emby'                                       => ['emby_url', 'emby_api_key'],
             default                                      => [],
         };
         $overrides = [];
@@ -627,7 +633,7 @@ class AdminSettingsController extends AbstractController
     public function healthInvalidate(string $service): JsonResponse
     {
         $service = strtolower($service);
-        $allowed = ['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr'];
+        $allowed = ['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr', 'emby'];
         if (!in_array($service, $allowed, true)) {
             return new JsonResponse(['ok' => false], 400);
         }

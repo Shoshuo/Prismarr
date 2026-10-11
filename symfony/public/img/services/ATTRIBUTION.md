@@ -15,6 +15,10 @@ Icons set.
 (https://github.com/connorgallopo/tracearr, AGPL-3.0), with its Tailwind
 theme classes resolved to fixed colours (`#0b1a2e`, `#162840`, `#19cee6`).
 
+`emby.svg` is likewise an original, simplified mark drawn for Prismarr in
+Emby's brand green (`#52b54b`); it is not taken from the Dashboard Icons
+set and is not Emby's official logo.
+
 `deluge.svg` — original minimal droplet drawn for Prismarr (Deluge brand
 color #3e7bbf), not the official Deluge logo.
 

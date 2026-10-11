@@ -1,0 +1,40 @@
+{# Click handler for Emby session cards: resolves the Emby item to a TMDb id
+   server-side (/emby/api/quicklook/{id}) and opens the app-global quick-look
+   through the same ghost anchor the Plex widget uses (rendered once per page
+   by _plex_info_modal.html.twig). No TMDb match → nothing happens; there is
+   no Emby-specific fallback modal. Turbo-safe: IIFE, var, .then(), one
+   delegated listener guarded by a window flag. #}
+<script>
+(function () {
+  if (window._embyQuickLookDelegated) return;
+  window._embyQuickLookDelegated = true;
+  function openEmbyItem(t) {
+    var itemId = t.getAttribute('data-emby-item-id');
+    if (!itemId) return;
+    fetch('/emby/api/quicklook/' + encodeURIComponent(itemId), { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var ghost = document.querySelector('[data-plex-ql-ghost]');
+        if (!d || !d.id || (d.type !== 'movie' && d.type !== 'tv') || !ghost) return;
+        ghost.setAttribute('data-ql-type', d.type);
+        ghost.setAttribute('data-ql-id', String(d.id));
+        ghost.setAttribute('href', '/decouverte?detail=' + d.type + '/' + d.id);
+        ghost.click();
+      })
+      .catch(function () {});
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-emby-item-id]');
+    if (!t) return;
+    e.preventDefault();
+    openEmbyItem(t);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var t = e.target.closest('[data-emby-item-id]');
+    if (!t) return;
+    e.preventDefault();
+    openEmbyItem(t);
+  });
+})();
+</script>
