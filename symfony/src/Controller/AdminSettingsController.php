@@ -10,6 +10,7 @@ use App\Service\ConfigService;
 use App\Service\DashboardLayoutService;
 use App\Service\HealthService;
 use App\Service\Media\JellyseerrClient;
+use App\Service\Media\LibraryIndexCache;
 use App\Service\Media\ProwlarrClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
@@ -444,7 +445,7 @@ class AdminSettingsController extends AbstractController
             $anyOk = false;
             foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
                 try {
-                    foreach ($radarr->withInstance($inst)->getMovies() as $m) {
+                    foreach ($this->libraryRows($radarr, $inst) as $m) {
                         $tmdbId = (int) ($m['tmdbId'] ?? 0);
                         if ($tmdbId > 0) {
                             $seenMovies[$tmdbId] = true;
@@ -468,7 +469,7 @@ class AdminSettingsController extends AbstractController
             $anyOk = false;
             foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
                 try {
-                    foreach ($sonarr->withInstance($inst)->getSeries() as $s) {
+                    foreach ($this->libraryRows($sonarr, $inst) as $s) {
                         $tvdbId = (int) ($s['tvdbId'] ?? 0);
                         $tmdbId = (int) ($s['tmdbId'] ?? 0);
                         if ($tvdbId > 0)        $seenSeries['tvdb_' . $tvdbId] = true;
@@ -526,7 +527,26 @@ class AdminSettingsController extends AbstractController
             ProwlarrClient::class   => ProwlarrClient::class,
             JellyseerrClient::class => JellyseerrClient::class,
             UserRepository::class   => UserRepository::class,
+            LibraryIndexCache::class => '?' . LibraryIndexCache::class,
         ]);
+    }
+
+    /**
+     * Slim library rows for the counts above, from the shared cached index
+     * when available — never a full per-visit fetch of every library.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function libraryRows(RadarrClient|SonarrClient $client, ServiceInstance $inst): array
+    {
+        if ($this->container->has(LibraryIndexCache::class)) {
+            /** @var LibraryIndexCache $index */
+            $index = $this->container->get(LibraryIndexCache::class);
+
+            return $client instanceof SonarrClient ? $index->series($inst) : $index->movies($inst);
+        }
+
+        return LibraryIndexCache::fetchRows($client->withInstance($inst));
     }
 
     #[Route('/test/{service}', name: 'test', methods: ['POST'])]

@@ -19,6 +19,7 @@ class TorrentResolverService
         private readonly RadarrClient $radarr,
         private readonly SonarrClient $sonarr,
         private readonly ServiceInstanceProvider $instances,
+        private readonly ?LibraryIndexCache $libraryIndex = null,
     ) {}
 
     /**
@@ -62,7 +63,9 @@ class TorrentResolverService
         $reachedAny = false;
         foreach ($enabled as $instance) {
             try {
-                $movies = $this->radarr->withInstance($instance)->getRawMovies();
+                // Slim cached index: carries every title variant scored below.
+                $movies = $this->libraryIndex?->movies($instance)
+                    ?? LibraryIndexCache::fetchRows($this->radarr->withInstance($instance));
                 $reachedAny = true;
             } catch (\Throwable) {
                 continue; // instance unreachable, skip but keep going
@@ -112,7 +115,8 @@ class TorrentResolverService
         $reachedAny = false;
         foreach ($enabled as $instance) {
             try {
-                $series = $this->sonarr->withInstance($instance)->getRawAllSeries();
+                $series = $this->libraryIndex?->series($instance)
+                    ?? LibraryIndexCache::fetchRows($this->sonarr->withInstance($instance));
                 $reachedAny = true;
             } catch (\Throwable) {
                 continue;
@@ -146,7 +150,7 @@ class TorrentResolverService
      * Build the list of candidate titles for a Radarr movie row.
      * Returns title + originalTitle + every alternateTitles[].title, deduped.
      *
-     * @param array<string, mixed> $m raw Radarr movie payload
+     * @param array<string, mixed> $m Radarr movie row (raw payload or library-index row)
      * @return list<string>
      */
     private function collectMovieTitles(array $m): array
@@ -165,7 +169,7 @@ class TorrentResolverService
     /**
      * Same as collectMovieTitles() but for Sonarr series payloads.
      *
-     * @param array<string, mixed> $s raw Sonarr series payload
+     * @param array<string, mixed> $s Sonarr series row (raw payload or library-index row)
      * @return list<string>
      */
     private function collectSeriesTitles(array $s): array

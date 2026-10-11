@@ -6,6 +6,7 @@ use App\Entity\ServiceInstance;
 use App\Repository\Media\WatchlistItemRepository;
 use App\Service\HealthService;
 use App\Service\Media\JellyseerrClient;
+use App\Service\Media\LibraryIndexCache;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TautulliClient;
@@ -64,6 +65,14 @@ class DashboardController extends AbstractController
         private readonly CacheInterface $cache,
         private readonly TautulliClient $tautulli,
         private readonly \App\Service\DashboardLayoutService $layout,
+        // Shared per-instance slim library index (LibraryIndexCache): every
+        // dashboard consumer only needs ids, titles, artwork, status and the
+        // added date, so it reads the ~10 MB index instead of the full
+        // normalized list (~50 MB to unserialize on a 20k-movie library).
+        // MediaController's invalidation sites reach it through
+        // MediaLibraryCache::invalidate(). Nullable + last so legacy
+        // positional test constructors keep working.
+        private readonly ?LibraryIndexCache $libraryIndex = null,
     ) {}
 
     /**
@@ -107,40 +116,55 @@ class DashboardController extends AbstractController
      */
     private function movies(): array
     {
-        return $this->moviesCache ??= $this->cached('movies', function () {
-            $out = [];
-            foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
-                $rows = $this->safeFetch(
-                    'library.movies.' . $inst->getSlug(),
-                    fn() => $this->radarr->withInstance($inst)->getMovies(),
-                ) ?? [];
-                foreach ($rows as $row) {
-                    $row['_instanceSlug'] = $inst->getSlug();
-                    $row['_instanceName'] = $inst->getName();
-                    $out[] = $row;
-                }
-            }
-            return $out;
-        });
+        return $this->moviesCache ??= $this->collectLibrary(ServiceInstance::TYPE_RADARR);
     }
 
     private function series(): array
     {
-        return $this->seriesCache ??= $this->cached('series', function () {
-            $out = [];
-            foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
-                $rows = $this->safeFetch(
-                    'library.series.' . $inst->getSlug(),
-                    fn() => $this->sonarr->withInstance($inst)->getSeries(),
-                ) ?? [];
-                foreach ($rows as $row) {
-                    $row['_instanceSlug'] = $inst->getSlug();
-                    $row['_instanceName'] = $inst->getName();
-                    $out[] = $row;
-                }
+        return $this->seriesCache ??= $this->collectLibrary(ServiceInstance::TYPE_SONARR);
+    }
+
+    /**
+     * Fan out over every enabled instance, reading each one's rows from the
+     * SHARED slim library index (`media.index.movies.<slug>` /
+     * `media.index.series.<slug>`), then tag the rows with the instance they
+     * came from. The tag is applied HERE, never stored in the cache — other
+     * readers of the same entry must not see dashboard-private keys.
+     *
+     * Rows have the LibraryIndexCache shape (RadarrClient/SonarrClient::
+     * toLibraryIndexRow()), not the full normalized one: consumers needing
+     * overview / dates / genres for ONE item fetch that item directly.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function collectLibrary(string $type): array
+    {
+        $isMovies = $type === ServiceInstance::TYPE_RADARR;
+        $out      = [];
+
+        foreach ($this->instances->getEnabled($type) as $inst) {
+            $slug = $inst->getSlug();
+            $rows = $this->safeFetch(
+                'library.' . ($isMovies ? 'movies.' : 'series.') . $slug,
+                function () use ($isMovies, $inst) {
+                    if ($this->libraryIndex !== null) {
+                        return $isMovies ? $this->libraryIndex->movies($inst) : $this->libraryIndex->series($inst);
+                    }
+
+                    return LibraryIndexCache::fetchRows($isMovies
+                        ? $this->radarr->withInstance($inst)
+                        : $this->sonarr->withInstance($inst));
+                },
+            ) ?? [];
+
+            foreach ($rows as $row) {
+                $row['_instanceSlug'] = $slug;
+                $row['_instanceName'] = $inst->getName();
+                $out[] = $row;
             }
-            return $out;
-        });
+        }
+
+        return $out;
     }
 
     #[Route('/tableau-de-bord', name: 'app_dashboard')]
@@ -724,8 +748,10 @@ class DashboardController extends AbstractController
      */
     private function recentAdditions(): array
     {
-        $movies = $this->movies();
-        $series = $this->series();
+        // Only the newest MAX_RECENT of each kind can make the cut, so trim
+        // before building DateTimeImmutable objects for 20k rows.
+        $movies = self::newestAdded($this->movies(), self::MAX_RECENT);
+        $series = self::newestAdded($this->series(), self::MAX_RECENT);
 
         $epoch = new \DateTimeImmutable('1970-01-01');
         $items = [];
@@ -741,11 +767,11 @@ class DashboardController extends AbstractController
                 'type'         => 'movie',
                 'id'           => $m['id'] ?? null,
                 'title'        => $m['title'] ?? '—',
-                'subtitle'     => $this->relativeDate($m['addedAt'] ?? null, $now),
+                'subtitle'     => $this->relativeDate($m['addedAt'], $now),
                 'poster'       => $m['poster'] ?? null,
                 'badge'        => $downloaded ? $this->translator->trans('dashboard.lib_badge.downloaded') : null,
                 'is_downloaded'=> $downloaded,
-                'addedAt'      => $m['addedAt'] ?? null,
+                'addedAt'      => $m['addedAt'],
                 'href'         => $this->generateUrl('app_media_films', ['slug' => $slug]) . '?open=' . ($m['id'] ?? ''),
                 'slug'         => $slug,
             ];
@@ -756,10 +782,10 @@ class DashboardController extends AbstractController
                 'type'     => 'series',
                 'id'       => $s['id'] ?? null,
                 'title'    => $s['title'] ?? '—',
-                'subtitle' => $this->relativeDate($s['addedAt'] ?? null, $now),
+                'subtitle' => $this->relativeDate($s['addedAt'], $now),
                 'poster'   => $s['poster'] ?? null,
                 'badge'    => $s['network'] ?? null,
-                'addedAt'  => $s['addedAt'] ?? null,
+                'addedAt'  => $s['addedAt'],
                 'href'     => $this->generateUrl('app_media_series', ['slug' => $slug]) . '?open=' . ($s['id'] ?? ''),
                 'slug'     => $slug,
             ];
@@ -771,42 +797,58 @@ class DashboardController extends AbstractController
     }
 
     /**
-     * Find a single library row for the quick-look. Prefers the already-cached
-     * movies()/series() aggregate (zero upstream calls on a warm dashboard);
-     * falls back to a direct client fetch for the given instance on a miss.
+     * The $n rows with the most recent `added` stamp, newest first, each
+     * given an `addedAt` DateTimeImmutable (null when unknown). Radarr and
+     * Sonarr emit `added` as UTC ISO-8601, so string order is time order.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private static function newestAdded(array $rows, int $n): array
+    {
+        usort($rows, static fn($a, $b) => strcmp((string) ($b['added'] ?? ''), (string) ($a['added'] ?? '')));
+        $rows = array_slice($rows, 0, $n);
+        foreach ($rows as &$row) {
+            try {
+                $row['addedAt'] = !empty($row['added']) ? new \DateTimeImmutable((string) $row['added']) : null;
+            } catch (\Exception) {
+                $row['addedAt'] = null;
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    /**
+     * Fetch the single full library row for the quick-look straight from the
+     * requested instance (one small /movie/{id} or /series/{id} call). The
+     * dashboard's library aggregate is the slim index, which carries no
+     * overview / genres / dates, and loading a whole library to show one
+     * item is exactly the cost the index exists to avoid.
      *
      * @return array<string, mixed>|null
      */
     private function findLibraryRow(string $type, string $slug, int $id): ?array
     {
-        $rows = $type === 'series' ? $this->series() : $this->movies();
-        $match = null;
-        foreach ($rows as $row) {
-            if ((int) ($row['id'] ?? 0) !== $id) {
-                continue;
-            }
-            // Prefer the row from the requested instance; otherwise keep the first hit.
-            if (($row['_instanceSlug'] ?? null) === $slug) {
-                return $row;
-            }
-            $match ??= $row;
-        }
-        if ($match !== null) {
-            return $match;
-        }
-
-        // Cache miss / not loaded — fetch directly from the requested instance.
         $svcType = $type === 'series' ? ServiceInstance::TYPE_SONARR : ServiceInstance::TYPE_RADARR;
         $inst = $this->instances->getBySlug($svcType, $slug);
         if ($inst === null) {
             return null;
         }
-        return $this->safeFetch(
+        $row = $this->safeFetch(
             "quicklook.{$type}.{$slug}.{$id}",
             fn() => $type === 'series'
                 ? $this->sonarr->withInstance($inst)->getSerie($id)
                 : $this->radarr->withInstance($inst)->getMovie($id),
         );
+        if ($row === null) {
+            return null;
+        }
+        $row['_instanceSlug'] = $slug;
+        $row['_instanceName'] = $inst->getName();
+
+        return $row;
     }
 
     /**
@@ -1141,6 +1183,17 @@ class DashboardController extends AbstractController
 
         if ($withFanart !== []) {
             $m = $withFanart[array_rand($withFanart)];
+            // The index row has no overview / runtime / genres / rating:
+            // fetch the one chosen movie in full, keep the index row if that
+            // fails (the banner then just shows less).
+            $slugOf = $m['_instanceSlug'] ?? null;
+            $inst   = $slugOf !== null ? $this->instances->getBySlug(ServiceInstance::TYPE_RADARR, $slugOf) : null;
+            if ($inst !== null && !empty($m['id'])) {
+                $full = $this->safeFetch('hero.movie', fn() => $this->radarr->withInstance($inst)->getMovie((int) $m['id']));
+                if (is_array($full)) {
+                    $m = $full + $m;
+                }
+            }
             // Pick the slug of the instance the spotlight movie actually lives
             // in (multi-instance) so the CTA opens the right page. _instanceSlug
             // is injected by movies(); fall back on default for safety.
