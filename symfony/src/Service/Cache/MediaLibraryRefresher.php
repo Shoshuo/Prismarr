@@ -3,6 +3,7 @@
 namespace App\Service\Cache;
 
 use App\Entity\ServiceInstance;
+use App\Service\Media\LibraryIndexCache;
 use App\Service\Media\MediaLibraryCache;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\ServiceHealthCache;
@@ -15,8 +16,10 @@ use Psr\Log\LoggerInterface;
  * messenger-worker process, so the multi-second full-library fetch never
  * occupies a FrankenPHP web worker.
  *
- * The entry is shared by the library pages and the dashboard, so whichever
- * code path refills it decides what all of them see.
+ * The entry is shared by the library pages and global search, so whichever
+ * code path refills it decides what all of them see. The same raw payload
+ * also refreshes the slim LibraryIndexCache entry for the instance, so one
+ * upstream round-trip serves both.
  */
 final class MediaLibraryRefresher implements CacheRefresherInterface
 {
@@ -30,6 +33,7 @@ final class MediaLibraryRefresher implements CacheRefresherInterface
         private readonly StaleWhileRevalidateCache $swr,
         private readonly ServiceHealthCache $health,
         private readonly LoggerInterface $logger,
+        private readonly ?LibraryIndexCache $index = null,
     ) {}
 
     public function supports(string $key): bool
@@ -69,9 +73,18 @@ final class MediaLibraryRefresher implements CacheRefresherInterface
         // the (up to LIBRARY_TIMEOUT) fetch is in flight wins over its result.
         $startedAt = microtime(true);
         try {
-            $rows = $isMovies
-                ? $this->radarr->withInstance($instance)->getMovies()
-                : $this->sonarr->withInstance($instance)->getSeries();
+            // LIBRARY_TIMEOUT: this runs in the worker, off the request path,
+            // so the wide budget costs no page anything — and the default
+            // 8 s / 4 s is exactly what a large library overruns.
+            if ($isMovies) {
+                $client = $this->radarr->withInstance($instance);
+                $raw    = $client->getRawMovies(RadarrClient::LIBRARY_TIMEOUT);
+                $rows   = $client->normalizeMovies($raw);
+            } else {
+                $client = $this->sonarr->withInstance($instance);
+                $raw    = $client->getRawAllSeries(SonarrClient::LIBRARY_TIMEOUT);
+                $rows   = $client->normalizeSeriesList($raw);
+            }
         } catch (\Throwable $e) {
             $this->logger->warning('Library refresh failed', [
                 'key' => $key, 'exception' => $e::class, 'message' => $e->getMessage(),
@@ -86,5 +99,6 @@ final class MediaLibraryRefresher implements CacheRefresherInterface
         }
 
         $this->swr->write($key, $rows, MediaLibraryCache::HARD_TTL, startedAt: $startedAt);
+        $this->index?->writeFromRaw($instance, $raw, $startedAt);
     }
 }

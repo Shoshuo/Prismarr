@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Controller\Concerns\ApiClientErrorTrait;
+use App\Service\Media\MediaLibraryCache;
 use App\Service\Media\SonarrClient;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,6 +24,7 @@ class SonarrController extends AbstractController
         private readonly SonarrClient $sonarr,
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
+        private readonly MediaLibraryCache $libraryCache,
     ) {}
 
     // ── Updates ───────────────────────────────────────────────────────────────
@@ -284,7 +286,10 @@ class SonarrController extends AbstractController
             $fs = $this->sonarr->getFilesystem($folder, false);
             $dirs = $fs['directories'] ?? [];
 
-            $series = $this->sonarr->getSeries();
+            // Deliberately a direct fetch, not the cached index: a folder
+            // imported a moment ago must not be offered again, and this is a
+            // rare, user-initiated scan.
+            $series = $this->sonarr->getRawAllSeries(SonarrClient::LIBRARY_TIMEOUT);
             $existingPaths = [];
             foreach ($series as $s) {
                 $existingPaths[rtrim($s['path'] ?? '', '/')] = true;
@@ -1025,7 +1030,12 @@ class SonarrController extends AbstractController
         $error = false;
         $stats = [];
         try {
-            $series  = $this->sonarr->getSeries();
+            // Needs status / size / genres / network: read the full
+            // normalized list through the cache the Series page shares.
+            $slug    = $this->sonarr->getInstance()?->getSlug();
+            $series  = $slug !== null
+                ? $this->libraryCache->series($slug, fn() => $this->sonarr->getSeries(SonarrClient::LIBRARY_TIMEOUT))
+                : $this->sonarr->getSeries(SonarrClient::LIBRARY_TIMEOUT);
             $disk    = $this->sonarr->getDiskSpace();
 
             $total      = count($series);

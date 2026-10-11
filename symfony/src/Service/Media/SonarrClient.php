@@ -226,6 +226,55 @@ class SonarrClient implements ResetInterface
         return array_map(fn($s) => $this->normalizeSeries($s), $rawSeries);
     }
 
+    /**
+     * Project a raw `/api/v3/series` row onto the slim shape LibraryIndexCache
+     * stores — see RadarrClient::toLibraryIndexRow(). Episode counts are
+     * flattened out of `statistics`; `added` stays the raw ISO-8601 string.
+     *
+     * @param array<string, mixed> $s
+     * @return array<string, mixed>
+     */
+    public static function toLibraryIndexRow(array $s): array
+    {
+        $stats = $s['statistics'] ?? [];
+
+        return [
+            'id'               => isset($s['id']) ? (int) $s['id'] : null,
+            'tvdbId'           => !empty($s['tvdbId']) ? (int) $s['tvdbId'] : null,
+            'tmdbId'           => !empty($s['tmdbId']) ? (int) $s['tmdbId'] : null,
+            'imdbId'           => $s['imdbId'] ?? null,
+            'title'            => $s['title'] ?? '—',
+            'originalTitle'    => $s['originalTitle'] ?? null,
+            'sortTitle'        => strtolower($s['sortTitle'] ?? $s['title'] ?? ''),
+            'year'             => $s['year'] ?? null,
+            'status'           => $s['status'] ?? 'unknown',
+            'monitored'        => (bool) ($s['monitored'] ?? false),
+            'network'          => $s['network'] ?? null,
+            'episodeCount'     => (int) ($stats['episodeCount'] ?? 0),
+            'episodeFileCount' => (int) ($stats['episodeFileCount'] ?? 0),
+            'added'            => $s['added'] ?? null,
+            'path'             => $s['path'] ?? null,
+            'poster'           => self::coverUrl($s, 'poster'),
+            'fanart'           => self::coverUrl($s, 'fanart'),
+            'alternateTitles'  => array_values(array_filter(array_map(
+                fn($t) => is_array($t) && !empty($t['title']) ? ['title' => (string) $t['title']] : null,
+                $s['alternateTitles'] ?? [],
+            ))),
+        ];
+    }
+
+    /** Static twin of imageUrl() for toLibraryIndexRow(). */
+    private static function coverUrl(array $item, string $coverType): ?string
+    {
+        foreach ($item['images'] ?? [] as $img) {
+            if (($img['coverType'] ?? null) === $coverType) {
+                return $img['remoteUrl'] ?? null;
+            }
+        }
+
+        return null;
+    }
+
     /** Returns raw series without normalization (for lightweight cache) */
     public function getRawAllSeries(int $timeout = 4): array
     {
@@ -1759,6 +1808,10 @@ class SonarrClient implements ResetInterface
             CURLOPT_TIMEOUT        => $timeout,
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_NOSIGNAL       => 1,
+            // '' = advertise every encoding libcurl supports and decode
+            // transparently: the full-library payloads compress ~4x on the
+            // wire (an 80 MB /api/v3/movie becomes ~20 MB).
+            CURLOPT_ENCODING       => '',
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Accept: application/json'],
         ]);
 
@@ -1830,6 +1883,7 @@ class SonarrClient implements ResetInterface
                 CURLOPT_TIMEOUT        => 8,
                 CURLOPT_CONNECTTIMEOUT => 4,
                 CURLOPT_NOSIGNAL       => 1,
+                CURLOPT_ENCODING       => '',
                 CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Accept: application/json'],
             ]);
             curl_multi_add_handle($mh, $ch);

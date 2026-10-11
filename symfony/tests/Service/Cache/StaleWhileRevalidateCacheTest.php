@@ -398,4 +398,60 @@ class StaleWhileRevalidateCacheTest extends TestCase
         $this->assertSame(['old'], $hit['value'], 'the caller still gets an answer');
         $this->assertNull($swr->read('k', 45), 'but the pre-mutation list is not cached');
     }
+
+    public function testMarkStaleKeepsTheValueButServesItStaleAndRequestsARefresh(): void
+    {
+        $pool = new ArrayAdapter();
+        $swr  = $this->swr($pool);
+        $swr->write('k', ['v'], 600);
+        // A refresh already in flight holds the coalescing marker.
+        $swr->requestRefresh('k');
+        $this->dispatched = [];
+
+        $swr->markStale('k', 60, 600);
+
+        self::assertSame(['value' => ['v'], 'state' => 'stale'], $swr->read('k', 60));
+        self::assertCount(1, $this->dispatched, 'the in-flight refresh is superseded, so a new one must go out now');
+        self::assertInstanceOf(RefreshCacheKey::class, $this->dispatched[0]);
+    }
+
+    public function testMarkStaleOnAMissingKeyIsANoOp(): void
+    {
+        $pool = new ArrayAdapter();
+        $swr  = $this->swr($pool);
+
+        $swr->markStale('k', 60, 600);
+
+        self::assertNull($swr->read('k', 60));
+        self::assertSame([], $this->dispatched);
+    }
+
+    public function testMarkStaleDropsAWriteFromAFetchThatStartedBeforeIt(): void
+    {
+        $pool = new ArrayAdapter();
+        $swr  = $this->swr($pool);
+        $swr->write('k', ['old'], 600);
+
+        $startedAt = microtime(true);
+        usleep(1000);
+        $swr->markStale('k', 60, 600);
+        $swr->write('k', ['pre-mutation'], 600, startedAt: $startedAt);
+
+        self::assertSame(['value' => ['old'], 'state' => 'stale'], $swr->read('k', 60));
+    }
+
+    public function testMarkStaleNeverOutlivesTheOriginalHardDeadline(): void
+    {
+        $pool = new ArrayAdapter();
+        $swr  = $this->swr($pool);
+        $swr->write('k', ['v'], 600, time() - 700); // dropped: already past hard
+
+        $swr->write('k', ['v'], 600, time() - 599);
+        $swr->markStale('k', 60, 600);
+        self::assertNotNull($swr->read('k', 60));
+
+        $swr->write('k', ['v'], 600, time() - 300);
+        $swr->markStale('k', 60, 300); // a shorter hard window that has already elapsed
+        self::assertNull($swr->read('k', 60));
+    }
 }

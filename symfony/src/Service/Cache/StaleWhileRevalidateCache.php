@@ -233,7 +233,62 @@ final class StaleWhileRevalidateCache
         $this->cacheApp->save($stamp);
     }
 
-    /** True when delete() invalidated $key after $startedAt (a microtime(true)). */
+    /**
+     * Soft invalidation: keep serving the current value, but as STALE, and
+     * ask for a background refresh. For datasets where a few seconds of
+     * staleness after a mutation is harmless (an "in library" badge) but a
+     * hard delete() would make the next reader block on a multi-second
+     * refetch.
+     *
+     * Records the same invalidation stamp delete() does, so a refresh that
+     * was already in flight (and may have read pre-mutation data) cannot
+     * land as fresh. The coalescing marker is dropped for the same reason:
+     * the in-flight refresh's write will be discarded, so a new one must be
+     * allowed to dispatch now rather than after MARKER_TTL.
+     *
+     * Never throws — called right after a successful mutation, which must
+     * not turn into an error because a cache write failed.
+     */
+    public function markStale(string $key, int $softTtl, int $hardTtl): void
+    {
+        try {
+            $stamp = $this->cacheApp->getItem($key . '.invalidated_at');
+            $stamp->set(microtime(true));
+            $stamp->expiresAfter(self::INVALIDATION_TTL);
+            $this->cacheApp->save($stamp);
+
+            $item = $this->cacheApp->getItem($key);
+            $env  = $item->isHit() ? $item->get() : null;
+            if (!is_array($env) || !isset($env['fetchedAt']) || !array_key_exists('value', $env)) {
+                // Nothing (valid) cached: the next read is a hard miss anyway.
+                return;
+            }
+
+            // Back-date fetchedAt just past the soft window. Keep the
+            // original hard deadline: marking stale must never extend it.
+            $fetchedAt = min((int) $env['fetchedAt'], time() - $softTtl);
+            $remaining = $hardTtl - (time() - (int) $env['fetchedAt']);
+            if ($remaining <= 0) {
+                $this->cacheApp->deleteItem($key);
+
+                return;
+            }
+            $item->set(['fetchedAt' => $fetchedAt, 'value' => $env['value']]);
+            $item->expiresAfter($remaining);
+            $this->cacheApp->save($item);
+
+            $this->cacheApp->deleteItem($key . '.refreshing');
+            $this->requestRefresh($key);
+        } catch (\Throwable $e) {
+            $this->logger->warning('SWR markStale failed', [
+                'key'       => $key,
+                'exception' => $e::class,
+                'message'   => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /** True when delete() or markStale() invalidated $key after $startedAt (a microtime(true)). */
     private function invalidatedSince(string $key, float $startedAt): bool
     {
         $stamp = $this->cacheApp->getItem($key . '.invalidated_at');
