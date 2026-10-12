@@ -499,4 +499,15 @@ class TmdbControllerTest extends TestCase
         self::assertNull($data['suggestion']);
         self::assertNull($data['corrected_from']);
     }
+
+    public function testSmartSearchCapsTheQueryLength(): void
+    {
+        $tmdb = $this->createMock(TmdbClient::class);
+        $tmdb->expects(self::atLeastOnce())->method('searchMulti')
+            ->with(self::callback(fn(string $q) => mb_strlen($q) <= 100))
+            ->willReturn(['page' => 1, 'total_pages' => 1, 'results' => []]);
+
+        $this->smartSearchController($tmdb)
+            ->smartSearch(new \Symfony\Component\HttpFoundation\Request(['q' => str_repeat('matrix ', 60), 'exact' => '1']));
+    }
 }

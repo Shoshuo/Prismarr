@@ -767,7 +767,9 @@ class TmdbController extends AbstractController
             'vote_min' => max(0.0, min(10.0, (float) $request->query->get('vote_min', 0))),
         ];
         $hideOwned = $request->query->getBoolean('hide_owned');
-        $query = trim((string) $request->query->get('q', ''));
+        // Capped: a title never needs more, and one query can fan out into
+        // several (cached) TMDb calls once typo correction kicks in.
+        $query = mb_substr(trim((string) $request->query->get('q', '')), 0, 100);
 
         try {
             $library = $this->buildLibraryIndex();
