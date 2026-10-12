@@ -1057,6 +1057,9 @@ class AdminSettingsController extends AbstractController
         'sonarr_api_key' => ['type' => ServiceInstance::TYPE_SONARR, 'kind' => 'api_key'],
     ];
 
+    /** Services whose settings live in service_instance rows, not flat keys. */
+    private const INSTANCE_TYPES_BY_SERVICE = ['radarr' => true, 'sonarr' => true];
+
     private function saveSubmitted(Request $request): void
     {
         $payload = [];
@@ -1065,10 +1068,20 @@ class AdminSettingsController extends AbstractController
         // per type below — this avoids two DB writes that could leave the
         // instance in a half-updated state if one of them throws.
         $instanceBuffer = [];
-        foreach (self::FIELDS as $group) {
+        foreach (self::FIELDS as $serviceId => $group) {
+            // "Remove" on a configured service (_remove_<service>=1): wipe every
+            // field of it, secrets included. Radarr/Sonarr instances have their
+            // own delete action and never take this path.
+            $removed = !isset(self::INSTANCE_TYPES_BY_SERVICE[$serviceId])
+                && (string) $request->request->get('_remove_' . $serviceId, '') === '1';
             foreach ($group as $field) {
                 $key   = $field['key'];
                 $value = trim((string) $request->request->get($key, ''));
+
+                if ($removed) {
+                    $payload[$key] = null;
+                    continue;
+                }
 
                 // Explicit clear via the dedicated trash button next to the
                 // input (only rendered for clearable fields — qBit user/

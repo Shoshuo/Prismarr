@@ -158,8 +158,8 @@
   .svc-group-label { font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--tblr-secondary); margin: 0 0 .45rem .1rem; }
   .svc-list { border: 1px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,.02); }
   [data-bs-theme="light"] .svc-list { border-color: rgba(0,0,0,.08); background: #fff; }
-  .svc-item + .svc-item, .svc-list > .svc-add { border-top: 1px solid rgba(255,255,255,.06); }
-  [data-bs-theme="light"] .svc-item + .svc-item, [data-bs-theme="light"] .svc-list > .svc-add { border-top-color: rgba(0,0,0,.06); }
+  .svc-item + .svc-item { border-top: 1px solid rgba(255,255,255,.06); }
+  [data-bs-theme="light"] .svc-item + .svc-item { border-top-color: rgba(0,0,0,.06); }
   .svc-row { display: flex; align-items: center; gap: .75rem; width: 100%; padding: .65rem .9rem; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; }
   .svc-row:hover { background: rgba(var(--tblr-primary-rgb), .05); }
   .svc-item.is-open > .svc-row { background: rgba(var(--tblr-primary-rgb), .07); }
@@ -174,6 +174,10 @@
   .svc-dot { width: 8px; height: 8px; border-radius: 50%; background: #6b7280; flex: 0 0 8px; }
   .is-up > .svc-dot, .svc-dot.is-up { background: #22c55e; }
   .is-down > .svc-dot, .svc-dot.is-down { background: #ef4444; }
+  .svc-item.is-new .svc-logo { opacity: .55; }
+  .svc-item.is-new .svc-name { color: var(--tblr-secondary); font-weight: 500; }
+  .svc-item.is-removed .svc-fields { opacity: .45; }
+  .svc-item.is-removed .svc-name { text-decoration: line-through; }
   .svc-chevron { flex: 0 0 auto; color: var(--tblr-secondary); transition: transform .15s ease; }
   .svc-item.is-open .svc-chevron { transform: rotate(180deg); }
   .svc-body { padding: .35rem .9rem .9rem calc(.9rem + 30px + .75rem); background: rgba(var(--tblr-primary-rgb), .03); }
@@ -181,8 +185,6 @@
   .svc-fields .field-row { margin-bottom: 0; }
   .svc-actions { display: flex; align-items: center; gap: .75rem; margin-top: .85rem; }
   .svc-actions .form-check-label { font-size: .8rem; color: var(--tblr-secondary); }
-  .svc-add { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; padding: .6rem .9rem; }
-  .svc-add-label { font-size: .78rem; color: var(--tblr-secondary); margin-right: .2rem; }
   .svc-add-btn { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; padding: .3rem .65rem .3rem .45rem; border: 1px dashed rgba(255,255,255,.22); border-radius: 6px; background: none; color: var(--tblr-body-color); cursor: pointer; }
   [data-bs-theme="light"] .svc-add-btn { border-color: rgba(0,0,0,.2); }
   .svc-add-btn:hover { border-color: var(--tblr-primary); color: var(--tblr-primary); }
@@ -1228,18 +1230,25 @@
           if (item) svcSetOpen(item, !item.classList.contains('is-open'));
         };
       });
-      document.querySelectorAll('[data-svc-add-for]').forEach(function (btn) {
+      // Remove / undo on a configured service. Field values are kept on the
+      // element so "Undo" restores exactly what was there.
+      var SVC_REMOVE = {{ 'admin.services.remove'|trans|json_encode|raw }};
+      var SVC_UNDO = {{ 'admin.services.remove_undo'|trans|json_encode|raw }};
+      document.querySelectorAll('[data-svc-remove]').forEach(function (btn) {
         btn.onclick = function () {
-          var item = document.querySelector('.svc-item[data-service-card="' + btn.dataset.svcAddFor + '"]');
-          if (!item) return;
-          item.hidden = false;
-          item.classList.remove('is-available');
-          svcSetOpen(item, true);
-          var bar = btn.closest('[data-svc-add]');
-          btn.remove();
-          if (bar && !bar.querySelector('[data-svc-add-for]')) bar.remove();
-          var first = item.querySelector('.svc-body input:not([type=hidden]):not([type=checkbox])');
-          if (first) first.focus();
+          var item = btn.closest('.svc-item');
+          var flag = item && item.querySelector('[data-svc-remove-flag]');
+          if (!item || !flag) return;
+          var removing = flag.value !== '1';
+          item.querySelectorAll('.svc-fields input:not([type=hidden])').forEach(function (input) {
+            if (removing) { input.dataset.svcKept = input.value; input.value = ''; }
+            else if (input.dataset.svcKept !== undefined) { input.value = input.dataset.svcKept; }
+          });
+          flag.value = removing ? '1' : '0';
+          item.classList.toggle('is-removed', removing);
+          var label = btn.querySelector('[data-svc-remove-label]');
+          if (label) label.textContent = removing ? SVC_UNDO : SVC_REMOVE;
+          if (typeof countDirty === 'function') countDirty();
         };
       });
       var svcSearch = document.querySelector('[data-svc-search]');
@@ -1249,13 +1258,11 @@
           var anyVisible = false;
           document.querySelectorAll('[data-svc-group]').forEach(function (group) {
             var groupVisible = false;
-            group.querySelectorAll('.svc-item:not(.is-available), [data-svc-add-for]').forEach(function (el) {
+            group.querySelectorAll('.svc-item').forEach(function (el) {
               var match = q === '' || (el.dataset.svcName || '').indexOf(q) !== -1;
               el.style.display = match ? '' : 'none';
               if (match) groupVisible = true;
             });
-            var bar = group.querySelector('[data-svc-add]');
-            if (bar) bar.style.display = bar.querySelector('[data-svc-add-for]:not([style*="none"])') ? '' : 'none';
             group.style.display = groupVisible ? '' : 'none';
             if (groupVisible) anyVisible = true;
           });
@@ -1304,6 +1311,7 @@
         if (!settingsForm || !dirtyEl) return;
         var n = 0;
         settingsForm.querySelectorAll('input, select, textarea').forEach(function (el) {
+          if (el.hasAttribute('data-svc-remove-flag')) { if (el.value === '1') n++; return; }
           if (el.type === 'hidden' || el.type === 'submit' || el.type === 'button' || el.type === 'search' || !el.name) return;
           if (el.type === 'checkbox' || el.type === 'radio') { if (el.checked !== el.defaultChecked) n++; }
           else if (el.tagName === 'SELECT') {

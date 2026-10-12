@@ -674,8 +674,7 @@ admin:
     enabled: Activé
     enabled_title: "Désactivé, Prismarr arrête de tester ce service et le considère comme non configuré. L'URL et la clé API sont conservées."
     search_placeholder: 'Rechercher un service'
-    add_label: 'Ajouter'
-    none_connected: 'Aucun service connecté pour l''instant. Ajoutez-en un ci-dessous pour commencer.'
+    none_connected: 'Aucun service connecté pour l''instant. Ouvrez-en un ci-dessous pour le configurer.'
     no_match: 'Aucun service ne correspond à votre recherche.'
     instances_count: '{count, plural, one {# instance} other {# instances}}'
     state:
@@ -685,6 +684,8 @@ admin:
       unknown: 'Non vérifié'
       disabled: 'Désactivé'
       new: 'Non configuré'
+    remove: 'Retirer'
+    remove_undo: 'Annuler le retrait'
   instances:
     add: '+ Ajouter une instance {service}'
     empty:

@@ -43,15 +43,15 @@
   <div class="svc-group" data-svc-group>
     <div class="svc-group-label">{{ group.label }}</div>
     <div class="svc-list">
-      {# Connected services first, then the not-yet-configured ones (hidden
-         until their "Add" button is used, but still in the form). #}
+      {# Connected services first (expanded), then the not-yet-configured
+         ones (collapsed; a click on the row opens their fields). #}
       {% for id in connected_ids|merge(available_ids) %}
         {% set meta = service_meta[id] %}
         {% set connected = id in connected_ids %}
         {% set label = service_labels[id] %}
         {% set instances = instances_by_type[id]|default([]) %}
-        <div class="svc-item{{ connected ? ' is-open' : ' is-available' }}" data-service-card="{{ id }}"
-             data-svc-name="{{ label|lower }} {{ meta.subtitle|lower }}" {{ connected ? '' : 'hidden' }}>
+        <div class="svc-item{{ connected ? ' is-open' : ' is-new' }}" data-service-card="{{ id }}"
+             data-svc-name="{{ label|lower }} {{ meta.subtitle|lower }}">
           <button type="button" class="svc-row" aria-expanded="{{ connected ? 'true' : 'false' }}" data-svc-toggle>
             <span class="svc-logo" style="--brand: {{ meta.icon_bg }};">
               <img src="{{ asset('img/services/' ~ id ~ '.svg') }}" alt="" width="22" height="22" loading="lazy">
@@ -122,6 +122,14 @@
                   </button>
                 {% endif %}
                 <span class="flex-fill"></span>
+                {% if connected %}
+                  {# Remove: empties the fields here and sends _remove_<id>=1 so the
+                     save wipes the service, secrets included. Click again to undo. #}
+                  <input type="hidden" name="_remove_{{ id }}" value="0" data-svc-remove-flag>
+                  <button type="button" class="btn btn-sm btn-ghost-danger" data-svc-remove="{{ id }}">
+                    {{ ico.icon('trash', '', 14) }}<span data-svc-remove-label>{{ 'admin.services.remove'|trans }}</span>
+                  </button>
+                {% endif %}
                 {% if id in toggleable %}
                   {# Issue #15 — per-service kill switch; an unchecked box is not POSTed → disabled. #}
                   <label class="form-check form-switch m-0" title="{{ 'admin.services.enabled_title'|trans }}">
@@ -136,18 +144,6 @@
         </div>
       {% endfor %}
 
-      {% if available_ids is not empty %}
-        <div class="svc-add" data-svc-add>
-          <span class="svc-add-label">{{ 'admin.services.add_label'|trans }}</span>
-          {% for id in available_ids %}
-            <button type="button" class="svc-add-btn" data-svc-add-for="{{ id }}"
-                    data-svc-name="{{ service_labels[id]|lower }} {{ service_meta[id].subtitle|lower }}">
-              <img src="{{ asset('img/services/' ~ id ~ '.svg') }}" alt="" width="16" height="16" loading="lazy">
-              {{ service_labels[id] }}
-            </button>
-          {% endfor %}
-        </div>
-      {% endif %}
     </div>
   </div>
 {% endfor %}

@@ -675,8 +675,7 @@ admin:
     enabled: Enabled
     enabled_title: 'When off, Prismarr stops polling this service and treats it as not configured. URL and API key are kept.'
     search_placeholder: 'Search services'
-    add_label: 'Add'
-    none_connected: 'No service connected yet. Add one below to get started.'
+    none_connected: 'No service connected yet. Open one below to set it up.'
     no_match: 'No service matches your search.'
     instances_count: '{count, plural, one {# instance} other {# instances}}'
     state:
@@ -686,6 +685,8 @@ admin:
       unknown: 'Not checked'
       disabled: 'Disabled'
       new: 'Not configured'
+    remove: 'Remove'
+    remove_undo: 'Undo remove'
   instances:
     add: '+ Add a {service} instance'
     empty:
