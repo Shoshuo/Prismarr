@@ -40,6 +40,13 @@ final class StaleWhileRevalidateCache
     /** Seconds an unanswered refresh request is remembered (dead-consumer probe). */
     public const REQUEST_TTL = 900;
 
+    /**
+     * Seconds delete() remembers WHEN it invalidated a key, so a fetch that
+     * was already in flight cannot write pre-invalidation data back as fresh.
+     * Only has to outlive the longest fetch (a 30 s library budget).
+     */
+    public const INVALIDATION_TTL = 900;
+
     public function __construct(
         private readonly CacheInterface $cache,
         private readonly CacheItemPoolInterface $cacheApp,
@@ -96,8 +103,9 @@ final class StaleWhileRevalidateCache
 
         $env = $this->cache->get(
             $key,
-            static function (ItemInterface $item) use ($fetch, $hardTtl): array {
-                $value = $fetch();
+            function (ItemInterface $item) use ($key, $fetch, $hardTtl): array {
+                $startedAt = microtime(true);
+                $value     = $fetch();
                 // An empty/failed fetch is never cached as success (never
                 // "effectively permanent" stale data): expiresAfter(0) means
                 // the entry is gone the instant this callback returns, so the
@@ -109,6 +117,13 @@ final class StaleWhileRevalidateCache
                 // breaker that bounds the resulting call volume once a
                 // service is marked down, not this cache.
                 $item->expiresAfter($value === [] ? 0 : $hardTtl);
+                // Same rule as write(): a delete() that landed while this
+                // fetch was in flight means $value may predate a user
+                // mutation — still answer the caller with it, but don't cache
+                // it, so the next read refetches the post-mutation list.
+                if ($this->invalidatedSince($key, $startedAt)) {
+                    $item->expiresAfter(0);
+                }
 
                 return ['fetchedAt' => time(), 'value' => $value];
             },
@@ -153,10 +168,27 @@ final class StaleWhileRevalidateCache
         ];
     }
 
-    public function write(string $key, mixed $value, int $hardTtl, ?int $fetchedAt = null): void
+    /**
+     * @param float|null $startedAt microtime(true) taken just before the fetch
+     *        that produced $value. When given, the write is dropped if
+     *        delete() invalidated the key after that moment: the fetch may
+     *        have read pre-mutation data, and landing it would resurrect it
+     *        as fresh (a lost update). The next read then
+     *        hard-misses and refetches.
+     */
+    public function write(string $key, mixed $value, int $hardTtl, ?int $fetchedAt = null, ?float $startedAt = null): void
     {
         if ($hardTtl <= 0) {
             throw new \InvalidArgumentException(sprintf('StaleWhileRevalidateCache::write(): $hardTtl must be > 0, got %d.', $hardTtl));
+        }
+
+        if ($startedAt !== null && $this->invalidatedSince($key, $startedAt)) {
+            // The demand this write answered is superseded by the
+            // invalidation (whose next read refetches inline), so it must not
+            // linger as an "overdue" request either.
+            $this->cacheApp->deleteItem($key . '.requested_at');
+
+            return;
         }
 
         $fetchedAt = $fetchedAt ?? time();
@@ -194,6 +226,19 @@ final class StaleWhileRevalidateCache
     public function delete(string $key): void
     {
         $this->cacheApp->deleteItems([$key, $key . '.refreshing', $key . '.requested_at']);
+
+        $stamp = $this->cacheApp->getItem($key . '.invalidated_at');
+        $stamp->set(microtime(true));
+        $stamp->expiresAfter(self::INVALIDATION_TTL);
+        $this->cacheApp->save($stamp);
+    }
+
+    /** True when delete() invalidated $key after $startedAt (a microtime(true)). */
+    private function invalidatedSince(string $key, float $startedAt): bool
+    {
+        $stamp = $this->cacheApp->getItem($key . '.invalidated_at');
+
+        return $stamp->isHit() && (float) $stamp->get() > $startedAt;
     }
 
     /**

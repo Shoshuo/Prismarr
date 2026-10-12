@@ -184,4 +184,24 @@ class MediaLibraryRefresherTest extends TestCase
             new NullLogger(),
         );
     }
+
+    public function testARefreshOverlappingAnInvalidationDoesNotResurrectTheOldList(): void
+    {
+        // The worker fetch starts, the user deletes a
+        // movie (MediaLibraryCache::invalidate), the fetch returns the
+        // pre-delete list — it must not be written back as fresh.
+        $pool   = new ArrayAdapter();
+        $cache  = new MediaLibraryCache($this->swr($pool));
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('withInstance')->willReturnSelf();
+        $radarr->method('getMovies')->willReturnCallback(static function () use ($cache): array {
+            $cache->invalidate('radarr', 'radarr-1');
+
+            return [['id' => 5], ['id' => 6]];
+        });
+
+        $this->refresher($pool, $radarr)->refresh('media.movies.radarr-1');
+
+        $this->assertNull($this->swr($pool)->read('media.movies.radarr-1', MediaLibraryCache::TTL));
+    }
 }

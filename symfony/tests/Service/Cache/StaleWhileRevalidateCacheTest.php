@@ -356,4 +356,46 @@ class StaleWhileRevalidateCacheTest extends TestCase
         $this->assertFalse($pool->getItem('k.refreshing')->isHit());
         $this->assertFalse($pool->getItem('k.requested_at')->isHit());
     }
+
+    public function testAWriteWhoseFetchStartedBeforeAnInvalidationIsDropped(): void
+    {
+        // Lost update: a background refresh that began
+        // fetching before a user mutation invalidated the key must not land
+        // its pre-mutation data afterwards, stamped fresh.
+        $pool = new ArrayAdapter();
+        $swr  = $this->swr($pool);
+
+        $startedAt = microtime(true);
+        $swr->delete('k');
+        $swr->write('k', ['old'], 600, startedAt: $startedAt);
+
+        $this->assertNull($swr->read('k', 45));
+    }
+
+    public function testAWriteWhoseFetchStartedAfterTheInvalidationLands(): void
+    {
+        $pool = new ArrayAdapter();
+        $swr  = $this->swr($pool);
+
+        $swr->delete('k');
+        usleep(1000);
+        $swr->write('k', ['new'], 600, startedAt: microtime(true));
+
+        $this->assertSame(['new'], $swr->read('k', 45)['value'] ?? null);
+    }
+
+    public function testAnInlineComputeOverlappingAnInvalidationIsServedButNotCached(): void
+    {
+        $pool = new ArrayAdapter();
+        $swr  = $this->swr($pool);
+
+        $hit = $swr->getOrCompute('k', 45, 600, static function () use ($swr): array {
+            $swr->delete('k'); // a mutation lands while this fetch is in flight
+
+            return ['old'];
+        });
+
+        $this->assertSame(['old'], $hit['value'], 'the caller still gets an answer');
+        $this->assertNull($swr->read('k', 45), 'but the pre-mutation list is not cached');
+    }
 }
