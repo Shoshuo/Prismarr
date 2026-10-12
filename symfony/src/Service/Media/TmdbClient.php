@@ -46,7 +46,8 @@ class TmdbClient implements ResetInterface
      * to FR if the pref service is unreachable (shouldn't happen but
      * defensive — TMDb still needs a `language=` value to respond).
      */
-    private function getLocale(): string
+    /** TMDb language in use (also keys the search vocabulary per locale). */
+    public function getLocale(): string
     {
         if ($this->locale === null) {
             try {
@@ -110,6 +111,11 @@ class TmdbClient implements ResetInterface
     public function getTopRatedMovies(int $page = 1): array
     {
         return $this->cachedGet("top_movie_{$page}", '/movie/top_rated', ['page' => $page], self::TTL_LIST);
+    }
+
+    public function getPopularPeople(int $page = 1): array
+    {
+        return $this->cachedGet("popular_person_{$page}", '/person/popular', ['page' => $page], self::TTL_LIST);
     }
 
     public function getTopRatedTv(int $page = 1): array

@@ -345,7 +345,7 @@ class TmdbControllerTest extends TestCase
     {
         return ['page' => 1, 'total_pages' => 1, 'results' => [
             ['media_type' => 'movie', 'id' => 624860, 'title' => 'The Matrix Resurrections', 'popularity' => 900, 'vote_count' => 6000, 'vote_average' => 6.4, 'release_date' => '2021-12-16', 'genre_ids' => [28]],
-            ['media_type' => 'person', 'id' => 6384, 'name' => 'Keanu Reeves', 'known_for_department' => 'Acting', 'known_for' => [['title' => 'The Matrix'], ['title' => 'John Wick']]],
+            ['media_type' => 'person', 'id' => 6384, 'name' => 'Keanu Reeves', 'popularity' => 40, 'known_for_department' => 'Acting', 'known_for' => [['title' => 'The Matrix'], ['title' => 'John Wick']]],
             ['media_type' => 'movie', 'id' => 603, 'title' => 'The Matrix', 'popularity' => 80, 'vote_count' => 25000, 'vote_average' => 8.2, 'release_date' => '1999-03-30', 'genre_ids' => [28, 878]],
             ['media_type' => 'tv', 'id' => 99, 'name' => 'Matrix Theories', 'popularity' => 2, 'vote_count' => 5, 'first_air_date' => '2010-01-01', 'genre_ids' => [99]],
         ]];
@@ -407,12 +407,14 @@ class TmdbControllerTest extends TestCase
     {
         $interstellar = ['media_type' => 'movie', 'id' => 157336, 'title' => 'Interstellar', 'popularity' => 150, 'vote_count' => 35000, 'release_date' => '2014-11-05', 'genre_ids' => [878]];
         $tmdb = $this->createMock(TmdbClient::class);
-        $tmdb->method('searchMulti')->willReturnCallback(fn(string $q) => match (strtolower($q)) {
-            'interstelar' => ['page' => 1, 'total_pages' => 1, 'results' => []],
-            'inte', 'interstellar' => ['page' => 1, 'total_pages' => 1, 'results' => [$interstellar]],
-            'interstellr' => ['page' => 1, 'total_pages' => 1, 'results' => [
-                ['media_type' => 'movie', 'id' => 5, 'title' => 'Stellar Docs', 'popularity' => 1, 'release_date' => '2020-01-01'],
+        // TMDb has no typo tolerance: the typo finds nothing, a shorter start
+        // of the word ("interst…") finds the real title.
+        $tmdb->method('searchMulti')->willReturnCallback(fn(string $q) => match (true) {
+            strtolower($q) === 'interstelar' => ['page' => 1, 'total_pages' => 1, 'results' => []],
+            strtolower($q) === 'interstellr' => ['page' => 1, 'total_pages' => 1, 'results' => [
+                ['media_type' => 'movie', 'id' => 5, 'title' => 'Stellar Docs', 'popularity' => 20, 'vote_count' => 300, 'release_date' => '2020-01-01'],
             ]],
+            str_starts_with(strtolower($q), 'interst') => ['page' => 1, 'total_pages' => 1, 'results' => [$interstellar]],
             default => ['page' => 1, 'total_pages' => 1, 'results' => []],
         });
         $tmdb->method('getGenresMovies')->willReturn(['genres' => [['id' => 878, 'name' => 'Science-Fiction']]]);
@@ -441,6 +443,50 @@ class TmdbControllerTest extends TestCase
         self::assertSame(5, $data['best']['id'], 'the literal results stay');
         self::assertNull($data['corrected_from']);
         self::assertSame('Interstellar', $data['suggestion']);
+    }
+
+    public function testSmartSearchCorrectsWhenOnlyObscureTitlesMatchLiterally(): void
+    {
+        $tmdb = $this->createMock(TmdbClient::class);
+        $tmdb->method('searchMulti')->willReturnCallback(fn(string $q) => match (strtolower($q)) {
+            'star wors' => ['page' => 1, 'total_pages' => 1, 'results' => [
+                ['media_type' => 'movie', 'id' => 7, 'title' => 'Star Worse', 'popularity' => 0.3, 'vote_count' => 1, 'release_date' => '2019-01-01'],
+            ]],
+            'star wars' => ['page' => 1, 'total_pages' => 1, 'results' => [
+                ['media_type' => 'movie', 'id' => 11, 'title' => 'Star Wars', 'popularity' => 90, 'vote_count' => 20000, 'release_date' => '1977-05-25'],
+            ]],
+            default => ['page' => 1, 'total_pages' => 1, 'results' => [
+                ['media_type' => 'movie', 'id' => 11, 'title' => 'Star Wars', 'popularity' => 90, 'vote_count' => 20000, 'release_date' => '1977-05-25'],
+            ]],
+        });
+        $tmdb->method('getGenresMovies')->willReturn(['genres' => []]);
+
+        $res = $this->smartSearchController($tmdb)
+            ->smartSearch(new \Symfony\Component\HttpFoundation\Request(['q' => 'star wors']));
+        $data = json_decode((string) $res->getContent(), true);
+
+        self::assertSame(11, $data['best']['id']);
+        self::assertSame('star wors', $data['corrected_from']);
+    }
+
+    public function testSmartSearchPutsAKnownPersonFirstAndCollapsesNamesakes(): void
+    {
+        $tmdb = $this->createMock(TmdbClient::class);
+        $tmdb->method('searchMulti')->willReturn(['page' => 1, 'total_pages' => 1, 'results' => [
+            ['media_type' => 'movie', 'id' => 1, 'title' => "Inside Christopher Nolan's Films", 'popularity' => 4, 'vote_count' => 20, 'release_date' => '2023-01-01'],
+            ['media_type' => 'person', 'id' => 525, 'name' => 'Christopher Nolan', 'popularity' => 25, 'known_for_department' => 'Directing', 'known_for' => [['title' => 'Inception']]],
+            ['media_type' => 'person', 'id' => 9001, 'name' => 'Christopher Nolan', 'popularity' => 1.6, 'known_for_department' => 'Sound'],
+        ]]);
+        $tmdb->method('getGenresMovies')->willReturn(['genres' => []]);
+
+        $res = $this->smartSearchController($tmdb)
+            ->smartSearch(new \Symfony\Component\HttpFoundation\Request(['q' => 'christopher nolan']));
+        $data = json_decode((string) $res->getContent(), true);
+
+        self::assertSame(525, $data['best_person']['id']);
+        self::assertNull($data['best']);
+        self::assertSame([], $data['people'], 'the namesake collapsed into the best-known one');
+        self::assertSame(1, $data['results'][0]['id'], 'the title moved back to the grid');
     }
 
     public function testSmartSearchExactSkipsTheCorrection(): void

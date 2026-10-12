@@ -198,6 +198,7 @@
     background: var(--tblr-bg-surface-secondary) var(--srch-bg, none) center 25% / cover no-repeat;
     border: 1px solid var(--tblr-border-color);
   }
+  .srch-best-person { background: linear-gradient(120deg, rgba(var(--tblr-primary-rgb), .35), rgba(10,12,18,.9)); }
   .srch-best::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10,12,18,.94) 0%, rgba(10,12,18,.82) 45%, rgba(10,12,18,.45) 100%); }
   .srch-best-inner { position: relative; display: flex; gap: 1.25rem; padding: 1.25rem; color: #fff; }
   .srch-best-poster { width: 140px; flex: 0 0 140px; aspect-ratio: 2/3; object-fit: cover; border-radius: .6rem; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
@@ -1851,6 +1852,8 @@
     didYouMean:  {{ 'decouverte.srch.did_you_mean'|trans|json_encode|raw }},
     showingFor:  {{ 'decouverte.srch.showing_for'|trans|json_encode|raw }},
     searchInstead: {{ 'decouverte.srch.search_instead'|trans|json_encode|raw }},
+    personKicker:  {{ 'decouverte.srch.person_kicker'|trans|json_encode|raw }},
+    seeFilmography: {{ 'decouverte.srch.see_filmography'|trans|json_encode|raw }},
     film:        TMDB_I18N.type_film,
     series:      TMDB_I18N.type_series
   };
@@ -1907,6 +1910,19 @@
       + '</div></div></div></div>';
   }
 
+  function srchBestPersonHTML(p) {
+    var sub = [p.known].concat(p.titles || []).filter(Boolean).map(escHtml).join(' · ');
+    return '<div class="srch-best srch-best-person">'
+      + '<div class="srch-best-inner">'
+      + (p.profile ? '<img class="srch-best-poster" src="' + encodeURI(p.profile) + '" alt="" loading="lazy">' : '')
+      + '<div class="srch-best-body">'
+      + '<div class="srch-best-kicker">' + escHtml(SRCH_I18N.personKicker) + '</div>'
+      + '<h2 class="srch-best-title">' + escHtml(p.name || '') + '</h2>'
+      + (sub ? '<div class="srch-best-meta">' + sub + '</div>' : '')
+      + '<div class="srch-best-actions"><button type="button" class="btn btn-primary btn-sm" data-srch-person="' + p.id + '" data-srch-person-name="' + escHtml(p.name || '') + '">' + escHtml(SRCH_I18N.seeFilmography) + '</button></div>'
+      + '</div></div></div>';
+  }
+
   function srchPeopleHTML(list) {
     return list.map(function (p) {
       var avatar = p.profile
@@ -1940,10 +1956,10 @@
       srchCorrection.hidden = corr === '';
     }
     if (!append) {
-      srchBest.innerHTML = d.best ? srchBestHTML(d.best) : '';
+      srchBest.innerHTML = d.best_person ? srchBestPersonHTML(d.best_person) : (d.best ? srchBestHTML(d.best) : '');
       srchPeople.innerHTML = srchPeopleHTML(d.people || []);
       srchPeopleWrap.hidden = !(d.people && d.people.length);
-      srchGridLabel.hidden = !(d.best && results.length);
+      srchGridLabel.hidden = !((d.best || d.best_person) && results.length);
       srchGridLabel.textContent = SRCH_I18N.others;
       srchGrid.innerHTML = results.map(renderCardHTML).join('');
     } else {

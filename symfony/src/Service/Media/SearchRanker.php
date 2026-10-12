@@ -26,6 +26,16 @@ final class SearchRanker
         return trim((string) preg_replace('/\s+/', ' ', $s));
     }
 
+    private static ?\Transliterator $plainTranslit = null;
+
+    /** Accents removed, case and spacing kept: "Pokémo" → "Pokemo". */
+    public static function stripAccents(string $s): string
+    {
+        self::$plainTranslit ??= \Transliterator::create('Any-Latin; Latin-ASCII');
+
+        return self::$plainTranslit ? (string) self::$plainTranslit->transliterate($s) : $s;
+    }
+
     /**
      * Splits a trailing year off the query: "dune 2021" → ["dune", 2021].
      *
@@ -115,10 +125,17 @@ final class SearchRanker
             $best = max($best, $s);
         }
 
+        $popularity = (float) ($item['popularity'] ?? 0);
+        $votes = (int) ($item['vote_count'] ?? 0);
         $score = $best
-            + log10(1 + (float) ($item['popularity'] ?? 0)) * 30
-            + log10(1 + (int) ($item['vote_count'] ?? 0)) * 10
+            + log10(1 + $popularity) * 60
+            + log10(1 + $votes) * 25
             - $tmdbIndex * 2;
+        // A title almost nobody knows (a 2-vote short called "Poke") must not
+        // outrank a famous one that merely starts the same way (Pokémon).
+        if ($votes < 10 && $popularity < 3) {
+            $score -= 500;
+        }
 
         if ($yearHint !== null) {
             $year = self::year($item);
@@ -162,16 +179,22 @@ final class SearchRanker
     }
 
     /**
-     * "Did you mean": the candidate title closest to a mistyped query, by
-     * edit distance on normalized text (a 4–7 letter query tolerates one
-     * typo, 8–11 two, longer three). A candidate is also compared on its
-     * first words only, so "the mtrix" can suggest "The Matrix" from "The
-     * Matrix Reloaded". Null when nothing is close enough, or when the query
-     * already matches a candidate exactly.
+     * "Did you mean": the best title for a mistyped query, Google style.
      *
-     * @param list<string> $candidates titles or names, most relevant first
+     * Candidates are compared on normalized text by edit distance (a 4–7
+     * letter query tolerates one typo, 8–11 two, longer three), on the whole
+     * title and on its first words only ("the mtrix" → "The Matrix" from "The
+     * Matrix Reloaded"). With $allowCompletion, a query that is the start of a
+     * candidate also counts ("pokemo" → "Pokémon"), for half-typed words.
+     * Closer wins, then more popular.
+     *
+     * When the query is itself a real title, a suggestion is still made if
+     * the close candidate is far more popular (an obscure "Interstelar" does
+     * not hide "Interstellar"); otherwise null.
+     *
+     * @param list<string|array{label: string, popularity?: float|int}> $candidates
      */
-    public static function suggest(string $query, array $candidates): ?string
+    public static function suggest(string $query, array $candidates, bool $allowCompletion = false): ?string
     {
         $nq = self::normalize($query);
         if (strlen($nq) < 4) {
@@ -181,33 +204,56 @@ final class SearchRanker
         $queryWords = count(explode(' ', $nq));
 
         $best = null;
-        $bestDistance = PHP_INT_MAX;
+        $bestKey = null;
+        $bestPopularity = 0.0;
+        $exactPopularity = null;
         foreach ($candidates as $candidate) {
-            if (!is_string($candidate) || trim($candidate) === '') {
+            $label = is_array($candidate) ? ($candidate['label'] ?? '') : $candidate;
+            $popularity = is_array($candidate) ? (float) ($candidate['popularity'] ?? 0) : 0.0;
+            if (!is_string($label) || trim($label) === '') {
                 continue;
             }
-            $words = preg_split('/\s+/u', trim($candidate)) ?: [];
-            $variants = [$candidate];
+            $words = preg_split('/\s+/u', trim($label)) ?: [];
+            $variants = [$label];
             if (count($words) > $queryWords) {
                 $variants[] = rtrim(implode(' ', array_slice($words, 0, $queryWords)), " :,.-");
             }
             foreach ($variants as $variant) {
                 $nv = self::normalize($variant);
-                if ($nv === '' || abs(strlen($nv) - strlen($nq)) > $maxDistance) {
+                if ($nv === '') {
                     continue;
                 }
-                $d = levenshtein($nq, $nv);
-                if ($d === 0) {
-                    return null; // the query is already a real title
+                if ($nv === $nq) {
+                    $exactPopularity = max($exactPopularity ?? 0.0, $popularity);
+                    continue;
                 }
-                if ($d < $bestDistance) {
-                    $bestDistance = $d;
+                if ($allowCompletion && str_starts_with($nv, $nq)) {
+                    $distance = 0.5; // the query is the start of this title
+                } elseif (abs(strlen($nv) - strlen($nq)) <= $maxDistance) {
+                    $distance = levenshtein($nq, $nv);
+                    if ($distance > $maxDistance) {
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+                $key = [$distance, -$popularity];
+                if ($bestKey === null || $key < $bestKey) {
+                    $bestKey = $key;
                     $best = $variant;
+                    $bestPopularity = $popularity;
                 }
             }
         }
 
-        return $bestDistance <= $maxDistance ? $best : null;
+        if ($best === null) {
+            return null;
+        }
+        if ($exactPopularity !== null && $bestPopularity < 10 * max($exactPopularity, 0.5)) {
+            return null; // the query is a real title and nothing much better is close
+        }
+
+        return $best;
     }
 
     /** @param list<string> $words */

@@ -1243,6 +1243,8 @@ decouverte:
     did_you_mean: 'Vouliez-vous dire __S__ ?'
     showing_for: 'Résultats pour __S__.'
     search_instead: 'Rechercher plutôt « __Q__ »'
+    person_kicker: 'Personne'
+    see_filmography: 'Voir la filmographie'
 media:
   api:
     tag_still_used: 'Ce tag est encore utilisé. Retirez-le de tous les films avant de le supprimer.'

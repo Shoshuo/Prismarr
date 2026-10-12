@@ -8,6 +8,7 @@ use App\Repository\Media\WatchlistItemRepository;
 use App\Service\ConfigService;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SearchRanker;
+use App\Service\Media\SearchVocabulary;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TmdbClient;
 use App\Service\ServiceInstanceProvider;
@@ -34,6 +35,9 @@ class TmdbController extends AbstractController
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
         private readonly ServiceInstanceProvider   $instances,
+        // Typo-correction vocabulary; nullable + last so positional test
+        // constructions keep working (null = suggestions from TMDb probes only).
+        private readonly ?SearchVocabulary $vocabulary = null,
     ) {}
 
     #[Route('/decouverte', name: 'tmdb_index')]
@@ -777,10 +781,14 @@ class TmdbController extends AbstractController
                 // so); otherwise just offer it.
                 $suggestion = null;
                 if ($payload['total'] < 3 && !$request->query->getBoolean('exact')) {
-                    $suggestion = SearchRanker::suggest($terms, $this->suggestionCandidates($terms, $payload['candidates']));
+                    // Completion ("pokemo" → "Pokémon") only when nothing was found:
+                    // with results on screen, a half-typed word is just being typed.
+                    $suggestion = SearchRanker::suggest($terms, $this->suggestionCandidates($terms, $payload['candidates']), $payload['total'] === 0);
                 }
                 $correctedFrom = null;
-                if ($suggestion !== null && $payload['total'] === 0) {
+                $literalIsObscure = $payload['total'] === 0
+                    || ($payload['best_person'] === null && (float) ($payload['best']['popularity'] ?? 0) < 5);
+                if ($suggestion !== null && $literalIsObscure) {
                     $corrected = $this->searchPayload($suggestion, $yearHint, $filters, $sort, $hideOwned, $library);
                     if ($corrected['total'] > 0) {
                         $payload = $corrected;
@@ -792,6 +800,7 @@ class TmdbController extends AbstractController
                 return $this->json([
                     'mode'           => 'search',
                     'best'           => $payload['best'],
+                    'best_person'    => $payload['best_person'],
                     'results'        => $payload['results'],
                     'people'         => $payload['people'],
                     'total'          => $payload['total'],
@@ -852,37 +861,47 @@ class TmdbController extends AbstractController
     }
 
     /**
-     * One text search: TMDb multi-search (two pages), people pulled out,
-     * movies/series filtered, ranked and library-enriched, the top hit as
-     * "best" with its genres. Also returns every title/name seen, as
+     * One text search: TMDb multi-search (two pages, plus the accent-free
+     * spelling, since TMDb finds "pokemo" but not "pokémo"), people pulled
+     * out (only those somewhat known, or an exact name), movies/series
+     * filtered, ranked and library-enriched, the top hit as "best" with its
+     * genres. Also returns every title/name seen with its popularity, as
      * candidates for the "did you mean" suggestion.
      *
      * @param array<string, mixed> $filters
      * @param array<string, mixed> $library
-     * @return array{terms: string, best: ?array, results: list<array>, people: list<array>, total: int, candidates: list<string>}
+     * @return array{terms: string, best: ?array, results: list<array>, people: list<array>, total: int, candidates: list<array{label: string, popularity: float}>}
      */
     private function searchPayload(string $terms, ?int $yearHint, array $filters, string $sort, bool $hideOwned, array $library): array
     {
+        $normalized = SearchRanker::normalize($terms);
+        $pages = [];
+        $first = $this->tmdb->searchMulti($terms, 1);
+        $pages[] = $first;
+        if (($first['total_pages'] ?? 1) > 1) {
+            $pages[] = $this->tmdb->searchMulti($terms, 2);
+        }
+        $plain = SearchRanker::stripAccents($terms);
+        if ($plain !== $terms) {
+            $pages[] = $this->tmdb->searchMulti($plain, 1);
+        }
+
         $raw = [];
         $people = [];
         $seen = [];
         $candidates = [];
-        $first = $this->tmdb->searchMulti($terms, 1);
-        $pages = [$first];
-        if (($first['total_pages'] ?? 1) > 1) {
-            $pages[] = $this->tmdb->searchMulti($terms, 2);
-        }
         foreach ($pages as $data) {
             foreach ($data['results'] ?? [] as $r) {
-                $label = $r['title'] ?? $r['name'] ?? null;
-                if (is_string($label)) {
-                    $candidates[] = $label;
-                }
+                $candidates = array_merge($candidates, self::labelsOf($r));
                 if (($r['media_type'] ?? '') === 'person') {
-                    if (count($people) < 6 && !empty($r['name'])) {
+                    $name = (string) ($r['name'] ?? '');
+                    $known = (float) ($r['popularity'] ?? 0) >= 1.5 || SearchRanker::normalize($name) === $normalized;
+                    if ($name !== '' && $known && count($people) < 6 && !isset($seen['person_' . ($r['id'] ?? 0)])) {
+                        $seen['person_' . ($r['id'] ?? 0)] = true;
                         $people[] = [
-                            'id'      => (int) ($r['id'] ?? 0),
-                            'name'    => (string) $r['name'],
+                            'id'         => (int) ($r['id'] ?? 0),
+                            'popularity' => (float) ($r['popularity'] ?? 0),
+                            'name'    => $name,
                             'profile' => TmdbClient::posterUrl($r['profile_path'] ?? null, 'w185'),
                             'known'   => (string) ($r['known_for_department'] ?? ''),
                             'titles'  => array_values(array_filter(array_map(
@@ -903,7 +922,15 @@ class TmdbController extends AbstractController
             }
         }
 
-        $ranked = SearchRanker::sort($raw, $sort, SearchRanker::normalize($terms), $yearHint);
+        // Most known first; namesakes ("Christopher Nolan" ×4) collapse to the best known.
+        usort($people, fn($a, $b) => $b['popularity'] <=> $a['popularity']);
+        $byName = [];
+        foreach ($people as $person) {
+            $byName[SearchRanker::normalize($person['name'])] ??= $person;
+        }
+        $people = array_values($byName);
+
+        $ranked = SearchRanker::sort($raw, $sort, $normalized, $yearHint);
         $results = $this->enrich($ranked, $library);
         if ($hideOwned) {
             $results = array_values(array_filter($results, fn($it) => !$it['in_library']));
@@ -917,43 +944,82 @@ class TmdbController extends AbstractController
             $best['original_title'] = $rawBest['original_title'] ?? $rawBest['original_name'] ?? null;
         }
 
+        // Query = a known person's exact name, and no title is called that:
+        // the person takes the top card and the titles go back to the grid.
+        $bestPerson = null;
+        if ($people !== [] && SearchRanker::normalize($people[0]['name']) === $normalized && $people[0]['popularity'] >= 3
+            && !($best && SearchRanker::normalize((string) $best['title']) === $normalized)) {
+            $bestPerson = $people[0];
+            array_shift($people);
+            if ($best !== null) {
+                array_unshift($results, $best);
+                $best = null;
+            }
+        }
+
         return [
-            'terms'      => $terms,
+            'terms'       => $terms,
+            'best_person' => $bestPerson,
             'best'       => $best,
             'results'    => $results,
             'people'     => $people,
-            'total'      => count($results) + ($best ? 1 : 0),
+            'total'      => count($results) + ($best ? 1 : 0) + ($bestPerson ? 1 : 0),
             'candidates' => $candidates,
         ];
     }
 
     /**
-     * Titles/names to test a mistyped query against: what the search itself
-     * returned, plus a search on the start of the query (a typo late in the
-     * word often still matches its first letters). Cached by TmdbClient.
+     * Titles/names to test a mistyped query against, with their popularity:
+     * what the search returned; searches on shorter starts of the query (a
+     * typo late in the word still matches its first letters: "incepsion" →
+     * "incep"); each word of a multi-word query on its own ("cristopher nolan"
+     * → "nolan"); and the SearchVocabulary of well-known titles and people,
+     * which reaches a famous title even when the typo is early ("pokumon").
+     * Every TMDb call is cached by TmdbClient; the vocabulary never fetches.
      *
-     * @param list<string> $seen
-     * @return list<string>
+     * @param list<array{label: string, popularity: float}> $seen
+     * @return list<array{label: string, popularity: float}>
      */
     private function suggestionCandidates(string $terms, array $seen): array
     {
         $candidates = $seen;
-        $normalized = SearchRanker::normalize($terms);
-        $words = explode(' ', $normalized);
-        $probes = array_unique(array_filter([
-            substr($normalized, 0, 4),
-            strlen($words[0]) >= 4 && count($words) > 1 ? $words[0] : null,
-        ]));
-        foreach ($probes as $probe) {
+        $plain = SearchRanker::normalize($terms);
+        $probes = [];
+        for ($len = strlen($plain) - 1; $len >= 5 && count($probes) < 4; $len--) {
+            $probes[] = rtrim(substr($plain, 0, $len));
+        }
+        $words = array_filter(explode(' ', $plain), fn($w) => strlen($w) >= 4);
+        if (count($words) > 1) {
+            $probes = array_merge($probes, array_slice($words, 0, 2));
+        }
+        foreach (array_unique(array_filter($probes, fn($p) => strlen($p) >= 4)) as $probe) {
             foreach ($this->tmdb->searchMulti($probe, 1)['results'] ?? [] as $r) {
-                $label = $r['title'] ?? $r['name'] ?? null;
-                if (is_string($label)) {
-                    $candidates[] = $label;
-                }
+                $candidates = array_merge($candidates, self::labelsOf($r));
             }
         }
 
-        return $candidates;
+        return array_merge($candidates, $this->vocabulary?->read() ?? []);
+    }
+
+    /**
+     * Display and original titles (or a person's name) of a TMDb item, each
+     * with the item's popularity.
+     *
+     * @param array<string, mixed> $r
+     * @return list<array{label: string, popularity: float}>
+     */
+    private static function labelsOf(array $r): array
+    {
+        $popularity = (float) ($r['popularity'] ?? 0);
+        $out = [];
+        foreach (array_unique(array_filter([
+            $r['title'] ?? $r['name'] ?? null,
+            $r['original_title'] ?? $r['original_name'] ?? null,
+        ], 'is_string')) as $label) {
+            $out[] = ['label' => $label, 'popularity' => $popularity];
+        }
+
+        return $out;
     }
 
     private function discoverSort(string $sort, string $type): string

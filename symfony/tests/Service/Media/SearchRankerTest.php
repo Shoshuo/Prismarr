@@ -91,6 +91,41 @@ final class SearchRankerTest extends TestCase
         self::assertNull(SearchRanker::suggest('alien', ['Aliens', 'Alien']), 'a real title among the candidates wins over a near one');
     }
 
+    public function testSuggestPrefersAFamousTitleOverAnObscureExactOne(): void
+    {
+        $candidates = [
+            ['label' => 'Interstelar', 'popularity' => 0.4],
+            ['label' => 'Interstellar', 'popularity' => 65],
+        ];
+        self::assertSame('Interstellar', SearchRanker::suggest('interstelar', $candidates));
+        // Comparable popularity: the real title stands, no suggestion.
+        self::assertNull(SearchRanker::suggest('interstelar', [['label' => 'Interstelar', 'popularity' => 30], ['label' => 'Interstellar', 'popularity' => 65]]));
+    }
+
+    public function testSuggestCompletesAHalfTypedWordWhenAllowed(): void
+    {
+        $candidates = [['label' => 'Poke', 'popularity' => 2], ['label' => 'Pokémon', 'popularity' => 152]];
+        self::assertSame('Pokémon', SearchRanker::suggest('pokémo', $candidates, allowCompletion: true));
+        $longer = [['label' => 'Pokémonia', 'popularity' => 14]];
+        self::assertNull(SearchRanker::suggest('pokémo', $longer), 'three letters short: only a completion reaches it');
+        self::assertSame('Pokémonia', SearchRanker::suggest('pokémo', $longer, allowCompletion: true));
+    }
+
+    public function testSuggestRanksEqualDistancesByPopularity(): void
+    {
+        $candidates = [['label' => 'Pokemen', 'popularity' => 0.1], ['label' => 'Pokémon', 'popularity' => 152]];
+        self::assertSame('Pokémon', SearchRanker::suggest('pokumon', $candidates));
+    }
+
+    public function testFamousPrefixMatchOutranksAnObscureExactTitle(): void
+    {
+        $items = [
+            ['media_type' => 'movie', 'title' => 'Poke', 'popularity' => 2, 'vote_count' => 2, 'release_date' => '2020-01-01'],
+            ['media_type' => 'tv', 'name' => 'Pokémon', 'popularity' => 152, 'vote_count' => 2000, 'first_air_date' => '1997-04-01'],
+        ];
+        self::assertSame('Pokémon', SearchRanker::sort($items, 'relevance', 'poke')[0]['name'] ?? null);
+    }
+
     public function testFilters(): void
     {
         $movie = ['media_type' => 'movie', 'title' => 'X', 'genre_ids' => [28, 12], 'release_date' => '2015-05-01', 'vote_average' => 7.4];

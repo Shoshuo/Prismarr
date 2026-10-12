@@ -1244,6 +1244,8 @@ decouverte:
     did_you_mean: 'Did you mean __S__?'
     showing_for: 'Showing results for __S__.'
     search_instead: 'Search instead for "__Q__"'
+    person_kicker: 'Person'
+    see_filmography: 'See filmography'
 media:
   api:
     tag_still_used: 'This tag is still in use. Remove it from all movies before deleting it.'
