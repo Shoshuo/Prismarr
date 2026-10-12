@@ -323,12 +323,16 @@ class TmdbClient implements ResetInterface
         $full = "prismarr_tmdb_{$this->getLocale()}_{$cacheKey}";
 
         return $this->cache->get($full, function (ItemInterface $item) use ($path, $params, $ttl) {
-            $item->expiresAfter($ttl);
-            return $this->request($path, $params) ?? [];
+            $data = $this->request($path, $params);
+            // A failed call is never cached: an empty answer stored for the
+            // whole TTL would show "no result" (and starve the search
+            // vocabulary) long after a short TMDb hiccup.
+            $item->expiresAfter($data === null ? 0 : $ttl);
+            return $data ?? [];
         });
     }
 
-    private function request(string $path, array $params = []): ?array
+    protected function request(string $path, array $params = []): ?array
     {
         $this->ensureConfig();
         $params['api_key']       = $this->apiKey;
