@@ -997,6 +997,16 @@
 
 <script>
 (function() {
+  // Turbo re-runs this script on every visit to the page. A listener bound
+  // on `document` would pile up (one more copy per visit: a card click then
+  // opens the detail modal N times) and keep pointing at the previous
+  // visit's DOM. bindDoc() swaps the previous copy for the new one.
+  function bindDoc(type, name, fn) {
+    var slot = '_prismarrSearchDoc_' + name;
+    if (window[slot]) document.removeEventListener(type, window[slot]);
+    window[slot] = fn;
+    document.addEventListener(type, fn);
+  }
   var BASE = window.BASE_PATH;
   function escHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
@@ -1203,7 +1213,7 @@
       });
   }
 
-  document.addEventListener('click', function(e) {
+  bindDoc('click', 'click1', function(e) {
     var addBtn = e.target.closest('.tmdb-add-btn');
     if (addBtn) {
       e.preventDefault();
@@ -1258,7 +1268,7 @@
       closeDetailModal();
     }
   });
-  document.addEventListener('keydown', function(e) {
+  bindDoc('keydown', 'keydown2', function(e) {
     if (e.key === 'Escape' && detailModal.classList.contains('show')) {
       closeDetailModal();
     }
@@ -1682,7 +1692,7 @@
   }
 
   // Switch video in the gallery
-  document.addEventListener('click', function(e) {
+  bindDoc('click', 'click3', function(e) {
     var vbtn = e.target.closest('.td-video-btn');
     if (!vbtn) return;
     var key = vbtn.dataset.ytKey;
@@ -1699,7 +1709,7 @@
   });
 
   // Scroll arrows for similar + seasons + backdrops (in the modal)
-  document.addEventListener('click', function(e) {
+  bindDoc('click', 'click4', function(e) {
     var btn = e.target.closest('[data-td-scroll], [data-seasons-scroll], [data-backdrops-scroll]');
     if (!btn) return;
     var rowId, dirAttr;
@@ -1715,7 +1725,7 @@
   // Lightbox backdrops
   var lb = document.getElementById('td-lightbox');
   var lbImg = document.getElementById('td-lightbox-img');
-  document.addEventListener('click', function(e) {
+  bindDoc('click', 'click5', function(e) {
     var open = e.target.closest('[data-td-lb-open]');
     if (open) {
       lbImg.src = open.dataset.tdLbOpen;
@@ -1727,7 +1737,7 @@
       lbImg.src = '';
     }
   });
-  document.addEventListener('keydown', function(e) {
+  bindDoc('keydown', 'keydown6', function(e) {
     if (!document.getElementById('td-lightbox')) return;
     if (e.key === 'Escape' && lb.classList.contains('show')) {
       lb.classList.remove('show');
@@ -1803,7 +1813,7 @@
       });
   }
 
-  document.addEventListener('click', function(e) {
+  bindDoc('click', 'click7', function(e) {
     if (e.target.closest('.tmdb-add-btn') || e.target.closest('.h-actions') || e.target.closest('a') || e.target.closest('.wl-star')) return;
     var card = e.target.closest('.media-card[data-tmdb-id]');
     if (!card) return;
@@ -2074,7 +2084,7 @@
       if (exact) { srchInput.value = exact.dataset.srchExact; srch.exact = true; srchRun(false); }
     });
     // "/" focuses the search box from anywhere on the page (not while typing).
-    document.addEventListener('keydown', function (e) {
+    bindDoc('keydown', 'keydown8', function (e) {
       if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
       var t = e.target;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
@@ -2084,7 +2094,7 @@
   }
 
   // Hero "View details" button → opens Prismarr modal (not external TMDb)
-  document.addEventListener('click', function(e) {
+  bindDoc('click', 'click9', function(e) {
     var btn = e.target.closest('.tmdb-hero-details-btn');
     if (!btn) return;
     e.preventDefault();
@@ -2211,7 +2221,7 @@
   }
 
   // Star click on cards (only .media-card, not .ex-card)
-  document.addEventListener('click', function(e) {
+  bindDoc('click', 'click10', function(e) {
     var star = e.target.closest('.wl-star');
     if (!star) return;
     if (!star.closest('.media-card[data-tmdb-id]')) return;
@@ -2236,7 +2246,7 @@
   });
 
   // Clic bouton watchlist dans la modal
-  document.addEventListener('click', function(e) {
+  bindDoc('click', 'click11', function(e) {
     var btn = e.target.closest('.tmdb-wl-modal-btn');
     if (!btn) return;
     e.stopPropagation();
