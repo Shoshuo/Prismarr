@@ -21,6 +21,8 @@ final class SearchRanker
     {
         self::$translit ??= \Transliterator::create('Any-Latin; Latin-ASCII; Lower()');
         $s = self::$translit ? (string) self::$translit->transliterate($s) : mb_strtolower($s);
+        // An apostrophe joins rather than splits: "JoJo's" is one word, "jojos".
+        $s = (string) preg_replace("/['`\u{2019}]/u", '', $s);
         $s = (string) preg_replace('/[^a-z0-9]+/', ' ', $s);
 
         return trim((string) preg_replace('/\s+/', ' ', $s));
@@ -244,6 +246,15 @@ final class SearchRanker
                     $bestPopularity = $popularity;
                 }
             }
+            $distance = self::wordDistance($nq, self::normalize($label), $allowCompletion);
+            if ($distance !== null) {
+                $key = [$distance, -$popularity];
+                if ($bestKey === null || $key < $bestKey) {
+                    $bestKey = $key;
+                    $best = $label;
+                    $bestPopularity = $popularity;
+                }
+            }
         }
 
         if ($best === null) {
@@ -254,6 +265,65 @@ final class SearchRanker
         }
 
         return $best;
+    }
+
+    /**
+     * Word-by-word distance for a multi-word query: each query word against
+     * the title word at the same place, within a tolerance set by its length
+     * (none up to 3 letters, 1 up to 5, 2 up to 8, 3 beyond), the last word
+     * also allowed to be the start of its title word ("adven" → "adventure").
+     * Catches several small typos spread over a long query, which a distance
+     * on the whole string rejects. Null when a word is too far off, or when
+     * nothing was corrected (an unfinished last word only counts when
+     * completion is allowed).
+     */
+    private static function wordDistance(string $nq, string $nl, bool $allowCompletion): ?float
+    {
+        $q = explode(' ', $nq);
+        $l = $nl === '' ? [] : explode(' ', $nl);
+        $n = count($q);
+        if ($n < 2 || count($l) < $n) {
+            return null;
+        }
+
+        $typos = 0;
+        $completed = false;
+        foreach ($q as $i => $w) {
+            $t = $l[$i];
+            $tolerance = match (true) {
+                strlen($w) <= 3 => 0,
+                strlen($w) <= 5 => 1,
+                strlen($w) <= 8 => 2,
+                default         => 3,
+            };
+            $last = $i === $n - 1;
+            if ($w === $t) {
+                continue;
+            }
+            if ($last && strlen($w) >= 2 && str_starts_with($t, $w)) {
+                $completed = true;
+                continue;
+            }
+            $d = levenshtein($w, $t);
+            if ($d <= $tolerance) {
+                $typos += $d;
+                continue;
+            }
+            if ($last && strlen($w) >= 4 && strlen($t) > strlen($w)
+                && ($d = levenshtein($w, substr($t, 0, strlen($w)))) <= $tolerance) {
+                $typos += $d;
+                $completed = true;
+                continue;
+            }
+
+            return null;
+        }
+        if ($typos === 0 && (!$completed || !$allowCompletion)) {
+            return null;
+        }
+
+        // Unfinished last word and extra title words make a match a bit looser.
+        return $typos + ($completed ? 0.5 : 0) + 0.25 * (count($l) - $n);
     }
 
     /** @param list<string> $words */

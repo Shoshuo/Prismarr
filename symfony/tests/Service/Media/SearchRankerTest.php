@@ -126,6 +126,29 @@ final class SearchRankerTest extends TestCase
         self::assertSame('Pokémon', SearchRanker::sort($items, 'relevance', 'poke')[0]['name'] ?? null);
     }
 
+    public function testNormalizeKeepsApostropheWordsWhole(): void
+    {
+        self::assertSame('jojos bizarre adventure', SearchRanker::normalize("JoJo's Bizarre Adventure"));
+        self::assertSame('lord of the rings the return of the king', SearchRanker::normalize('Lord of the Rings: The Return of the King'));
+    }
+
+    public function testSuggestCorrectsWordByWordWithAHalfTypedLastWord(): void
+    {
+        $candidates = [
+            ['label' => "JoJo's Bizarre Adventure", 'popularity' => 60],
+            ['label' => 'Bizarre Love Triangle', 'popularity' => 2],
+        ];
+        self::assertSame("JoJo's Bizarre Adventure", SearchRanker::suggest('jojo bizzare adven', $candidates));
+        self::assertSame('Breaking Bad', SearchRanker::suggest('braking ba', [['label' => 'Breaking Bad', 'popularity' => 300]]));
+    }
+
+    public function testWordByWordStaysStrictOnShortWords(): void
+    {
+        // A 3-letter word tolerates no typo.
+        self::assertNull(SearchRanker::suggest('red dawn', [['label' => 'Rex Dawson', 'popularity' => 50]]));
+        self::assertNull(SearchRanker::suggest('dog day', [['label' => 'Dig Dug', 'popularity' => 50]]));
+    }
+
     public function testFilters(): void
     {
         $movie = ['media_type' => 'movie', 'title' => 'X', 'genre_ids' => [28, 12], 'release_date' => '2015-05-01', 'vote_average' => 7.4];
