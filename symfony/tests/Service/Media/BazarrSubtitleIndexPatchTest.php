@@ -286,4 +286,28 @@ class BazarrSubtitleIndexPatchTest extends TestCase
         $index->refreshItem('movie', 7); // must not throw
         $this->addToAssertionCount(1);
     }
+
+    public function testAfterAPatchAFreshMapIsMarkedStaleSoTheQueuedRebuildActuallyRuns(): void
+    {
+        // The trailing requestRefresh() no-oped in the
+        // refresher while the map was fresh (and could be swallowed by a page
+        // view's coalescing marker), so the cards / most-missing / counts
+        // derived from the same fetch kept the pre-download values.
+        $pool = new ArrayAdapter();
+        $swr  = $this->swr($pool);
+        $swr->write(BazarrSubtitleIndex::KEY_MOVIES, [7 => ['state' => 'missing', 'count' => 2]], BazarrSubtitleIndex::HARD_TTL);
+        $swr->requestRefresh(BazarrSubtitleIndex::KEY_MOVIES); // marker already set by a page view
+        $this->dispatched = [];
+
+        $client = $this->createMock(BazarrClient::class);
+        $client->method('getMovies')->willReturn([['radarrId' => 7, 'profileId' => 1, 'subtitles' => [['code2' => 'fr']], 'missing_subtitles' => []]]);
+        $client->method('getLastError')->willReturn(null);
+
+        $this->index($client, $pool)->refreshItem('movie', 7);
+
+        $hit = $swr->read(BazarrSubtitleIndex::KEY_MOVIES, BazarrSubtitleIndex::SOFT_TTL);
+        $this->assertSame('stale', $hit['state']);
+        $this->assertSame('complete', $hit['value'][7]['state'], 'the patch itself is still served');
+        $this->assertSame([BazarrSubtitleIndex::KEY_MOVIES], array_map(static fn (object $m): string => $m->key, $this->dispatched));
+    }
 }

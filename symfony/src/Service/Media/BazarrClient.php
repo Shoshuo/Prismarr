@@ -26,6 +26,25 @@ class BazarrClient implements ResetInterface
     /** Short slug — circuit-breaker key + HealthService service id. */
     public const SERVICE = 'bazarr';
 
+    /** Request budget (seconds) for the cheap calls a page render waits on. */
+    public const DEFAULT_TIMEOUT = 8;
+
+    /**
+     * Budget for the full-library lists (`length=-1`), opt-in per call like
+     * RadarrClient::LIBRARY_TIMEOUT. The worker refresher passes it: /movies
+     * alone was measured at 4–8 s on a 5.4k-movie library — right at the
+     * default cap — and nobody is waiting on that request.
+     */
+    public const LIBRARY_TIMEOUT = 30;
+
+    /**
+     * Budget for /providers/* — Bazarr answers synchronously: a search fans
+     * out to every enabled provider, a download fetches and writes the file.
+     * Kept under the common 60 s reverse-proxy read timeout so the browser
+     * gets Prismarr's answer, not a proxy 504 for a download that worked.
+     */
+    public const PROVIDER_TIMEOUT = 45;
+
     private bool $configLoaded = false;
     private bool $enabled = true;
     private string $baseUrl = '';
@@ -132,28 +151,31 @@ class BazarrClient implements ResetInterface
     /**
      * @param list<int> $radarrIds Optional per-id filter. Empty = the whole
      *        list (start=0&length=-1), byte-for-byte the previous query.
+     * @param int $timeout Pass LIBRARY_TIMEOUT for the unfiltered list off
+     *        the request path (the worker refresher).
      * @return list<array<string, mixed>> Raw movie dicts; [] on failure.
      */
-    public function getMovies(array $radarrIds = []): array
+    public function getMovies(array $radarrIds = [], int $timeout = self::DEFAULT_TIMEOUT): array
     {
         if (!$this->ready()) {
             return [];
         }
-        $r = $this->request('GET', '/movies', ['start' => 0, 'length' => -1], [], self::repeatedIds('radarrid', $radarrIds));
+        $r = $this->request('GET', '/movies', ['start' => 0, 'length' => -1], [], self::repeatedIds('radarrid', $radarrIds), $timeout);
 
         return array_values(is_array($r['data'] ?? null) ? $r['data'] : []);
     }
 
     /**
      * @param list<int> $sonarrSeriesIds Optional per-id filter; empty = the whole list.
+     * @param int $timeout Pass LIBRARY_TIMEOUT for the unfiltered list off the request path.
      * @return list<array<string, mixed>> Raw series dicts; [] on failure.
      */
-    public function getSeries(array $sonarrSeriesIds = []): array
+    public function getSeries(array $sonarrSeriesIds = [], int $timeout = self::DEFAULT_TIMEOUT): array
     {
         if (!$this->ready()) {
             return [];
         }
-        $r = $this->request('GET', '/series', ['start' => 0, 'length' => -1], [], self::repeatedIds('seriesid', $sonarrSeriesIds));
+        $r = $this->request('GET', '/series', ['start' => 0, 'length' => -1], [], self::repeatedIds('seriesid', $sonarrSeriesIds), $timeout);
 
         return array_values(is_array($r['data'] ?? null) ? $r['data'] : []);
     }
@@ -179,7 +201,10 @@ class BazarrClient implements ResetInterface
         ));
     }
 
-    /** @return list<array<string, mixed>> Raw movie subtitle-history dicts; [] on failure. */
+    /**
+     * @return list<array<string, mixed>> Raw movie subtitle-history dicts; [] on failure.
+     * @phpstan-impure Sets getLastError() — callers read it after each call.
+     */
     public function getHistoryMovies(): array
     {
         if (!$this->ready()) {
@@ -189,7 +214,10 @@ class BazarrClient implements ResetInterface
         return array_values(is_array($r['data'] ?? null) ? $r['data'] : []);
     }
 
-    /** @return list<array<string, mixed>> Raw episode subtitle-history dicts; [] on failure. */
+    /**
+     * @return list<array<string, mixed>> Raw episode subtitle-history dicts; [] on failure.
+     * @phpstan-impure Sets getLastError() — callers read it after each call.
+     */
     public function getHistoryEpisodes(): array
     {
         if (!$this->ready()) {
@@ -215,7 +243,7 @@ class BazarrClient implements ResetInterface
         if (!$this->ready()) {
             return null;
         }
-        return $this->request('GET', '/providers/movies', ['radarrid' => $radarrId]);
+        return $this->request('GET', '/providers/movies', ['radarrid' => $radarrId], timeout: self::PROVIDER_TIMEOUT);
     }
 
     /** @return array<string, mixed>|null Provider search results; null on failure. */
@@ -224,7 +252,7 @@ class BazarrClient implements ResetInterface
         if (!$this->ready()) {
             return null;
         }
-        return $this->request('GET', '/providers/episodes', ['episodeid' => $episodeId]);
+        return $this->request('GET', '/providers/episodes', ['episodeid' => $episodeId], timeout: self::PROVIDER_TIMEOUT);
     }
 
     /** @param array{radarrid?: mixed, hi?: mixed, forced?: mixed, original_format?: mixed, provider?: mixed, subtitle?: mixed} $p */
@@ -233,16 +261,22 @@ class BazarrClient implements ResetInterface
         if (!$this->ready()) {
             return false;
         }
-        return $this->request('POST', '/providers/movies', [], $this->downloadBody($p, 'radarrid')) !== null;
+        return $this->request('POST', '/providers/movies', [], $this->downloadBody($p, 'radarrid'), timeout: self::PROVIDER_TIMEOUT) !== null;
     }
 
-    /** @param array{episodeid?: mixed, hi?: mixed, forced?: mixed, original_format?: mixed, provider?: mixed, subtitle?: mixed} $p */
+    /**
+     * Bazarr's episode-download parser requires the Sonarr series id
+     * alongside the episode id (both `required=True`) — omit it and every
+     * download is rejected with a 400.
+     *
+     * @param array{seriesid?: mixed, episodeid?: mixed, hi?: mixed, forced?: mixed, original_format?: mixed, provider?: mixed, subtitle?: mixed} $p
+     */
     public function downloadEpisode(array $p): bool
     {
         if (!$this->ready()) {
             return false;
         }
-        return $this->request('POST', '/providers/episodes', [], $this->downloadBody($p, 'episodeid')) !== null;
+        return $this->request('POST', '/providers/episodes', [], $this->downloadBody($p, 'seriesid', 'episodeid'), timeout: self::PROVIDER_TIMEOUT) !== null;
     }
 
     public function searchMissingMovie(int $radarrId): bool
@@ -263,19 +297,23 @@ class BazarrClient implements ResetInterface
 
     /**
      * Normalizes a subtitle-download request body for Bazarr's
-     * `/providers/{movies,episodes}` POST endpoints: the id is cast to a
-     * string under the caller-supplied key ('radarrid' or 'episodeid'), and
+     * `/providers/{movies,episodes}` POST endpoints: each id is cast to a
+     * string under the caller-supplied keys ('radarrid', or 'seriesid' +
+     * 'episodeid'), and
      * the three boolean-ish flags are coerced to Bazarr's expected literal
      * strings "True"/"False" (truthy-ish inputs: `true`, `"True"`, `"1"`, `1`).
      *
      * @param array<string, mixed> $p
      * @return array<string, string>
      */
-    private function downloadBody(array $p, string $idKey): array
+    private function downloadBody(array $p, string ...$idKeys): array
     {
         $b = static fn($v): string => (($v === true || $v === 'True' || $v === '1' || $v === 1) ? 'True' : 'False');
-        return [
-            $idKey            => (string) ($p[$idKey] ?? ''),
+        $ids = [];
+        foreach ($idKeys as $idKey) {
+            $ids[$idKey] = (string) ($p[$idKey] ?? '');
+        }
+        return $ids + [
             'hi'              => $b($p['hi'] ?? false),
             'forced'          => $b($p['forced'] ?? false),
             'original_format' => $b($p['original_format'] ?? false),
@@ -297,9 +335,16 @@ class BazarrClient implements ResetInterface
      * @param string               $rawQuery Pre-encoded extra query fragment for
      *                                       parameters http_build_query() cannot
      *                                       express (Bazarr's repeated `name[]=`).
+     * @param int                  $timeout  Total budget in seconds. A long-budget
+     *                                       call that connected and then ran out
+     *                                       does NOT trip the breaker: Bazarr is
+     *                                       busy, not down, and marking it down
+     *                                       would blind every other call. Refused /
+     *                                       unresolvable / connect-timeout still
+     *                                       trips it on any budget.
      * @return array<string, mixed>|null
      */
-    private function request(string $method, string $path, array $query = [], array $body = [], string $rawQuery = ''): ?array
+    private function request(string $method, string $path, array $query = [], array $body = [], string $rawQuery = '', int $timeout = self::DEFAULT_TIMEOUT): ?array
     {
         // Circuit breaker: skip the call entirely if Bazarr was just seen
         // down — a widget poll would otherwise stack connect timeouts.
@@ -343,7 +388,7 @@ class BazarrClient implements ResetInterface
         $opts = [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CONNECTTIMEOUT => 3,
-            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_TIMEOUT        => $timeout,
             CURLOPT_NOSIGNAL       => true, // critical under FrankenPHP/Alpine
             CURLOPT_FOLLOWLOCATION => false,
             // SSRF guard #2 — lock the protocol even across any redirect.
@@ -359,14 +404,17 @@ class BazarrClient implements ResetInterface
             $opts[CURLOPT_POSTFIELDS] = http_build_query($body);
         }
 
-        curl_setopt_array($ch, $opts);
-        [$rawBody, $code, $err] = $this->exec($ch);
+        [$rawBody, $code, $err, $timedOutAfterConnect] = $this->exec($ch, $opts);
 
         // Transport failure (unreachable / DNS / TLS / timeout) — the only
-        // class of failure that may trip the breaker.
+        // class of failure that may trip the breaker. One exception: a
+        // long-budget call that connected and then ran out of time means
+        // Bazarr is busy, not down (see the $timeout docblock above).
         if ($rawBody === false || $err !== '' || $code === 0) {
             $this->recordError($code, $err !== '' ? $err : 'connection failed', $method, $path);
-            $this->health?->markDown(self::SERVICE);
+            if ($timeout <= self::DEFAULT_TIMEOUT || !$timedOutAfterConnect) {
+                $this->health?->markDown(self::SERVICE);
+            }
             return null;
         }
 
@@ -402,24 +450,30 @@ class BazarrClient implements ResetInterface
     }
 
     /**
-     * cURL execution seam: performs the transfer and returns the three raw
-     * facts request() classifies on. Split out (and protected) so unit tests
-     * can feed fabricated responses through the classification branches —
-     * transport failure vs non-2xx vs invalid JSON drive different circuit-
-     * breaker decisions, and there is no live Bazarr in the test suite.
+     * cURL execution seam: applies the options, performs the transfer and
+     * returns the three raw facts request() classifies on. Split out (and
+     * protected) so unit tests can feed fabricated responses through the
+     * classification branches — transport failure vs non-2xx vs invalid JSON
+     * drive different circuit-breaker decisions, and there is no live Bazarr
+     * in the test suite — and can inspect the options (body, timeout) each
+     * call would have sent.
      *
-     * @param \CurlHandle $ch
-     * @return array{0: string|false, 1: int, 2: string} [body, http code, curl error]
+     * @param \CurlHandle       $ch
+     * @param array<int, mixed> $opts
+     * @return array{0: string|false, 1: int, 2: string, 3: bool} [body, http code, curl error, timed out after the connection was established]
      */
-    protected function exec(\CurlHandle $ch): array
+    protected function exec(\CurlHandle $ch, array $opts): array
     {
+        curl_setopt_array($ch, $opts);
         /** @var string|false $body */
         $body = curl_exec($ch);
         $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $err  = curl_error($ch);
+        $timedOutAfterConnect = curl_errno($ch) === CURLE_OPERATION_TIMEDOUT
+            && (float) curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
         curl_close($ch);
 
-        return [$body, $code, $err];
+        return [$body, $code, $err, $timedOutAfterConnect];
     }
 
     private function recordError(int $code, string $message, string $method, string $path): void

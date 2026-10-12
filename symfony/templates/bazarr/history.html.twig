@@ -31,7 +31,11 @@
             <div class="card-header">
               <h3 class="card-title">{{ 'bazarr.history.movies_title'|trans }}</h3>
             </div>
-            {% if history_movies is empty %}
+            {% if error_movies %}
+              <div class="card-body">
+                {% include 'error/_service_banner.html.twig' with { service: 'Bazarr', wizard_route: 'admin_settings_index', configured_url: service_url, reason: 'unreachable' } %}
+              </div>
+            {% elseif history_movies is empty %}
               <div class="card-body">
                 <div class="empty">
                   <p class="empty-title">{{ 'bazarr.history.empty'|trans }}</p>
@@ -70,7 +74,11 @@
             <div class="card-header">
               <h3 class="card-title">{{ 'bazarr.history.episodes_title'|trans }}</h3>
             </div>
-            {% if history_episodes is empty %}
+            {% if error_episodes %}
+              <div class="card-body">
+                {% include 'error/_service_banner.html.twig' with { service: 'Bazarr', wizard_route: 'admin_settings_index', configured_url: service_url, reason: 'unreachable' } %}
+              </div>
+            {% elseif history_episodes is empty %}
               <div class="card-body">
                 <div class="empty">
                   <p class="empty-title">{{ 'bazarr.history.empty'|trans }}</p>

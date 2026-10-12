@@ -25,12 +25,25 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * Closing the session right after the controller is resolved (auth already
  * done) drops the lock immediately, so the parallel fragments stop fighting
  * over it. We only do this for GET main requests: POSTs (CSRF mutations,
- * login, flash messages) keep the session open and write normally. The setup
+ * login, flash messages) keep the session open and write normally — except a
+ * short allowlist of long-running POSTs known not to write it. The setup
  * wizard is excluded because it legitimately writes `_locale` to the session
  * on its language picker; internal routes (_profiler, _wdt) are skipped too.
  */
 class SessionLockReleaseSubscriber implements EventSubscriberInterface
 {
+    /**
+     * Non-GET routes that never write the session yet can run long — a
+     * Bazarr provider download or the inline subtitle-index rebuild hold the
+     * request for up to a minute or more, and keeping the lock that long
+     * freezes every other tab of that admin.
+     */
+    private const LONG_POST_ROUTES = [
+        'app_bazarr_api_download_movie',
+        'app_bazarr_api_download_episode',
+        'app_bazarr_api_refresh',
+    ];
+
     private const ROUTE_PREFIX_BLOCKLIST = [
         'app_setup_', // the wizard writes `_locale` to the session on GET
         '_',          // Symfony internals (_profiler, _wdt, _error)
@@ -61,12 +74,13 @@ class SessionLockReleaseSubscriber implements EventSubscriberInterface
 
     /**
      * A request is safe to release the session lock for when it's a GET main
-     * request with an already-started session that isn't a route known to
-     * write to the session.
+     * request (or one of the LONG_POST_ROUTES) with an already-started
+     * session that isn't a route known to write to the session.
      */
     public static function shouldRelease(Request $request): bool
     {
-        if (!$request->isMethod('GET')) {
+        $route = (string) $request->attributes->get('_route', '');
+        if (!$request->isMethod('GET') && !in_array($route, self::LONG_POST_ROUTES, true)) {
             return false;
         }
 
@@ -79,7 +93,6 @@ class SessionLockReleaseSubscriber implements EventSubscriberInterface
             return false;
         }
 
-        $route = (string) $request->attributes->get('_route', '');
         foreach (self::ROUTE_PREFIX_BLOCKLIST as $prefix) {
             if (str_starts_with($route, $prefix)) {
                 return false;

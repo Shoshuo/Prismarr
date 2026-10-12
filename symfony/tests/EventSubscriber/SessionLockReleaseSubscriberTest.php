@@ -46,6 +46,16 @@ class SessionLockReleaseSubscriberTest extends TestCase
             self::request('POST', 'admin_instances_create', true),
             false,
         ];
+        // Long-running Bazarr POSTs that never write the session: a 45 s
+        // provider download / ~86 s inline refresh must not hold the lock and
+        // freeze every other tab of that admin.
+        foreach (['app_bazarr_api_download_movie', 'app_bazarr_api_download_episode', 'app_bazarr_api_refresh'] as $route) {
+            yield 'POST ' . $route . ' releases the lock' => [self::request('POST', $route, true), true];
+        }
+        yield 'other Bazarr POSTs keep the lock' => [
+            self::request('POST', 'app_bazarr_api_auto_movie', true),
+            false,
+        ];
         // No session started yet → nothing to release (and we must not start one).
         yield 'GET without a started session' => [
             self::request('GET', 'app_dashboard', false),

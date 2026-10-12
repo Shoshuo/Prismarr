@@ -3,7 +3,9 @@
    "missing" badge (media/_subtitle_badge.html.twig) and the
    per-episode Search buttons on the series-detail page
    (bazarr/series_detail.html.twig) both emit that contract without knowing
-   about this modal. The same delegate also owns two sibling contracts:
+   about this modal. Episode triggers must also carry data-series-id (the
+   Sonarr series id) — Bazarr's episode download requires it alongside the
+   episode id. The same delegate also owns two sibling contracts:
    [data-bazarr-nav] (an <a> that must navigate without waking the toggler it
    sits inside) and [data-bazarr-auto][data-kind][data-id] ("search missing"
    for a whole movie/series). All three are contained in the CAPTURE phase —
@@ -98,7 +100,7 @@
 
   var searchToken = 0;
 
-  function renderRows(kind, itemId, results) {
+  function renderRows(kind, itemId, seriesId, results) {
     var tbody = tbodyEl();
     if (!tbody) return;
     if (!results || !results.length) {
@@ -111,6 +113,7 @@
     tbody._bazarrRows = results;
     tbody.setAttribute('data-kind', kind);
     tbody.setAttribute('data-item-id', String(itemId));
+    tbody.setAttribute('data-series-id', seriesId ? String(seriesId) : '');
     tbody.innerHTML = results.map(function (r, idx) {
       var lang = window.escHtml(normalizeLanguage(r.language));
       var release = normalizeRelease(r.release_info);
@@ -130,7 +133,7 @@
     }).join('');
   }
 
-  function doSearch(kind, id) {
+  function doSearch(kind, id, seriesId) {
     var trigger = triggerEl();
     if (!trigger) return;
     var token = ++searchToken;
@@ -151,7 +154,7 @@
       .then(function (data) {
         if (token !== searchToken) return; // a newer search superseded this one
         if (!data || data.ok !== true) { throw new Error((data && data.error) || 'search-failed'); }
-        renderRows(kind, id, data.results || []);
+        renderRows(kind, id, seriesId, data.results || []);
       })
       .catch(function () {
         if (token !== searchToken) return;
@@ -201,7 +204,7 @@
     if (quicklookOpen()) { document.body.classList.add('modal-open'); }
   });
 
-  function doDownload(kind, itemId, row, btn) {
+  function doDownload(kind, itemId, seriesId, row, btn) {
     var origHtml = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
@@ -210,6 +213,8 @@
     var idField = kind === 'movie' ? 'radarrid' : 'episodeid';
     var params = {};
     params[idField] = itemId;
+    // Bazarr's episode-download parser requires the series id too.
+    if (kind === 'episode') { params.seriesid = seriesId || ''; }
     params.hi = isTruthy(row.hearing_impaired) ? '1' : '0';
     params.forced = isTruthy(row.forced) ? '1' : '0';
     params.original_format = isTruthy(row.original_format) ? '1' : '0';
@@ -312,7 +317,7 @@
       if (!kind || !id) return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      doSearch(kind, id);
+      doSearch(kind, id, searchTrigger.getAttribute('data-series-id'));
       return;
     }
 
@@ -350,7 +355,7 @@
       var rows = tbody && tbody._bazarrRows;
       var idx = parseInt(downloadBtn.getAttribute('data-idx'), 10);
       if (!rows || !rows[idx]) return;
-      doDownload(tbody.getAttribute('data-kind'), tbody.getAttribute('data-item-id'), rows[idx], downloadBtn);
+      doDownload(tbody.getAttribute('data-kind'), tbody.getAttribute('data-item-id'), tbody.getAttribute('data-series-id'), rows[idx], downloadBtn);
     }
   }, true);
 })();

@@ -3,7 +3,9 @@
 namespace App\Tests\Controller;
 
 use App\Entity\User;
+use App\Service\Cache\StaleWhileRevalidateCache;
 use App\Service\Media\BazarrClient;
+use App\Service\Media\BazarrSubtitleIndex;
 use App\Service\Media\ServiceHealthCache;
 use App\Tests\AbstractWebTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -28,14 +30,19 @@ class BazarrControllerTest extends AbstractWebTestCase
      * AbstractWebTestCase resets — is NOT reset between tests in this
      * process. A test that reaches apiRefresh() successfully (the truthful-
      * shape test, the breaker-open test, and the already_running test below)
-     * leaves the marker set for 30 s, which would make whichever of those
+     * leaves the marker set for ~68 s, which would make whichever of those
      * tests happens to run next within that window answer already_running
      * instead of whatever it actually means to exercise. Clear it after
      * every test in this class so order/timing can never matter.
      */
     protected function tearDown(): void
     {
-        static::getContainer()->get('cache.app')->deleteItem('bazarr_subtitle_index.inline_refresh');
+        $pool = static::getContainer()->get('cache.app');
+        $pool->deleteItem('bazarr_subtitle_index.inline_refresh');
+        // The breaker lives in the same persistent pool; apiRefresh() checks
+        // it first, so a test that marks Bazarr down must not leak that into
+        // the next one.
+        (new ServiceHealthCache($pool))->clear(BazarrClient::SERVICE);
         parent::tearDown();
     }
 
@@ -193,6 +200,9 @@ class BazarrControllerTest extends AbstractWebTestCase
         self::assertTrue($payload['ok']);
         self::assertSame('fresh', $payload['movies']);
         self::assertSame('fresh', $payload['series']);
+        // The landing page also gates on the badge counts,
+        // so the truthful answer reports them too.
+        self::assertSame('fresh', $payload['badges'] ?? null);
         self::assertNull($payload['reason']);
     }
 
@@ -218,7 +228,7 @@ class BazarrControllerTest extends AbstractWebTestCase
     /**
      * a second call while the coalescing marker is
      * still set (a double-clicked Retry, or a second admin) must not stack
-     * another inline ~3x8s rebuild — it answers `already_running`
+     * another inline rebuild — it answers `already_running`
      * immediately. Zero client calls is structurally guaranteed here the
      * same way the breaker_open test above guarantees it: the marker check
      * returns before BazarrIndexRefresher::refresh() is ever called, and the
@@ -243,5 +253,43 @@ class BazarrControllerTest extends AbstractWebTestCase
         self::assertArrayHasKey('series', $payload);
         self::assertFalse($payload['ok']);
         self::assertSame('already_running', $payload['reason']);
+    }
+
+    /**
+     * Retry only rebuilt the movies + series maps, so a
+     * landing page stuck on "warming" because its badge counts were missing
+     * (their /badges call failed while /movies succeeded) could never be
+     * recovered from the UI.
+     */
+    public function testTheRefreshEndpointAlsoRebuildsMissingBadgeCounts(): void
+    {
+        $swr = static::getContainer()->get(StaleWhileRevalidateCache::class);
+        $swr->write(BazarrSubtitleIndex::KEY_MOVIES, [], BazarrSubtitleIndex::HARD_TTL);
+        $swr->write(BazarrSubtitleIndex::KEY_SERIES, [], BazarrSubtitleIndex::HARD_TTL);
+        $swr->delete(BazarrSubtitleIndex::KEY_BADGES);
+
+        $this->client->request('POST', '/bazarr/api/refresh');
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertNotNull($swr->read(BazarrSubtitleIndex::KEY_BADGES, BazarrSubtitleIndex::SOFT_TTL));
+    }
+
+    /**
+     * The coalescing marker was taken BEFORE the breaker
+     * check, so a breaker_open answer still blocked every Retry for the
+     * marker TTL — after Bazarr had already recovered.
+     */
+    public function testABreakerOpenAnswerDoesNotBlockTheNextRetry(): void
+    {
+        $pool   = static::getContainer()->get('cache.app');
+        $health = new ServiceHealthCache($pool);
+        $health->markDown(BazarrClient::SERVICE);
+        $this->client->request('POST', '/bazarr/api/refresh');
+        self::assertSame('breaker_open', json_decode((string) $this->client->getResponse()->getContent(), true)['reason']);
+
+        $health->clear(BazarrClient::SERVICE);
+        $this->client->request('POST', '/bazarr/api/refresh');
+
+        self::assertNotSame('already_running', json_decode((string) $this->client->getResponse()->getContent(), true)['reason']);
     }
 }

@@ -62,8 +62,10 @@ class BazarrFrameRenderTest extends WebTestCase
      *                        unreachable, isolating the controller's error
      *                        path from the (separate, out-of-scope) guard
      *                        behaviour.
+     * @param callable|null   $configure stubs further client methods on the
+     *                        same stub before the override is installed.
      */
-    private function boot(bool|array $reachable): void
+    private function boot(bool|array $reachable, ?callable $configure = null): void
     {
         $this->client = static::createClient();
 
@@ -85,6 +87,9 @@ class BazarrFrameRenderTest extends WebTestCase
             $fakeBazarr->method('ping')->willReturnOnConsecutiveCalls(...$reachable);
         } else {
             $fakeBazarr->method('ping')->willReturn($reachable);
+        }
+        if ($configure !== null) {
+            $configure($fakeBazarr);
         }
         static::getContainer()->set(BazarrClient::class, $fakeBazarr);
 
@@ -318,5 +323,109 @@ class BazarrFrameRenderTest extends WebTestCase
         $this->assertStringNotContainsString('bazarr-warming', $html);
         // the banner's CTA must escape the frame.
         $this->assertStringContainsString('data-turbo-frame="_top"', $html);
+    }
+
+    /**
+     * A reachable Bazarr whose history call FAILS (timeout
+     * on the ~4 MB uncached response, 401...) rendered "No history" with no
+     * error — the controller only checked ping(), never getLastError().
+     */
+    public function testAFailedHistoryFetchRendersTheErrorBannerNotAnEmptyList(): void
+    {
+        $this->boot(true, static function ($bazarr): void {
+            $bazarr->method('getHistoryMovies')->willReturn([]);
+            $bazarr->method('getHistoryEpisodes')->willReturn([]);
+            $bazarr->method('getLastError')->willReturn(['code' => 0, 'method' => 'GET', 'path' => '/history/movies', 'message' => 'Operation timed out']);
+        });
+
+        $this->client->request('GET', '/bazarr/history');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('data-reason="unreachable"', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testAFailedEpisodeFetchRendersTheErrorBannerNotAnEmptyTable(): void
+    {
+        $this->boot(true, static function ($bazarr): void {
+            $bazarr->method('getEpisodes')->willReturn([]);
+            $bazarr->method('getSeries')->willReturn([]);
+            $bazarr->method('getLastError')->willReturn(['code' => 500, 'method' => 'GET', 'path' => '/episodes', 'message' => 'unexpected HTTP status']);
+        });
+
+        $this->client->request('GET', '/bazarr/series/7');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('data-reason="unreachable"', (string) $this->client->getResponse()->getContent());
+    }
+
+    /**
+     * The series page fetched Bazarr's WHOLE series list
+     * (on the short page budget) just to find one title; the per-id filter
+     * already exists. The same row says whether Bazarr tracks the series —
+     * an untracked series' episodes have nothing missing simply because no
+     * language profile asks for anything, and were labelled "Complete".
+     */
+    public function testSeriesDetailLooksUpOnlyItsOwnSeriesAndLabelsAnUntrackedOneHonestly(): void
+    {
+        $this->boot(true, static function ($bazarr): void {
+            $bazarr->method('getSeries')->willReturnCallback(
+                static fn (array $ids = []): array => $ids === [7] ? [['sonarrSeriesId' => 7, 'title' => 'ZzyxUntrackedShow', 'profileId' => null]] : [],
+            );
+            $bazarr->method('getEpisodes')->willReturn([
+                ['sonarrEpisodeId' => 70, 'season' => 1, 'episode' => 1, 'title' => 'Pilot', 'audio_language' => [], 'subtitles' => [], 'missing_subtitles' => []],
+            ]);
+            $bazarr->method('getLastError')->willReturn(null);
+        });
+
+        $this->client->request('GET', '/bazarr/series/7');
+
+        $html = (string) $this->client->getResponse()->getContent();
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('ZzyxUntrackedShow', $html, 'the title comes from the per-id lookup');
+        $this->assertSame(0, preg_match_all('/badge bg-green-lt">\s*Complete\s*</', $html), 'an untracked series is not "Complete"');
+        $this->assertStringContainsString('Not tracked', $html);
+    }
+
+    public function testAnEpisodeWithNoSubtitleRequirementIsNotLabelledComplete(): void
+    {
+        $this->boot(true, static function ($bazarr): void {
+            $bazarr->method('getSeries')->willReturn([['sonarrSeriesId' => 7, 'title' => 'Show', 'profileId' => 1]]);
+            $bazarr->method('getEpisodes')->willReturn([
+                // tracked series, but this episode has nothing present AND nothing missing
+                ['sonarrEpisodeId' => 70, 'season' => 1, 'episode' => 1, 'title' => 'Pilot', 'audio_language' => [], 'subtitles' => [], 'missing_subtitles' => []],
+                ['sonarrEpisodeId' => 71, 'season' => 1, 'episode' => 2, 'title' => 'Two', 'audio_language' => [], 'subtitles' => [['code2' => 'en']], 'missing_subtitles' => []],
+            ]);
+            $bazarr->method('getLastError')->willReturn(null);
+        });
+
+        $this->client->request('GET', '/bazarr/series/7');
+
+        $html = (string) $this->client->getResponse()->getContent();
+        $this->assertSame(1, preg_match_all('/badge bg-green-lt">\s*Complete\s*</', $html), 'only the episode that actually has subtitles is "Complete"');
+    }
+
+    /**
+     * Review of a6793db: one failed history call must not throw away the
+     * other card's data — the banner goes inside the failed card only.
+     */
+    public function testAFailedEpisodeHistoryKeepsTheMovieHistoryThatLoaded(): void
+    {
+        $this->boot(true, static function ($bazarr): void {
+            $bazarr->method('getHistoryMovies')->willReturn([
+                ['title' => 'ZzyxHistoryMovie', 'action' => 'downloaded', 'provider' => 'p', 'language' => 'en', 'timestamp' => 'now'],
+            ]);
+            $bazarr->method('getHistoryEpisodes')->willReturn([]);
+            $bazarr->method('getLastError')->willReturnOnConsecutiveCalls(
+                null, // after getHistoryMovies()
+                ['code' => 0, 'method' => 'GET', 'path' => '/episodes/history', 'message' => 'Operation timed out'],
+            );
+        });
+
+        $this->client->request('GET', '/bazarr/history');
+
+        $html = (string) $this->client->getResponse()->getContent();
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('ZzyxHistoryMovie', $html, 'the movie history that loaded is still shown');
+        $this->assertSame(1, substr_count($html, 'data-reason="unreachable"'), 'one banner, for the failed card');
     }
 }

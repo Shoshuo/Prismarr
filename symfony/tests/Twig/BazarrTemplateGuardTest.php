@@ -214,4 +214,28 @@ class BazarrTemplateGuardTest extends TestCase
         $this->assertStringContainsString('var SCHEDULE = [', $src);
         $this->assertStringContainsString('state.n < SCHEDULE.length', $src);
     }
+
+    public function testEveryEpisodeSubtitleSearchTriggerCarriesItsSeriesId(): void
+    {
+        // Bazarr's episode-download endpoint requires seriesid as well as
+        // episodeid: every [data-kind="episode"] search trigger must hand the
+        // modal its Sonarr series id.
+        foreach (['bazarr/series_detail.html.twig', 'media/series.html.twig'] as $tpl) {
+            $src = (string) file_get_contents(self::TEMPLATE_ROOT . $tpl);
+            $triggers = substr_count($src, 'data-kind="episode"');
+            $this->assertGreaterThan(0, $triggers, $tpl . ' has no episode search trigger');
+            $this->assertSame(
+                $triggers,
+                preg_match_all('/data-kind="episode"[^>]*data-series-id=/', $src),
+                $tpl . ': an episode search trigger is missing data-series-id'
+            );
+        }
+    }
+
+    public function testTheSearchModalPostsTheSeriesIdWithAnEpisodeDownload(): void
+    {
+        $src = (string) file_get_contents(self::TEMPLATE_ROOT . 'bazarr/_search_modal.html.twig');
+        $this->assertStringContainsString("getAttribute('data-series-id')", $src);
+        $this->assertStringContainsString('params.seriesid', $src);
+    }
 }

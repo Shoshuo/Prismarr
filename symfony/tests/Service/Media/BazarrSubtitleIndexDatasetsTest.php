@@ -213,4 +213,32 @@ class BazarrSubtitleIndexDatasetsTest extends TestCase
         $this->assertSame(6219, $out['counts']['movies']);
         $this->assertCount(1, $this->dispatched, 'exactly one refresh must be requested for the stale key');
     }
+
+    public function testMissingBadgeCountsRequestABadgesRefreshEvenWhileTheMovieMapIsFresh(): void
+    {
+        // A failed /badges call skips only the KEY_BADGES
+        // write. Requesting a KEY_MOVIES refresh for it then no-ops while the
+        // movie map is fresh, so the landing page sat on "warming".
+        $pool = new ArrayAdapter();
+        $this->swr($pool)->write(BazarrSubtitleIndex::KEY_MOVIES, [7 => ['state' => 'ok', 'count' => 0]], BazarrSubtitleIndex::HARD_TTL);
+
+        $this->index($this->createMock(BazarrClient::class), $pool)->badgeCounts();
+
+        $keys = array_map(static fn (object $m): string => $m->key, $this->dispatched);
+        $this->assertSame([BazarrSubtitleIndex::KEY_BADGES], $keys);
+    }
+
+    public function testInvalidateAlsoDropsThePatchJournal(): void
+    {
+        // A journalled patch from the OLD instance must not be re-applied by
+        // the first refresh against the new one.
+        $pool = new ArrayAdapter();
+        $item = $pool->getItem(BazarrSubtitleIndex::KEY_PATCHES);
+        $item->set(['movie:7' => ['at' => time(), 'kind' => 'movie', 'id' => 7, 'status' => ['state' => 'complete', 'count' => 0], 'langs' => null]]);
+        $pool->save($item);
+
+        $this->index($this->createMock(BazarrClient::class), $pool)->invalidate();
+
+        $this->assertFalse($pool->getItem(BazarrSubtitleIndex::KEY_PATCHES)->isHit());
+    }
 }

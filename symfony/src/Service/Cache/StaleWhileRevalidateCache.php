@@ -233,6 +233,36 @@ final class StaleWhileRevalidateCache
         $this->cacheApp->save($stamp);
     }
 
+    /**
+     * After a mutation: keep serving $key's value, but as STALE, and drop
+     * its coalescing marker — so the requestRefresh() that follows really
+     * dispatches, and the refresher (which skips fresh keys) really rebuilds.
+     * Without this a mutation's queued rebuild no-ops whenever the key was
+     * fetched in the last soft window.
+     *
+     * Back-dates fetchedAt by exactly $softTtl rather than to 0, so callers
+     * that re-write the envelope with its own fetchedAt (a per-id patch) stay
+     * inside the hard window. A missing key is left alone — the next read's
+     * hard miss already refetches. Never throws: it runs on the request that
+     * just performed a successful mutation.
+     */
+    public function markStale(string $key, int $softTtl, int $hardTtl): void
+    {
+        try {
+            $hit = $this->read($key, $softTtl);
+            if ($hit !== null) {
+                $this->write($key, $hit['value'], $hardTtl, time() - $softTtl);
+            }
+            $this->cacheApp->deleteItem($key . '.refreshing');
+        } catch (\Throwable $e) {
+            $this->logger->warning('SWR markStale failed', [
+                'key'       => $key,
+                'exception' => $e::class,
+                'message'   => $e->getMessage(),
+            ]);
+        }
+    }
+
     /** True when delete() invalidated $key after $startedAt (a microtime(true)). */
     private function invalidatedSince(string $key, float $startedAt): bool
     {

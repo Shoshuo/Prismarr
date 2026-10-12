@@ -2431,7 +2431,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
       var marker = missing
         ? '<span class="badge poster-chip is-danger" style="flex-shrink:0;" title="' + window.escHtml(SERIES_I18N.bazarr_episode_missing_title) + '">' + missingLen + '</span>'
         : '<span class="badge poster-chip is-success" style="flex-shrink:0;" title="' + window.escHtml(SERIES_I18N.bazarr_subtitles_complete_title) + '">&#10003;</span>';
-      var searchBtn = '<button type="button" class="btn btn-ghost-secondary btn-icon btn-sm" data-bazarr-search data-kind="episode" data-id="' + window.escHtml(epId) + '" title="' + window.escHtml(SERIES_I18N.bazarr_search_title) + '" style="flex-shrink:0;width:20px;height:20px;">' + SVG_SEARCH_SM + '</button>';
+      var searchBtn = '<button type="button" class="btn btn-ghost-secondary btn-icon btn-sm" data-bazarr-search data-kind="episode" data-series-id="' + window.escHtml(String(currentId)) + '" data-id="' + window.escHtml(epId) + '" title="' + window.escHtml(SERIES_I18N.bazarr_search_title) + '" style="flex-shrink:0;width:20px;height:20px;">' + SVG_SEARCH_SM + '</button>';
       row.insertAdjacentHTML('beforeend', marker + searchBtn);
     });
   }

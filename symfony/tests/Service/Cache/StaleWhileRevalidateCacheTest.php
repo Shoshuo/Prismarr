@@ -398,4 +398,42 @@ class StaleWhileRevalidateCacheTest extends TestCase
         $this->assertSame(['old'], $hit['value'], 'the caller still gets an answer');
         $this->assertNull($swr->read('k', 45), 'but the pre-mutation list is not cached');
     }
+
+    public function testMarkStaleKeepsTheValueButServesItStale(): void
+    {
+        // A mutation's queued rebuild no-ops in the
+        // refresher while the key is fresh. markStale() keeps serving the
+        // value but lets the rebuild through.
+        $pool = new ArrayAdapter();
+        $swr  = $this->swr($pool);
+        $swr->write('k', ['v'], 600);
+
+        $swr->markStale('k', 60, 600);
+
+        $this->assertSame(['value' => ['v'], 'state' => 'stale'], $swr->read('k', 60));
+    }
+
+    public function testMarkStaleLetsTheNextRefreshRequestThroughAnActiveMarker(): void
+    {
+        $pool = new ArrayAdapter();
+        $swr  = $this->swr($pool);
+        $swr->write('k', ['v'], 600);
+        $swr->requestRefresh('k'); // a page view just asked; its 30 s marker is set
+        $this->assertCount(1, $this->dispatched);
+
+        $swr->markStale('k', 60, 600);
+        $swr->requestRefresh('k');
+
+        $this->assertCount(2, $this->dispatched, 'the mutation-driven rebuild must not be swallowed by the marker');
+    }
+
+    public function testMarkStaleOnAMissingKeyDoesNothing(): void
+    {
+        $pool = new ArrayAdapter();
+        $swr  = $this->swr($pool);
+
+        $swr->markStale('k', 60, 600);
+
+        $this->assertNull($swr->read('k', 60));
+    }
 }

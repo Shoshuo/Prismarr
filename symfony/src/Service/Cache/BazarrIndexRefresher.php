@@ -14,15 +14,14 @@ use Psr\Log\LoggerInterface;
  * one fetch writes every map derived from it, so a refresh costs at most one
  * Bazarr call per dataset per soft window.
  *
- * KEY_BADGES piggybacks on the SAME getMovies()
- * fetch as KEY_MOVIES — there is no separate badges-only Bazarr call. It
- * exists as its own requestable key because a mutation that only affects
- * badge counts and has no per-id row to patch (an episode subtitle download,
- * which carries an episode id, not a series id) needs a way to queue "the
- * badges are stale" without also implying "the movie list is stale" to a
- * caller that only cares about the former. Both keys share the same $now
- * (see refreshMovies()), so checking KEY_BADGES's own freshness still
- * coalesces correctly with a concurrent KEY_MOVIES-triggered refresh.
+ * KEY_BADGES is written by every movies refresh (one extra cheap /badges
+ * call in the same cycle), but a KEY_BADGES request on its own only ever
+ * makes that /badges call — never the full movie list.
+ * The counts don't depend on the list, and routing a badges request through
+ * refreshMovies() made a failing /movies run twice per cycle (one KEY_MOVIES
+ * and one KEY_BADGES message) and twice inside apiRefresh()'s inline run.
+ * It exists as its own requestable key so a mutation (a subtitle download)
+ * or a landing page missing only its counts can ask for just them.
  */
 final class BazarrIndexRefresher implements CacheRefresherInterface
 {
@@ -54,9 +53,24 @@ final class BazarrIndexRefresher implements CacheRefresherInterface
             return;
         }
 
-        // KEY_BADGES has no fetch of its own — see the class docblock — so it
-        // takes the same branch as KEY_MOVIES.
-        $key === BazarrSubtitleIndex::KEY_SERIES ? $this->refreshSeries() : $this->refreshMovies();
+        match ($key) {
+            BazarrSubtitleIndex::KEY_BADGES => $this->refreshBadgeCounts(), // never the full list — see the class docblock
+            BazarrSubtitleIndex::KEY_SERIES => $this->refreshSeries(),
+            default                         => $this->refreshMovies(),
+        };
+    }
+
+    private function refreshBadgeCounts(): void
+    {
+        $startedAt = microtime(true); // see refreshMovies()
+        $counts = $this->client->getBadgeCounts();
+        if ($this->client->getLastError() !== null) {
+            $this->logger->warning('Bazarr badge count refresh failed', ['error' => $this->client->getLastError()]);
+
+            return;
+        }
+
+        $this->swr->write(BazarrSubtitleIndex::KEY_BADGES, $counts, BazarrSubtitleIndex::HARD_TTL, startedAt: $startedAt);
     }
 
     private function refreshMovies(): void
@@ -66,7 +80,11 @@ final class BazarrIndexRefresher implements CacheRefresherInterface
         // flight (must survive) from one this fetch's own result already
         // reflects, so a patch is never applied twice.
         $fetchStartedAt = time();
-        $rows = $this->client->getMovies();
+        // Sub-second twin for the SWR invalidation guard: a settings change
+        // (BazarrSubtitleIndex::invalidate()) landing while this fetch runs
+        // against the OLD instance makes every write below a no-op.
+        $startedAt = microtime(true);
+        $rows = $this->client->getMovies([], BazarrClient::LIBRARY_TIMEOUT);
 
         // Only a clean fetch may overwrite. An unreachable
         // Bazarr yields [] plus a recorded lastError; caching that would
@@ -147,12 +165,6 @@ final class BazarrIndexRefresher implements CacheRefresherInterface
             => ($b['missingCount'] <=> $a['missingCount']) ?: strcasecmp($a['title'], $b['title']));
         $candidates = array_slice($candidates, 0, BazarrSubtitleIndex::MOST_MISSING_CANDIDATES);
 
-        // A mutation's per-id patch (BazarrSubtitleIndex::refreshItem())
-        // recorded at or after $fetchStartedAt must survive this write —
-        // otherwise a subtitle download that lands mid-fetch would be
-        // silently reverted the moment this bulk result is written below.
-        [$status, $langs] = $this->index->applyPatchesNewerThan('movie', $fetchStartedAt, $status, $langs);
-
         // /api/badges is one cheap call and belongs to the same refresh cycle;
         // giving it its own message would double queue traffic for nothing.
         // BazarrClient::getBadgeCounts() fails CLOSED to all-zeros AND
@@ -170,6 +182,14 @@ final class BazarrIndexRefresher implements CacheRefresherInterface
             $this->logger->warning('Bazarr badge count refresh failed', ['error' => $this->client->getLastError()]);
         }
 
+        // A mutation's per-id patch (BazarrSubtitleIndex::refreshItem())
+        // recorded at or after $fetchStartedAt must survive this write —
+        // otherwise a subtitle download that lands mid-fetch would be
+        // silently reverted the moment this bulk result is written below.
+        // Read the journal AFTER the /badges call above, right before the
+        // writes, so a patch landing during that call isn't missed.
+        [$status, $langs] = $this->index->applyPatchesNewerThan('movie', $fetchStartedAt, $status, $langs);
+
         // One timestamp for every key written from this fetch, so the group
         // shares a soft window instead of drifting apart. Write order per
         // the architecture doc (M2): cards -> most_missing -> badges ->
@@ -177,20 +197,21 @@ final class BazarrIndexRefresher implements CacheRefresherInterface
         // seriesStatus, gating hundreds of badge renders) are the last to
         // flip.
         $now = time();
-        $this->swr->write(BazarrSubtitleIndex::KEY_MOVIE_CARDS, ['cards' => $cards, 'languages' => array_keys($langSet)], BazarrSubtitleIndex::HARD_TTL, $now);
-        $this->swr->write(BazarrSubtitleIndex::KEY_MOST_MISSING_MOVIES, $candidates, BazarrSubtitleIndex::HARD_TTL, $now);
+        $this->swr->write(BazarrSubtitleIndex::KEY_MOVIE_CARDS, ['cards' => $cards, 'languages' => array_keys($langSet)], BazarrSubtitleIndex::HARD_TTL, $now, $startedAt);
+        $this->swr->write(BazarrSubtitleIndex::KEY_MOST_MISSING_MOVIES, $candidates, BazarrSubtitleIndex::HARD_TTL, $now, $startedAt);
         if (!$badgesFailed) {
-            $this->swr->write(BazarrSubtitleIndex::KEY_BADGES, $counts, BazarrSubtitleIndex::HARD_TTL, $now);
+            $this->swr->write(BazarrSubtitleIndex::KEY_BADGES, $counts, BazarrSubtitleIndex::HARD_TTL, $now, $startedAt);
         }
-        $this->swr->write(BazarrSubtitleIndex::KEY_MOVIE_LANGS, $langs, BazarrSubtitleIndex::HARD_TTL, $now);
-        $this->swr->write(BazarrSubtitleIndex::KEY_MOVIES, $status, BazarrSubtitleIndex::HARD_TTL, $now);
+        $this->swr->write(BazarrSubtitleIndex::KEY_MOVIE_LANGS, $langs, BazarrSubtitleIndex::HARD_TTL, $now, $startedAt);
+        $this->swr->write(BazarrSubtitleIndex::KEY_MOVIES, $status, BazarrSubtitleIndex::HARD_TTL, $now, $startedAt);
     }
 
     private function refreshSeries(): void
     {
         // See refreshMovies(): captured before the client call.
         $fetchStartedAt = time();
-        $rows = $this->client->getSeries();
+        $startedAt = microtime(true); // see refreshMovies()
+        $rows = $this->client->getSeries([], BazarrClient::LIBRARY_TIMEOUT);
         // See refreshMovies(): an empty-but-clean result is a legitimate
         // permanent state (unconfigured/disabled Bazarr, or a genuinely
         // empty Sonarr library), not a failure — only a recorded lastError
@@ -254,8 +275,8 @@ final class BazarrIndexRefresher implements CacheRefresherInterface
         [$status] = $this->index->applyPatchesNewerThan('series', $fetchStartedAt, $status, []);
 
         $now = time();
-        $this->swr->write(BazarrSubtitleIndex::KEY_SERIES_CARDS, ['cards' => $cards, 'languages' => array_keys($langSet)], BazarrSubtitleIndex::HARD_TTL, $now);
-        $this->swr->write(BazarrSubtitleIndex::KEY_MOST_MISSING_SERIES, $candidates, BazarrSubtitleIndex::HARD_TTL, $now);
-        $this->swr->write(BazarrSubtitleIndex::KEY_SERIES, $status, BazarrSubtitleIndex::HARD_TTL, $now);
+        $this->swr->write(BazarrSubtitleIndex::KEY_SERIES_CARDS, ['cards' => $cards, 'languages' => array_keys($langSet)], BazarrSubtitleIndex::HARD_TTL, $now, $startedAt);
+        $this->swr->write(BazarrSubtitleIndex::KEY_MOST_MISSING_SERIES, $candidates, BazarrSubtitleIndex::HARD_TTL, $now, $startedAt);
+        $this->swr->write(BazarrSubtitleIndex::KEY_SERIES, $status, BazarrSubtitleIndex::HARD_TTL, $now, $startedAt);
     }
 }

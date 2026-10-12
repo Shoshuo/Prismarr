@@ -45,8 +45,22 @@ class BazarrController extends AbstractController
     /** Coalescing marker for apiRefresh()'s inline rebuild — see that method's docblock. */
     private const INLINE_REFRESH_MARKER = 'bazarr_subtitle_index.inline_refresh';
 
-    /** Seconds. Mirrors StaleWhileRevalidateCache::MARKER_TTL's coalescing window. */
-    private const INLINE_REFRESH_MARKER_TTL = 30;
+    /**
+     * Seconds. Must outlive apiRefresh()'s worst-case inline run (two
+     * library-budget lists + two badges calls, plus a margin for processing)
+     * or a double-clicked Retry could stack a second rebuild behind a
+     * still-running first one. apiRefresh() also uses it as its PHP time
+     * limit, so the run is cut off before the marker can expire under it.
+     */
+    private const INLINE_REFRESH_MARKER_TTL = 2 * BazarrClient::LIBRARY_TIMEOUT + 2 * BazarrClient::DEFAULT_TIMEOUT + 10;
+
+    /**
+     * PHP time limit for the /providers/* actions: past the client budget so
+     * a slow provider answers with Prismarr's JSON error, not a fatal page
+     * (PHP_MAX_EXECUTION_TIME can be lowered, and FrankenPHP's limit is
+     * wall-clock).
+     */
+    private const PROVIDER_TIME_LIMIT = BazarrClient::PROVIDER_TIMEOUT + 15;
 
     public function __construct(
         private readonly BazarrClient $bazarr,
@@ -210,6 +224,8 @@ class BazarrController extends AbstractController
     public function history(): Response
     {
         $error = false;
+        $errorMovies = false;
+        $errorEpisodes = false;
         $historyMovies = [];
         $historyEpisodes = [];
 
@@ -217,8 +233,14 @@ class BazarrController extends AbstractController
             if (!$this->bazarr->ping()) {
                 $error = true;
             } else {
+                // Each getter answers [] on failure, so check lastError after
+                // each one — a failed call shows the error banner in ITS card
+                // instead of "No history", without discarding the other card.
                 $historyMovies = $this->bazarr->getHistoryMovies();
+                $errorMovies = $this->bazarr->getLastError() !== null;
                 $historyEpisodes = $this->bazarr->getHistoryEpisodes();
+                $errorEpisodes = $this->bazarr->getLastError() !== null;
+                $error = $errorMovies && $errorEpisodes;
             }
         } catch (\Throwable $e) {
             $error = true;
@@ -227,6 +249,8 @@ class BazarrController extends AbstractController
 
         return $this->render('bazarr/history.html.twig', [
             'error'            => $error,
+            'error_movies'     => $errorMovies,
+            'error_episodes'   => $errorEpisodes,
             'history_movies'   => $historyMovies,
             'history_episodes' => $historyEpisodes,
             'service_url'      => $this->config->get('bazarr_url'),
@@ -234,10 +258,11 @@ class BazarrController extends AbstractController
     }
 
     /**
-     * Episode drill-down for one Sonarr series. `series_title` is a
-     * best-effort lookup against the already-consumed getSeries() list (no
-     * dedicated "get one series" client method exists) — a miss just falls
-     * back to a generic "Series #{id}" heading in the template.
+     * Episode drill-down for one Sonarr series. `series_title` and
+     * `series_tracked` come from a per-id getSeries([$seriesId]) lookup —
+     * best-effort: a miss falls back to a generic "Series #{id}" heading and
+     * an unknown (null) tracked state. A failed EPISODE fetch shows the error
+     * banner rather than an empty table (getEpisodes() answers [] on failure).
      */
     #[Route('/series/{seriesId}', name: 'series_detail', requirements: ['seriesId' => '\d+'])]
     public function seriesDetail(int $seriesId): Response
@@ -245,16 +270,24 @@ class BazarrController extends AbstractController
         $error = false;
         $episodes = [];
         $seriesTitle = null;
+        $seriesTracked = null;
 
         try {
             if (!$this->bazarr->ping()) {
                 $error = true;
             } else {
                 $episodes = $this->bazarr->getEpisodes($seriesId);
-                foreach ($this->bazarr->getSeries() as $s) {
-                    if ((int) ($s['sonarrSeriesId'] ?? 0) === $seriesId) {
-                        $seriesTitle = (string) ($s['title'] ?? '');
-                        break;
+                if ($this->bazarr->getLastError() !== null) {
+                    $error = true;
+                } else {
+                    foreach ($this->bazarr->getSeries([$seriesId]) as $s) {
+                        if ((int) ($s['sonarrSeriesId'] ?? 0) === $seriesId) {
+                            $seriesTitle = (string) ($s['title'] ?? '');
+                            // Same rule as computeSeriesStatus(): no language
+                            // profile means Bazarr isn't tracking it.
+                            $seriesTracked = ($s['profileId'] ?? null) !== null;
+                            break;
+                        }
                     }
                 }
             }
@@ -267,6 +300,7 @@ class BazarrController extends AbstractController
             'error'        => $error,
             'series_id'    => $seriesId,
             'series_title' => $seriesTitle,
+            'series_tracked' => $seriesTracked,
             'episodes'     => $episodes,
             'service_url'  => $this->config->get('bazarr_url'),
         ]);
@@ -281,6 +315,7 @@ class BazarrController extends AbstractController
     #[Route('/api/search/movie/{radarrId}', name: 'api_search_movie', methods: ['GET'], requirements: ['radarrId' => '\d+'])]
     public function apiSearchMovie(int $radarrId): JsonResponse
     {
+        set_time_limit(self::PROVIDER_TIME_LIMIT);
         $r = $this->bazarr->searchMovie($radarrId);
 
         return $r !== null
@@ -295,6 +330,7 @@ class BazarrController extends AbstractController
     #[Route('/api/search/episode/{episodeId}', name: 'api_search_episode', methods: ['GET'], requirements: ['episodeId' => '\d+'])]
     public function apiSearchEpisode(int $episodeId): JsonResponse
     {
+        set_time_limit(self::PROVIDER_TIME_LIMIT);
         $r = $this->bazarr->searchEpisode($episodeId);
 
         return $r !== null
@@ -381,6 +417,7 @@ class BazarrController extends AbstractController
     #[Route('/api/download/movie', name: 'api_download_movie', methods: ['POST'])]
     public function apiDownloadMovie(Request $request): JsonResponse
     {
+        set_time_limit(self::PROVIDER_TIME_LIMIT);
         $ok = $this->bazarr->downloadMovie($request->request->all());
         if ($ok) {
             $radarrId = $request->request->getInt('radarrid');
@@ -388,8 +425,9 @@ class BazarrController extends AbstractController
                 $this->bazarrIndex->refreshItem('movie', $radarrId);
             } else {
                 $this->bazarrIndex->requestRefresh(BazarrSubtitleIndex::KEY_MOVIES);
-                $this->bazarrIndex->requestRefresh(BazarrSubtitleIndex::KEY_BADGES);
             }
+            // The wanted-movies count changed either way.
+            $this->bazarrIndex->requestRefresh(BazarrSubtitleIndex::KEY_BADGES);
         }
 
         return $ok ? $this->json(['ok' => true]) : $this->jsonClientError('Bazarr', $this->bazarr);
@@ -399,19 +437,30 @@ class BazarrController extends AbstractController
      * Download a specific subtitle result for an episode. No CSRF token —
      * follows the Deluge convention (#[IsGranted] + same-origin fetch only).
      *
-     * The POST body carries an episodeid, not a series id, so there is
-     * nothing per-id to patch in place — queue a bulk rebuild of the series
-     * map and the badge counts instead of invalidate()'s blanket delete:
-     * invalidate() would also blank movies/cards/
-     * most-missing that this mutation never touched, turning every badge on
-     * the Films page 'pending' until the next full rebuild lands.
+     * Episode subtitles roll up into series-level status: with the Sonarr
+     * series id the body now carries (Bazarr requires it), refetch just that
+     * series and patch its badge in place, like the movie path — a queued
+     * bulk rebuild alone no-ops while the series map is still fresh. Without
+     * a usable id, fall back to queueing the bulk rebuild rather than
+     * invalidate()'s blanket delete: invalidate() would also blank
+     * movies/cards/most-missing that this mutation never touched. The badge
+     * counts are queued either way.
      */
     #[Route('/api/download/episode', name: 'api_download_episode', methods: ['POST'])]
     public function apiDownloadEpisode(Request $request): JsonResponse
     {
+        set_time_limit(self::PROVIDER_TIME_LIMIT);
         $ok = $this->bazarr->downloadEpisode($request->request->all());
         if ($ok) {
-            $this->bazarrIndex->requestRefresh(BazarrSubtitleIndex::KEY_SERIES);
+            // Read leniently: InputBag::get() throws on a non-scalar, which
+            // would turn this already-successful download into a 400.
+            $rawSeriesId = $request->request->all()['seriesid'] ?? null;
+            $seriesId    = is_scalar($rawSeriesId) ? (int) $rawSeriesId : 0;
+            if ($seriesId > 0) {
+                $this->bazarrIndex->refreshItem('series', $seriesId);
+            } else {
+                $this->bazarrIndex->requestRefresh(BazarrSubtitleIndex::KEY_SERIES);
+            }
             $this->bazarrIndex->requestRefresh(BazarrSubtitleIndex::KEY_BADGES);
         }
 
@@ -458,10 +507,14 @@ class BazarrController extends AbstractController
      * what it achieved. This is the ONLY inline Bazarr fetch left in the app:
      * admin-only, explicitly user-driven (the warming panel's Retry button),
      * rate-limited by the refresher's own freshness check, and bounded by
-     * BazarrClient's own 3 s connect / 8 s total timeouts — up to THREE
-     * client calls can happen inline (getMovies + getBadgeCounts for the
-     * movies refresh, getSeries for the series refresh), so the worst case is
-     * roughly 3x8s (~24s) before this responds. It exists so a dead
+     * BazarrClient's timeouts — up to FOUR client calls can happen inline
+     * (getMovies + getBadgeCounts for the movies refresh, a /badges-only
+     * retry when that one didn't land, getSeries for the series refresh);
+     * the two full lists run on LIBRARY_TIMEOUT (30 s) and the badges calls
+     * on DEFAULT_TIMEOUT (8 s), so the worst case is ~76 s (time limit:
+     * INLINE_REFRESH_MARKER_TTL) before this responds — only when Bazarr is
+     * that slow, which is exactly when a short budget would make Retry fail
+     * every time. It exists so a dead
      * messenger-worker is recoverable from the UI instead of leaving the tab
      * warming forever.
      *
@@ -478,7 +531,7 @@ class BazarrController extends AbstractController
      * JSON (HTTP 200, never a 500) even when the breaker is open — the
      * breaker check below never calls the client at all.
      *
-     * The ~3x8s inline cost above means a double-
+     * The inline cost above means a double-
      * clicked Retry (or two admins) must not stack two of these in flight at
      * once. Before any of that inline work, a coalescing marker is acquired
      * in `cache.app` — best-effort check-then-set, the same shape as
@@ -489,17 +542,32 @@ class BazarrController extends AbstractController
      * expires after MARKER_TTL, capping how often this endpoint's own
      * worst-case cost can be paid.
      *
-     * @return JsonResponse {ok: bool, movies: 'fresh'|'stale'|'pending', series: 'fresh'|'stale'|'pending', reason: 'breaker_open'|'fetch_failed'|'already_running'|null}
+     * @return JsonResponse {ok: bool, movies: 'fresh'|'stale'|'pending', series: 'fresh'|'stale'|'pending', badges: 'fresh'|'stale'|'pending', reason: 'breaker_open'|'fetch_failed'|'already_running'|null}
      */
     #[Route('/api/refresh', name: 'api_refresh', methods: ['POST'])]
     public function apiRefresh(BazarrIndexRefresher $refresher, ServiceHealthCache $health, CacheItemPoolInterface $cacheApp): JsonResponse
     {
+        set_time_limit(self::INLINE_REFRESH_MARKER_TTL);
+        // Breaker first: a breaker_open answer does no work, so it must not
+        // take the coalescing marker — that would block every Retry for the
+        // marker TTL after Bazarr had already recovered.
+        if ($health->isDown(BazarrClient::SERVICE)) {
+            return $this->json([
+                'ok'     => false,
+                'movies' => $this->bazarrIndex->datasetState(BazarrSubtitleIndex::KEY_MOVIES),
+                'series' => $this->bazarrIndex->datasetState(BazarrSubtitleIndex::KEY_SERIES),
+                'badges' => $this->bazarrIndex->datasetState(BazarrSubtitleIndex::KEY_BADGES),
+                'reason' => 'breaker_open',
+            ]);
+        }
+
         $marker = $cacheApp->getItem(self::INLINE_REFRESH_MARKER);
         if ($marker->isHit()) {
             return $this->json([
                 'ok'     => false,
                 'movies' => $this->bazarrIndex->datasetState(BazarrSubtitleIndex::KEY_MOVIES),
                 'series' => $this->bazarrIndex->datasetState(BazarrSubtitleIndex::KEY_SERIES),
+                'badges' => $this->bazarrIndex->datasetState(BazarrSubtitleIndex::KEY_BADGES),
                 'reason' => 'already_running',
             ]);
         }
@@ -507,26 +575,24 @@ class BazarrController extends AbstractController
         $marker->expiresAfter(self::INLINE_REFRESH_MARKER_TTL);
         $cacheApp->save($marker);
 
-        if ($health->isDown(BazarrClient::SERVICE)) {
-            return $this->json([
-                'ok'     => false,
-                'movies' => $this->bazarrIndex->datasetState(BazarrSubtitleIndex::KEY_MOVIES),
-                'series' => $this->bazarrIndex->datasetState(BazarrSubtitleIndex::KEY_SERIES),
-                'reason' => 'breaker_open',
-            ]);
-        }
-
         $refresher->refresh(BazarrSubtitleIndex::KEY_MOVIES);
+        // A movies refresh that just ran already wrote the counts (this is
+        // then a cheap fresh-key no-op); one that found the movie map fresh
+        // didn't, so the counts get their own cheap /badges retry.
+        $refresher->refresh(BazarrSubtitleIndex::KEY_BADGES);
         $refresher->refresh(BazarrSubtitleIndex::KEY_SERIES);
 
         $movies = $this->bazarrIndex->datasetState(BazarrSubtitleIndex::KEY_MOVIES);
         $series = $this->bazarrIndex->datasetState(BazarrSubtitleIndex::KEY_SERIES);
-        $ok     = $movies === 'fresh' && $series === 'fresh';
+        // The landing page also gates on the counts, so "ok" includes them.
+        $badges = $this->bazarrIndex->datasetState(BazarrSubtitleIndex::KEY_BADGES);
+        $ok     = $movies === 'fresh' && $series === 'fresh' && $badges === 'fresh';
 
         return $this->json([
             'ok'     => $ok,
             'movies' => $movies,
             'series' => $series,
+            'badges' => $badges,
             'reason' => $ok ? null : 'fetch_failed',
         ]);
     }

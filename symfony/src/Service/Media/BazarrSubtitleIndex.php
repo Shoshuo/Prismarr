@@ -181,13 +181,16 @@ class BazarrSubtitleIndex implements ResetInterface
         foreach (self::ALL_KEYS as $key) {
             $this->swr->delete($key);
         }
+        // A patch journalled from the OLD instance must not be re-applied by
+        // the first bulk refresh against the new one.
+        $this->cacheApp->deleteItem(self::KEY_PATCHES);
     }
 
     /**
      * Queue a bulk rebuild of $key without waiting for the next reader to hit
      * a hard miss or a stale soft window. Used by mutation endpoints that
-     * cannot patch a specific id in place — e.g. apiDownloadEpisode, which
-     * only knows an episode id, not the series id it belongs to — so the
+     * cannot patch a specific id in place — e.g. apiDownloadEpisode, whose
+     * episode-level change rolls up into series-level status — so the
      * queue happens synchronously in the request that performed the mutation
      * instead of the fix waiting for someone else's page view.
      *
@@ -207,6 +210,10 @@ class BazarrSubtitleIndex implements ResetInterface
             throw new \InvalidArgumentException(sprintf('BazarrSubtitleIndex::requestRefresh(): unsupported key "%s".', $key));
         }
 
+        // A mutation just changed Bazarr: the key's current value is stale by
+        // definition, even if it was fetched seconds ago — otherwise the
+        // refresher's fresh-key early return swallows this rebuild.
+        $this->swr->markStale($key, self::SOFT_TTL, self::HARD_TTL);
         $this->swr->requestRefresh($key);
     }
 
@@ -261,7 +268,7 @@ class BazarrSubtitleIndex implements ResetInterface
         $rows      = $kind === 'movie' ? $this->client->getMovies([$id]) : $this->client->getSeries([$id]);
 
         if ($this->client->getLastError() !== null || $rows === []) {
-            $this->swr->requestRefresh($statusKey);
+            $this->requestRefresh($statusKey);
 
             return;
         }
@@ -273,7 +280,7 @@ class BazarrSubtitleIndex implements ResetInterface
             // the response — writing $rows[0] under $id would patch the WRONG
             // item. Treat exactly like a failed fetch.
             $this->logger->warning('Bazarr per-id refresh: requested id not found in response', ['kind' => $kind, 'id' => $id]);
-            $this->swr->requestRefresh($statusKey);
+            $this->requestRefresh($statusKey);
 
             return;
         }
@@ -301,7 +308,7 @@ class BazarrSubtitleIndex implements ResetInterface
 
         // Everyone else's view, plus the cards/most-missing/badge datasets
         // derived from the same full-list fetch.
-        $this->swr->requestRefresh($statusKey);
+        $this->requestRefresh($statusKey);
     }
 
     /**
@@ -660,16 +667,19 @@ class BazarrSubtitleIndex implements ResetInterface
     }
 
     /**
-     * `/api/badges` counts for the Bazarr topbar/tab chips. Refreshed
-     * alongside the movie dataset (see BazarrIndexRefresher) since it is one
-     * cheap call — giving it its own refresh key would double queue traffic
-     * for no benefit.
+     * `/api/badges` counts for the Bazarr topbar/tab chips. Written by every
+     * movies refresh, and requestable on their own (a /badges-only call — see
+     * BazarrIndexRefresher) for when just the counts are missing.
      *
      * @return array{state: 'ready'|'warming', counts: array{movies: int, episodes: int, providers: int}}
      */
     public function badgeCounts(): array
     {
-        $hit = $this->readDataset(self::KEY_BADGES, self::KEY_MOVIES);
+        // Requests KEY_BADGES itself, not KEY_MOVIES: the counts come from
+        // their own /badges call, which can fail while /movies succeeds — a
+        // KEY_MOVIES request would then no-op against the fresh movie map
+        // and leave the landing page on "warming".
+        $hit = $this->readDataset(self::KEY_BADGES, self::KEY_BADGES);
         if (!is_array($hit)) {
             return ['state' => 'warming', 'counts' => ['movies' => 0, 'episodes' => 0, 'providers' => 0]];
         }

@@ -59,14 +59,20 @@
                     <td>
                       {% if ep.missing_subtitles is iterable and ep.missing_subtitles|length > 0 %}
                         {% if ep.sonarrEpisodeId|default(null) is not null %}
-                          <button type="button" class="btn btn-sm btn-outline-primary" data-bazarr-search data-kind="episode" data-id="{{ ep.sonarrEpisodeId }}">
+                          <button type="button" class="btn btn-sm btn-outline-primary" data-bazarr-search data-kind="episode" data-series-id="{{ series_id }}" data-id="{{ ep.sonarrEpisodeId }}">
                             {{ 'bazarr.series_detail.search'|trans }}
                           </button>
                         {% else %}
                           <span class="text-secondary">—</span>
                         {% endif %}
-                      {% else %}
+                      {% elseif series_tracked is same as(false) %}
+                        {# No language profile: nothing is missing because nothing is asked for. #}
+                        <span class="text-secondary">{{ 'bazarr.series.not_tracked'|trans }}</span>
+                      {% elseif ep.subtitles is iterable and ep.subtitles|length > 0 %}
                         <span class="badge bg-green-lt">{{ 'bazarr.series_detail.complete'|trans }}</span>
+                      {% else %}
+                        {# Nothing present and nothing missing: no requirement, not "complete" (mirrors the Series modal). #}
+                        <span class="text-secondary">—</span>
                       {% endif %}
                     </td>
                   </tr>
