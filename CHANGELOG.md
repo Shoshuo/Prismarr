@@ -50,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Reverse-proxy sub-path respected in JS-built URLs.** Hardcoded root-relative links and fetch calls across the templates now go through the base path, so Prismarr works when mounted under a sub-path.
 - **Series queue and header escape indexer and Sonarr strings.** Release names, episode titles, status messages, network, certification and genres were inserted as raw HTML on the Series page.
 - **"Not configured" links no longer bounce back to the home page.** Opening an unconfigured service, its banner button, or a card on the empty-home welcome page pointed at a wizard step that redirects home once setup is done; they now open the Services settings for admins and the home page for other users.
+- **A short TMDb outage no longer leaves searches and lists empty.** A failed TMDb call was cached as an empty answer for the whole cache lifetime (10 minutes for a search, an hour for a list); it is now retried on the next request.
+- **The detail modal no longer opens several times on the Search page.** Coming back to the page through the sidebar added its click handlers again on every visit, so one click opened the detail modal (or the quick-add) once per previous visit.
 
 ## [1.2.0] - 2026-08-29
 

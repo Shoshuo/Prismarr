@@ -48,7 +48,7 @@
 
 <p align="center">
   <img src="docs/screenshots/dashboard.png" width="49%" alt="Dashboard">
-  <img src="docs/screenshots/discover.png" width="49%" alt="Discover">
+  <img src="docs/screenshots/discover.png" width="49%" alt="Search">
 </p>
 <p align="center">
   <img src="docs/screenshots/calendar.png" width="49%" alt="Calendar">
@@ -113,7 +113,7 @@ queued for later.
 - **Unified calendar:** movie and episode releases merged across instances, deduped by `tmdbId` / `tvdbId`, with month / week / day views and iCal export.
 - **Dashboard:** hero spotlight, upcoming releases, pending Seerr requests, live service health, watchlist, trending and latest additions. Paints instantly, each widget hydrates on its own.
 - **Downloads:** full qBittorrent dashboard (server-side pagination, sorting, filters, drag-and-drop upload), Deluge and Transmission pages, and dedicated SABnzbd and NZBGet pages, plus an optional Transmission dashboard widget. Optional Gluetun integration.
-- **Discovery:** TMDb landing page with recommendations and trending, watchlist, an explorer with filters, and deep-links into your library.
+- **Search:** one box for movies, series and people, typo-tolerant with a Google-style "did you mean", inline filters (type, genre, rating, sort, hide what you have), a large best-match card and each result's library status. With the box empty: trending movie and series banners, recommendations from your library, trending rows, plus the watchlist and an explorer.
 - **Plex activity (Tautulli):** optional read-only page (now playing, watch stats, graphs, history) plus a "Current Plex activity" dashboard widget. The API key stays server-side and responses are sanitised.
 - **Subtitles (Bazarr):** optional admin-only page with Wanted / Movies / Series / History views, plus a per-title subtitle badge on the Films and Series pages, in the quick-look modal and in `Ctrl+K` results — click a badge to search and download a subtitle without leaving Prismarr. Refreshes happen off the request path, so the badges cost nothing to render.
 - **Tracearr:** optional read-only page for Plex / Jellyfin / Emby activity (now playing, overview stats, graphs, history, users) via Tracearr's public API. The API key stays server-side and responses are sanitised.
@@ -133,7 +133,7 @@ queued for later.
   (qBittorrent, Deluge, Transmission, SABnzbd, NZBGet)
 - Optional: Gluetun if qBittorrent runs behind a VPN
 - Optional: Tautulli, Tracearr or Emby for playback activity, Bazarr for subtitles
-- Optional: a TMDb API key (free) to enable the Discovery page
+- Optional: a TMDb API key (free) to enable the Search page
 
 ### Install
 
@@ -357,9 +357,9 @@ Yes. The image is built for `linux/amd64` and `linux/arm64`. It runs
 on a Raspberry Pi 4/5, an Apple Silicon Mac, or any arm64 NAS.
 
 **Does Prismarr need internet access?**
-Only for TMDb (cover art, metadata, discovery) and the Servarr
+Only for TMDb (cover art, metadata, search) and the Servarr
 services you point it at. The app itself works fully on a LAN; if
-you don't configure TMDb, the Discovery page is the only feature
+you don't configure TMDb, the Search page is the only feature
 that goes dark.
 
 **Can I run it behind a reverse proxy?**
