@@ -39,7 +39,7 @@ final class SearchPageRenderTest extends AbstractWebTestCase
 
         self::assertCount(1, $crawler->filter('#tmdb-search'));
         self::assertCount(3, $crawler->filter('[data-srch-type]'));
-        foreach (['#srch-genre', '#srch-year-min', '#srch-year-max', '#srch-vote', '#srch-sort', '#srch-hide-owned', '#srch-results', '#srch-correction', '#srch-home'] as $sel) {
+        foreach (['#srch-genre', '#srch-vote', '#srch-sort', '#srch-hide-owned', '#srch-results', '#srch-correction', '#srch-home'] as $sel) {
             self::assertCount(1, $crawler->filter($sel), $sel . ' missing');
         }
         // The two "trending this week" banners stay on the home view.

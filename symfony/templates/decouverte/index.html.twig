@@ -171,18 +171,22 @@
     border: 1px solid var(--tblr-border-color); border-radius: .3rem;
     font-size: .7rem; padding: .1rem .45rem; font-weight: 600;
   }
-  .srch-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .75rem; }
+  .srch-filters { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin-top: .75rem; }
+  @media (min-width: 992px) { .srch-filters { flex-wrap: nowrap; } .srch-filters > * { flex-shrink: 0; } }
   .srch-seg { display: inline-flex; border: 1px solid var(--tblr-border-color); border-radius: .5rem; overflow: hidden; }
-  .srch-seg button { background: none; border: 0; color: var(--tblr-secondary); font-size: .8rem; padding: .3rem .75rem; cursor: pointer; }
+  .srch-seg button { background: none; border: 0; color: var(--tblr-secondary); font-size: .8rem; padding: .3rem .6rem; cursor: pointer; }
   .srch-seg button + button { border-left: 1px solid var(--tblr-border-color); }
   .srch-seg button.is-active { background: rgba(var(--tblr-primary-rgb), .14); color: var(--tblr-primary); font-weight: 600; }
-  .srch-select { width: auto; min-width: 8.5rem; font-size: .8rem; }
-  .srch-years { display: inline-flex; align-items: center; gap: .3rem; color: var(--tblr-secondary); }
-  .srch-years input { width: 5.2rem; font-size: .8rem; }
-  .srch-check { display: inline-flex; align-items: center; gap: .35rem; font-size: .8rem; color: var(--tblr-secondary); cursor: pointer; }
+  .srch-select { width: auto; min-width: 0; font-size: .8rem; padding-top: .3rem; padding-bottom: .3rem; }
+  .srch-check { display: inline-flex; align-items: center; gap: .35rem; font-size: .8rem; color: var(--tblr-secondary); cursor: pointer; white-space: nowrap; }
   .srch-reset { background: none; border: 0; font-size: .8rem; color: var(--tblr-primary); cursor: pointer; padding: .2rem .3rem; }
-  .srch-link { display: inline-flex; align-items: center; gap: .3rem; font-size: .8rem; color: var(--tblr-secondary); text-decoration: none; }
-  .srch-link:hover { color: var(--tblr-primary); }
+  .srch-btn {
+    display: inline-flex; align-items: center; gap: .35rem; white-space: nowrap;
+    padding: .32rem .7rem; border-radius: .5rem; font-size: .8rem; font-weight: 600; text-decoration: none;
+    color: var(--tblr-primary); background: rgba(var(--tblr-primary-rgb), .1);
+    border: 1px solid rgba(var(--tblr-primary-rgb), .35); transition: background .15s, border-color .15s;
+  }
+  .srch-btn:hover { color: var(--tblr-primary); background: rgba(var(--tblr-primary-rgb), .18); border-color: var(--tblr-primary); }
   .tmdb-filter-badge {
     display: inline-flex; align-items: center; justify-content: center;
     background: #ef4444; color: #fff; width: 16px; height: 16px; border-radius: 50%;
@@ -236,7 +240,7 @@
     .srch-best-inner { flex-direction: column; }
     .srch-best-poster { width: 110px; flex-basis: auto; }
     .srch-best-title { font-size: 1.3rem; }
-    .srch-select { min-width: 0; flex: 1 1 45%; }
+    .srch-select { flex: 1 1 45%; }
   }
 
   .tmdb-search-bar { margin-bottom: 1rem; }
@@ -500,13 +504,6 @@
         <select id="srch-genre" class="form-select form-select-sm srch-select" aria-label="{{ 'decouverte.filters.genre'|trans }}">
           <option value="">{{ 'decouverte.srch.all_genres'|trans }}</option>
         </select>
-        <div class="srch-years">
-          <input type="number" id="srch-year-min" class="form-control form-control-sm" min="1900" max="2100"
-                 placeholder="{{ 'decouverte.filters.year_from'|trans }}" aria-label="{{ 'decouverte.filters.year_from'|trans }}">
-          <span>–</span>
-          <input type="number" id="srch-year-max" class="form-control form-control-sm" min="1900" max="2100"
-                 placeholder="{{ 'decouverte.filters.year_to'|trans }}" aria-label="{{ 'decouverte.filters.year_to'|trans }}">
-        </div>
         <select id="srch-vote" class="form-select form-select-sm srch-select" aria-label="{{ 'decouverte.srch.rating'|trans }}">
           <option value="0">{{ 'decouverte.srch.any_rating'|trans }}</option>
           <option value="6">★ 6+</option>
@@ -522,11 +519,11 @@
         <label class="srch-check"><input type="checkbox" id="srch-hide-owned"> {{ 'decouverte.srch.hide_owned'|trans }}</label>
         <button type="button" class="srch-reset" id="srch-reset" hidden>{{ 'decouverte.filters.reset'|trans }}</button>
         <span class="flex-fill"></span>
-        <a href="{{ path('tmdb_watchlist') }}" class="srch-link" id="tmdb-watchlist-link">
+        <a href="{{ path('tmdb_watchlist') }}" class="srch-btn" id="tmdb-watchlist-link">
           {{ ico.icon('star-filled', '', 14) }} {{ 'decouverte.actions.watchlist'|trans }}
           <span class="tmdb-filter-badge" id="tmdb-wl-count" style="display:none;">0</span>
         </a>
-        <a href="{{ path('tmdb_explorer') }}" class="srch-link">{{ ico.icon('world', '', 14) }} {{ 'decouverte.actions.explorer'|trans }}</a>
+        <a href="{{ path('tmdb_explorer') }}" class="srch-btn">{{ ico.icon('world', '', 14) }} {{ 'decouverte.actions.explorer'|trans }}</a>
       </div>
     </div>
 
@@ -1830,8 +1827,6 @@
   var srchMore       = document.getElementById('srch-more');
   var srchReset      = document.getElementById('srch-reset');
   var srchGenre      = document.getElementById('srch-genre');
-  var srchYearMin    = document.getElementById('srch-year-min');
-  var srchYearMax    = document.getElementById('srch-year-max');
   var srchVote       = document.getElementById('srch-vote');
   var srchSort       = document.getElementById('srch-sort');
   var srchHideOwned  = document.getElementById('srch-hide-owned');
@@ -1861,7 +1856,7 @@
   var srchGenresCache = { movie: null, tv: null };
 
   function srchFiltersActive() {
-    return srch.type !== 'all' || !!srchGenre.value || !!srchYearMin.value || !!srchYearMax.value
+    return srch.type !== 'all' || !!srchGenre.value
       || parseFloat(srchVote.value) > 0 || srchSort.value !== 'relevance' || srchHideOwned.checked;
   }
 
@@ -1877,8 +1872,6 @@
     if (q) p.set('q', q);
     if (q && srch.exact) p.set('exact', '1');
     if (srchGenre.value) p.set('genre', srchGenre.value);
-    if (srchYearMin.value) p.set('year_min', srchYearMin.value);
-    if (srchYearMax.value) p.set('year_max', srchYearMax.value);
     if (parseFloat(srchVote.value) > 0) p.set('vote_min', srchVote.value);
     if (srchHideOwned.checked) p.set('hide_owned', '1');
     return p;
@@ -2054,7 +2047,6 @@
     srchInput.addEventListener('input', function () { srch.exact = false; srchSchedule(); });
     srchInput.addEventListener('search', function () { srchRun(false); });
     [srchGenre, srchVote, srchSort, srchHideOwned].forEach(function (el) { el.addEventListener('change', function () { srchRun(false); }); });
-    [srchYearMin, srchYearMax].forEach(function (el) { el.addEventListener('input', srchSchedule); });
     document.querySelectorAll('[data-srch-type]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         srch.type = btn.dataset.srchType;
@@ -2067,7 +2059,7 @@
     srchReset.addEventListener('click', function () {
       srch.type = 'all';
       document.querySelectorAll('[data-srch-type]').forEach(function (b) { b.classList.toggle('is-active', b.dataset.srchType === 'all'); });
-      srchGenre.value = ''; srchYearMin.value = ''; srchYearMax.value = '';
+      srchGenre.value = '';
       srchVote.value = '0'; srchSort.value = 'relevance'; srchHideOwned.checked = false;
       srchRun(false);
     });
