@@ -220,27 +220,44 @@ class BazarrController extends AbstractController
         ]);
     }
 
+    /** Rows per History card; each card pages independently. */
+    public const HISTORY_PAGE_SIZE = 50;
+
+    /**
+     * Subtitle history, one 50-row slice per card. Rendering Bazarr's whole
+     * history (~13k rows / 4 MB on a real install) took the page 7-11 s.
+     * `movies_page` / `episodes_page` are 1-based and independent, so paging
+     * one card keeps the other where it was. A card whose fetch fails gets
+     * the error banner instead of "No history", without discarding the other.
+     */
     #[Route('/history', name: 'history')]
-    public function history(): Response
+    public function history(Request $request): Response
     {
+        $pages = [
+            // (int) cast, not getInt(): a junk value lands on page 1, not a 400.
+            'movies'   => max(1, (int) $request->query->get('movies_page', '1')),
+            'episodes' => max(1, (int) $request->query->get('episodes_page', '1')),
+        ];
         $error = false;
-        $errorMovies = false;
-        $errorEpisodes = false;
-        $historyMovies = [];
-        $historyEpisodes = [];
+        $cards = [];
 
         try {
             if (!$this->bazarr->ping()) {
                 $error = true;
             } else {
-                // Each getter answers [] on failure, so check lastError after
-                // each one — a failed call shows the error banner in ITS card
-                // instead of "No history", without discarding the other card.
-                $historyMovies = $this->bazarr->getHistoryMovies();
-                $errorMovies = $this->bazarr->getLastError() !== null;
-                $historyEpisodes = $this->bazarr->getHistoryEpisodes();
-                $errorEpisodes = $this->bazarr->getLastError() !== null;
-                $error = $errorMovies && $errorEpisodes;
+                foreach ($pages as $kind => $page) {
+                    $start = ($page - 1) * self::HISTORY_PAGE_SIZE;
+                    $slice = $this->bazarr->getHistoryPage($kind, $start, self::HISTORY_PAGE_SIZE);
+                    $cards[$kind] = [
+                        'error' => $slice === null,
+                        'rows'  => $slice['rows'] ?? [],
+                        'total' => $slice['total'] ?? 0,
+                        'page'  => $page,
+                        'from'  => $start + 1,
+                        'to'    => $start + count($slice['rows'] ?? []),
+                    ];
+                }
+                $error = $cards['movies']['error'] && $cards['episodes']['error'];
             }
         } catch (\Throwable $e) {
             $error = true;
@@ -248,12 +265,11 @@ class BazarrController extends AbstractController
         }
 
         return $this->render('bazarr/history.html.twig', [
-            'error'            => $error,
-            'error_movies'     => $errorMovies,
-            'error_episodes'   => $errorEpisodes,
-            'history_movies'   => $historyMovies,
-            'history_episodes' => $historyEpisodes,
-            'service_url'      => $this->config->get('bazarr_url'),
+            'error'       => $error,
+            'cards'       => $cards,
+            'pages'       => $pages,
+            'page_size'   => self::HISTORY_PAGE_SIZE,
+            'service_url' => $this->config->get('bazarr_url'),
         ]);
     }
 

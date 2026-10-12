@@ -25,93 +25,76 @@
     {% if error %}
       {% include 'error/_service_banner.html.twig' with { service: 'Bazarr', configured_url: service_url, reason: 'unreachable' } %}
     {% else %}
+      {#
+        One 50-row slice per card (BazarrController::HISTORY_PAGE_SIZE) — the
+        full history is ~13k rows on a real install. Each card pages through
+        its own query parameter; the other card's page is carried along so it
+        stays where it was.
+      #}
+      {% set page_query = { movies_page: pages.movies, episodes_page: pages.episodes } %}
       <div class="row row-cards">
-        <div class="col-lg-6">
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">{{ 'bazarr.history.movies_title'|trans }}</h3>
-            </div>
-            {% if error_movies %}
-              <div class="card-body">
-                {% include 'error/_service_banner.html.twig' with { service: 'Bazarr', wizard_route: 'admin_settings_index', configured_url: service_url, reason: 'unreachable' } %}
+        {% for kind, card in cards %}
+          {% set param = kind ~ '_page' %}
+          <div class="col-lg-6">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">{{ ('bazarr.history.' ~ kind ~ '_title')|trans }}</h3>
               </div>
-            {% elseif history_movies is empty %}
-              <div class="card-body">
-                <div class="empty">
-                  <p class="empty-title">{{ 'bazarr.history.empty'|trans }}</p>
+              {% if card.error %}
+                <div class="card-body">
+                  {% include 'error/_service_banner.html.twig' with { service: 'Bazarr', configured_url: service_url, reason: 'unreachable' } %}
                 </div>
-              </div>
-            {% else %}
-              <div class="table-responsive">
-                <table class="table table-vcenter card-table">
-                  <thead>
-                    <tr>
-                      <th>{{ 'bazarr.history.column_title'|trans }}</th>
-                      <th>{{ 'bazarr.history.column_action'|trans }}</th>
-                      <th>{{ 'bazarr.history.column_provider'|trans }}</th>
-                      <th>{{ 'bazarr.history.column_language'|trans }}</th>
-                      <th>{{ 'bazarr.history.column_date'|trans }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for item in history_movies %}
-                      <tr>
-                        <td>{{ item.title|default('—') }}</td>
-                        <td>{{ item.action|default('—') }}</td>
-                        <td>{{ item.provider|default('—') }}</td>
-                        <td>{% if item.language is iterable %}{{ item.language.name|default('—') }}{% else %}{{ item.language|default('—') }}{% endif %}</td>
-                        <td>{{ item.raw_timestamp is defined and item.raw_timestamp ? item.raw_timestamp|relative_date : (item.parsed_timestamp|default(item.timestamp|default('—'))) }}</td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-        <div class="col-lg-6">
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">{{ 'bazarr.history.episodes_title'|trans }}</h3>
-            </div>
-            {% if error_episodes %}
-              <div class="card-body">
-                {% include 'error/_service_banner.html.twig' with { service: 'Bazarr', wizard_route: 'admin_settings_index', configured_url: service_url, reason: 'unreachable' } %}
-              </div>
-            {% elseif history_episodes is empty %}
-              <div class="card-body">
-                <div class="empty">
-                  <p class="empty-title">{{ 'bazarr.history.empty'|trans }}</p>
+              {% elseif card.rows is empty %}
+                <div class="card-body">
+                  <div class="empty">
+                    <p class="empty-title">{{ 'bazarr.history.empty'|trans }}</p>
+                  </div>
                 </div>
-              </div>
-            {% else %}
-              <div class="table-responsive">
-                <table class="table table-vcenter card-table">
-                  <thead>
-                    <tr>
-                      <th>{{ 'bazarr.history.column_title'|trans }}</th>
-                      <th>{{ 'bazarr.history.column_action'|trans }}</th>
-                      <th>{{ 'bazarr.history.column_provider'|trans }}</th>
-                      <th>{{ 'bazarr.history.column_language'|trans }}</th>
-                      <th>{{ 'bazarr.history.column_date'|trans }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for item in history_episodes %}
+              {% else %}
+                <div class="table-responsive">
+                  <table class="table table-vcenter card-table">
+                    <thead>
                       <tr>
-                        <td>{{ item.seriesTitle|default('—') }} — {{ item.episodeTitle|default('—') }} {% if item.episode_number is defined %}({{ item.episode_number }}){% endif %}</td>
-                        <td>{{ item.action|default('—') }}</td>
-                        <td>{{ item.provider|default('—') }}</td>
-                        <td>{% if item.language is iterable %}{{ item.language.name|default('—') }}{% else %}{{ item.language|default('—') }}{% endif %}</td>
-                        <td>{{ item.raw_timestamp is defined and item.raw_timestamp ? item.raw_timestamp|relative_date : (item.parsed_timestamp|default(item.timestamp|default('—'))) }}</td>
+                        <th>{{ 'bazarr.history.column_title'|trans }}</th>
+                        <th>{{ 'bazarr.history.column_action'|trans }}</th>
+                        <th>{{ 'bazarr.history.column_provider'|trans }}</th>
+                        <th>{{ 'bazarr.history.column_language'|trans }}</th>
+                        <th>{{ 'bazarr.history.column_date'|trans }}</th>
                       </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            {% endif %}
+                    </thead>
+                    <tbody>
+                      {% for item in card.rows %}
+                        <tr>
+                          {% if kind == 'movies' %}
+                            <td>{{ item.title|default('—') }}</td>
+                          {% else %}
+                            <td>{{ item.seriesTitle|default('—') }} — {{ item.episodeTitle|default('—') }} {% if item.episode_number is defined %}({{ item.episode_number }}){% endif %}</td>
+                          {% endif %}
+                          <td>{{ item.action|default('—') }}</td>
+                          <td>{{ item.provider|default('—') }}</td>
+                          <td>{% if item.language is iterable %}{{ item.language.name|default('—') }}{% else %}{{ item.language|default('—') }}{% endif %}</td>
+                          <td>{{ item.raw_timestamp is defined and item.raw_timestamp ? item.raw_timestamp|relative_date : (item.parsed_timestamp|default(item.timestamp|default('—'))) }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% endif %}
+              {% if not card.error and card.total > 0 %}
+                <div class="card-footer d-flex align-items-center gap-2">
+                  <span class="text-secondary small">{{ 'bazarr.history.range'|trans({ from: card.rows is empty ? 0 : card.from, to: card.to, total: card.total|number_format }) }}</span>
+                  <span class="flex-fill"></span>
+                  {% if card.page > 1 %}
+                    <a class="btn btn-sm btn-ghost-secondary" href="{{ path('app_bazarr_history', page_query|merge({ (param): card.page - 1 })) }}">{{ 'bazarr.history.newer'|trans }}</a>
+                  {% endif %}
+                  {% if card.page * page_size < card.total %}
+                    <a class="btn btn-sm btn-ghost-secondary" href="{{ path('app_bazarr_history', page_query|merge({ (param): card.page + 1 })) }}">{{ 'bazarr.history.older'|trans }}</a>
+                  {% endif %}
+                </div>
+              {% endif %}
+            </div>
           </div>
-        </div>
+        {% endfor %}
       </div>
     {% endif %}
 

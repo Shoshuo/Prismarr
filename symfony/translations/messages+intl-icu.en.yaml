@@ -5569,6 +5569,9 @@ bazarr:
     movies_title: Movie subtitle history
     episodes_title: Episode subtitle history
     empty: No history yet
+    range: '{from}–{to} of {total}'
+    newer: Newer
+    older: Older
     column_title: Title
     column_action: Action
     column_provider: Provider
