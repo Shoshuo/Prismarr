@@ -82,7 +82,7 @@
               {% endif %}
               {% if not card.error and card.total > 0 %}
                 <div class="card-footer d-flex align-items-center gap-2">
-                  <span class="text-secondary small">{{ 'bazarr.history.range'|trans({ from: card.rows is empty ? 0 : card.from, to: card.to, total: card.total|number_format }) }}</span>
+                  <span class="text-secondary small">{{ 'bazarr.history.range'|trans({ from: (card.rows is empty ? 0 : card.from)|number_format, to: card.to|number_format, total: card.total|number_format }) }}</span>
                   <span class="flex-fill"></span>
                   {% if card.page > 1 %}
                     <a class="btn btn-sm btn-ghost-secondary" href="{{ path('app_bazarr_history', page_query|merge({ (param): card.page - 1 })) }}">{{ 'bazarr.history.newer'|trans }}</a>
