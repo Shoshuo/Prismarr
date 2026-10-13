@@ -5572,6 +5572,15 @@ bazarr:
     range: '{from}–{to} of {total}'
     newer: Newer
     older: Older
+    action:
+      '0': Deleted
+      '1': Download
+      '2': Manual
+      '3': Upgrade
+      '4': Upload
+      '5': Sync
+      '6': Translated
+      '7': Extracted
     column_title: Title
     column_action: Action
     column_provider: Provider

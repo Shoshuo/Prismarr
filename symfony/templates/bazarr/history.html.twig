@@ -70,7 +70,10 @@
                           {% else %}
                             <td>{{ item.seriesTitle|default('—') }} — {{ item.episodeTitle|default('—') }} {% if item.episode_number is defined %}({{ item.episode_number }}){% endif %}</td>
                           {% endif %}
-                          <td>{{ item.action|default('—') }}</td>
+                          {# Bazarr's numeric history action (codes 0-7, as its own UI labels them);
+                             anything else is shown as-is. #}
+                          {% set action = item.action ?? null %}
+                          <td>{{ action is not null and action ~ '' matches '/^[0-7]$/' ? ('bazarr.history.action.' ~ action)|trans : action|default('—') }}</td>
                           <td>{{ item.provider|default('—') }}</td>
                           <td>{% if item.language is iterable %}{{ item.language.name|default('—') }}{% else %}{{ item.language|default('—') }}{% endif %}</td>
                           <td>{{ item.raw_timestamp is defined and item.raw_timestamp ? item.raw_timestamp|relative_date : (item.parsed_timestamp|default(item.timestamp|default('—'))) }}</td>

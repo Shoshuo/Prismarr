@@ -471,4 +471,35 @@ class BazarrFrameRenderTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $this->assertSame([0, 0], $calls);
     }
+
+    /**
+     * Bazarr's history `action` is a numeric code (its own UI maps 0-7 to
+     * Delete / Download / Manual / Upgrade / Upload / Sync / Translated /
+     * Extracted); the page printed the bare number. An unknown code still
+     * shows as-is rather than vanishing.
+     */
+    public function testHistoryActionCodesRenderAsLabels(): void
+    {
+        $this->boot(true, static function ($bazarr): void {
+            $bazarr->method('getHistoryPage')->willReturnCallback(static fn (string $kind): array => $kind === 'movies'
+                ? ['rows' => [
+                    ['title' => 'M1', 'action' => 1, 'provider' => 'p', 'language' => 'en', 'timestamp' => 'now'],
+                    ['title' => 'M2', 'action' => '3', 'provider' => 'p', 'language' => 'en', 'timestamp' => 'now'],
+                    ['title' => 'M3', 'action' => 99, 'provider' => 'p', 'language' => 'en', 'timestamp' => 'now'],
+                ], 'total' => 3]
+                : ['rows' => [
+                    ['seriesTitle' => 'S', 'episodeTitle' => 'E', 'action' => 5, 'provider' => 'p', 'language' => 'en', 'timestamp' => 'now'],
+                ], 'total' => 1]);
+        });
+
+        $this->client->request('GET', '/bazarr/history');
+
+        $html = (string) $this->client->getResponse()->getContent();
+        $this->assertResponseIsSuccessful();
+        $this->assertMatchesRegularExpression('#<td[^>]*>\s*Download\s*</td>#', $html);
+        $this->assertMatchesRegularExpression('#<td[^>]*>\s*Upgrade\s*</td>#', $html, 'a numeric string maps too');
+        $this->assertMatchesRegularExpression('#<td[^>]*>\s*Sync\s*</td>#', $html);
+        $this->assertMatchesRegularExpression('#<td[^>]*>\s*99\s*</td>#', $html, 'an unknown code is shown as-is');
+        $this->assertStringNotContainsString('bazarr.history.action.', $html, 'no untranslated key leaks');
+    }
 }
