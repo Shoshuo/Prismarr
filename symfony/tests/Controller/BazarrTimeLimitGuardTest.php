@@ -32,4 +32,23 @@ class BazarrTimeLimitGuardTest extends TestCase
 
         $this->assertMatchesRegularExpression('/set_time_limit\(self::\w+\)/', $body, $method . ' must call set_time_limit() with its budget constant');
     }
+
+    /** @return iterable<string, array{mixed, int}> */
+    public static function historyPages(): iterable
+    {
+        yield 'absent' => [null, 1];
+        yield 'plain' => ['3', 3];
+        yield 'zero' => ['0', 1];
+        yield 'negative' => ['-4', 1];
+        yield 'junk' => ['abc', 1];
+        yield 'array' => [['1'], 1];
+        yield 'overflow' => ['99999999999999999999', 100000];
+        yield 'above cap' => ['5000000', 100000];
+    }
+
+    #[DataProvider('historyPages')]
+    public function testHistoryPageParsingNeverThrowsOrOverflows(mixed $raw, int $expected): void
+    {
+        $this->assertSame($expected, BazarrController::parseHistoryPage($raw));
+    }
 }

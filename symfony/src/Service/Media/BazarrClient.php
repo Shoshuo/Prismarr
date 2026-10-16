@@ -251,7 +251,7 @@ class BazarrClient implements ResetInterface
         $rows = array_values(is_array($r['data'] ?? null) ? $r['data'] : []);
         $total = $r['total'] ?? null;
 
-        return ['rows' => $rows, 'total' => is_int($total) ? $total : count($rows)];
+        return ['rows' => $rows, 'total' => is_numeric($total) ? max(0, (int) $total) : count($rows)];
     }
 
     /** @return list<array<string, mixed>> Raw episode dicts for one Sonarr series; [] on failure. */

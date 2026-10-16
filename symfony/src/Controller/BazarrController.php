@@ -234,9 +234,8 @@ class BazarrController extends AbstractController
     public function history(Request $request): Response
     {
         $pages = [
-            // (int) cast, not getInt(): a junk value lands on page 1, not a 400.
-            'movies'   => max(1, (int) $request->query->get('movies_page', '1')),
-            'episodes' => max(1, (int) $request->query->get('episodes_page', '1')),
+            'movies'   => self::parseHistoryPage($request->query->all()['movies_page'] ?? null),
+            'episodes' => self::parseHistoryPage($request->query->all()['episodes_page'] ?? null),
         ];
         $error = false;
         $cards = [];
@@ -248,6 +247,13 @@ class BazarrController extends AbstractController
                 foreach ($pages as $kind => $page) {
                     $start = ($page - 1) * self::HISTORY_PAGE_SIZE;
                     $slice = $this->bazarr->getHistoryPage($kind, $start, self::HISTORY_PAGE_SIZE);
+                    // Past the end (stale link, hand-edited URL): clamp to the last page, once.
+                    if ($slice !== null && $slice['rows'] === [] && $slice['total'] > 0) {
+                        $page = max(1, (int) ceil($slice['total'] / self::HISTORY_PAGE_SIZE));
+                        $pages[$kind] = $page;
+                        $start = ($page - 1) * self::HISTORY_PAGE_SIZE;
+                        $slice = $this->bazarr->getHistoryPage($kind, $start, self::HISTORY_PAGE_SIZE);
+                    }
                     $cards[$kind] = [
                         'error' => $slice === null,
                         'rows'  => $slice['rows'] ?? [],
@@ -271,6 +277,24 @@ class BazarrController extends AbstractController
             'page_size'   => self::HISTORY_PAGE_SIZE,
             'service_url' => $this->config->get('bazarr_url'),
         ]);
+    }
+
+    /** Upper bound on a History page number (100000 x 50 rows) — keeps `($page-1)*50` far from int overflow. */
+    private const HISTORY_MAX_PAGE = 100000;
+
+    /** Junk (arrays, non-numerics, overflow) lands on page 1 / the cap, never a 400 or a TypeError. */
+    public static function parseHistoryPage(mixed $raw): int
+    {
+        if (!is_string($raw) && !is_int($raw)) {
+            return 1;
+        }
+        $v = filter_var($raw, FILTER_VALIDATE_INT);
+        if ($v === false) {
+            // Digits-only but too big for an int => cap; anything else => page 1.
+            return is_string($raw) && ctype_digit($raw) ? self::HISTORY_MAX_PAGE : 1;
+        }
+
+        return max(1, min(self::HISTORY_MAX_PAGE, $v));
     }
 
     /**
