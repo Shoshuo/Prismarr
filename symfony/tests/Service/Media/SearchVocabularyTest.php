@@ -73,6 +73,21 @@ final class SearchVocabularyTest extends TestCase
         self::assertSame([], $vocab->build());
     }
 
+    public function testBuildReturnsNothingWhenTooManyPagesComeBackEmpty(): void
+    {
+        // TmdbClient answers [] (no throw) on a failed call: a mostly-failed build must not be cached.
+        $tmdb = $this->createMock(TmdbClient::class);
+        foreach (['getPopularTv', 'getTopRatedMovies', 'getTopRatedTv', 'getPopularPeople', 'getTrendingAll'] as $m) {
+            $tmdb->method($m)->willReturn([]);
+        }
+        $tmdb->method('getPopularMovies')->willReturnCallback(fn(int $p) => $p === 1
+            ? ['results' => [['title' => 'Matrix', 'popularity' => 70]]]
+            : []);
+        $vocab = new SearchVocabulary($this->swr(new ArrayAdapter()), $tmdb, new NullLogger());
+
+        self::assertSame([], $vocab->build());
+    }
+
     public function testReadNeverFetchesAndQueuesARebuildOnAMiss(): void
     {
         $tmdb = $this->tmdb();
