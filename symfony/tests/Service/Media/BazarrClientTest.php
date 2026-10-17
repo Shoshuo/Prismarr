@@ -475,4 +475,54 @@ class BazarrClientTest extends TestCase
         $this->assertSame([], $client->getMovies([], BazarrClient::LIBRARY_TIMEOUT));
         $this->assertTrue($health->isDown(BazarrClient::SERVICE));
     }
+
+    /**
+     * History is paged server-side: the full Bazarr history is ~13k rows /
+     * 4 MB on a real install, so the page asks for one slice and Bazarr's
+     * `total` drives the pager.
+     */
+    public function testHistoryPageAsksBazarrForOneSliceAndReturnsItsTotal(): void
+    {
+        $client = new class ($this->config($this->configured()), new NullLogger(), new ServiceHealthCache(new ArrayAdapter())) extends BazarrClient {
+            /** @var list<string> */
+            public array $urls = [];
+
+            protected function exec(\CurlHandle $ch, array $opts): array
+            {
+                $this->urls[] = (string) ($opts[CURLOPT_URL] ?? curl_getinfo($ch, CURLINFO_EFFECTIVE_URL));
+                curl_close($ch);
+
+                return ['{"data":[{"title":"A"},{"title":"B"}],"total":4022}', 200, '', false];
+            }
+        };
+
+        $page = $client->getHistoryPage('movies', 50, 50);
+
+        $this->assertSame(['rows' => [['title' => 'A'], ['title' => 'B']], 'total' => 4022], $page);
+        $this->assertStringContainsString('/api/movies/history?', $client->urls[0]);
+        $this->assertStringContainsString('start=50', $client->urls[0]);
+        $this->assertStringContainsString('length=50', $client->urls[0]);
+
+        $client->getHistoryPage('episodes', 0, 50);
+        $this->assertStringContainsString('/api/episodes/history?', $client->urls[1]);
+    }
+
+    public function testHistoryPageIsNullOnFailureAndWhenUnconfigured(): void
+    {
+        $this->assertNull($this->client([])->getHistoryPage('movies', 0, 50));
+        $this->assertNull($this->fakeClient(new ServiceHealthCache(new ArrayAdapter()), 'oops', 500)->getHistoryPage('movies', 0, 50));
+    }
+
+    public function testHistoryPageFallsBackToTheRowCountWhenBazarrSendsNoTotal(): void
+    {
+        $page = $this->fakeClient(new ServiceHealthCache(new ArrayAdapter()), '{"data":[{"title":"A"}]}', 200)->getHistoryPage('episodes', 0, 50);
+
+        $this->assertSame(['rows' => [['title' => 'A']], 'total' => 1], $page);
+    }
+
+    public function testHistoryPageRejectsAnUnknownKind(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->client($this->configured())->getHistoryPage('series', 0, 50);
+    }
 }

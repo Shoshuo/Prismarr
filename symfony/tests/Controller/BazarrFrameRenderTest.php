@@ -333,9 +333,8 @@ class BazarrFrameRenderTest extends WebTestCase
     public function testAFailedHistoryFetchRendersTheErrorBannerNotAnEmptyList(): void
     {
         $this->boot(true, static function ($bazarr): void {
-            $bazarr->method('getHistoryMovies')->willReturn([]);
-            $bazarr->method('getHistoryEpisodes')->willReturn([]);
-            $bazarr->method('getLastError')->willReturn(['code' => 0, 'method' => 'GET', 'path' => '/history/movies', 'message' => 'Operation timed out']);
+            // null = the call failed (timeout, 401...), never "no history"
+            $bazarr->method('getHistoryPage')->willReturn(null);
         });
 
         $this->client->request('GET', '/bazarr/history');
@@ -411,14 +410,9 @@ class BazarrFrameRenderTest extends WebTestCase
     public function testAFailedEpisodeHistoryKeepsTheMovieHistoryThatLoaded(): void
     {
         $this->boot(true, static function ($bazarr): void {
-            $bazarr->method('getHistoryMovies')->willReturn([
-                ['title' => 'ZzyxHistoryMovie', 'action' => 'downloaded', 'provider' => 'p', 'language' => 'en', 'timestamp' => 'now'],
-            ]);
-            $bazarr->method('getHistoryEpisodes')->willReturn([]);
-            $bazarr->method('getLastError')->willReturnOnConsecutiveCalls(
-                null, // after getHistoryMovies()
-                ['code' => 0, 'method' => 'GET', 'path' => '/episodes/history', 'message' => 'Operation timed out'],
-            );
+            $bazarr->method('getHistoryPage')->willReturnCallback(static fn (string $kind): ?array => $kind === 'movies'
+                ? ['rows' => [['title' => 'ZzyxHistoryMovie', 'action' => 'downloaded', 'provider' => 'p', 'language' => 'en', 'timestamp' => 'now']], 'total' => 1]
+                : null);
         });
 
         $this->client->request('GET', '/bazarr/history');
@@ -427,5 +421,85 @@ class BazarrFrameRenderTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $this->assertStringContainsString('ZzyxHistoryMovie', $html, 'the movie history that loaded is still shown');
         $this->assertSame(1, substr_count($html, 'data-reason="unreachable"'), 'one banner, for the failed card');
+    }
+
+    /**
+     * The full history (~13k rows / 4 MB on a real install) made the page take
+     * 7-11 s; each card now fetches one 50-row slice, picked by its own query
+     * parameter so paging one card keeps the other where it was.
+     */
+    public function testHistoryFetchesOneSlicePerCardAndLinksToTheNextOne(): void
+    {
+        $calls = [];
+        $this->boot(true, static function ($bazarr) use (&$calls): void {
+            $bazarr->method('getHistoryPage')->willReturnCallback(static function (string $kind, int $start, int $length) use (&$calls): array {
+                $calls[] = [$kind, $start, $length];
+                $rows = [];
+                for ($i = 0; $i < $length; ++$i) {
+                    $rows[] = ['title' => 'Row' . ($start + $i), 'seriesTitle' => 'Show', 'episodeTitle' => 'Ep', 'action' => 'downloaded', 'provider' => 'p', 'language' => 'en', 'timestamp' => 'now'];
+                }
+
+                return ['rows' => $rows, 'total' => $kind === 'movies' ? 4022 : 120];
+            });
+        });
+
+        $this->client->request('GET', '/bazarr/history?movies_page=3&episodes_page=1');
+
+        $html = (string) $this->client->getResponse()->getContent();
+        $this->assertResponseIsSuccessful();
+        $this->assertSame([['movies', 100, 50], ['episodes', 0, 50]], $calls);
+        $this->assertStringContainsString('101–150', $html);
+        $this->assertStringContainsString('4,022', $html);
+        $this->assertStringContainsString('movies_page=4', $html, 'older movie history');
+        $this->assertStringContainsString('movies_page=2', $html, 'newer movie history');
+        $this->assertStringContainsString('episodes_page=2', $html, 'older episode history');
+    }
+
+    public function testHistoryPageParametersAreClampedToAtLeastOne(): void
+    {
+        $calls = [];
+        $this->boot(true, static function ($bazarr) use (&$calls): void {
+            $bazarr->method('getHistoryPage')->willReturnCallback(static function (string $kind, int $start) use (&$calls): array {
+                $calls[] = $start;
+
+                return ['rows' => [], 'total' => 0];
+            });
+        });
+
+        $this->client->request('GET', '/bazarr/history?movies_page=-4&episodes_page=abc');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSame([0, 0], $calls);
+    }
+
+    /**
+     * Bazarr's history `action` is a numeric code (its own UI maps 0-7 to
+     * Delete / Download / Manual / Upgrade / Upload / Sync / Translated /
+     * Extracted); the page printed the bare number. An unknown code still
+     * shows as-is rather than vanishing.
+     */
+    public function testHistoryActionCodesRenderAsLabels(): void
+    {
+        $this->boot(true, static function ($bazarr): void {
+            $bazarr->method('getHistoryPage')->willReturnCallback(static fn (string $kind): array => $kind === 'movies'
+                ? ['rows' => [
+                    ['title' => 'M1', 'action' => 1, 'provider' => 'p', 'language' => 'en', 'timestamp' => 'now'],
+                    ['title' => 'M2', 'action' => '3', 'provider' => 'p', 'language' => 'en', 'timestamp' => 'now'],
+                    ['title' => 'M3', 'action' => 99, 'provider' => 'p', 'language' => 'en', 'timestamp' => 'now'],
+                ], 'total' => 3]
+                : ['rows' => [
+                    ['seriesTitle' => 'S', 'episodeTitle' => 'E', 'action' => 5, 'provider' => 'p', 'language' => 'en', 'timestamp' => 'now'],
+                ], 'total' => 1]);
+        });
+
+        $this->client->request('GET', '/bazarr/history');
+
+        $html = (string) $this->client->getResponse()->getContent();
+        $this->assertResponseIsSuccessful();
+        $this->assertMatchesRegularExpression('#<td[^>]*>\s*Download\s*</td>#', $html);
+        $this->assertMatchesRegularExpression('#<td[^>]*>\s*Upgrade\s*</td>#', $html, 'a numeric string maps too');
+        $this->assertMatchesRegularExpression('#<td[^>]*>\s*Sync\s*</td>#', $html);
+        $this->assertMatchesRegularExpression('#<td[^>]*>\s*99\s*</td>#', $html, 'an unknown code is shown as-is');
+        $this->assertStringNotContainsString('bazarr.history.action.', $html, 'no untranslated key leaks');
     }
 }
