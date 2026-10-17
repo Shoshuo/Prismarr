@@ -1011,9 +1011,9 @@
   }
   // Navigating AWAY via Turbo must drop every document-level listener too,
   // otherwise they stay live on other pages (for instance the "/" handler
-  // would swallow the key everywhere). Runs once at the next turbo:before-render.
-  document.addEventListener('turbo:before-render', function dropDocListeners() {
-    document.removeEventListener('turbo:before-render', dropDocListeners);
+  // would swallow the key everywhere). Runs once at the next turbo:before-render
+  // and removes itself along with the rest.
+  bindDoc('turbo:before-render', 'leave', function () {
     Object.keys(boundDocTypes).forEach(function(slot) {
       if (window[slot]) document.removeEventListener(boundDocTypes[slot], window[slot]);
       delete window[slot];

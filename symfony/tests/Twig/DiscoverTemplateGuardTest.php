@@ -24,7 +24,7 @@ final class DiscoverTemplateGuardTest extends TestCase
     public function testDocumentListenersAreRemovedOnTurboNavigation(): void
     {
         $src = $this->src();
-        self::assertStringContainsString("document.addEventListener('turbo:before-render', function dropDocListeners()", $src);
+        self::assertStringContainsString("bindDoc('turbo:before-render', 'leave', function ()", $src);
         self::assertStringContainsString('document.removeEventListener(boundDocTypes[slot], window[slot])', $src);
         self::assertStringContainsString('delete window[slot]', $src);
         self::assertStringContainsString('if (!srchInput.isConnected) return;', $src);
