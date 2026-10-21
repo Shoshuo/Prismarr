@@ -72,10 +72,22 @@
 	# cors_origins is exposed via env so public deployments can restrict
 	# which origins may subscribe to the hub. Default '*' keeps local/LAN
 	# homelab setups working out of the box.
+	# Mercure 1.0 syntax (FrankenPHP 1.13+): `transport bolt` replaces
+	# `transport_url`, and the JWT secret lives in an `issuer` block (modern
+	# mode, strict token validation). Tokens must carry `iss: prismarr`;
+	# nothing in the app publishes or subscribes yet, so no token is minted.
 	mercure {
-		transport_url bolt:///var/www/html/var/data/mercure.db
-		publisher_jwt {env.MERCURE_JWT_SECRET}
-		subscriber_jwt {env.MERCURE_JWT_SECRET}
+		transport bolt {
+			path /var/www/html/var/data/mercure.db
+		}
+		issuer prismarr {
+			publisher {
+				jwt {env.MERCURE_JWT_SECRET} HS256
+			}
+			subscriber {
+				jwt {env.MERCURE_JWT_SECRET} HS256
+			}
+		}
 		cors_origins {$PRISMARR_MERCURE_CORS_ORIGINS:*}
 		anonymous
 	}

@@ -1,4 +1,4 @@
-FROM dunglas/frankenphp:1.3.6-php8.4-alpine
+FROM dunglas/frankenphp:1.13.2-php8.4-alpine
 
 # ── Build-time version injection ────────────────────────────────────────
 # The release workflow passes `--build-arg PRISMARR_VERSION=$TAG`, the beta
