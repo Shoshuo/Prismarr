@@ -5567,6 +5567,18 @@ bazarr:
     movies_title: Historique des sous-titres de films
     episodes_title: Historique des sous-titres d'épisodes
     empty: Aucun historique pour le moment
+    range: '{from}–{to} sur {total}'
+    newer: Plus récent
+    older: Plus ancien
+    action:
+      '0': Supprimé
+      '1': Téléchargé
+      '2': Manuel
+      '3': Mis à niveau
+      '4': Envoyé
+      '5': Synchronisé
+      '6': Traduit
+      '7': Extrait
     column_title: Titre
     column_action: Action
     column_provider: Fournisseur

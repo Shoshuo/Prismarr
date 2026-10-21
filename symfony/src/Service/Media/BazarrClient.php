@@ -227,6 +227,33 @@ class BazarrClient implements ResetInterface
         return array_values(is_array($r['data'] ?? null) ? $r['data'] : []);
     }
 
+    /**
+     * One slice of the movie or episode subtitle history, newest first.
+     * Bazarr's history endpoints default to `length=-1` (everything) — about
+     * 13k rows / 4 MB on a real install — so the History page asks for one
+     * slice at a time and pages with Bazarr's own `total`.
+     *
+     * @param string $kind 'movies' or 'episodes' (anything else throws)
+     * @return array{rows: list<array<string, mixed>>, total: int}|null null on failure or when Bazarr is not configured
+     */
+    public function getHistoryPage(string $kind, int $start, int $length): ?array
+    {
+        if ($kind !== 'movies' && $kind !== 'episodes') {
+            throw new \InvalidArgumentException('Unknown Bazarr history kind: ' . $kind);
+        }
+        if (!$this->ready()) {
+            return null;
+        }
+        $r = $this->request('GET', '/' . $kind . '/history', ['start' => max(0, $start), 'length' => max(1, $length)]);
+        if ($r === null) {
+            return null;
+        }
+        $rows = array_values(is_array($r['data'] ?? null) ? $r['data'] : []);
+        $total = $r['total'] ?? null;
+
+        return ['rows' => $rows, 'total' => is_numeric($total) ? max(0, (int) $total) : count($rows)];
+    }
+
     /** @return list<array<string, mixed>> Raw episode dicts for one Sonarr series; [] on failure. */
     public function getEpisodes(int $sonarrSeriesId): array
     {
