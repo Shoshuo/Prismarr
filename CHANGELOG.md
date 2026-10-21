@@ -5,7 +5,7 @@ All notable changes to Prismarr are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.3.0] - 2026-10-21
 
 ### Security
 - **PHP2Shell: the image now ships PHP 8.4.27 (CVE-2026-109618, CVE-2026-109619).** Every earlier Prismarr image, 1.2.0 and the 1.3.0 betas included, ran PHP 8.4.2, which is affected by two critical flaws that let an unauthenticated request execute code on the server. The base image moves from FrankenPHP 1.3.6 to 1.13.2, which also fixes four FrankenPHP issues of its own (one of them could leak a previous request's errors to the next one in worker mode). As an extra layer, `session.upload_progress.enabled` is now off (Prismarr never used it). Update as soon as possible, especially if your instance is reachable from the internet.
