@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Controller\Concerns\ApiClientErrorTrait;
+use App\Service\Media\LibraryIndexCache;
+use App\Service\Media\MediaLibraryCache;
 use App\Service\Media\RadarrClient;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,7 +25,22 @@ class RadarrController extends AbstractController
         private readonly RadarrClient $radarr,
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
+        private readonly LibraryIndexCache $libraryIndex,
+        private readonly MediaLibraryCache $libraryCache,
     ) {}
+
+    /**
+     * Slim cached library rows for the instance this route is bound to (see
+     * LibraryIndexCache) instead of a per-request full /api/v3/movie fetch.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function indexedMovies(): array
+    {
+        $inst = $this->radarr->getInstance();
+
+        return $inst !== null ? $this->libraryIndex->movies($inst) : LibraryIndexCache::fetchRows($this->radarr);
+    }
 
     // ── Updates ───────────────────────────────────────────────────────────────
 
@@ -314,8 +331,10 @@ class RadarrController extends AbstractController
             $fs = $this->radarr->getFilesystem($folder, false);
             $dirs = $fs['directories'] ?? [];
 
-            // Get existing movie paths
-            $movies = $this->radarr->getMovies(RadarrClient::LIBRARY_TIMEOUT);
+            // Get existing movie paths. Deliberately a direct fetch, not the
+            // cached index: a folder imported a moment ago must not be
+            // offered again, and this is a rare, user-initiated scan.
+            $movies = $this->radarr->getRawMovies(RadarrClient::LIBRARY_TIMEOUT);
             $existingPaths = [];
             foreach ($movies as $m) {
                 $existingPaths[rtrim($m['path'] ?? '', '/')] = true;
@@ -349,7 +368,7 @@ class RadarrController extends AbstractController
         $movies = [];
         $error  = false;
         try {
-            $allMovies = $this->radarr->getMovies(RadarrClient::LIBRARY_TIMEOUT);
+            $allMovies = $this->indexedMovies();
             // Just title + id for the select
             $movies = array_map(fn($m) => ['id' => $m['id'], 'title' => $m['title'], 'year' => $m['year']], $allMovies);
             usort($movies, fn($a, $b) => strcmp($a['title'] ?? '', $b['title'] ?? ''));
@@ -1106,7 +1125,12 @@ class RadarrController extends AbstractController
         $error = false;
         $stats = [];
         try {
-            $movies   = $this->radarr->getMovies(RadarrClient::LIBRARY_TIMEOUT);
+            // Needs quality / size / genres: read the full normalized list
+            // through the cache the Films page shares, not a fresh fetch.
+            $slug     = $this->radarr->getInstance()?->getSlug();
+            $movies   = $slug !== null
+                ? $this->libraryCache->movies($slug, fn() => $this->radarr->getMovies(RadarrClient::LIBRARY_TIMEOUT))
+                : $this->radarr->getMovies(RadarrClient::LIBRARY_TIMEOUT);
             $disk     = $this->radarr->getDiskSpace();
             $missing  = $this->radarr->getMissing(1, 1);
 

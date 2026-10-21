@@ -5,6 +5,11 @@ All notable changes to Prismarr are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Performance
+- **Large libraries no longer re-fetch the whole Radarr/Sonarr library on every Discover, dashboard, collections or torrent-resolve request.** Outside the Films/Series pages, ~20 call sites (Discover's "in library" badges on every TMDb rail, recommendations seeds, quick-add owners, dashboard widgets, collections, rename, torrent → library resolve, admin counts) each pulled the full `/api/v3/movie` / `/api/v3/series` payload. On a 20k-movie Radarr that is ~80 MB, ~4.5 s for Radarr to serialize and ~350 MB of PHP memory per call — and Discover fires one per rail in parallel, so overlapping fetches pushed Radarr past the client timeout and pages hung or came back without badges. A new `LibraryIndexCache` keeps one slim per-instance index (ids, status, titles incl. alternate titles, artwork, added date, path: ~10 MB serialized for 20k movies, ~25 ms to read) in `cache.app`, served stale-while-revalidate (5 min soft / 1 h hard) on top of `StaleWhileRevalidateCache`: refreshes run in the messenger worker, a cold miss is fetched once while concurrent requests wait on the cache lock, and the full-library refresher feeds both caches from a single fetch. Mutations mark the index stale (`StaleWhileRevalidateCache::markStale()`) instead of deleting it, so a quick-add doesn't make the next rail block on a refetch. Radarr/Sonarr GETs now also request gzip (`CURLOPT_ENCODING`), cutting the movie list from ~80 MB to ~20 MB on the wire. The library import scan keeps a direct fetch on purpose (a just-imported folder must not be offered again).
+
 ## [1.3.0] - 2026-10-21
 
 ### Security

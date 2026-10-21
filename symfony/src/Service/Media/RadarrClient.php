@@ -240,6 +240,55 @@ class RadarrClient implements ResetInterface
         return array_map(fn($m) => $this->normalizeMovie($m), $rawMovies);
     }
 
+    /**
+     * Project a raw `/api/v3/movie` row onto the slim shape LibraryIndexCache
+     * stores: only what the membership / status / title-matching callers
+     * read, a few hundred bytes per movie instead of the full normalized
+     * row (no overview, no DateTimeImmutable objects, no file details). On a
+     * 20k-movie library that is ~10 MB serialized instead of ~50 MB.
+     *
+     * Keys that overlap normalizeMovie() keep the same meaning; `added` stays
+     * the raw ISO-8601 string (sortable as-is).
+     *
+     * @param array<string, mixed> $m
+     * @return array<string, mixed>
+     */
+    public static function toLibraryIndexRow(array $m): array
+    {
+        return [
+            'id'              => isset($m['id']) ? (int) $m['id'] : null,
+            'tmdbId'          => !empty($m['tmdbId']) ? (int) $m['tmdbId'] : null,
+            'imdbId'          => $m['imdbId'] ?? null,
+            'title'           => $m['title'] ?? '—',
+            'originalTitle'   => $m['originalTitle'] ?? null,
+            'sortTitle'       => strtolower($m['sortTitle'] ?? $m['title'] ?? ''),
+            'year'            => $m['year'] ?? null,
+            'status'          => $m['status'] ?? 'unknown',
+            'hasFile'         => (bool) ($m['hasFile'] ?? false),
+            'monitored'       => (bool) ($m['monitored'] ?? false),
+            'added'           => $m['added'] ?? null,
+            'path'            => $m['path'] ?? null,
+            'poster'          => self::coverUrl($m, 'poster'),
+            'fanart'          => self::coverUrl($m, 'fanart'),
+            'alternateTitles' => array_values(array_filter(array_map(
+                fn($t) => is_array($t) && !empty($t['title']) ? ['title' => (string) $t['title']] : null,
+                $m['alternateTitles'] ?? [],
+            ))),
+        ];
+    }
+
+    /** Static twin of imageUrl() for toLibraryIndexRow(). */
+    private static function coverUrl(array $item, string $coverType): ?string
+    {
+        foreach ($item['images'] ?? [] as $img) {
+            if (($img['coverType'] ?? null) === $coverType) {
+                return $img['remoteUrl'] ?? null;
+            }
+        }
+
+        return null;
+    }
+
     /** Returns raw movies without normalization (for lightweight cache) */
     public function getRawMovies(int $timeout = 8): array
     {
@@ -516,6 +565,10 @@ class RadarrClient implements ResetInterface
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_TIMEOUT        => 90,
             CURLOPT_NOSIGNAL       => 1,
+            // '' = advertise every encoding libcurl supports and decode
+            // transparently: the full-library payloads compress ~4x on the
+            // wire (an 80 MB /api/v3/movie becomes ~20 MB).
+            CURLOPT_ENCODING       => '',
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Accept: application/json'],
         ]);
 
@@ -1616,6 +1669,10 @@ class RadarrClient implements ResetInterface
             CURLOPT_TIMEOUT        => $timeout,
             CURLOPT_CONNECTTIMEOUT => 4,
             CURLOPT_NOSIGNAL       => 1,
+            // '' = advertise every encoding libcurl supports and decode
+            // transparently: the full-library payloads compress ~4x on the
+            // wire (an 80 MB /api/v3/movie becomes ~20 MB).
+            CURLOPT_ENCODING       => '',
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Accept: application/json'],
         ]);
 
@@ -1692,6 +1749,7 @@ class RadarrClient implements ResetInterface
                 CURLOPT_TIMEOUT        => 8,
                 CURLOPT_CONNECTTIMEOUT => 4,
                 CURLOPT_NOSIGNAL       => 1,
+                CURLOPT_ENCODING       => '',
                 CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Accept: application/json'],
             ]);
             curl_multi_add_handle($mh, $ch);

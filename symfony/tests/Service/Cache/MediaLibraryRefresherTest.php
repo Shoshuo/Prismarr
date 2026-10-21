@@ -70,7 +70,8 @@ class MediaLibraryRefresherTest extends TestCase
         $pool   = new ArrayAdapter();
         $radarr = $this->createMock(RadarrClient::class);
         $radarr->method('withInstance')->willReturnSelf();
-        $radarr->expects($this->once())->method('getMovies')->willReturn([['id' => 5]]);
+        $radarr->method('normalizeMovies')->willReturnArgument(0);
+        $radarr->expects($this->once())->method('getRawMovies')->willReturn([['id' => 5]]);
 
         $this->refresher($pool, $radarr)->refresh('media.movies.radarr-1');
 
@@ -86,7 +87,7 @@ class MediaLibraryRefresherTest extends TestCase
         $this->swr($pool)->write('media.movies.radarr-1', [['id' => 1]], MediaLibraryCache::HARD_TTL);
 
         $radarr = $this->createMock(RadarrClient::class);
-        $radarr->expects($this->never())->method('getMovies');
+        $radarr->expects($this->never())->method('getRawMovies');
 
         $this->refresher($pool, $radarr)->refresh('media.movies.radarr-1');
     }
@@ -97,7 +98,7 @@ class MediaLibraryRefresherTest extends TestCase
         (new ServiceHealthCache($pool))->markDown('radarr', 'radarr-1');
 
         $radarr = $this->createMock(RadarrClient::class);
-        $radarr->expects($this->never())->method('getMovies');
+        $radarr->expects($this->never())->method('getRawMovies');
 
         $this->refresher($pool, $radarr)->refresh('media.movies.radarr-1');
     }
@@ -109,7 +110,8 @@ class MediaLibraryRefresherTest extends TestCase
 
         $radarr = $this->createMock(RadarrClient::class);
         $radarr->method('withInstance')->willReturnSelf();
-        $radarr->method('getMovies')->willReturn([]);
+        $radarr->method('normalizeMovies')->willReturnArgument(0);
+        $radarr->method('getRawMovies')->willReturn([]);
 
         $this->refresher($pool, $radarr)->refresh('media.movies.radarr-1');
 
@@ -120,7 +122,7 @@ class MediaLibraryRefresherTest extends TestCase
     public function testAnUnknownSlugIsANoOp(): void
     {
         $radarr = $this->createMock(RadarrClient::class);
-        $radarr->expects($this->never())->method('getMovies');
+        $radarr->expects($this->never())->method('getRawMovies');
 
         $this->refresher(new ArrayAdapter(), $radarr)->refresh('media.movies.does-not-exist');
     }
@@ -133,7 +135,7 @@ class MediaLibraryRefresherTest extends TestCase
     public function testADisabledInstanceIsANoOp(): void
     {
         $radarr = $this->createMock(RadarrClient::class);
-        $radarr->expects($this->never())->method('getMovies');
+        $radarr->expects($this->never())->method('getRawMovies');
 
         $refresher = new MediaLibraryRefresher(
             $this->instancesWithDisabledInstance(),
@@ -156,7 +158,7 @@ class MediaLibraryRefresherTest extends TestCase
     public function testAnEmptySlugIsANoOp(): void
     {
         $radarr = $this->createMock(RadarrClient::class);
-        $radarr->expects($this->never())->method('getMovies');
+        $radarr->expects($this->never())->method('getRawMovies');
 
         $instances = $this->createMock(ServiceInstanceProvider::class);
         $instances->expects($this->never())->method('getBySlug');
@@ -194,7 +196,8 @@ class MediaLibraryRefresherTest extends TestCase
         $cache  = new MediaLibraryCache($this->swr($pool));
         $radarr = $this->createMock(RadarrClient::class);
         $radarr->method('withInstance')->willReturnSelf();
-        $radarr->method('getMovies')->willReturnCallback(static function () use ($cache): array {
+        $radarr->method('normalizeMovies')->willReturnArgument(0);
+        $radarr->method('getRawMovies')->willReturnCallback(static function () use ($cache): array {
             $cache->invalidate('radarr', 'radarr-1');
 
             return [['id' => 5], ['id' => 6]];
@@ -203,5 +206,30 @@ class MediaLibraryRefresherTest extends TestCase
         $this->refresher($pool, $radarr)->refresh('media.movies.radarr-1');
 
         $this->assertNull($this->swr($pool)->read('media.movies.radarr-1', MediaLibraryCache::TTL));
+    }
+
+    public function testOneFetchAlsoRefreshesTheSlimLibraryIndex(): void
+    {
+        $pool   = new ArrayAdapter();
+        $swr    = $this->swr($pool);
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('withInstance')->willReturnSelf();
+        $radarr->method('normalizeMovies')->willReturnArgument(0);
+        $radarr->expects($this->once())->method('getRawMovies')
+            ->with(RadarrClient::LIBRARY_TIMEOUT)
+            ->willReturn([['id' => 5, 'tmdbId' => 50, 'title' => 'X', 'hasFile' => true, 'monitored' => true]]);
+
+        $index = new \App\Service\Media\LibraryIndexCache($swr, $radarr, $this->createMock(SonarrClient::class));
+        $refresher = new MediaLibraryRefresher(
+            $this->instances(), $radarr, $this->createMock(SonarrClient::class),
+            $swr, new ServiceHealthCache($pool), new NullLogger(), $index,
+        );
+        $refresher->refresh('media.movies.radarr-1');
+
+        $hit = $swr->read('media.index.movies.radarr-1', \App\Service\Media\LibraryIndexCache::SOFT_TTL);
+        $this->assertNotNull($hit);
+        $this->assertSame('fresh', $hit['state']);
+        $this->assertSame(50, $hit['value'][0]['tmdbId']);
+        $this->assertTrue($hit['value'][0]['hasFile']);
     }
 }

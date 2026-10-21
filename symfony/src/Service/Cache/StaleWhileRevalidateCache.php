@@ -226,7 +226,12 @@ final class StaleWhileRevalidateCache
     public function delete(string $key): void
     {
         $this->cacheApp->deleteItems([$key, $key . '.refreshing', $key . '.requested_at']);
+        $this->stampInvalidated($key);
+    }
 
+    /** Makes write() refuse any rebuild of $key that started before now. */
+    private function stampInvalidated(string $key): void
+    {
         $stamp = $this->cacheApp->getItem($key . '.invalidated_at');
         $stamp->set(microtime(true));
         $stamp->expiresAfter(self::INVALIDATION_TTL);
@@ -254,6 +259,8 @@ final class StaleWhileRevalidateCache
                 $this->write($key, $hit['value'], $hardTtl, time() - $softTtl);
             }
             $this->cacheApp->deleteItem($key . '.refreshing');
+            // A rebuild already in flight read pre-mutation data: don't let it land as fresh.
+            $this->stampInvalidated($key);
         } catch (\Throwable $e) {
             $this->logger->warning('SWR markStale failed', [
                 'key'       => $key,
