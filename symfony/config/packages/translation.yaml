@@ -1,6 +1,6 @@
 framework:
     default_locale: en
-    enabled_locales: ['en', 'fr']
+    enabled_locales: ['en', 'fr', 'it']
     translator:
         default_path: '%kernel.project_dir%/translations'
         # en is the source locale (Prismarr is a public homelab project, EN by default).
