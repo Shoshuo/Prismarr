@@ -27,7 +27,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
  */
 class LocaleSubscriber implements EventSubscriberInterface
 {
-    public const SUPPORTED      = ['en', 'fr'];
+    public const SUPPORTED      = ['en', 'fr', 'it'];
     public const FALLBACK       = 'en';
     public const SESSION_KEY    = '_locale';
 

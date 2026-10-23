@@ -172,6 +172,20 @@ class SetupControllerTest extends TestCase
         $this->assertSame('/_route/app_setup_root', $response->getTargetUrl());
     }
 
+    public function testLocaleStoresItalianInSession(): void
+    {
+        $request = $this->postRequest(['locale' => 'it']);
+        $controller = $this->newController(
+            $this->createMock(UserRepository::class),
+            $this->createMock(EntityManagerInterface::class),
+        );
+
+        $response = $controller->locale($request);
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('it', $request->getSession()->get('_locale'));
+    }
+
     public function testAdminRaceRedirectsToLoginOnUniqueConstraint(): void
     {
         // By the time flush() runs, another request already committed the admin.
