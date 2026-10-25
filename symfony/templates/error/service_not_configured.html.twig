@@ -21,7 +21,7 @@
           {{ 'error.service_not_configured.missing_key'|trans }} <code>{{ key }}</code>
         </p>
         <div class="empty-action">
-          <a href="{{ path('app_setup_api_keys') }}" class="btn btn-primary">
+          <a href="{{ path('app_configure_services') }}" class="btn btn-primary">
             {{ 'error.service_not_configured.configure_cta'|trans({service: service}) }}
           </a>
           <a href="{{ path('app_home') }}" class="btn btn-link">
