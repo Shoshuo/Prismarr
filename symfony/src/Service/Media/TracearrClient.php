@@ -466,6 +466,18 @@ class TracearrClient implements ResetInterface
             $device = null;
         }
 
+        // Episode-specific fields for the session card template.
+        $mediaType   = self::str($s['mediaType'] ?? null);
+        $showTitle   = $mediaType === 'episode' ? self::str($s['showTitle'] ?? null) : null;
+        $epCode      = null;
+        $epTitle     = null;
+        if ($showTitle !== null) {
+            if (is_numeric($s['seasonNumber'] ?? null) && is_numeric($s['episodeNumber'] ?? null)) {
+                $epCode = sprintf('S%02dE%02d', (int) $s['seasonNumber'], (int) $s['episodeNumber']);
+            }
+            $epTitle = self::str($s['mediaTitle'] ?? null);
+        }
+
         return [
             // No ratingKey: the Plex info modal stays off (it goes through
             // Tautulli). The app-global TMDb quick-look opens instead.
@@ -474,9 +486,14 @@ class TracearrClient implements ResetInterface
             // plex | jellyfin | emby (v2 only) — source badge on the card.
             'serverType'       => self::str($s['serverType'] ?? null),
             'state'            => self::str($s['state'] ?? null),
+            // Episode layout keys; title keeps the full "Show — SxxEyy · Episode"
+            // string for movies and any consumer that ignores the split keys.
+            'grandparentTitle' => $showTitle,
+            'episodeCode'      => $epCode,
+            'episodeTitle'     => $epTitle,
             'title'            => self::fullTitle($s),
             'year'             => self::str($s['year'] ?? null),
-            'mediaType'        => self::str($s['mediaType'] ?? null),
+            'mediaType'        => $mediaType,
             // Media-server image path + owning server, streamed through
             // TracearrController::apiImage — never the raw Tracearr URL.
             'posterPath'       => self::str($s['thumbPath'] ?? null),

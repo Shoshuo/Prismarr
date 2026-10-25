@@ -90,6 +90,9 @@ class TracearrClientTest extends TestCase
         $s = TracearrClient::normalizeStreams($this->streamsFixture())['sessions'][0];
 
         self::assertSame('Severance — S01E02 · Pilot', $s['title']);
+        self::assertSame('Severance', $s['grandparentTitle']);
+        self::assertSame('S01E02', $s['episodeCode']);
+        self::assertSame('Pilot', $s['episodeTitle']);
         self::assertSame('transcode', $s['transcodeDecision']);
         self::assertSame('HEVC', $s['videoCodec']);
         self::assertSame('H.264', $s['streamVideoCodec']);
@@ -285,6 +288,9 @@ class TracearrClientTest extends TestCase
         self::assertSame(1, $out['directPlayCount']);
         self::assertSame('2.7 Mbps', $out['totalBitrate']);
         self::assertSame('Reacher — S04E06 · Balle perdue', $s['title']);
+        self::assertSame('Reacher', $s['grandparentTitle']);
+        self::assertSame('S04E06', $s['episodeCode']);
+        self::assertSame('Balle perdue', $s['episodeTitle']);
         self::assertSame('plex', $s['serverType']);
         self::assertSame('SDR', $s['dynamicRange']);
         self::assertSame(50.0, $s['progressPercent']);

@@ -22,8 +22,8 @@
   <div class="plex-session-main">
     <{{ ql ? 'a' : 'div' }} class="plex-session-title text-truncate {% if s.ratingKey or ql %}plex-clickable{% endif %}{{ ql ? ' d-block text-reset text-decoration-none' }}"{{ ql_attrs|raw }}
          {% if s.ratingKey %}data-plex-rating-key="{{ s.ratingKey }}" data-plex-player="{{ s.player }}" data-plex-device="{{ s.device }}" role="button" tabindex="0"{% endif %}>
-      {% if s.mediaType == 'episode' and s.grandparentTitle %}
-        {{- s.grandparentTitle }}{% if s.episodeCode %} <span class="plex-session-ep">{{ s.episodeCode }}</span>{% endif %}{% if s.episodeTitle %} · {{ s.episodeTitle }}{% endif %}
+      {% if s.mediaType == 'episode' and s.grandparentTitle|default(null) %}
+        {{- s.grandparentTitle }}{% if s.episodeCode|default(null) %} <span class="plex-session-ep">{{ s.episodeCode }}</span>{% endif %}{% if s.episodeTitle|default(null) %} · {{ s.episodeTitle }}{% endif %}
       {%- else %}
         {{- s.title ?? 'dashboard.plex.unknown_title'|trans }}
       {%- endif %}{% if s.year %} <span class="plex-session-year">({{ s.year }})</span>{% endif %}
