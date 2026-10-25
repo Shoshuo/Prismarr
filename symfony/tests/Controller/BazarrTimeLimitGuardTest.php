@@ -32,4 +32,14 @@ class BazarrTimeLimitGuardTest extends TestCase
 
         $this->assertMatchesRegularExpression('/set_time_limit\(self::\w+\)/', $body, $method . ' must call set_time_limit() with its budget constant');
     }
+
+    public function testSmartSearchRaisesTheExecutionLimit(): void
+    {
+        $ref   = new \ReflectionMethod(\App\Controller\TmdbController::class, 'smartSearch');
+        $lines = file((string) $ref->getFileName());
+        $this->assertNotFalse($lines);
+        $body = implode('', array_slice($lines, $ref->getStartLine() - 1, $ref->getEndLine() - $ref->getStartLine() + 1));
+
+        $this->assertMatchesRegularExpression('/set_time_limit\(self::\w+\)/', $body);
+    }
 }

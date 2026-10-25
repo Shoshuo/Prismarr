@@ -738,6 +738,9 @@ class TmdbController extends AbstractController
         ]);
     }
 
+    /** Wall-clock budget for smartSearch's worst path (~13 sequential TMDb calls). */
+    private const SMART_SEARCH_TIME_LIMIT = 120;
+
     /**
      * Search page backend. With a query: TMDb multi-search (two pages), people
      * pulled out, movies/series filtered and ranked by SearchRanker, the top
@@ -747,6 +750,9 @@ class TmdbController extends AbstractController
     #[Route('/decouverte/recherche', name: 'tmdb_smart_search', methods: ['GET'])]
     public function smartSearch(Request $request): JsonResponse
     {
+        // Up to ~13 sequential TMDb calls (15 s timeout each) on the worst path;
+        // don't let a wall-clock PHP_MAX_EXECUTION_TIME kill it mid-flight.
+        set_time_limit(self::SMART_SEARCH_TIME_LIMIT);
         $type = (string) $request->query->get('type', 'all');
         if (!in_array($type, ['all', 'movie', 'tv'], true)) {
             $type = 'all';

@@ -37,6 +37,9 @@ final class SearchVocabulary
         return self::KEY_PREFIX . ($this->tmdb->getLocale() ?: 'default');
     }
 
+    /** Pages allowed to come back empty before the whole build counts as failed. */
+    private const MAX_FAILED_PAGES = 2;
+
     /** @return list<array{label: string, popularity: float}> never fetches */
     public function read(): array
     {
@@ -76,6 +79,15 @@ final class SearchVocabulary
             $lists[] = $this->tmdb->getTrendingAll('week');
         } catch (\Throwable $e) {
             $this->logger->warning('Search vocabulary build failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            return [];
+        }
+
+        // TmdbClient answers [] (not an exception) for a failed call; a vocabulary
+        // missing more than a couple of pages would be cached for 24 h, so treat
+        // it as a failed build and let the refresher keep the previous value.
+        $failed = count(array_filter($lists, static fn ($d) => !is_array($d['results'] ?? null)));
+        if ($failed > self::MAX_FAILED_PAGES) {
+            $this->logger->warning('Search vocabulary build incomplete', ['failed_pages' => $failed, 'pages' => count($lists)]);
             return [];
         }
 
