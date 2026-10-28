@@ -610,10 +610,13 @@ class HealthService implements ResetInterface
                 // NOT actually behind a bypass-auth proxy, the call returns
                 // 403 → diagnosed as `forbidden`, which is the right hint
                 // for the user (they meant to fill creds and forgot one).
+                // No Referer here: the proxy forwards it to qBit unchanged,
+                // and qBit's CSRF check answers 401 to any Referer that isn't
+                // its own host (the proxy's URL never is). QBittorrentClient
+                // sends none either, so the probe now matches the real calls.
                 if ($user === '' || $pass === '') {
                     return [
-                        'url'     => rtrim($url, '/') . '/api/v2/app/version',
-                        'headers' => ['Referer: ' . rtrim($url, '/')],
+                        'url' => rtrim($url, '/') . '/api/v2/app/version',
                     ];
                 }
 

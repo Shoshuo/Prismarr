@@ -5,6 +5,11 @@ All notable changes to Prismarr are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **qBittorrent behind a reverse proxy (#10 follow-up).** With URL set and username/password empty, the qBittorrent page redirected to Settings because the route guard still required a username; it now only requires the URL, like `HealthService::isConfigured()`. The settings "Test" also failed behind qui: its probe sent a `Referer` that the proxy forwards to qBittorrent, whose CSRF check answers 401 to a foreign Referer. The reverse-proxy probe no longer sends one, matching `QBittorrentClient`.
+
 ## [1.3.0] - 2026-10-21
 
 ### Security

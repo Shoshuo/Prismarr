@@ -240,6 +240,25 @@ class HealthServiceDiagnoseTest extends TestCase
         self::assertNull($this->probeFor('emby', ['emby_url' => 'http://emby:8096', 'emby_api_key' => '']));
     }
 
+    // Reverse-proxy mode (#10): the probe must not send a Referer. A proxy
+    // such as qui forwards it to qBit unchanged, and qBit's CSRF check
+    // answers 401 to any Referer that isn't its own host — so "Test" failed
+    // although the page (QBittorrentClient sends no Referer) worked.
+    public function testQbittorrentReverseProxyProbeSendsNoReferer(): void
+    {
+        foreach ([
+            ['qbittorrent_url' => 'http://qui:7476/proxy/abc', 'qbittorrent_user' => '', 'qbittorrent_password' => ''],
+            ['qbittorrent_url' => 'http://qui:7476/proxy/abc', 'qbittorrent_user' => 'admin', 'qbittorrent_password' => ''],
+        ] as $overrides) {
+            $probe = $this->probeFor('qbittorrent', $overrides);
+            self::assertNotNull($probe);
+            self::assertSame('http://qui:7476/proxy/abc/api/v2/app/version', $probe['url']);
+            foreach ($probe['headers'] ?? [] as $header) {
+                self::assertStringStartsNotWith('referer:', strtolower($header));
+            }
+        }
+    }
+
     /**
      * @param array<string, ?string> $overrides
      * @return array{url: string, headers?: array<int,string>, method?: string, body?: string}|null

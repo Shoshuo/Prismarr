@@ -213,6 +213,22 @@ class ServiceRouteGuardSubscriberTest extends TestCase
         $this->assertSame('/_route/app_configure_services', $response->getTargetUrl());
     }
 
+    public function testQbittorrentUrlOnlyLetsThrough(): void
+    {
+        // Reverse-proxy mode (#10): the proxy in front of qBit (qui, forward
+        // auth, …) injects credentials, so user and password are both empty.
+        // HealthService::isConfigured() accepts URL-only since #10; the guard
+        // must agree, otherwise the page redirects back to settings forever.
+        $event = $this->event('app_qbittorrent_index');
+        $sub = $this->subscriber(
+            configuredKeys: ['qbittorrent_url'],
+            healthy: ['qbittorrent'],
+        );
+        $sub->onKernelRequest($event);
+
+        $this->assertFalse($event->hasResponse());
+    }
+
     public function testDelugeUnconfiguredRedirectsToServicesSettings(): void
     {
         $event = $this->event('app_deluge_index');
