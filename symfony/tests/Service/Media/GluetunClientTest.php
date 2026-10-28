@@ -2,8 +2,9 @@
 
 namespace App\Tests\Service\Media;
 
-use App\Service\ConfigService;
+use App\Entity\ServiceInstance;
 use App\Service\Media\GluetunClient;
+use App\Service\ServiceInstanceProvider;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -21,15 +22,28 @@ use Psr\Log\LoggerInterface;
 #[AllowMockObjectsWithoutExpectations]
 class GluetunClientTest extends TestCase
 {
+    private static function gluetun(string $slug, string $url, ?string $apiKey = null): ServiceInstance
+    {
+        return new ServiceInstance(ServiceInstance::TYPE_GLUETUN, $slug, ucfirst($slug), $url, $apiKey);
+    }
+
+    /**
+     * Client whose unbound fallback is the Gluetun linked to the default
+     * qBittorrent instance ($linked; null = no qBittorrent or no link).
+     */
+    private function clientWithDefault(?ServiceInstance $linked, bool $hasQbittorrent = true): GluetunClient
+    {
+        $qbt = new ServiceInstance(ServiceInstance::TYPE_QBITTORRENT, 'qbittorrent-1', 'qBittorrent 1', 'http://qbit.lan:8080');
+        $provider = $this->createMock(ServiceInstanceProvider::class);
+        $provider->method('getDefault')->willReturn($hasQbittorrent ? $qbt : null);
+        $provider->method('getGluetunFor')->willReturnCallback(fn (ServiceInstance $i) => $i === $qbt ? $linked : null);
+
+        return new GluetunClient($provider, $this->createMock(LoggerInterface::class));
+    }
+
     private function makeClient(?string $apiKey): GluetunClient
     {
-        $config = $this->createMock(ConfigService::class);
-        $config->method('get')->willReturnMap([
-            ['gluetun_url', 'http://gluetun:8000'],
-            ['gluetun_api_key', $apiKey],
-        ]);
-
-        return new GluetunClient($config, $this->createMock(LoggerInterface::class));
+        return $this->clientWithDefault(self::gluetun('gluetun-1', 'http://gluetun:8000', $apiKey));
     }
 
     private function invokePrivate(GluetunClient $client, string $method): mixed
@@ -82,5 +96,81 @@ class GluetunClientTest extends TestCase
                 'Gluetun does not have /v1/wireguard/* control endpoints.'
             );
         }
+    }
+
+    /**
+     * Issue #131 — Gluetun is a multi-instance service; the URL / key come
+     * from the Gluetun instance the client is bound to (the one linked to
+     * the qBittorrent instance of the page), not from a global setting.
+     */
+    public function testBoundInstanceWinsOverTheDefault(): void
+    {
+        $client = $this->clientWithDefault(self::gluetun('tv', 'http://gluetun-tv:8000', 'tv-key'));
+        $client->bindInstance(self::gluetun('movies', 'http://gluetun-movies:8000', 'movies-key'));
+
+        $this->assertTrue($client->isConfigured());
+        $this->assertSame('movies', $client->getInstance()?->getSlug());
+        $this->assertSame(['X-API-Key: movies-key'], $this->invokePrivate($client, 'authHeaders'));
+        $this->assertSame('http://gluetun-movies:8000', (new \ReflectionProperty($client, 'baseUrl'))->getValue($client));
+    }
+
+    public function testUnboundFollowsTheGluetunLinkedToTheDefaultQbittorrent(): void
+    {
+        $client = $this->clientWithDefault(self::gluetun('tv', 'http://gluetun-tv:8000', 'tv-key'));
+
+        $this->assertSame('tv', $client->getInstance()?->getSlug());
+        $this->assertSame(['X-API-Key: tv-key'], $this->invokePrivate($client, 'authHeaders'));
+    }
+
+    public function testBoundToNoneIsNotConfiguredEvenWhenTheDefaultHasAGluetun(): void
+    {
+        // A qBittorrent instance without a linked Gluetun gets the 1.3.0
+        // empty VPN card — it must NOT borrow the default instance's Gluetun.
+        $client = $this->clientWithDefault(self::gluetun('tv', 'http://gluetun-tv:8000', 'tv-key'));
+        $client->bindInstance(null);
+
+        $this->assertNull($client->getInstance());
+        $this->assertFalse($client->isConfigured());
+        // No URL → no HTTP call at all, every getter degrades to null.
+        $this->assertNull($client->getPublicIp());
+        $this->assertNull($client->getForwardedPort());
+        $this->assertFalse($client->getSummary()['ok']);
+    }
+
+    public function testResetDropsTheBinding(): void
+    {
+        $client = $this->clientWithDefault(self::gluetun('tv', 'http://gluetun-tv:8000'));
+        $client->bindInstance(null);
+        $client->reset();
+
+        $this->assertSame('tv', $client->getInstance()?->getSlug());
+    }
+
+    public function testWithInstanceReturnsAnIndependentClone(): void
+    {
+        $client = $this->clientWithDefault(self::gluetun('tv', 'http://gluetun-tv:8000', 'tv-key'));
+        $clone  = $client->withInstance(self::gluetun('movies', 'http://gluetun-movies:8000'));
+
+        $this->assertSame([], $this->invokePrivate($clone, 'authHeaders'));
+        // The original keeps following the default instance.
+        $this->assertSame(['X-API-Key: tv-key'], $this->invokePrivate($client, 'authHeaders'));
+    }
+
+    public function testNoLinkedGluetunIsNotConfigured(): void
+    {
+        $this->assertFalse($this->clientWithDefault(null)->isConfigured());
+    }
+
+    public function testNoQbittorrentInstanceAtAllIsNotConfigured(): void
+    {
+        $this->assertFalse($this->clientWithDefault(self::gluetun('tv', 'http://gluetun-tv:8000'), hasQbittorrent: false)->isConfigured());
+    }
+
+    public function testRejectsANonGluetunInstance(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->clientWithDefault(null)->bindInstance(
+            new ServiceInstance(ServiceInstance::TYPE_QBITTORRENT, 'qbittorrent-1', 'qBittorrent 1', 'http://qbit.lan:8080')
+        );
     }
 }

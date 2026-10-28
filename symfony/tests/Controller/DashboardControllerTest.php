@@ -267,8 +267,14 @@ class DashboardControllerTest extends TestCase
         $health = $this->createMock(HealthService::class);
         $health->method('statusFor')->willReturn(['status' => 'up', 'latencyMs' => 5]);
 
+        // Issue #131 — qBittorrent's chip needs an enabled instance; a single
+        // one keeps the catalog label.
         $instances = $this->createMock(ServiceInstanceProvider::class);
-        $instances->method('getEnabled')->willReturn([]);
+        $instances->method('getEnabled')->willReturnCallback(
+            fn(string $type): array => $type === ServiceInstance::TYPE_QBITTORRENT
+                ? [$this->instance('qbittorrent-1', 'qBittorrent 1')]
+                : []
+        );
 
         $controller = new DashboardController(
             $health,
@@ -309,6 +315,7 @@ class DashboardControllerTest extends TestCase
             fn(string $type): array => match ($type) {
                 ServiceInstance::TYPE_RADARR => [$this->instance('radarr-1', 'Radarr 1080p'), $this->instance('radarr-4k', 'Radarr 4K')],
                 ServiceInstance::TYPE_SONARR => [$this->instance('sonarr-1', 'Sonarr')],
+                ServiceInstance::TYPE_QBITTORRENT => [$this->instance('qbittorrent-1', 'qBittorrent 1')],
                 default                      => [],
             }
         );
@@ -339,6 +346,47 @@ class DashboardControllerTest extends TestCase
         self::assertSame(['id' => 'radarr', 'name' => 'Radarr 4K',    'status' => 'down', 'latencyMs' => null], $chips[1]);
         self::assertSame(['id' => 'sonarr', 'name' => 'Sonarr',       'status' => 'slow', 'latencyMs' => 1500], $chips[2]);
         self::assertSame(['id' => 'qbittorrent', 'name' => 'qBittorrent', 'status' => 'up', 'latencyMs' => 40], $chips[3]);
+    }
+
+    public function testServicesHealthNamesQbittorrentChipsAfterInstancesWhenSeveral(): void
+    {
+        // Issue #131 — 2+ qBittorrent instances → one chip each, named after
+        // the instance, in the catalog's qBittorrent slot.
+        $health = $this->createMock(HealthService::class);
+        $health->method('statusFor')->willReturnCallback(
+            fn(string $service, ?string $slug = null): array => match (true) {
+                $service === 'qbittorrent' && $slug === 'qbittorrent-1' => ['status' => 'up',   'latencyMs' => 40],
+                $service === 'qbittorrent' && $slug === 'qbittorrent-2' => ['status' => 'down', 'latencyMs' => null],
+                default => ['status' => null, 'latencyMs' => null],
+            }
+        );
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getEnabled')->willReturnCallback(
+            fn(string $type): array => $type === ServiceInstance::TYPE_QBITTORRENT
+                ? [$this->instance('qbittorrent-1', 'Home'), $this->instance('qbittorrent-2', 'Seedbox')]
+                : []
+        );
+
+        $controller = new DashboardController(
+            $health,
+            $this->createMock(RadarrClient::class),
+            $this->createMock(SonarrClient::class),
+            $this->createMock(JellyseerrClient::class),
+            $this->createMock(TmdbClient::class),
+            $this->createMock(WatchlistItemRepository::class),
+            $instances,
+            new NullLogger(),
+            $this->createMock(TranslatorInterface::class),
+            $this->createMock(CacheInterface::class),
+            $this->createMock(TautulliClient::class), new DashboardLayoutService($this->createMock(ConfigService::class)),
+        );
+
+        $chips = (new ReflectionMethod(DashboardController::class, 'servicesHealth'))->invoke($controller);
+
+        self::assertSame([
+            ['id' => 'qbittorrent', 'name' => 'Home',    'status' => 'up',   'latencyMs' => 40],
+            ['id' => 'qbittorrent', 'name' => 'Seedbox', 'status' => 'down', 'latencyMs' => null],
+        ], $chips);
     }
 
     public function testQuickLookTmdbMovieAndTv(): void

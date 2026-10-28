@@ -90,10 +90,6 @@ class AdminSettingsController extends AbstractController
             ['key' => 'nzbget_user',     'type' => 'text',     'label' => 'admin.field.username', 'clearable' => true],
             ['key' => 'nzbget_password', 'type' => 'password', 'label' => 'admin.field.password', 'clearable' => true],
         ],
-        'gluetun' => [
-            ['key' => 'gluetun_url',      'type' => 'text',     'label' => 'admin.field.url'],
-            ['key' => 'gluetun_api_key',  'type' => 'password', 'label' => 'admin.field.api_key_if_protected'],
-        ],
         'tautulli' => [
             ['key' => 'tautulli_url',     'type' => 'text',     'label' => 'admin.field.url',     'placeholder' => 'http://host.docker.internal:8181'],
             ['key' => 'tautulli_api_key', 'type' => 'password', 'label' => 'admin.field.api_key'],
@@ -447,8 +443,10 @@ class AdminSettingsController extends AbstractController
             'dashboard_layout'   => $this->loadDashboardLayout(),
             // v1.1.0 — instance lists for the multi-instance card UI.
             'instances_by_type'  => [
-                ServiceInstance::TYPE_RADARR => $this->instances->getAll(ServiceInstance::TYPE_RADARR),
-                ServiceInstance::TYPE_SONARR => $this->instances->getAll(ServiceInstance::TYPE_SONARR),
+                ServiceInstance::TYPE_RADARR      => $this->instances->getAll(ServiceInstance::TYPE_RADARR),
+                ServiceInstance::TYPE_SONARR      => $this->instances->getAll(ServiceInstance::TYPE_SONARR),
+                ServiceInstance::TYPE_QBITTORRENT => $this->instances->getAll(ServiceInstance::TYPE_QBITTORRENT),
+                ServiceInstance::TYPE_GLUETUN     => $this->instances->getAll(ServiceInstance::TYPE_GLUETUN),
             ],
         ]);
     }
@@ -1069,6 +1067,12 @@ class AdminSettingsController extends AbstractController
         // instance in a half-updated state if one of them throws.
         $instanceBuffer = [];
         foreach (self::FIELDS as $serviceId => $group) {
+            // qBittorrent (issue #131) is edited only through the instance
+            // modals (AdminInstancesController); its FIELDS entry just feeds
+            // the Test-connection whitelist. Nothing to save from this form.
+            if ($serviceId === ServiceInstance::TYPE_QBITTORRENT) {
+                continue;
+            }
             // "Remove" on a configured service (_remove_<service>=1): wipe every
             // field of it, secrets included. Radarr/Sonarr instances have their
             // own delete action and never take this path.
@@ -1228,6 +1232,13 @@ class AdminSettingsController extends AbstractController
     private const EXPORT_SENSITIVE_PATTERNS = ['api_key', 'password', 'secret'];
 
     /**
+     * Pre-#131 flat qBittorrent / Gluetun settings that a restored export may
+     * still carry (non-secret ones only — passwords and keys are never
+     * exported). See import(): they become `gluetun-1` / `qbittorrent-1`.
+     */
+    private const LEGACY_QBITTORRENT_KEYS = ['qbittorrent_url', 'qbittorrent_user', 'gluetun_url'];
+
+    /**
      * @return array{safe: int, skipped: int}
      */
     private function exportCounts(): array
@@ -1295,9 +1306,16 @@ class AdminSettingsController extends AbstractController
         // Instances are exported WITHOUT api_key — same hygiene rule as the
         // sensitive settings above. The admin retypes the keys after import,
         // exactly like they retype TMDB / Prowlarr / etc. credentials.
-        foreach ([ServiceInstance::TYPE_RADARR, ServiceInstance::TYPE_SONARR] as $type) {
+        // Gluetun rows (issue #131) follow the same rule. qBittorrent rows add
+        // the non-secret username and the slug of the linked Gluetun
+        // (`gluetun`, null = none); the password stays out.
+        $gluetunSlugs = [];
+        foreach ($this->instances->getAll(ServiceInstance::TYPE_GLUETUN) as $gluetun) {
+            $gluetunSlugs[$gluetun->getId()] = $gluetun->getSlug();
+        }
+        foreach (ServiceInstance::TYPES as $type) {
             foreach ($this->instances->getAll($type) as $instance) {
-                $payload['instances'][] = [
+                $row = [
                     'type'       => $instance->getType(),
                     'slug'       => $instance->getSlug(),
                     'name'       => $instance->getName(),
@@ -1306,6 +1324,11 @@ class AdminSettingsController extends AbstractController
                     'position'   => $instance->getPosition(),
                     'is_default' => $instance->isDefault(),
                 ];
+                if ($type === ServiceInstance::TYPE_QBITTORRENT) {
+                    $row['username'] = $instance->getUsername();
+                    $row['gluetun']  = $gluetunSlugs[$instance->getGluetunInstanceId()] ?? null;
+                }
+                $payload['instances'][] = $row;
             }
         }
 
@@ -1365,7 +1388,18 @@ class AdminSettingsController extends AbstractController
         $applied = 0;
         $skipped = 0;
         $toApply = [];
+        // Issue #131 — exports made before qBittorrent moved to
+        // service_instance carry its URL / username / Gluetun URL as flat
+        // settings, which nothing reads anymore. Collected here and turned
+        // into the default qBittorrent instance below instead.
+        $legacyQbt = [];
         foreach ($payload['settings'] as $name => $value) {
+            if (is_string($name) && in_array($name, self::LEGACY_QBITTORRENT_KEYS, true)) {
+                if (is_scalar($value) && trim((string) $value) !== '') {
+                    $legacyQbt[$name] = trim((string) $value);
+                }
+                continue;
+            }
             if (!is_string($name) || $name === '') {
                 $skipped++;
                 continue;
@@ -1392,6 +1426,45 @@ class AdminSettingsController extends AbstractController
             $this->appCache->clear();
         }
 
+        $instancesApplied = 0;
+        $instancesSkipped = 0;
+        // Same mapping as migration Version20261027000000: a standalone
+        // Gluetun becomes `gluetun-1`, qBittorrent becomes `qbittorrent-1`
+        // linked to it. Skipped when the type already has instances.
+        $legacyGluetun = null;
+        if (isset($legacyQbt['gluetun_url'])
+            && !$this->instances->hasAny(ServiceInstance::TYPE_GLUETUN)) {
+            try {
+                $legacyGluetun = $this->instances->create(
+                    type:   ServiceInstance::TYPE_GLUETUN,
+                    name:   ServiceInstance::defaultName(ServiceInstance::TYPE_GLUETUN),
+                    url:    $legacyQbt['gluetun_url'],
+                    apiKey: null,
+                    slug:   ServiceInstance::TYPE_GLUETUN . '-1',
+                );
+                $instancesApplied++;
+            } catch (\Throwable) {
+                $instancesSkipped++;
+            }
+        }
+        if (isset($legacyQbt['qbittorrent_url'])
+            && !$this->instances->hasAny(ServiceInstance::TYPE_QBITTORRENT)) {
+            try {
+                $this->instances->create(
+                    type:              ServiceInstance::TYPE_QBITTORRENT,
+                    name:              ServiceInstance::defaultName(ServiceInstance::TYPE_QBITTORRENT),
+                    url:               $legacyQbt['qbittorrent_url'],
+                    apiKey:            null,
+                    slug:              ServiceInstance::TYPE_QBITTORRENT . '-1',
+                    username:          $legacyQbt['qbittorrent_user'] ?? null,
+                    gluetunInstanceId: $legacyGluetun?->getId(),
+                );
+                $instancesApplied++;
+            } catch (\Throwable) {
+                $instancesSkipped++;
+            }
+        }
+
         // v2 — restore the instances section. Existing instances with the
         // same (type, slug) are updated in place (so the api_key the user
         // already typed survives the round-trip); missing ones are created
@@ -1399,10 +1472,9 @@ class AdminSettingsController extends AbstractController
         // for the sensitive flat settings above). Instances present in the
         // DB but absent from the payload are left intact: import is additive,
         // not destructive.
-        $instancesApplied = 0;
-        $instancesSkipped = 0;
         if ($version >= 2 && isset($payload['instances']) && is_array($payload['instances'])) {
             $defaults = []; // type → slug to flag as default at the end
+            $links    = []; // qBittorrent slug → Gluetun slug (null = none)
             foreach ($payload['instances'] as $row) {
                 if (!is_array($row)) { $instancesSkipped++; continue; }
                 $type = (string) ($row['type'] ?? '');
@@ -1421,6 +1493,11 @@ class AdminSettingsController extends AbstractController
                 $position = isset($row['position']) && is_numeric($row['position'])
                     ? (int) $row['position']
                     : null;
+                // qBittorrent extras (issue #131) — absent keys leave the
+                // existing value alone; secrets are never in the export.
+                $isQbt    = $type === ServiceInstance::TYPE_QBITTORRENT;
+                $username = $isQbt && array_key_exists('username', $row) && (is_string($row['username']) || $row['username'] === null)
+                    ? $row['username'] : false;
                 try {
                     if ($existing !== null) {
                         $this->instances->update(
@@ -1431,6 +1508,7 @@ class AdminSettingsController extends AbstractController
                             $slug,
                             (bool) ($row['enabled'] ?? true),
                             $position,
+                            username: $username,
                         );
                     } else {
                         $this->instances->create(
@@ -1441,14 +1519,33 @@ class AdminSettingsController extends AbstractController
                             $slug,
                             (bool) ($row['enabled'] ?? true),
                             $position,
+                            username: $username !== false ? $username : null,
                         );
                     }
                     $instancesApplied++;
                     if (!empty($row['is_default'])) {
                         $defaults[$type] = $slug;
                     }
+                    if ($isQbt && array_key_exists('gluetun', $row) && (is_string($row['gluetun']) || $row['gluetun'] === null)) {
+                        $links[ServiceInstance::slugify($slug)] = $row['gluetun'];
+                    }
                 } catch (\Throwable) {
                     $instancesSkipped++;
+                }
+            }
+            // Gluetun links (issue #131) are resolved by slug once every row
+            // exists — a qBittorrent row may come before its Gluetun. A slug
+            // that matches no Gluetun leaves the current link alone.
+            foreach ($links as $qbtSlug => $gluetunSlug) {
+                $qbt     = $this->instances->getBySlug(ServiceInstance::TYPE_QBITTORRENT, $qbtSlug);
+                $gluetun = $gluetunSlug !== null ? $this->instances->getBySlug(ServiceInstance::TYPE_GLUETUN, $gluetunSlug) : null;
+                if ($qbt === null || ($gluetunSlug !== null && $gluetun === null)) {
+                    continue;
+                }
+                try {
+                    $this->instances->linkGluetun($qbt, $gluetun);
+                } catch (\InvalidArgumentException) {
+                    // Wrong type on either side — leave the link as it is.
                 }
             }
             // Apply default flags after every row so a slug renamed mid-loop

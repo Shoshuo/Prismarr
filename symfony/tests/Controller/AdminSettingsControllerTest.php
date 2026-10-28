@@ -666,6 +666,206 @@ class AdminSettingsControllerTest extends TestCase
         $this->assertSame(302, $response->getStatusCode(), 'v1 imports must still redirect cleanly');
     }
 
+    /**
+     * Key a mocked provider call's positional arguments by parameter name,
+     * so assertions read `['username']` whatever the signature order.
+     *
+     * @return array<string, mixed>
+     */
+    private static function named(string $method, array $args): array
+    {
+        $names = array_map(
+            fn(\ReflectionParameter $p) => $p->getName(),
+            (new \ReflectionMethod(ServiceInstanceProvider::class, $method))->getParameters(),
+        );
+        return array_combine(array_slice($names, 0, count($args)), $args);
+    }
+
+    /** Build an UploadedFile + POST request for import(). */
+    private function importRequest(array $payload): Request
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'prismarr-export-');
+        file_put_contents($tmp, json_encode($payload));
+        $file = new \Symfony\Component\HttpFoundation\File\UploadedFile($tmp, 'export.json', 'application/json', test: true);
+        $request = Request::create('/admin/settings/import', 'POST', ['_csrf_token' => 'valid'], [], ['config' => $file]);
+        $request->setSession(new \Symfony\Component\HttpFoundation\Session\Session(
+            new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage()
+        ));
+        return $request;
+    }
+
+    private static function withId(\App\Entity\ServiceInstance $i, int $id): \App\Entity\ServiceInstance
+    {
+        (new \ReflectionProperty($i, 'id'))->setValue($i, $id);
+        return $i;
+    }
+
+    public function testExportIncludesQbittorrentAndGluetunInstancesWithoutSecrets(): void
+    {
+        // Issue #131 — qBittorrent rows carry the non-secret username and the
+        // slug of their linked Gluetun; Gluetun rows are exported like
+        // Radarr/Sonarr. The WebUI password and every API key stay out.
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->method('findAll')->willReturn([]);
+        $gluetun = self::withId(new \App\Entity\ServiceInstance('gluetun', 'vpn-tv', 'VPN TV', 'http://10.0.0.3:8000', 'gluetun-secret-key'), 7);
+        $qbt = new \App\Entity\ServiceInstance('qbittorrent', 'qbittorrent-1', 'Seedbox', 'http://10.0.0.2:8080');
+        $qbt->setUsername('admin');
+        $qbt->setPassword('qbt-secret-pass');
+        $qbt->setGluetunInstanceId(7);
+        $unlinked = new \App\Entity\ServiceInstance('qbittorrent', 'qbittorrent-2', 'Books', 'http://10.0.0.4:8080');
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getAll')->willReturnCallback(fn(string $type) => match ($type) {
+            'qbittorrent' => [$qbt, $unlinked],
+            'gluetun'     => [$gluetun],
+            default       => [],
+        });
+
+        $response = $this->controller($settings, $this->createMock(ConfigService::class), $this->createMock(HealthService::class), $instances)->export();
+        $payload = json_decode($response->getContent(), true);
+
+        $rows = array_column($payload['instances'], null, 'slug');
+        $this->assertSame(['qbittorrent-1', 'qbittorrent-2', 'vpn-tv'], array_keys($rows));
+        $this->assertSame('admin', $rows['qbittorrent-1']['username']);
+        $this->assertSame('vpn-tv', $rows['qbittorrent-1']['gluetun'], 'link exported by slug');
+        $this->assertNull($rows['qbittorrent-2']['gluetun']);
+        $this->assertSame('gluetun', $rows['vpn-tv']['type']);
+        $this->assertSame('http://10.0.0.3:8000', $rows['vpn-tv']['url']);
+        $this->assertArrayNotHasKey('password', $rows['qbittorrent-1']);
+        $this->assertArrayNotHasKey('api_key', $rows['vpn-tv']);
+        $this->assertStringNotContainsString('qbt-secret-pass', $response->getContent());
+        $this->assertStringNotContainsString('gluetun-secret-key', $response->getContent());
+    }
+
+    public function testImportTurnsLegacyFlatSettingsIntoLinkedDefaultInstances(): void
+    {
+        // An export made before #131 carries qbittorrent_url / _user and
+        // gluetun_url as flat settings, which nothing reads anymore. Same
+        // result as the DB migration: gluetun-1, then qbittorrent-1 linked.
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->expects($this->once())->method('setMany')->with(['display_language' => 'en']);
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('hasAny')->willReturn(false);
+        $calls = [];
+        $instances->expects($this->exactly(2))->method('create')->willReturnCallback(
+            function (...$args) use (&$calls) {
+                $calls[] = $named = self::named('create', $args);
+                return self::withId(new \App\Entity\ServiceInstance($named['type'], $named['slug'], $named['name'], $named['url']), count($calls) === 1 ? 42 : 43);
+            }
+        );
+
+        $request = $this->importRequest([
+            'prismarr_export_version' => 1,
+            'settings' => [
+                'display_language' => 'en',
+                'qbittorrent_url'  => 'http://10.0.0.2:8080',
+                'qbittorrent_user' => 'admin',
+                'gluetun_url'      => 'http://10.0.0.3:8000',
+            ],
+        ]);
+        $this->controller($settings, $this->createMock(ConfigService::class), $this->createMock(HealthService::class), $instances)->import($request);
+
+        [$gluetun, $qbt] = $calls;
+        $this->assertSame('gluetun', $gluetun['type']);
+        $this->assertSame('gluetun-1', $gluetun['slug']);
+        $this->assertSame('http://10.0.0.3:8000', $gluetun['url']);
+        $this->assertNull($gluetun['apiKey']);
+        $this->assertSame('qbittorrent', $qbt['type']);
+        $this->assertSame('qbittorrent-1', $qbt['slug']);
+        $this->assertSame('http://10.0.0.2:8080', $qbt['url']);
+        $this->assertNull($qbt['apiKey']);
+        $this->assertSame('admin', $qbt['username']);
+        $this->assertSame(42, $qbt['gluetunInstanceId'], 'qbittorrent-1 links to the imported gluetun-1');
+    }
+
+    public function testImportKeepsALegacyStandaloneGluetun(): void
+    {
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('hasAny')->willReturn(false);
+        $calls = [];
+        $instances->expects($this->once())->method('create')->willReturnCallback(
+            function (...$args) use (&$calls) {
+                $calls[] = $named = self::named('create', $args);
+                return new \App\Entity\ServiceInstance($named['type'], $named['slug'], $named['name'], $named['url']);
+            }
+        );
+
+        $request = $this->importRequest([
+            'prismarr_export_version' => 1,
+            'settings' => ['gluetun_url' => 'http://10.0.0.3:8000'],
+        ]);
+        $this->controller($this->createMock(SettingRepository::class), $this->createMock(ConfigService::class), $this->createMock(HealthService::class), $instances)->import($request);
+
+        $this->assertSame('gluetun', $calls[0]['type']);
+        $this->assertSame('gluetun-1', $calls[0]['slug']);
+    }
+
+    public function testImportIgnoresLegacyFlatQbittorrentWhenAnInstanceExists(): void
+    {
+        $settings  = $this->createMock(SettingRepository::class);
+        $settings->expects($this->never())->method('setMany');
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('hasAny')->willReturn(true);
+        $instances->expects($this->never())->method('create');
+
+        $request = $this->importRequest([
+            'prismarr_export_version' => 1,
+            'settings' => ['qbittorrent_url' => 'http://10.0.0.2:8080', 'gluetun_url' => 'http://10.0.0.3:8000'],
+        ]);
+        $this->controller($settings, $this->createMock(ConfigService::class), $this->createMock(HealthService::class), $instances)->import($request);
+    }
+
+    public function testImportV2PassesQbittorrentFieldsAndRestoresGluetunLinks(): void
+    {
+        $existing = new \App\Entity\ServiceInstance('qbittorrent', 'qbittorrent-1', 'Home', 'http://10.0.0.2:8080');
+        $seedbox  = new \App\Entity\ServiceInstance('qbittorrent', 'qbittorrent-2', 'Seedbox', 'http://10.0.0.5:8080');
+        $vpn      = self::withId(new \App\Entity\ServiceInstance('gluetun', 'vpn', 'VPN', 'http://10.0.0.6:8000'), 9);
+        $created  = [];
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getBySlug')->willReturnCallback(
+            function (string $type, string $slug) use ($existing, $seedbox, $vpn, &$created) {
+                if ($type === 'qbittorrent' && $slug === 'qbittorrent-1') return $existing;
+                // Created during the loop → resolvable when links are applied.
+                if ($type === 'qbittorrent' && $slug === 'qbittorrent-2' && isset($created['qbittorrent'])) return $seedbox;
+                if ($type === 'gluetun' && $slug === 'vpn' && isset($created['gluetun'])) return $vpn;
+                return null;
+            }
+        );
+        $updated = [];
+        $instances->expects($this->once())->method('update')->willReturnCallback(
+            function (...$args) use (&$updated, $existing) { $updated = self::named('update', $args); return $existing; }
+        );
+        $instances->expects($this->exactly(2))->method('create')->willReturnCallback(
+            function (...$args) use (&$created, $seedbox, $vpn) {
+                $named = self::named('create', $args);
+                $created[$named['type']] = $named;
+                return $named['type'] === 'gluetun' ? $vpn : $seedbox;
+            }
+        );
+        $links = [];
+        $instances->method('linkGluetun')->willReturnCallback(
+            function (\App\Entity\ServiceInstance $qbt, ?\App\Entity\ServiceInstance $g) use (&$links) { $links[$qbt->getSlug()] = $g?->getSlug(); }
+        );
+
+        $request = $this->importRequest([
+            'prismarr_export_version' => 2,
+            'settings'  => [],
+            'instances' => [
+                // A row without the #131 keys leaves username and link alone.
+                ['type' => 'qbittorrent', 'slug' => 'qbittorrent-1', 'name' => 'Home', 'url' => 'http://10.0.0.2:8080', 'enabled' => true, 'position' => 0, 'is_default' => true],
+                // Comes BEFORE its Gluetun in the payload: resolved after the loop.
+                ['type' => 'qbittorrent', 'slug' => 'qbittorrent-2', 'name' => 'Seedbox', 'url' => 'http://10.0.0.5:8080', 'enabled' => true, 'position' => 1, 'is_default' => false,
+                 'username' => 'seed', 'gluetun' => 'vpn'],
+                ['type' => 'gluetun', 'slug' => 'vpn', 'name' => 'VPN', 'url' => 'http://10.0.0.6:8000', 'enabled' => true, 'position' => 0, 'is_default' => true],
+            ],
+        ]);
+        $this->controller($this->createMock(SettingRepository::class), $this->createMock(ConfigService::class), $this->createMock(HealthService::class), $instances)->import($request);
+
+        $this->assertFalse($updated['username'], 'absent username must leave the stored one alone');
+        $this->assertSame('seed', $created['qbittorrent']['username']);
+        $this->assertNull($created['gluetun']['apiKey'], 'no API key in an export');
+        $this->assertSame(['qbittorrent-2' => 'vpn'], $links, 'only rows carrying `gluetun` are (re)linked');
+    }
+
     public function testDashboardLayoutEndpointPersistsOrderAndHidden(): void
     {
         $saved = [];

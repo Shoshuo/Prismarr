@@ -2,14 +2,24 @@
 
 namespace App\Service\Media;
 
-use App\Service\ConfigService;
+use App\Entity\ServiceInstance;
+use App\Service\ServiceInstanceProvider;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
 /**
  * Client for the Gluetun control API (HTTP Control Server).
- * Optional service — if `gluetun.url` is not configured, calls return null
+ * Optional service — if no Gluetun URL is configured, calls return null
  * without exception (Gluetun is not required to use Prismarr).
+ *
+ * Issue #131 — Gluetun is a multi-instance service (`service_instance` rows
+ * of type `gluetun`, URL + optional API key) and each qBittorrent instance
+ * may link to one. MultiInstanceBinderSubscriber binds the autowired client
+ * to the Gluetun linked to the qBittorrent instance of the current
+ * `/qbittorrent/{slug}/…` route — bound to null when it has none, which
+ * gives the VPN card its empty state. Unbound, the client follows the
+ * Gluetun linked to the default qBittorrent instance, as the single flat
+ * Gluetun did. withInstance() returns an independent clone.
  * Docs: https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/control-server.md
  */
 class GluetunClient implements ResetInterface
@@ -33,21 +43,67 @@ class GluetunClient implements ResetInterface
     private string $apiKey = '';
     private bool $configLoaded = false;
 
+    /** Gluetun instance this client talks to (meaningful once $bound). */
+    private ?ServiceInstance $instance = null;
+    private bool $bound = false;
+
     public function __construct(
-        private readonly ConfigService $config,
+        private readonly ServiceInstanceProvider $instances,
         private readonly LoggerInterface $logger,
     ) {}
+
+    /** Clone bound to Gluetun instance $instance (null = no Gluetun). */
+    public function withInstance(?ServiceInstance $instance): self
+    {
+        $clone = clone $this;
+        $clone->bindInstance($instance);
+        return $clone;
+    }
+
+    /** Bind this client to $instance for the rest of the request (null = no Gluetun). */
+    public function bindInstance(?ServiceInstance $instance): void
+    {
+        if ($instance !== null && $instance->getType() !== ServiceInstance::TYPE_GLUETUN) {
+            throw new \InvalidArgumentException(sprintf(
+                'GluetunClient expects a gluetun instance, got "%s".',
+                $instance->getType(),
+            ));
+        }
+        $this->reset();
+        $this->instance = $instance;
+        $this->bound    = true;
+    }
+
+    /** Gluetun instance targeted by this client, or null when there is none. */
+    public function getInstance(): ?ServiceInstance
+    {
+        if ($this->bound) {
+            return $this->instance;
+        }
+        $qbittorrent = $this->instances->getDefault(ServiceInstance::TYPE_QBITTORRENT);
+        return $qbittorrent !== null ? $this->instances->getGluetunFor($qbittorrent) : null;
+    }
+
+    /** True when a Gluetun control server is targeted. */
+    public function isConfigured(): bool
+    {
+        $this->ensureConfig();
+        return $this->baseUrl !== null && $this->baseUrl !== '';
+    }
 
     private function ensureConfig(): void
     {
         if ($this->configLoaded) return;
-        $this->baseUrl  = $this->config->get('gluetun_url');
-        $this->apiKey   = $this->config->get('gluetun_api_key') ?? '';
+        $instance = $this->getInstance();
+        $this->baseUrl  = $instance?->getUrl();
+        $this->apiKey   = $instance?->getApiKey() ?? '';
         $this->configLoaded = true;
     }
 
     public function reset(): void
     {
+        $this->instance        = null;
+        $this->bound           = false;
         $this->configLoaded    = false;
         $this->baseUrl         = null;
         $this->apiKey          = '';

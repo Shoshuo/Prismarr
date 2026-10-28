@@ -25,11 +25,14 @@
   </div>
 </div>
 
+{# Services backed by service_instance rows (qBittorrent and Gluetun since #131). #}
+{% set instance_ids = ['radarr', 'sonarr', 'qbittorrent', 'gluetun'] %}
+
 {# Connected = a saved URL / API key (enabled or not), or at least one
-   Radarr/Sonarr instance. Computed with filters on purpose: a variable
-   updated inside a Twig for loop does not survive the loop. #}
+   instance. Computed with filters on purpose: a variable updated inside a
+   Twig for loop does not survive the loop. #}
 {% set connected_all = groupings|map(g => g.ids)|reduce((carry, ids) => carry|merge(ids), [])|filter(id =>
-    id in ['radarr', 'sonarr']
+    id in instance_ids
       ? (instances_by_type[id]|default([]))|length > 0
       : ((values[id ~ '_url'] ?? '') != '' or (values[id ~ '_api_key'] ?? '') != '')) %}
 
@@ -59,7 +62,7 @@
             <span class="svc-main">
               <span class="svc-name">{{ label }}</span>
               <span class="svc-sub">
-                {% if id in ['radarr', 'sonarr'] and instances|length > 0 %}
+                {% if id in instance_ids and instances|length > 0 %}
                   {{ 'admin.services.instances_count'|trans({ count: instances|length }) }}
                 {% elseif connected and (values[id ~ '_url'] ?? '') != '' %}
                   {{ values[id ~ '_url'] }}
@@ -73,6 +76,7 @@
             {% elseif id in toggleable and not (service_enabled[id] ?? true) %}
               <span class="svc-status is-muted">{{ 'admin.services.state.disabled'|trans }}</span>
             {% elseif id == 'gluetun' %}
+              {# No service-level health probe for Gluetun; each instance row has its Test button. #}
               <span class="svc-status is-muted"></span>
             {% else %}
               <span class="svc-status" data-svc-status="{{ id }}"><span class="svc-dot"></span><span data-svc-status-text>{{ 'admin.services.state.checking'|trans }}</span></span>
@@ -82,9 +86,14 @@
 
           {# Connected services start expanded; a click on the row folds them. #}
           <div class="svc-body"{{ connected ? '' : ' hidden' }}>
-            {% if id in ['radarr', 'sonarr'] %}
+            {% if id in instance_ids %}
+              {# qBittorrent keeps its service-level kill switch (issue #15) on
+                 top of the per-instance toggles: off = every instance hidden. #}
               {% include 'admin/_instance_rows.html.twig' with {
                 service_id: id, service_label: label, instances: instances,
+                gluetun_instances: instances_by_type.gluetun|default([]),
+                qbittorrent_instances: instances_by_type.qbittorrent|default([]),
+                kill_switch: id in toggleable ? (service_enabled[id] ?? true) : null,
               } only %}
             {% else %}
               <div class="svc-fields">
@@ -114,13 +123,10 @@
                 {% endfor %}
               </div>
               <div class="svc-actions">
-                {% if id != 'gluetun' %}
-                  {# Gluetun has no health probe (HealthService::probeFor()). #}
-                  <button type="button" class="btn btn-sm btn-outline-secondary admin-settings-test" data-service="{{ id }}">
-                    {{ ico.icon('bolt', '', 14) }}
-                    <span data-service-test-label="{{ id }}">{{ 'admin.services.test'|trans }}</span>
-                  </button>
-                {% endif %}
+                <button type="button" class="btn btn-sm btn-outline-secondary admin-settings-test" data-service="{{ id }}">
+                  {{ ico.icon('bolt', '', 14) }}
+                  <span data-service-test-label="{{ id }}">{{ 'admin.services.test'|trans }}</span>
+                </button>
                 <span class="flex-fill"></span>
                 {% if connected %}
                   {# Remove: empties the fields here and sends _remove_<id>=1 so the

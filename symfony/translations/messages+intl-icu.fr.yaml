@@ -706,6 +706,7 @@ admin:
       delete: Supprimer l''instance
       delete_confirm: 'Supprimer l''instance {name} ? Le service distant ne sera pas affecté.'
       delete_last_confirm: '{name} est la dernière instance {service} active. La supprimer masquera {service} du menu latéral et bloquera l''accès à ses pages tant que vous n''en ajoutez pas une autre. Continuer ?'
+      delete_gluetun_linked_confirm: 'Supprimer l''instance {name} ? {count, plural, one {# instance qBittorrent l''utilise et perdra son panneau VPN} other {# instances qBittorrent l''utilisent et perdront leur panneau VPN}} tant que vous n''en liez pas une autre.'
       disable_last_confirm: 'Désactiver cette instance masquera {service} du menu latéral et bloquera l''accès à ses pages (aucune autre instance {service} active). Continuer ?'
       add_submit: Ajouter l''instance
       save: Enregistrer
@@ -723,6 +724,13 @@ admin:
       default_quality_profile: Profil de qualité par défaut
       default_quality_profile_none: 'Aucun (utiliser le premier disponible)'
       default_quality_profile_hint: 'Présélectionné dans les formulaires d''ajout rapide et de bibliothèque pour cette instance. Laisser sur Aucun conserve le comportement précédent.'
+      qbittorrent_auth_hint: 'Laissez l''identifiant ou le mot de passe vide lorsqu''un reverse proxy (qui, forward auth, …) injecte les identifiants.'
+      clear_password: Supprimer le mot de passe enregistré
+      gluetun: Gluetun (panneau VPN)
+      gluetun_none: Aucun
+      gluetun_hint: 'L''instance Gluetun derrière laquelle tourne ce qBittorrent. Alimente le panneau VPN / redirection de port de sa page. Ajoutez des instances Gluetun dans Téléchargements.'
+      gluetun_linked: 'Gluetun : {name}'
+      clear_api_key: Supprimer la clé API enregistrée
     flash:
       created: Instance créée.
       updated: Instance mise à jour.
@@ -3529,6 +3537,8 @@ media:
 
 qbittorrent:
   page_title: Téléchargements
+  instances:
+    switch: Changer d'instance qBittorrent
   error_unreachable: Impossible de contacter qBittorrent.
   stats:
     total: Total

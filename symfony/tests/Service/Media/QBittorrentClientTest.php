@@ -5,6 +5,7 @@ namespace App\Tests\Service\Media;
 use App\Service\ConfigService;
 use App\Service\Media\QBittorrentClient;
 use App\Service\Media\ServiceHealthCache;
+use App\Service\ServiceInstanceProvider;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -39,7 +40,7 @@ class QBittorrentClientTest extends TestCase
     public function testIsOkStatusAcceptsTheWhole2xxRange(int $code, bool $expected): void
     {
         $config = $this->createMock(ConfigService::class);
-        $client = new QBittorrentClient($config, new NullLogger(), new ServiceHealthCache(new ArrayAdapter()));
+        $client = new QBittorrentClient($config, new NullLogger(), new ServiceHealthCache(new ArrayAdapter()), $this->createMock(ServiceInstanceProvider::class));
 
         $m = (new \ReflectionClass($client))->getMethod('isOkStatus');
         $m->setAccessible(true);
@@ -77,7 +78,7 @@ class QBittorrentClientTest extends TestCase
     public function testExtractSessionCookieHandlesLegacyAndQBit52(string $rawHeaders, ?string $expected): void
     {
         $config = $this->createMock(ConfigService::class);
-        $client = new QBittorrentClient($config, new NullLogger(), new ServiceHealthCache(new ArrayAdapter()));
+        $client = new QBittorrentClient($config, new NullLogger(), new ServiceHealthCache(new ArrayAdapter()), $this->createMock(ServiceInstanceProvider::class));
 
         $m = (new \ReflectionClass($client))->getMethod('extractSessionCookie');
         $m->setAccessible(true);

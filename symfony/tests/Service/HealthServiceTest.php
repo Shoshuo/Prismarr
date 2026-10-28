@@ -191,34 +191,42 @@ class HealthServiceTest extends TestCase
      * auth, …) where the proxy injects credentials transparently. We
      * MUST treat that as configured, otherwise the topbar/dashboard
      * marks it as unconfigured and hides the widgets.
+     *
+     * Issue #131 — the URL lives on a qBittorrent service_instance now; an
+     * enabled instance is "configured" whatever its credentials.
      */
-    public function testQbittorrentIsConfiguredWithUrlOnly(): void
+    public function testQbittorrentIsConfiguredWithAnEnabledInstance(): void
     {
         $config = $this->createMock(ConfigService::class);
-        $config->method('has')->willReturnCallback(fn (string $k) => match ($k) {
-            'qbittorrent_url'      => true,
-            'qbittorrent_user'     => false,
-            'qbittorrent_password' => false,
-            default                => false,
-        });
+        $config->method('has')->willReturn(false);
+        $config->method('get')->willReturn(null);
 
-        $svc = $this->makeService(config: $config);
+        $svc = $this->makeService(config: $config, instances: $this->provider([ServiceInstance::TYPE_QBITTORRENT]));
         $this->assertTrue($svc->isConfigured('qbittorrent'));
     }
 
-    public function testQbittorrentIsNotConfiguredWithoutUrl(): void
+    public function testQbittorrentIsNotConfiguredWithoutInstance(): void
     {
-        // Even if user/password are filled in, no URL means we can't talk
-        // to qBit at all → must be marked unconfigured.
+        // Leftover flat credentials don't count: without an instance there
+        // is no URL to talk to.
         $config = $this->createMock(ConfigService::class);
         $config->method('has')->willReturnCallback(fn (string $k) => match ($k) {
-            'qbittorrent_url'      => false,
+            'qbittorrent_url'      => true,
             'qbittorrent_user'     => true,
             'qbittorrent_password' => true,
             default                => false,
         });
 
-        $svc = $this->makeService(config: $config);
+        $svc = $this->makeService(config: $config, instances: $this->provider([]));
+        $this->assertFalse($svc->isConfigured('qbittorrent'));
+    }
+
+    public function testQbittorrentKillSwitchWinsOverEnabledInstance(): void
+    {
+        $config = $this->createMock(ConfigService::class);
+        $config->method('get')->willReturnCallback(fn (string $k) => $k === 'qbittorrent_enabled' ? '0' : null);
+
+        $svc = $this->makeService(config: $config, instances: $this->provider([ServiceInstance::TYPE_QBITTORRENT]));
         $this->assertFalse($svc->isConfigured('qbittorrent'));
     }
 

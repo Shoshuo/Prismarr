@@ -436,4 +436,249 @@ class ServiceInstanceProviderTest extends TestCase
 
         $this->provider($repo)->setDefault($instance);
     }
+
+    // ── qBittorrent fields + Gluetun links (issue #131) ───────────────────
+
+    private function qbt(): ServiceInstance
+    {
+        $i = $this->withId(new ServiceInstance(ServiceInstance::TYPE_QBITTORRENT, 'qbittorrent-1', 'qBittorrent 1', 'http://10.0.0.2:8080'), 10);
+        $i->setUsername('admin');
+        $i->setPassword('old-pass');
+        $i->setGluetunInstanceId(20);
+        return $i;
+    }
+
+    private function gluetun(int $id, string $slug = 'gluetun-1', bool $enabled = true): ServiceInstance
+    {
+        $g = $this->withId(new ServiceInstance(ServiceInstance::TYPE_GLUETUN, $slug, ucfirst($slug), 'http://10.0.0.3:8000', 'old-key'), $id);
+        $g->setEnabled($enabled);
+        return $g;
+    }
+
+    private function withId(ServiceInstance $i, int $id): ServiceInstance
+    {
+        (new \ReflectionProperty($i, 'id'))->setValue($i, $id);
+        return $i;
+    }
+
+    /** Repository whose find() knows $known (by id). */
+    private function repoKnowing(ServiceInstance ...$known): ServiceInstanceRepository
+    {
+        $byId = [];
+        foreach ($known as $i) {
+            $byId[$i->getId()] = $i;
+        }
+        $repo = $this->createMock(ServiceInstanceRepository::class);
+        $repo->method('find')->willReturnCallback(fn ($id) => $byId[$id] ?? null);
+        $repo->method('findOneBySlug')->willReturn(null);
+        $repo->method('findByType')->willReturnCallback(
+            fn (string $type) => array_values(array_filter($known, fn (ServiceInstance $i) => $i->getType() === $type))
+        );
+        return $repo;
+    }
+
+    public function testCreateStoresQbittorrentCredentialsAndGluetunLink(): void
+    {
+        $repo = $this->repoKnowing($this->gluetun(20));
+        $captured = null;
+        $repo->method('save')->willReturnCallback(function (ServiceInstance $i) use (&$captured) { $captured = $i; });
+
+        $this->provider($repo)->create(
+            ServiceInstance::TYPE_QBITTORRENT, 'Seedbox', 'http://10.0.0.2:8080', null,
+            username: 'admin', password: 'pass', gluetunInstanceId: 20,
+        );
+
+        $this->assertNotNull($captured);
+        $this->assertSame('admin', $captured->getUsername());
+        $this->assertSame('pass', $captured->getPassword());
+        $this->assertSame(20, $captured->getGluetunInstanceId());
+        $this->assertFalse($captured->usesProxyAuth());
+    }
+
+    public function testCreateWithoutCredentialsIsReverseProxyMode(): void
+    {
+        // Issue #10 per instance — empty user/password stored as null.
+        $repo = $this->repoKnowing();
+        $captured = null;
+        $repo->method('save')->willReturnCallback(function (ServiceInstance $i) use (&$captured) { $captured = $i; });
+
+        $this->provider($repo)->create(ServiceInstance::TYPE_QBITTORRENT, 'qBit', 'http://10.0.0.2:8080', null, username: '', password: '');
+
+        $this->assertNull($captured->getUsername());
+        $this->assertNull($captured->getPassword());
+        $this->assertNull($captured->getGluetunInstanceId());
+        $this->assertTrue($captured->usesProxyAuth());
+    }
+
+    public function testCreateStandaloneGluetunWithOptionalApiKey(): void
+    {
+        $repo = $this->repoKnowing();
+        $captured = [];
+        $repo->method('save')->willReturnCallback(function (ServiceInstance $i) use (&$captured) { $captured[] = $i; });
+        $provider = $this->provider($repo);
+
+        $provider->create(ServiceInstance::TYPE_GLUETUN, 'VPN TV', 'http://10.0.0.3:8000', ' ');
+        $provider->create(ServiceInstance::TYPE_GLUETUN, 'VPN Movies', 'http://10.0.0.4:8000', 'key');
+
+        $this->assertSame('vpn-tv', $captured[0]->getSlug());
+        $this->assertNull($captured[0]->getApiKey(), 'Gluetun without control-server auth');
+        $this->assertSame('key', $captured[1]->getApiKey());
+    }
+
+    public function testCreateRejectsALinkToAMissingOrNonGluetunInstance(): void
+    {
+        $sonarr = $this->withId(new ServiceInstance(ServiceInstance::TYPE_SONARR, 'sonarr-1', 'Sonarr 1', 'http://10.0.0.5:8989'), 30);
+        $repo = $this->repoKnowing($sonarr);
+        $repo->expects($this->never())->method('save');
+        $provider = $this->provider($repo);
+
+        foreach ([30, 99] as $bad) {
+            try {
+                $provider->create(ServiceInstance::TYPE_QBITTORRENT, 'qBit', 'http://10.0.0.2:8080', null, gluetunInstanceId: $bad);
+                $this->fail("link to #$bad must be rejected");
+            } catch (\InvalidArgumentException $e) {
+                $this->assertStringContainsString('Gluetun', $e->getMessage());
+            }
+        }
+    }
+
+    public function testOnlyQbittorrentCanLinkToGluetun(): void
+    {
+        $repo = $this->repoKnowing($this->gluetun(20));
+        $repo->expects($this->never())->method('save');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->provider($repo)->create(ServiceInstance::TYPE_RADARR, 'Radarr', 'http://10.0.0.6:7878', 'k', gluetunInstanceId: 20);
+    }
+
+    public function testUpdateLeavesQbittorrentFieldsUnchangedWhenAbsent(): void
+    {
+        // Radarr/Sonarr forms (and the settings import) don't send these.
+        $instance = $this->qbt();
+        $this->provider($this->repoKnowing())
+            ->update($instance, 'Renamed', 'http://10.0.0.2:8080', null);
+
+        $this->assertSame('admin', $instance->getUsername());
+        $this->assertSame('old-pass', $instance->getPassword());
+        $this->assertSame(20, $instance->getGluetunInstanceId());
+    }
+
+    public function testUpdatePreservesPasswordWhenSubmittedEmpty(): void
+    {
+        // type=password input: empty = unchanged, same rule as api_key.
+        $instance = $this->qbt();
+        $this->provider($this->repoKnowing())
+            ->update($instance, 'qBit', 'http://10.0.0.2:8080', null, username: 'admin', password: '');
+
+        $this->assertSame('old-pass', $instance->getPassword());
+    }
+
+    public function testUpdateReplacesAndClearsPassword(): void
+    {
+        $instance = $this->qbt();
+        $provider = $this->provider($this->repoKnowing());
+
+        $provider->update($instance, 'qBit', 'http://10.0.0.2:8080', null, password: 'new-pass');
+        $this->assertSame('new-pass', $instance->getPassword());
+
+        // The clear flag wins even if the browser re-submitted the old value.
+        $provider->update($instance, 'qBit', 'http://10.0.0.2:8080', null, password: 'new-pass', clearPassword: true);
+        $this->assertNull($instance->getPassword());
+        $this->assertTrue($instance->usesProxyAuth());
+    }
+
+    public function testUpdateEmptyUsernameClearsIt(): void
+    {
+        // Plain text input: an empty submission really means "clear".
+        $instance = $this->qbt();
+        $this->provider($this->repoKnowing())
+            ->update($instance, 'qBit', 'http://10.0.0.2:8080', null, username: '');
+
+        $this->assertNull($instance->getUsername());
+        $this->assertTrue($instance->usesProxyAuth());
+    }
+
+    public function testUpdateRelinksAndUnlinksGluetun(): void
+    {
+        $instance = $this->qbt();
+        $provider = $this->provider($this->repoKnowing($this->gluetun(20), $this->gluetun(21, 'gluetun-2')));
+
+        $provider->update($instance, 'qBit', 'http://10.0.0.2:8080', null, gluetunInstanceId: 21);
+        $this->assertSame(21, $instance->getGluetunInstanceId());
+
+        $provider->update($instance, 'qBit', 'http://10.0.0.2:8080', null, gluetunInstanceId: null);
+        $this->assertNull($instance->getGluetunInstanceId());
+    }
+
+    public function testUpdateRejectsABadLinkBeforeTouchingTheInstance(): void
+    {
+        $instance = $this->qbt();
+        $repo = $this->repoKnowing();
+        $repo->expects($this->never())->method('save');
+
+        try {
+            $this->provider($repo)->update($instance, 'Renamed', 'http://10.0.0.2:8080', null, gluetunInstanceId: 99);
+            $this->fail('unknown Gluetun must be rejected');
+        } catch (\InvalidArgumentException) {
+        }
+        $this->assertSame('qBittorrent 1', $instance->getName(), 'no half-applied update');
+        $this->assertSame(20, $instance->getGluetunInstanceId());
+    }
+
+    public function testUpdateGluetunApiKeyCanBeCleared(): void
+    {
+        $gluetun  = $this->gluetun(20);
+        $provider = $this->provider($this->repoKnowing($gluetun));
+
+        $provider->update($gluetun, 'Gluetun', 'http://10.0.0.3:8000', '');
+        $this->assertSame('old-key', $gluetun->getApiKey(), 'empty password input = unchanged');
+
+        $provider->update($gluetun, 'Gluetun', 'http://10.0.0.3:8000', 'old-key', clearApiKey: true);
+        $this->assertNull($gluetun->getApiKey());
+    }
+
+    public function testDeletingAGluetunUnlinksItsQbittorrentInstancesWithoutDeletingThem(): void
+    {
+        $gluetun = $this->gluetun(20);
+        $linked  = $this->qbt();
+        $other   = $this->withId(new ServiceInstance(ServiceInstance::TYPE_QBITTORRENT, 'qbittorrent-2', 'qBittorrent 2', 'http://10.0.0.7:8080'), 11);
+        $other->setGluetunInstanceId(21);
+        $repo = $this->repoKnowing($gluetun, $linked, $other);
+        $removed = [];
+        $repo->method('remove')->willReturnCallback(function (ServiceInstance $i) use (&$removed) { $removed[] = $i; });
+
+        $this->provider($repo)->delete($gluetun);
+
+        $this->assertSame([$gluetun], $removed, 'never cascades to qBittorrent');
+        $this->assertNull($linked->getGluetunInstanceId());
+        $this->assertSame(21, $other->getGluetunInstanceId(), 'other links untouched');
+    }
+
+    public function testGetGluetunForResolvesOnlyEnabledLinkedInstances(): void
+    {
+        $qbt = $this->qbt(); // links to #20
+        $this->assertSame(20, $this->provider($this->repoKnowing($this->gluetun(20)))->getGluetunFor($qbt)?->getId());
+        $this->assertNull(
+            $this->provider($this->repoKnowing($this->gluetun(20, enabled: false)))->getGluetunFor($qbt),
+            'a disabled Gluetun reads as no Gluetun',
+        );
+        $this->assertNull($this->provider($this->repoKnowing($this->gluetun(21)))->getGluetunFor($qbt), 'dangling id');
+        $qbt->setGluetunInstanceId(null);
+        $this->assertNull($this->provider($this->repoKnowing($this->gluetun(20)))->getGluetunFor($qbt));
+    }
+
+    public function testLinkGluetunValidatesBothSides(): void
+    {
+        $qbt      = $this->qbt();
+        $gluetun  = $this->gluetun(21, 'gluetun-2');
+        $provider = $this->provider($this->repoKnowing($gluetun));
+
+        $provider->linkGluetun($qbt, $gluetun);
+        $this->assertSame(21, $qbt->getGluetunInstanceId());
+        $provider->linkGluetun($qbt, null);
+        $this->assertNull($qbt->getGluetunInstanceId());
+
+        $this->expectException(\InvalidArgumentException::class);
+        $provider->linkGluetun($qbt, $this->qbt());
+    }
 }

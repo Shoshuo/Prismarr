@@ -707,6 +707,7 @@ admin:
       delete: Delete instance
       delete_confirm: 'Delete the {name} instance? This will not affect the upstream service itself.'
       delete_last_confirm: '{name} is the last enabled {service} instance. Deleting it will hide {service} from the sidebar and block access to its pages until you add another. Continue?'
+      delete_gluetun_linked_confirm: 'Delete the {name} instance? {count, plural, one {# qBittorrent instance uses it and will lose its VPN panel} other {# qBittorrent instances use it and will lose their VPN panel}} until you link another Gluetun.'
       disable_last_confirm: 'Disabling this instance will hide {service} from the sidebar and block access to its pages (no other enabled {service} instance). Continue?'
       add_submit: Add instance
       save: Save changes
@@ -724,6 +725,13 @@ admin:
       default_quality_profile: Default quality profile
       default_quality_profile_none: 'None (use the first available)'
       default_quality_profile_hint: 'Preselected in the quick-add and library add forms for this instance. Leave on None to keep the previous behaviour.'
+      qbittorrent_auth_hint: 'Leave the username or the password empty when a reverse proxy (qui, forward auth, …) injects the credentials.'
+      clear_password: Remove the saved password
+      gluetun: Gluetun (VPN panel)
+      gluetun_none: None
+      gluetun_hint: 'The Gluetun instance this qBittorrent runs behind. Feeds the VPN / port-forward panel of its page. Add Gluetun instances under Downloads.'
+      gluetun_linked: 'Gluetun: {name}'
+      clear_api_key: Remove the saved API key
     flash:
       created: Instance created.
       updated: Instance updated.
@@ -3530,6 +3538,8 @@ media:
 
 qbittorrent:
   page_title: Downloads
+  instances:
+    switch: Switch qBittorrent instance
   error_unreachable: Unable to reach qBittorrent.
   stats:
     total: Total

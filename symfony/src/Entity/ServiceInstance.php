@@ -13,10 +13,12 @@ use Doctrine\ORM\Mapping as ORM;
  * the same service can coexist (e.g. "Radarr 1080p" + "Radarr 4K"), each with
  * its own URL, API key and sidebar entry.
  *
- * Scope for v1.1.0: only Radarr and Sonarr. The other services (Jellyseerr,
- * qBittorrent, Prowlarr, Gluetun, TMDb) keep their flat settings for now.
- * The schema is intentionally extensible (free-form `type` field) so we can
- * onboard them later without another migration.
+ * Radarr and Sonarr since v1.1.0. Issue #131 added qBittorrent, with the
+ * optional per-instance credentials (`username` / `password`), and Gluetun
+ * control servers (`url` + optional `apiKey`), which a qBittorrent instance
+ * links to through `gluetunInstanceId`. The other services (Jellyseerr,
+ * Prowlarr, TMDb, …) keep their flat settings for now. The `type` field is
+ * free-form so more services can be onboarded without reshaping the table.
  *
  * Slug is the URL-safe identifier carried in routes (e.g. `/radarr/{slug}/films`).
  * It's auto-generated from the name on create and stays fixed by default; users
@@ -30,9 +32,24 @@ class ServiceInstance
 {
     public const TYPE_RADARR = 'radarr';
     public const TYPE_SONARR = 'sonarr';
+    public const TYPE_QBITTORRENT = 'qbittorrent';
+    public const TYPE_GLUETUN = 'gluetun';
 
-    /** @var list<string> Allowed type values for v1.1.0. */
-    public const TYPES = [self::TYPE_RADARR, self::TYPE_SONARR];
+    /** @var list<string> Allowed type values. */
+    public const TYPES = [self::TYPE_RADARR, self::TYPE_SONARR, self::TYPE_QBITTORRENT, self::TYPE_GLUETUN];
+
+    /**
+     * Brand label per type, used to name auto-created instances ("Radarr 1",
+     * "qBittorrent 1") — ucfirst() would turn qBittorrent into "Qbittorrent".
+     *
+     * @var array<string, string>
+     */
+    public const TYPE_LABELS = [
+        self::TYPE_RADARR      => 'Radarr',
+        self::TYPE_SONARR      => 'Sonarr',
+        self::TYPE_QBITTORRENT => 'qBittorrent',
+        self::TYPE_GLUETUN     => 'Gluetun',
+    ];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -63,6 +80,29 @@ class ServiceInstance
      */
     #[ORM\Column(nullable: true)]
     private ?int $defaultQualityProfileId = null;
+
+    /**
+     * qBittorrent WebUI credentials (issue #131). Both null/empty is the
+     * reverse-proxy mode of issue #10: the proxy in front of qBittorrent (qui,
+     * forward auth, …) injects authentication, so the client skips
+     * /auth/login. Unused by Radarr/Sonarr, which authenticate with $apiKey.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $username = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $password = null;
+
+    /**
+     * Gluetun instance whose control server feeds the VPN / public IP /
+     * forwarded-port panel of this qBittorrent instance (issue #131).
+     * Null = no Gluetun, the panel shows its empty state. Plain id rather
+     * than a Doctrine association: SQLite foreign keys are not enforced in
+     * this app, so ServiceInstanceProvider owns the integrity (validates the
+     * target is a Gluetun instance, unlinks on delete) either way.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?int $gluetunInstanceId = null;
 
     #[ORM\Column]
     private bool $isDefault = false;
@@ -110,6 +150,24 @@ class ServiceInstance
     public function getDefaultQualityProfileId(): ?int { return $this->defaultQualityProfileId; }
     public function setDefaultQualityProfileId(?int $id): static { $this->defaultQualityProfileId = $id; return $this->touch(); }
 
+    public function getUsername(): ?string { return $this->username; }
+    public function setUsername(?string $username): static { $this->username = self::emptyToNull($username); return $this->touch(); }
+
+    public function getPassword(): ?string { return $this->password; }
+    public function setPassword(?string $password): static { $this->password = self::emptyToNull($password); return $this->touch(); }
+
+    public function getGluetunInstanceId(): ?int { return $this->gluetunInstanceId; }
+    public function setGluetunInstanceId(?int $id): static { $this->gluetunInstanceId = $id; return $this->touch(); }
+
+    /**
+     * Reverse-proxy mode (issue #10): an empty username OR password means
+     * the proxy in front of qBittorrent handles auth, so no /auth/login.
+     */
+    public function usesProxyAuth(): bool
+    {
+        return ($this->username ?? '') === '' || ($this->password ?? '') === '';
+    }
+
     public function isDefault(): bool { return $this->isDefault; }
     public function setIsDefault(bool $isDefault): static { $this->isDefault = $isDefault; return $this->touch(); }
 
@@ -140,6 +198,23 @@ class ServiceInstance
         $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
         $slug = trim($slug, '-');
         return $slug === '' ? 'instance' : $slug;
+    }
+
+    /**
+     * Default display name for an auto-created instance of $type.
+     */
+    public static function defaultName(string $type, int $n = 1): string
+    {
+        return (self::TYPE_LABELS[$type] ?? ucfirst($type)) . ' ' . $n;
+    }
+
+    private static function emptyToNull(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+        $value = trim($value);
+        return $value === '' ? null : $value;
     }
 
     private function touch(): static

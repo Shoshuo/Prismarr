@@ -4,6 +4,8 @@ namespace App\Tests\EventSubscriber;
 
 use App\Entity\ServiceInstance;
 use App\EventSubscriber\MultiInstanceBinderSubscriber;
+use App\Service\Media\GluetunClient;
+use App\Service\Media\QBittorrentClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use App\Service\ServiceInstanceProvider;
@@ -38,8 +40,16 @@ class MultiInstanceBinderSubscriberTest extends TestCase
         ServiceInstanceProvider $instances,
         RadarrClient $radarr,
         SonarrClient $sonarr,
+        ?QBittorrentClient $qbittorrent = null,
+        ?GluetunClient $gluetun = null,
     ): MultiInstanceBinderSubscriber {
-        return new MultiInstanceBinderSubscriber($instances, $radarr, $sonarr);
+        return new MultiInstanceBinderSubscriber(
+            $instances,
+            $radarr,
+            $sonarr,
+            $qbittorrent ?? $this->createMock(QBittorrentClient::class),
+            $gluetun ?? $this->createMock(GluetunClient::class),
+        );
     }
 
     public function testSubRequestIsIgnored(): void
@@ -151,5 +161,93 @@ class MultiInstanceBinderSubscriberTest extends TestCase
         $event = $this->makeEvent('radarr_indexers', 'ghost-slug');
         $this->expectException(NotFoundHttpException::class);
         $this->newSubscriber($instances, $radarr, $sonarr)->onKernelRequest($event);
+    }
+
+    public function testQbittorrentRouteBindsQbittorrentAndItsLinkedGluetun(): void
+    {
+        // Issue #131 — the VPN panel follows the selected download client:
+        // a /qbittorrent/{slug} route binds the qBittorrent client to the
+        // instance and the Gluetun client to the Gluetun it links to.
+        $instance = new ServiceInstance(ServiceInstance::TYPE_QBITTORRENT, 'qbittorrent-2', 'Seedbox', 'http://10.0.0.2:8080', null);
+        $linked   = new ServiceInstance(ServiceInstance::TYPE_GLUETUN, 'vpn-seedbox', 'VPN Seedbox', 'http://10.0.0.3:8000', null);
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->expects($this->once())->method('getBySlug')
+            ->with(ServiceInstance::TYPE_QBITTORRENT, 'qbittorrent-2')
+            ->willReturn($instance);
+        $instances->expects($this->once())->method('getGluetunFor')->with($this->identicalTo($instance))->willReturn($linked);
+        $radarr  = $this->createMock(RadarrClient::class);
+        $sonarr  = $this->createMock(SonarrClient::class);
+        $qbt     = $this->createMock(QBittorrentClient::class);
+        $gluetun = $this->createMock(GluetunClient::class);
+        $radarr->expects($this->never())->method('bindInstance');
+        $sonarr->expects($this->never())->method('bindInstance');
+        $qbt->expects($this->once())->method('bindInstance')->with($this->identicalTo($instance));
+        $gluetun->expects($this->once())->method('bindInstance')->with($this->identicalTo($linked));
+
+        $event = $this->makeEvent('app_qbittorrent_api_torrents', 'qbittorrent-2');
+        $this->newSubscriber($instances, $radarr, $sonarr, $qbt, $gluetun)->onKernelRequest($event);
+    }
+
+    public function testQbittorrentWithoutLinkedGluetunBindsGluetunToNone(): void
+    {
+        // No link → bound to null (VPN card empty state), never left on the
+        // unbound "default qBittorrent's Gluetun" fallback.
+        $instance  = new ServiceInstance(ServiceInstance::TYPE_QBITTORRENT, 'qbittorrent-2', 'Seedbox', 'http://10.0.0.2:8080', null);
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getBySlug')->willReturn($instance);
+        $instances->method('getGluetunFor')->willReturn(null);
+        $qbt     = $this->createMock(QBittorrentClient::class);
+        $gluetun = $this->createMock(GluetunClient::class);
+        $gluetun->expects($this->once())->method('bindInstance')->with($this->isNull());
+
+        $event = $this->makeEvent('app_qbittorrent_index', 'qbittorrent-2');
+        $this->newSubscriber(
+            $instances,
+            $this->createMock(RadarrClient::class),
+            $this->createMock(SonarrClient::class),
+            $qbt,
+            $gluetun,
+        )->onKernelRequest($event);
+    }
+
+    public function testQbittorrentAggregateRouteWithoutSlugIsNoOp(): void
+    {
+        // The cross-instance poll summary has no slug — the clients keep
+        // their lazy default binding and the controller iterates instances.
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->expects($this->never())->method('getBySlug');
+        $qbt     = $this->createMock(QBittorrentClient::class);
+        $gluetun = $this->createMock(GluetunClient::class);
+        $qbt->expects($this->never())->method('bindInstance');
+        $gluetun->expects($this->never())->method('bindInstance');
+
+        $event = $this->makeEvent('app_qbittorrent_api_poll_summary', null);
+        $this->newSubscriber(
+            $instances,
+            $this->createMock(RadarrClient::class),
+            $this->createMock(SonarrClient::class),
+            $qbt,
+            $gluetun,
+        )->onKernelRequest($event);
+    }
+
+    public function testUnknownQbittorrentSlugThrowsNotFound(): void
+    {
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getBySlug')->willReturn(null);
+        $qbt     = $this->createMock(QBittorrentClient::class);
+        $gluetun = $this->createMock(GluetunClient::class);
+        $qbt->expects($this->never())->method('bindInstance');
+        $gluetun->expects($this->never())->method('bindInstance');
+
+        $event = $this->makeEvent('app_qbittorrent_index', 'ghost-slug');
+        $this->expectException(NotFoundHttpException::class);
+        $this->newSubscriber(
+            $instances,
+            $this->createMock(RadarrClient::class),
+            $this->createMock(SonarrClient::class),
+            $qbt,
+            $gluetun,
+        )->onKernelRequest($event);
     }
 }

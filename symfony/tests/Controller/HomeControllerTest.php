@@ -74,6 +74,8 @@ class HomeControllerTest extends TestCase
             fn(string $type) => match ($type) {
                 ServiceInstance::TYPE_RADARR => in_array('radarr_api_key', $hasKeys, true),
                 ServiceInstance::TYPE_SONARR => in_array('sonarr_api_key', $hasKeys, true),
+                // Issue #131 — qBittorrent moved to service_instance too.
+                ServiceInstance::TYPE_QBITTORRENT => in_array('qbittorrent_url', $hasKeys, true),
                 default => false,
             }
         );
@@ -85,6 +87,7 @@ class HomeControllerTest extends TestCase
                 $configured = match ($type) {
                     ServiceInstance::TYPE_RADARR => in_array('radarr_api_key', $hasKeys, true),
                     ServiceInstance::TYPE_SONARR => in_array('sonarr_api_key', $hasKeys, true),
+                    ServiceInstance::TYPE_QBITTORRENT => in_array('qbittorrent_url', $hasKeys, true),
                     default => false,
                 };
                 if (!$configured) return null;

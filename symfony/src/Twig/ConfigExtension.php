@@ -18,7 +18,8 @@ class ConfigExtension extends AbstractExtension
     /**
      * Single setting key that indicates a configured service. Only services
      * still on the v1.0 flat-settings model — radarr & sonarr moved to the
-     * service_instance table in v1.1.0 and are checked via the provider.
+     * service_instance table in v1.1.0, qBittorrent and Gluetun in issue
+     * #131; those are checked via the provider.
      *
      * @var array<string, string>
      */
@@ -26,12 +27,10 @@ class ConfigExtension extends AbstractExtension
         'tmdb'        => 'tmdb_api_key',
         'prowlarr'    => 'prowlarr_api_key',
         'jellyseerr'  => 'jellyseerr_api_key',
-        'qbittorrent' => 'qbittorrent_url',
         'deluge'      => 'deluge_url',
         'transmission' => 'transmission_url',
         'sabnzbd'     => 'sabnzbd_url',
         'nzbget'      => 'nzbget_url',
-        'gluetun'     => 'gluetun_url',
         'tautulli'    => 'tautulli_url',
         'bazarr'      => 'bazarr_url',
         'tracearr'    => 'tracearr_url',
@@ -40,8 +39,10 @@ class ConfigExtension extends AbstractExtension
 
     /** Services backed by service_instance instead of a flat setting. */
     private const INSTANCE_TYPES = [
-        'radarr' => ServiceInstance::TYPE_RADARR,
-        'sonarr' => ServiceInstance::TYPE_SONARR,
+        'radarr'      => ServiceInstance::TYPE_RADARR,
+        'sonarr'      => ServiceInstance::TYPE_SONARR,
+        'qbittorrent' => ServiceInstance::TYPE_QBITTORRENT,
+        'gluetun'     => ServiceInstance::TYPE_GLUETUN,
     ];
 
     public function __construct(
@@ -120,6 +121,10 @@ class ConfigExtension extends AbstractExtension
         if (str_starts_with($name, 'app_media_series') || str_starts_with($name, 'app_media_sonarr')) {
             return ServiceInstance::TYPE_SONARR;
         }
+        // The cross-instance poll route is slug-less (issue #131).
+        if (str_starts_with($name, 'app_qbittorrent_') && $name !== 'app_qbittorrent_api_poll_summary') {
+            return ServiceInstance::TYPE_QBITTORRENT;
+        }
         return null;
     }
 
@@ -144,7 +149,7 @@ class ConfigExtension extends AbstractExtension
     }
 
     /**
-     * Enabled instances for radarr/sonarr (other services return []).
+     * Enabled instances for radarr/sonarr/qbittorrent/gluetun (others return []).
      * Used by the sidebar to render one entry per instance when the user
      * configured several (Phase B2).
      *
@@ -158,15 +163,16 @@ class ConfigExtension extends AbstractExtension
 
     public function isServiceConfigured(string $service): bool
     {
-        if (isset(self::INSTANCE_TYPES[$service])) {
-            return $this->instances->hasAnyEnabled(self::INSTANCE_TYPES[$service]);
-        }
         // Issue #15 — the per-service kill switch makes the service behave as
         // unconfigured: hidden from the sidebar and rendered as "not set" on
         // its page. Same constant the runtime check in HealthService uses.
+        // Checked first: qBittorrent is instance-backed AND toggleable.
         if (in_array($service, HealthService::TOGGLEABLE_SERVICES, true)
             && $this->config->get($service . '_enabled') === '0') {
             return false;
+        }
+        if (isset(self::INSTANCE_TYPES[$service])) {
+            return $this->instances->hasAnyEnabled(self::INSTANCE_TYPES[$service]);
         }
         $key = self::SERVICE_KEYS[$service] ?? null;
         return $key !== null && $this->config->has($key);

@@ -56,8 +56,10 @@ class HomeController extends AbstractController
             $defaultSonarr = $instances->getDefault(ServiceInstance::TYPE_SONARR);
             return $this->redirectToRoute('app_media_series', ['slug' => $defaultSonarr->getSlug()]);
         }
-        if ($health->isConfigured('qbittorrent')) {
-            return $this->redirectToRoute('app_qbittorrent_index');
+        // Issue #131 — slug is mandatory, plug the default instance.
+        $defaultQbt = $instances->getDefault(ServiceInstance::TYPE_QBITTORRENT);
+        if ($defaultQbt !== null && $health->isConfigured('qbittorrent')) {
+            return $this->redirectToRoute('app_qbittorrent_index', ['slug' => $defaultQbt->getSlug()]);
         }
 
         return $this->render('home/welcome.html.twig');
@@ -111,7 +113,9 @@ class HomeController extends AbstractController
                 if (!$instances->hasAnyEnabled(ServiceInstance::TYPE_SONARR)) return null;
                 return ['app_media_series', ['slug' => $instances->getDefault(ServiceInstance::TYPE_SONARR)->getSlug()]];
             case 'qbittorrent':
-                return $health->isConfigured('qbittorrent') ? ['app_qbittorrent_index', []] : null;
+                $qbt = $instances->getDefault(ServiceInstance::TYPE_QBITTORRENT);
+                if ($qbt === null || !$health->isConfigured('qbittorrent')) return null;
+                return ['app_qbittorrent_index', ['slug' => $qbt->getSlug()]];
             case 'last':
                 return $this->resolveLastVisitedRoute($request, $router, $instances, $health);
             default:
@@ -205,6 +209,7 @@ class HomeController extends AbstractController
         if (str_starts_with($route, 'sonarr_'))                                                       return ServiceInstance::TYPE_SONARR;
         if (str_starts_with($route, 'app_media_films') || str_starts_with($route, 'app_media_radarr')) return ServiceInstance::TYPE_RADARR;
         if (str_starts_with($route, 'app_media_series') || str_starts_with($route, 'app_media_sonarr')) return ServiceInstance::TYPE_SONARR;
+        if (str_starts_with($route, 'app_qbittorrent_'))                                              return ServiceInstance::TYPE_QBITTORRENT;
         return null;
     }
 }

@@ -185,7 +185,7 @@ class ServiceInstanceProvider implements ResetInterface
         $instance = new ServiceInstance(
             type:   $type,
             slug:   $type . '-1',
-            name:   ucfirst($type) . ' 1',
+            name:   ServiceInstance::defaultName($type),
             url:    $url,
             apiKey: $apiKey !== '' ? $apiKey : null,
         );
@@ -234,6 +234,9 @@ class ServiceInstanceProvider implements ResetInterface
         bool $enabled = true,
         ?int $position = null,
         ?int $defaultQualityProfileId = null,
+        ?string $username = null,
+        ?string $password = null,
+        ?int $gluetunInstanceId = null,
     ): ServiceInstance {
         $name = trim($name);
         $url  = trim($url);
@@ -254,6 +257,7 @@ class ServiceInstanceProvider implements ResetInterface
         if (!in_array($type, ServiceInstance::TYPES, true)) {
             throw new \InvalidArgumentException(sprintf('Unknown instance type "%s".', $type));
         }
+        $this->assertGluetunLink($type, $gluetunInstanceId);
 
         $finalSlug = $this->normalizeSlug($type, $slug, $name);
         if ($this->repository->findOneBySlug($type, $finalSlug) !== null) {
@@ -284,6 +288,12 @@ class ServiceInstanceProvider implements ResetInterface
         $instance->setIsDefault($isFirst); // first instance is automatically default
         $instance->setPosition($finalPosition);
         $instance->setDefaultQualityProfileId($defaultQualityProfileId);
+        // qBittorrent-only fields (issue #131) — the setters normalise empty
+        // strings to null, so an empty username/password lands as reverse-
+        // proxy mode (issue #10); a null Gluetun link = no VPN panel.
+        $instance->setUsername($username);
+        $instance->setPassword($password);
+        $instance->setGluetunInstanceId($gluetunInstanceId);
         $this->repository->save($instance);
         $this->invalidate();
         return $instance;
@@ -305,6 +315,11 @@ class ServiceInstanceProvider implements ResetInterface
         ?bool $enabled = null,
         ?int $position = null,
         int|false|null $defaultQualityProfileId = false,
+        string|false|null $username = false,
+        ?string $password = null,
+        bool $clearPassword = false,
+        int|false|null $gluetunInstanceId = false,
+        bool $clearApiKey = false,
     ): ServiceInstance {
         $name = trim($name);
         $url  = trim($url);
@@ -316,6 +331,11 @@ class ServiceInstanceProvider implements ResetInterface
         }
         if (($reason = HealthService::urlBlockedReason($url)) !== null) {
             throw new \InvalidArgumentException(sprintf('Invalid instance URL (%s).', $reason));
+        }
+        // Validate before the first setter so a rejected Gluetun link can't
+        // leave the instance half-updated in the unit of work.
+        if ($gluetunInstanceId !== false) {
+            $this->assertGluetunLink($instance->getType(), $gluetunInstanceId);
         }
 
         $instance->setName($name);
@@ -336,7 +356,10 @@ class ServiceInstanceProvider implements ResetInterface
 
         // Empty submission of the API key field means "unchanged" (Firefox
         // strips type=password autofill — same regression as v1.0 settings).
-        if ($apiKey !== null) {
+        // A Gluetun API key is optional, so its form adds an explicit clear.
+        if ($clearApiKey) {
+            $instance->setApiKey(null);
+        } elseif ($apiKey !== null) {
             $apiKey = trim($apiKey);
             if ($apiKey !== '') {
                 $instance->setApiKey($apiKey);
@@ -357,9 +380,86 @@ class ServiceInstanceProvider implements ResetInterface
             $instance->setDefaultQualityProfileId($defaultQualityProfileId);
         }
 
+        // qBittorrent fields (issue #131). Same conventions as above:
+        //  - `false` = field absent from the form, leave unchanged;
+        //  - username is a plain text input, so an empty submission really
+        //    means "clear" (empty username = reverse-proxy mode, issue #10);
+        //  - password is a type=password input: empty means unchanged
+        //    (browsers strip it), the explicit clear flag wipes;
+        //  - Gluetun link: null = "None", an int = that Gluetun instance.
+        if ($username !== false) {
+            $instance->setUsername($username);
+        }
+        if ($clearPassword) {
+            $instance->setPassword(null);
+        } elseif ($password !== null && trim($password) !== '') {
+            $instance->setPassword($password);
+        }
+        if ($gluetunInstanceId !== false) {
+            $instance->setGluetunInstanceId($gluetunInstanceId);
+        }
+
         $this->repository->save($instance);
         $this->invalidate();
         return $instance;
+    }
+
+    /**
+     * A Gluetun link is only valid on a qBittorrent instance and must point
+     * to an existing Gluetun instance. Null = no Gluetun, always allowed.
+     *
+     * @throws \InvalidArgumentException
+     */
+    private function assertGluetunLink(string $type, ?int $gluetunInstanceId): void
+    {
+        if ($gluetunInstanceId === null) {
+            return;
+        }
+        if ($type !== ServiceInstance::TYPE_QBITTORRENT) {
+            throw new \InvalidArgumentException(sprintf('A %s instance cannot link to Gluetun.', $type));
+        }
+        $target = $this->repository->find($gluetunInstanceId);
+        if ($target === null || $target->getType() !== ServiceInstance::TYPE_GLUETUN) {
+            throw new \InvalidArgumentException('Unknown Gluetun instance.');
+        }
+    }
+
+    /**
+     * Link qBittorrent instance $qbittorrent to Gluetun instance $gluetun,
+     * or unlink it with null. Used by the settings import, which resolves
+     * links by slug once every row of the payload exists.
+     *
+     * @throws \InvalidArgumentException when either side has the wrong type.
+     */
+    public function linkGluetun(ServiceInstance $qbittorrent, ?ServiceInstance $gluetun): void
+    {
+        if ($gluetun !== null && $gluetun->getType() !== ServiceInstance::TYPE_GLUETUN) {
+            throw new \InvalidArgumentException('Unknown Gluetun instance.');
+        }
+        $this->assertGluetunLink($qbittorrent->getType(), $gluetun?->getId());
+        $qbittorrent->setGluetunInstanceId($gluetun?->getId());
+        $this->repository->save($qbittorrent);
+        $this->invalidate();
+    }
+
+    /**
+     * Gluetun instance linked to qBittorrent instance $qbittorrent (issue
+     * #131), or null when it has none, the target is gone, or it is
+     * disabled — a disabled Gluetun reads as "no Gluetun", same as a
+     * disabled Radarr hides its pages.
+     */
+    public function getGluetunFor(ServiceInstance $qbittorrent): ?ServiceInstance
+    {
+        $id = $qbittorrent->getGluetunInstanceId();
+        if ($id === null) {
+            return null;
+        }
+        foreach ($this->getEnabled(ServiceInstance::TYPE_GLUETUN) as $gluetun) {
+            if ($gluetun->getId() === $id) {
+                return $gluetun;
+            }
+        }
+        return null;
     }
 
     /**
@@ -370,6 +470,17 @@ class ServiceInstanceProvider implements ResetInterface
     {
         $wasDefault = $instance->isDefault();
         $type = $instance->getType();
+        // Deleting a Gluetun unlinks the qBittorrent instances that used it
+        // (issue #131) — never cascades. Done here because SQLite foreign
+        // keys are not enforced, so the DB would leave a dangling id.
+        if ($type === ServiceInstance::TYPE_GLUETUN && $instance->getId() !== null) {
+            foreach ($this->repository->findByType(ServiceInstance::TYPE_QBITTORRENT) as $qbittorrent) {
+                if ($qbittorrent->getGluetunInstanceId() === $instance->getId()) {
+                    $qbittorrent->setGluetunInstanceId(null);
+                    $this->repository->save($qbittorrent, flush: false);
+                }
+            }
+        }
         $this->repository->remove($instance);
         if ($wasDefault) {
             $this->promoteFirstToDefault($type);

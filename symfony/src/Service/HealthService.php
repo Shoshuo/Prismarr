@@ -228,18 +228,21 @@ class HealthService implements ResetInterface
     {
         if ($instanceSlug !== null && $this->instances !== null) {
             $type = match ($service) {
-                'radarr' => ServiceInstance::TYPE_RADARR,
-                'sonarr' => ServiceInstance::TYPE_SONARR,
-                default  => null,
+                'radarr'      => ServiceInstance::TYPE_RADARR,
+                'sonarr'      => ServiceInstance::TYPE_SONARR,
+                'qbittorrent' => ServiceInstance::TYPE_QBITTORRENT,
+                default       => null,
             };
             if ($type !== null) {
                 $instance = $this->instances->getBySlug($type, $instanceSlug);
                 if ($instance === null) {
                     return null; // unknown slug → not_configured-ish
                 }
-                $client = $service === 'radarr'
-                    ? $this->radarr->withInstance($instance)
-                    : $this->sonarr->withInstance($instance);
+                $client = match ($service) {
+                    'radarr'      => $this->radarr->withInstance($instance),
+                    'sonarr'      => $this->sonarr->withInstance($instance),
+                    'qbittorrent' => $this->qbittorrent->withInstance($instance),
+                };
                 return $client->ping();
             }
         }
@@ -305,13 +308,12 @@ class HealthService implements ResetInterface
                 $this->config->has('jellyseerr_url') && $this->config->has('jellyseerr_api_key'),
             'tmdb' =>
                 $this->config->has('tmdb_api_key'),
-            // qBittorrent — only the URL is required. Empty user/password
-            // is a legitimate "reverse proxy" setup (qui, traefik forward
-            // auth, …) where the proxy injects credentials on every call,
-            // so the upstream qBit doesn't need a /auth/login round-trip.
-            // See issue #10.
+            // qBittorrent — issue #131 moved it to service_instance. An
+            // instance only needs a URL: empty user/password is a legitimate
+            // "reverse proxy" setup (qui, traefik forward auth, …) where the
+            // proxy injects credentials on every call (issue #10).
             'qbittorrent' =>
-                $this->config->has('qbittorrent_url'),
+                $this->instances?->hasAnyEnabled(ServiceInstance::TYPE_QBITTORRENT) ?? false,
             // Deluge — URL only, same reverse-proxy stance as qBittorrent:
             // an empty password is a legitimate "the proxy injects the
             // session" setup, not a misconfiguration.
@@ -372,11 +374,110 @@ class HealthService implements ResetInterface
                 foreach (['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr', 'emby'] as $svc) {
                     $this->serviceHealthCache->clear($svc);
                 }
+                $this->clearInstanceBreakers();
             }
         } else {
             unset($this->statusCache[$service]);
             $this->serviceHealthCache?->clear($service);
+            if ($service === 'qbittorrent') {
+                $this->clearInstanceBreakers();
+            }
         }
+    }
+
+    /**
+     * QBittorrentClient keys its cross-request circuit breaker per instance
+     * slug (issue #131), so the slug-less clear() above misses those entries.
+     * Without this, "Test" / "Retry" after fixing one instance would still
+     * short-circuit it until the TTL runs out.
+     */
+    private function clearInstanceBreakers(): void
+    {
+        foreach ($this->instances?->getAll(ServiceInstance::TYPE_QBITTORRENT) ?? [] as $instance) {
+            $this->serviceHealthCache?->clear('qbittorrent', $instance->getSlug());
+        }
+    }
+
+    /**
+     * Probe one qBittorrent or Gluetun instance exactly as stored — the
+     * per-instance "Test" button (issue #131). Unlike diagnose() with
+     * overrides, an empty qBittorrent username/password here does NOT fall
+     * back to another instance's credentials: it is that instance's
+     * reverse-proxy mode (issue #10).
+     *
+     * @return array{ok: bool, category: string, http: ?int}
+     */
+    public function diagnoseInstance(ServiceInstance $instance): array
+    {
+        $probe = match ($instance->getType()) {
+            ServiceInstance::TYPE_QBITTORRENT => self::qbittorrentProbe(
+                $instance->getUrl(),
+                $instance->getUsername() ?? '',
+                $instance->getPassword() ?? '',
+            ),
+            ServiceInstance::TYPE_GLUETUN => self::gluetunProbe($instance->getUrl(), $instance->getApiKey() ?? ''),
+            default => null,
+        };
+        if ($probe === null) {
+            return ['ok' => false, 'category' => 'unknown', 'http' => null];
+        }
+        $resp = $this->httpProbe(
+            $probe['url'],
+            $probe['headers'] ?? [],
+            $probe['method'] ?? 'GET',
+            $probe['body'] ?? null,
+        );
+        return $this->diagnoseFromResponse($resp, $instance->getType());
+    }
+
+    /**
+     * Probe parameters for one Gluetun control server: a read-only GET of
+     * the public IP the VPN card displays. 401 = the route is protected and
+     * the API key is missing or wrong (Gluetun v3.40+ auth config).
+     *
+     * @return array{url: string, headers?: array<int,string>}
+     */
+    public static function gluetunProbe(string $url, string $apiKey): array
+    {
+        $probe = ['url' => rtrim($url, '/') . '/v1/publicip/ip'];
+        if ($apiKey !== '') {
+            $probe['headers'] = ['X-API-Key: ' . $apiKey];
+        }
+        return $probe;
+    }
+
+    /**
+     * Probe parameters for one qBittorrent WebUI. Public + static for
+     * testability (the curl side is harder to mock).
+     *
+     * Reverse-proxy mode (issue #10): missing user OR password means we
+     * shouldn't probe /auth/login because the body would be empty and qBit
+     * would answer "Fails." A lightweight GET /api/v2/app/version is enough
+     * to confirm reachability, and the proxy will inject auth transparently.
+     * If qBit is NOT actually behind a bypass-auth proxy, the call returns
+     * 403 → diagnosed as `forbidden`, which is the right hint for the user
+     * (they meant to fill creds and forgot one). No Referer on that probe:
+     * the proxy forwards it to qBit unchanged, and qBit's CSRF check answers
+     * 401 to any Referer that isn't its own host (the proxy's URL never is).
+     * QBittorrentClient sends none either, so the probe matches real calls.
+     *
+     * @return array{url: string, headers?: array<int,string>, method?: string, body?: string}
+     */
+    public static function qbittorrentProbe(string $url, string $user, string $pass): array
+    {
+        if ($user === '' || $pass === '') {
+            return ['url' => rtrim($url, '/') . '/api/v2/app/version'];
+        }
+
+        return [
+            'url'     => rtrim($url, '/') . '/api/v2/auth/login',
+            'headers' => [
+                'Content-Type: application/x-www-form-urlencoded',
+                'Referer: ' . rtrim($url, '/'),
+            ],
+            'method'  => 'POST',
+            'body'    => http_build_query(['username' => $user, 'password' => $pass]),
+        ];
     }
 
     /**
@@ -597,35 +698,21 @@ class HealthService implements ResetInterface
                 ];
             }
             case 'qbittorrent': {
-                $url  = $get('qbittorrent_url');
-                $user = $get('qbittorrent_user');
-                $pass = $get('qbittorrent_password');
+                // Issue #131 — the saved values live on the default
+                // qBittorrent instance; form overrides still win.
+                $default = $this->instances?->getDefault(ServiceInstance::TYPE_QBITTORRENT);
+                $pick = static function (string $key, ?string $saved) use ($overrides): string {
+                    if (is_array($overrides) && array_key_exists($key, $overrides)) {
+                        $v = trim((string) ($overrides[$key] ?? ''));
+                        if ($v !== '') return $v;
+                    }
+                    return (string) ($saved ?? '');
+                };
+                $url  = $pick('qbittorrent_url', $default?->getUrl());
+                $user = $pick('qbittorrent_user', $default?->getUsername());
+                $pass = $pick('qbittorrent_password', $default?->getPassword());
                 if ($url === '') return null;
-
-                // Reverse-proxy mode (issue #10): missing user OR password
-                // means we shouldn't probe /auth/login because the body
-                // would be empty and qBit would answer "Fails." A lightweight
-                // GET /api/v2/app/version is enough to confirm reachability,
-                // and the proxy will inject auth transparently. If qBit is
-                // NOT actually behind a bypass-auth proxy, the call returns
-                // 403 → diagnosed as `forbidden`, which is the right hint
-                // for the user (they meant to fill creds and forgot one).
-                if ($user === '' || $pass === '') {
-                    return [
-                        'url'     => rtrim($url, '/') . '/api/v2/app/version',
-                        'headers' => ['Referer: ' . rtrim($url, '/')],
-                    ];
-                }
-
-                return [
-                    'url'     => rtrim($url, '/') . '/api/v2/auth/login',
-                    'headers' => [
-                        'Content-Type: application/x-www-form-urlencoded',
-                        'Referer: ' . rtrim($url, '/'),
-                    ],
-                    'method'  => 'POST',
-                    'body'    => http_build_query(['username' => $user, 'password' => $pass]),
-                ];
+                return self::qbittorrentProbe($url, $user, $pass);
             }
             case 'deluge': {
                 $url  = $get('deluge_url');

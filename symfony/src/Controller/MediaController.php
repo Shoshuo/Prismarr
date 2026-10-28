@@ -2015,7 +2015,9 @@ class MediaController extends AbstractController
     #[Route('/telechargements', name: 'downloads')]
     public function downloads(): Response
     {
-        return $this->redirectToRoute('app_qbittorrent_index', [], 301);
+        // Issue #131 — the slug-less /qbittorrent URL forwards to the
+        // default instance itself (QBittorrentAggregateController).
+        return $this->redirectToRoute('legacy_qbittorrent_redirect', [], 301);
     }
 
     // ── Global search ────────────────────────────────────────────────────────

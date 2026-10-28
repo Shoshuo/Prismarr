@@ -804,8 +804,8 @@ class DashboardController extends AbstractController implements ResetInterface
      * v1.1.0 — radarr/sonarr expand to one chip PER enabled instance, named
      * after the instance (Radarr 1080p, Radarr 4K…), matching the topbar
      * dropdown / `/api/health/services` rather than collapsing to a single
-     * aggregate dot. Mono-instance services (prowlarr, jellyseerr, qbit, tmdb)
-     * keep one chip each. Unconfigured entries (isHealthy null) are dropped.
+     * aggregate dot. Mono-instance services (prowlarr, jellyseerr, tmdb)
+     * keep one chip each; qBittorrent expands per instance (issue #131). Unconfigured entries (isHealthy null) are dropped.
      */
     private function servicesHealth(): array
     {
@@ -825,6 +825,23 @@ class DashboardController extends AbstractController implements ResetInterface
 
         $labels = HealthCatalog::FLAT_SERVICES;
         foreach ($labels as $service => $label) {
+            // Issue #131 — qBittorrent keeps its catalog slot but gets one chip
+            // per enabled instance once there are 2+ (named after the
+            // instance); a single instance keeps the "qBittorrent" chip.
+            if ($service === ServiceInstance::TYPE_QBITTORRENT) {
+                $qbts = $this->instances->getEnabled($service);
+                foreach ($qbts as $inst) {
+                    try {
+                        $s = $this->health->statusFor($service, $inst->getSlug());
+                    } catch (\Throwable) {
+                        $s = ['status' => 'down', 'latencyMs' => null];
+                    }
+                    if ($s['status'] === null) continue; // disabled via the kill switch
+                    $name = count($qbts) > 1 ? $inst->getName() : $label;
+                    $chips[] = ['id' => $service, 'name' => $name, 'status' => $s['status'], 'latencyMs' => $s['latencyMs']];
+                }
+                continue;
+            }
             try {
                 $s = $this->health->statusFor($service);
             } catch (\Throwable) {

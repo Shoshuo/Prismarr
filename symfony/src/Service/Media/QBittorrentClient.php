@@ -2,11 +2,26 @@
 
 namespace App\Service\Media;
 
+use App\Entity\ServiceInstance;
 use App\Exception\ServiceNotConfiguredException;
 use App\Service\ConfigService;
+use App\Service\ServiceInstanceProvider;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Service\ResetInterface;
 
+/**
+ * qBittorrent WebUI API client.
+ *
+ * Issue #131 — multi-instance, same contract as RadarrClient / SonarrClient
+ * (CONTRIBUTING.md §5.1): the autowired client is unbound and lazily falls
+ * back to the default qBittorrent instance; MultiInstanceBinderSubscriber
+ * binds it for slug-aware `/qbittorrent/{slug}/…` routes (bindInstance), and
+ * code that iterates every instance in one request (poll summary, health)
+ * uses an immutable clone per instance (withInstance). The circuit breaker
+ * is keyed per instance slug so one unreachable qBittorrent doesn't silence
+ * the others. The service-level kill switch `qbittorrent_enabled` (issue #15)
+ * still disables every instance at once.
+ */
 class QBittorrentClient implements ResetInterface
 {
     private const SERVICE = 'qBittorrent';
@@ -40,6 +55,9 @@ class QBittorrentClient implements ResetInterface
     private string $user = '';
     private string $password = '';
 
+    /** Bound instance (explicit, or the default resolved on first call). */
+    private ?ServiceInstance $instance = null;
+
     /** @var array{code:int, method:string, path:string, message:string}|null */
     private ?array $lastError = null;
 
@@ -54,7 +72,81 @@ class QBittorrentClient implements ResetInterface
         private readonly ConfigService $config,
         private readonly LoggerInterface $logger,
         private readonly ServiceHealthCache $health,
+        private readonly ServiceInstanceProvider $instances,
     ) {}
+
+    /**
+     * Returns a clone bound to $instance — used where one request talks to
+     * every qBittorrent instance in turn (poll summary, health probes). The
+     * original client keeps its own binding.
+     */
+    public function withInstance(ServiceInstance $instance): self
+    {
+        self::assertType($instance, 'withInstance');
+        $clone = clone $this;
+        $clone->unbind($instance);
+        return $clone;
+    }
+
+    /**
+     * Point this client at $instance for the rest of the request. Used by
+     * MultiInstanceBinderSubscriber on the autowired client so the
+     * QBittorrentController actions keep calling `$this->qbt` unchanged.
+     * Worker-mode safe: reset() clears the binding between requests.
+     */
+    public function bindInstance(?ServiceInstance $instance): void
+    {
+        if ($instance !== null) {
+            self::assertType($instance, 'bindInstance');
+        }
+        $this->unbind($instance);
+    }
+
+    /** Currently bound instance (after binding or the first call), or null. */
+    public function getInstance(): ?ServiceInstance
+    {
+        return $this->instance;
+    }
+
+    private static function assertType(ServiceInstance $instance, string $method): void
+    {
+        if ($instance->getType() !== ServiceInstance::TYPE_QBITTORRENT) {
+            throw new \InvalidArgumentException(sprintf(
+                'QBittorrentClient::%s() expects a qbittorrent instance, got "%s".',
+                $method,
+                $instance->getType(),
+            ));
+        }
+    }
+
+    /** Drop every per-connection state and (re)bind to $instance. */
+    private function unbind(?ServiceInstance $instance): void
+    {
+        $this->instance = $instance;
+        $this->baseUrl = '';
+        $this->user = '';
+        $this->password = '';
+        $this->sid = null;
+        $this->serverStateCache = null;
+        $this->serverStateCacheAt = 0.0;
+        $this->lastError = null;
+        $this->serviceUnavailable = false;
+    }
+
+    /**
+     * Instance targeted by the next call: the bound one, else the default.
+     * Never throws — the circuit-breaker checks run before ensureConfig().
+     */
+    private function currentInstance(): ?ServiceInstance
+    {
+        return $this->instance ??= $this->instances->getDefault(ServiceInstance::TYPE_QBITTORRENT);
+    }
+
+    /** Slug the cross-request circuit breaker is keyed on (per instance). */
+    private function breakerSlug(): ?string
+    {
+        return $this->currentInstance()?->getSlug();
+    }
 
     private function ensureConfig(): void
     {
@@ -66,14 +158,19 @@ class QBittorrentClient implements ResetInterface
             // URL stays mandatory — without it we have nothing to talk to.
             // user/password are optional (issue #10): empty means "reverse
             // proxy injects auth", login() short-circuits accordingly.
-            $this->baseUrl  = $this->config->require('qbittorrent_url', self::SERVICE);
-            $this->user     = (string) ($this->config->get('qbittorrent_user') ?? '');
-            $this->password = (string) ($this->config->get('qbittorrent_password') ?? '');
+            $instance = $this->currentInstance();
+            if ($instance === null || !$instance->isEnabled()) {
+                throw new ServiceNotConfiguredException(self::SERVICE, 'service_instance:qbittorrent');
+            }
+            $this->baseUrl  = $instance->getUrl();
+            $this->user     = $instance->getUsername() ?? '';
+            $this->password = $instance->getPassword() ?? '';
         }
     }
 
     public function reset(): void
     {
+        $this->instance = null;
         $this->baseUrl = '';
         $this->user = '';
         $this->password = '';
@@ -378,7 +475,7 @@ class QBittorrentClient implements ResetInterface
     public function addTorrentFromFiles(array $files, ?string $category = null, ?string $savepath = null, bool $paused = false): bool
     {
         if (empty($files)) return false;
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->breakerSlug())) {
             $this->serviceUnavailable = true;
             return false;
         }
@@ -436,7 +533,7 @@ class QBittorrentClient implements ResetInterface
                 $this->recordError('POST', '/api/v2/torrents/add', (int) $code, is_string($response) ? $response : '', $curlErr);
                 if ($curlErr !== '' || (int) $code === 0) {
                     $this->serviceUnavailable = true;
-                    $this->health->markDown(self::SERVICE_KEY);
+                    $this->health->markDown(self::SERVICE_KEY, $this->breakerSlug());
                 }
                 return false;
             }
@@ -445,7 +542,7 @@ class QBittorrentClient implements ResetInterface
             if ($isFail) {
                 $this->recordError('POST', '/api/v2/torrents/add', (int) $code, (string) $response, $curlErr);
             } else {
-                $this->health->clear(self::SERVICE_KEY);
+                $this->health->clear(self::SERVICE_KEY, $this->breakerSlug());
             }
             return !$isFail;
         } finally {
@@ -727,7 +824,7 @@ class QBittorrentClient implements ResetInterface
         // Reuse the already-obtained SID (survives between requests in the same PHP-FPM worker).
         if ($this->sid !== null) return $this->sid;
 
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->breakerSlug())) {
             $this->serviceUnavailable = true;
             return null;
         }
@@ -745,7 +842,7 @@ class QBittorrentClient implements ResetInterface
         // getRaw() / postAction() recognize it and omit the Cookie header.
         if ($this->user === '' || $this->password === '') {
             $this->sid = self::NO_AUTH_SID;
-            $this->health->clear(self::SERVICE_KEY);
+            $this->health->clear(self::SERVICE_KEY, $this->breakerSlug());
             return $this->sid;
         }
 
@@ -777,7 +874,7 @@ class QBittorrentClient implements ResetInterface
             // Network failure → arm circuit breaker (in-process + cross-request)
             // so subsequent get/postAction calls bail out fast.
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY);
+            $this->health->markDown(self::SERVICE_KEY, $this->breakerSlug());
             return null;
         }
         curl_close($ch);
@@ -785,12 +882,12 @@ class QBittorrentClient implements ResetInterface
         // Empty/zero HTTP code also means we never reached the host.
         if ((int) $code === 0) {
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY);
+            $this->health->markDown(self::SERVICE_KEY, $this->breakerSlug());
         }
 
         $this->sid = self::extractSessionCookie($response);
         if ($this->sid !== null) {
-            $this->health->clear(self::SERVICE_KEY);
+            $this->health->clear(self::SERVICE_KEY, $this->breakerSlug());
         }
         return $this->sid;
     }
@@ -844,7 +941,7 @@ class QBittorrentClient implements ResetInterface
 
     private function getRaw(string $path, array $params = [], ?string $sid = null): ?string
     {
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->breakerSlug())) {
             $this->serviceUnavailable = true;
             return null;
         }
@@ -881,7 +978,7 @@ class QBittorrentClient implements ResetInterface
             $this->recordError('GET', $path, (int) $code, '', $curlErr);
             curl_close($ch);
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY);
+            $this->health->markDown(self::SERVICE_KEY, $this->breakerSlug());
             return null;
         }
         curl_close($ch);
@@ -895,18 +992,18 @@ class QBittorrentClient implements ResetInterface
             $this->recordError('GET', $path, (int) $code, is_string($body) ? $body : '', $curlErr);
             if ($curlErr !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY);
+                $this->health->markDown(self::SERVICE_KEY, $this->breakerSlug());
             }
             return null;
         }
 
-        $this->health->clear(self::SERVICE_KEY);
+        $this->health->clear(self::SERVICE_KEY, $this->breakerSlug());
         return $body;
     }
 
     private function postAction(string $path, array $params = [], bool $retried = false): bool
     {
-        if ($this->health->isDown(self::SERVICE_KEY)) {
+        if ($this->health->isDown(self::SERVICE_KEY, $this->breakerSlug())) {
             $this->serviceUnavailable = true;
             return false;
         }
@@ -945,7 +1042,7 @@ class QBittorrentClient implements ResetInterface
             $this->recordError('POST', $path, (int) $code, '', $curlErr);
             curl_close($ch);
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY);
+            $this->health->markDown(self::SERVICE_KEY, $this->breakerSlug());
             return false;
         }
         curl_close($ch);
@@ -960,12 +1057,12 @@ class QBittorrentClient implements ResetInterface
             $this->recordError('POST', $path, (int) $code, is_string($body) ? $body : '', $curlErr);
             if ($curlErr !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY);
+                $this->health->markDown(self::SERVICE_KEY, $this->breakerSlug());
             }
             return false;
         }
 
-        $this->health->clear(self::SERVICE_KEY);
+        $this->health->clear(self::SERVICE_KEY, $this->breakerSlug());
         return true;
     }
 }

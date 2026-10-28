@@ -31,16 +31,15 @@ use Symfony\Component\HttpKernel\KernelEvents;
  *
  * v1.1.0 — radarr/sonarr origins are aggregated across every enabled
  * instance (a multi-instance install with a 1080p + 4K Radarr needs
- * both whitelisted), the other services still use their flat setting.
+ * both whitelisted); qBittorrent and Gluetun joined them in #131. The
+ * other services still use their flat setting.
  */
 final class CspHeaderSubscriber implements EventSubscriberInterface
 {
-    /** Services still on flat settings (radarr/sonarr migrated to service_instance). */
+    /** Services still on flat settings (radarr/sonarr/qbittorrent/gluetun migrated to service_instance). */
     private const SERVICE_URL_KEYS = [
         'prowlarr_url',
         'jellyseerr_url',
-        'qbittorrent_url',
-        'gluetun_url',
     ];
 
     private const STATIC_IMG_HOSTS = [
@@ -104,7 +103,7 @@ final class CspHeaderSubscriber implements EventSubscriberInterface
                 $imgHosts[] = $origin;
             }
         }
-        foreach ([ServiceInstance::TYPE_RADARR, ServiceInstance::TYPE_SONARR] as $type) {
+        foreach (ServiceInstance::TYPES as $type) {
             foreach ($this->instances->getEnabled($type) as $instance) {
                 $origin = $this->extractOrigin($instance->getUrl());
                 if ($origin !== null) {

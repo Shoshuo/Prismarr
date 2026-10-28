@@ -57,17 +57,50 @@ class ConfigExtensionTest extends TestCase
         $this->assertFalse($ext->isServiceConfigured('radarr'));
     }
 
-    public function testQbittorrentConfiguredByUrlNotApiKey(): void
+    public function testQbittorrentConfiguredViaInstanceProvider(): void
     {
-        // qBittorrent uses URL as the presence indicator (no api_key concept).
-        $ext = $this->extension(['qbittorrent_url']);
+        // Issue #131 — qBittorrent moved to service_instance: an enabled
+        // instance is the presence indicator, the legacy flat URL is not.
+        $config = $this->createMock(ConfigService::class);
+        $config->method('has')->willReturnCallback(fn(string $k) => $k === 'qbittorrent_url');
+        $config->method('get')->willReturn(null);
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('hasAnyEnabled')->willReturnCallback(
+            fn(string $type) => $type === ServiceInstance::TYPE_QBITTORRENT
+        );
+        $ext = new ConfigExtension($config, $instances);
         $this->assertTrue($ext->isServiceConfigured('qbittorrent'));
+
+        $this->assertFalse(
+            $this->extension(['qbittorrent_url'])->isServiceConfigured('qbittorrent'),
+            'A leftover flat qbittorrent_url must not count once instances own the config.',
+        );
     }
 
-    public function testGluetunConfiguredByUrl(): void
+    public function testQbittorrentKillSwitchWinsOverEnabledInstance(): void
     {
-        $ext = $this->extension(['gluetun_url']);
-        $this->assertTrue($ext->isServiceConfigured('gluetun'));
+        // The kill switch stays service-level: it hides every instance at once.
+        $config = $this->createMock(ConfigService::class);
+        $config->method('get')->willReturnCallback(fn(string $k) => $k === 'qbittorrent_enabled' ? '0' : null);
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('hasAnyEnabled')->willReturn(true);
+        $ext = new ConfigExtension($config, $instances);
+
+        $this->assertFalse($ext->isServiceConfigured('qbittorrent'));
+        $this->assertFalse($ext->isServiceVisibleInSidebar('qbittorrent'));
+    }
+
+    public function testGluetunConfiguredViaInstanceProvider(): void
+    {
+        // Issue #131 — Gluetun is a multi-instance service: an enabled
+        // instance makes it configured, a leftover flat gluetun_url does not.
+        $this->assertFalse($this->extension(['gluetun_url'])->isServiceConfigured('gluetun'));
+
+        $config = $this->createMock(ConfigService::class);
+        $config->method('get')->willReturn(null);
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('hasAnyEnabled')->willReturnCallback(fn(string $type) => $type === ServiceInstance::TYPE_GLUETUN);
+        $this->assertTrue((new ConfigExtension($config, $instances))->isServiceConfigured('gluetun'));
     }
 
     public function testUnknownServiceReturnsFalse(): void
@@ -84,8 +117,6 @@ class ConfigExtensionTest extends TestCase
             'sonarr'      => 'sonarr_api_key',
             'prowlarr'    => 'prowlarr_api_key',
             'jellyseerr'  => 'jellyseerr_api_key',
-            'qbittorrent' => 'qbittorrent_url',
-            'gluetun'     => 'gluetun_url',
         ];
 
         foreach ($expectations as $service => $requiredKey) {

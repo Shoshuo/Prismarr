@@ -1,13 +1,22 @@
 {#
-  Compact instance list for Radarr / Sonarr inside the Services section.
-  Keeps every data-instance-* hook used by the inline JS of settings.html.twig
-  (set-default, toggle-enabled, test, delete) and the Bootstrap modal targets
-  rendered by _instance_modals.html.twig (outside the main form).
+  Compact instance list for Radarr / Sonarr / qBittorrent / Gluetun inside
+  the Services section. Keeps every data-instance-* hook used by the inline
+  JS of settings.html.twig (set-default, toggle-enabled, test, delete) and
+  the Bootstrap modal targets rendered by _instance_modals.html.twig
+  (outside the main form).
 
-  Inputs: service_id ('radarr' | 'sonarr'), service_label, instances
+  Inputs: service_id ('radarr' | 'sonarr' | 'qbittorrent' | 'gluetun'),
+          service_label, instances,
+          gluetun_instances (qBittorrent rows name their linked Gluetun),
+          qbittorrent_instances (Gluetun rows warn on delete when linked),
+          kill_switch (optional: current state of the service-level
+          `<service_id>_enabled` switch, rendered on the add-button row)
 #}
 {% import '_icons.html.twig' as ico %}
 {% set enabled_count = instances|filter(i => i.enabled)|length %}
+{# Gluetun has no sidebar entry or pages: disabling / deleting its last
+   instance hides nothing, so skip the "last enabled" warning. #}
+{% set warn_last = service_id != 'gluetun' %}
 
 <div class="inst-list">
   {% for instance in instances %}
@@ -16,6 +25,12 @@
       <div class="inst-main">
         <span class="inst-name">{{ instance.name }}</span>
         <span class="inst-url">{{ instance.url }}</span>
+        {% if service_id == 'qbittorrent' and instance.gluetunInstanceId %}
+          {% set linked = (gluetun_instances|default([]))|filter(g => g.id == instance.gluetunInstanceId)|first %}
+          {% if linked %}
+            <span class="inst-link">{{ 'admin.instances.field.gluetun_linked'|trans({ '%name%': linked.name }) }}</span>
+          {% endif %}
+        {% endif %}
       </div>
       {% if instance.default %}
         <span class="inst-default">{{ 'admin.instances.badge.default'|trans }}</span>
@@ -34,7 +49,7 @@
                data-instance-url="{{ path('admin_instances_toggle_enabled', { id: instance.id }) }}"
                data-instance-csrf="{{ csrf_token('admin_instance_toggle_' ~ instance.id) }}"
                data-instance-service="{{ service_label }}"
-               {% if instance.enabled and enabled_count == 1 %}data-instance-is-last-enabled="1"{% endif %}>
+               {% if warn_last and instance.enabled and enabled_count == 1 %}data-instance-is-last-enabled="1"{% endif %}>
       </label>
       <button type="button" class="btn btn-sm btn-outline-secondary instance-test-btn"
               data-instance-action="test"
@@ -58,7 +73,11 @@
               data-instance-service="{{ service_label }}"
               data-instance-url="{{ path('admin_instances_delete', { id: instance.id }) }}"
               data-instance-csrf="{{ csrf_token('admin_instance_delete_' ~ instance.id) }}"
-              {% if instance.enabled and enabled_count == 1 %}data-instance-is-last-enabled="1"{% endif %}
+              {% if service_id == 'gluetun' %}
+                {% set linked_qbt = (qbittorrent_instances|default([]))|filter(q => q.gluetunInstanceId == instance.id)|length %}
+                {% if linked_qbt > 0 %}data-instance-confirm="{{ 'admin.instances.action.delete_gluetun_linked_confirm'|trans({ name: instance.name, count: linked_qbt }) }}"{% endif %}
+              {% endif %}
+              {% if warn_last and instance.enabled and enabled_count == 1 %}data-instance-is-last-enabled="1"{% endif %}
               title="{{ 'admin.instances.action.delete'|trans }}" aria-label="{{ 'admin.instances.action.delete'|trans }}">
         {{ ico.icon('trash', '', 16) }}
       </button>
@@ -67,7 +86,19 @@
     <p class="inst-empty">{{ 'admin.instances.empty.subtitle'|trans({ '%service%': service_label }) }}</p>
   {% endfor %}
 
-  <button type="button" class="svc-add-btn inst-add" data-bs-toggle="modal" data-bs-target="#instance-add-modal-{{ service_id }}">
-    {{ 'admin.instances.add'|trans({ '%service%': service_label }) }}
-  </button>
+  {# Add button and the optional service-level switch share one row, both
+     vertically centred (qBittorrent keeps its kill switch, issue #15). #}
+  <div class="inst-foot">
+    <button type="button" class="svc-add-btn inst-add" data-bs-toggle="modal" data-bs-target="#instance-add-modal-{{ service_id }}">
+      {{ 'admin.instances.add'|trans({ '%service%': service_label }) }}
+    </button>
+    {% if kill_switch is defined and kill_switch is not null %}
+      <span class="flex-fill"></span>
+      <label class="form-check form-switch m-0" title="{{ 'admin.services.enabled_title'|trans }}">
+        <input class="form-check-input" type="checkbox" name="{{ service_id }}_enabled" value="1"
+               {{ kill_switch ? 'checked' : '' }}>
+        <span class="form-check-label">{{ 'admin.services.enabled'|trans }}</span>
+      </label>
+    {% endif %}
+  </div>
 </div>

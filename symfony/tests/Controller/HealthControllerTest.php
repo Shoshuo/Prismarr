@@ -3,6 +3,7 @@
 namespace App\Tests\Controller;
 
 use App\Controller\HealthController;
+use App\Entity\ServiceInstance;
 use App\Service\HealthService;
 use App\Service\ServiceInstanceProvider;
 use Doctrine\DBAL\Connection;
@@ -69,11 +70,22 @@ class HealthControllerTest extends TestCase
             default       => null,   // prowlarr, jellyseerr, tmdb not configured
         });
 
+        // Issue #131 — qBittorrent is probed per instance.
+        $health->method('isConfigured')->willReturn(true);
+        $qbt = new ServiceInstance(ServiceInstance::TYPE_QBITTORRENT, 'qbittorrent-1', 'qBittorrent 1', 'http://10.0.0.2:8080');
         $instances = $this->createMock(ServiceInstanceProvider::class);
-        $instances->method('getEnabled')->willReturn([]);
+        $instances->method('getEnabled')->willReturnCallback(
+            fn(string $type) => $type === ServiceInstance::TYPE_QBITTORRENT ? [$qbt] : []
+        );
 
         $response = $this->newController()->servicesHealth($health, $instances);
         $payload  = json_decode((string) $response->getContent(), true);
+
+        $this->assertTrue($payload['services']['qbittorrent']);
+        $this->assertSame(
+            [['slug' => 'qbittorrent-1', 'name' => 'qBittorrent 1', 'state' => true]],
+            $payload['instances']['qbittorrent'],
+        );
 
         // Both clients present in the services map.
         $this->assertArrayHasKey('sabnzbd', $payload['services']);
@@ -99,5 +111,29 @@ class HealthControllerTest extends TestCase
         $this->assertStringNotContainsString('SQLSTATE', $response->getContent());
         $this->assertStringNotContainsString('/var/www', $response->getContent());
         $this->assertStringNotContainsString('password', $response->getContent());
+    }
+
+    public function testQbittorrentKillSwitchHidesEveryInstance(): void
+    {
+        // Issue #15 kill switch stays service-level: no instance is probed.
+        $health = $this->createMock(HealthService::class);
+        $health->method('isConfigured')->willReturnCallback(fn(string $s) => $s !== 'qbittorrent');
+        $probed = [];
+        $health->method('isHealthy')->willReturnCallback(function (string $s) use (&$probed) {
+            $probed[] = $s;
+            return null;
+        });
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getEnabled')->willReturnCallback(
+            fn(string $type) => $type === ServiceInstance::TYPE_QBITTORRENT
+                ? [new ServiceInstance(ServiceInstance::TYPE_QBITTORRENT, 'qbittorrent-1', 'qBittorrent 1', 'http://10.0.0.2:8080')]
+                : []
+        );
+
+        $payload = json_decode((string) $this->newController()->servicesHealth($health, $instances)->getContent(), true);
+
+        $this->assertNotContains('qbittorrent', $probed);
+        $this->assertNull($payload['services']['qbittorrent']);
+        $this->assertSame([], $payload['instances']['qbittorrent']);
     }
 }

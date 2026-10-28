@@ -3,6 +3,8 @@
 namespace App\EventSubscriber;
 
 use App\Entity\ServiceInstance;
+use App\Service\Media\GluetunClient;
+use App\Service\Media\QBittorrentClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use App\Service\ServiceInstanceProvider;
@@ -23,8 +25,13 @@ use Symfony\Component\HttpKernel\KernelEvents;
  *
  * Decision is route-name driven (not URL-shape driven) so a future route
  * rename doesn't silently break the binding. The `_route` attribute MUST
- * start with `radarr_`, `sonarr_`, or `app_media_` for the subscriber to
- * touch anything; everything else is left untouched.
+ * start with `radarr_`, `sonarr_`, `app_media_` or `app_qbittorrent_` for
+ * the subscriber to touch anything; everything else is left untouched.
+ *
+ * Issue #131 — qBittorrent routes (`/qbittorrent/{slug}/…`) bind the
+ * QBittorrentClient to that instance and the GluetunClient to the Gluetun
+ * instance it links to (or to none), so the VPN panel follows the selected
+ * download client.
  *
  * Skipped on sub-requests (forward(), ESI fragments) so a media controller
  * forwarded into another won't re-bind the parent's client.
@@ -43,6 +50,8 @@ final class MultiInstanceBinderSubscriber implements EventSubscriberInterface
         private readonly ServiceInstanceProvider $instances,
         private readonly RadarrClient $radarr,
         private readonly SonarrClient $sonarr,
+        private readonly QBittorrentClient $qbittorrent,
+        private readonly GluetunClient $gluetun,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -86,11 +95,17 @@ final class MultiInstanceBinderSubscriber implements EventSubscriberInterface
             ));
         }
 
-        if ($type === ServiceInstance::TYPE_RADARR) {
-            $this->radarr->bindInstance($instance);
-        } else {
-            $this->sonarr->bindInstance($instance);
-        }
+        match ($type) {
+            ServiceInstance::TYPE_RADARR => $this->radarr->bindInstance($instance),
+            ServiceInstance::TYPE_SONARR => $this->sonarr->bindInstance($instance),
+            ServiceInstance::TYPE_QBITTORRENT => $this->bindQbittorrent($instance),
+        };
+    }
+
+    private function bindQbittorrent(ServiceInstance $instance): void
+    {
+        $this->qbittorrent->bindInstance($instance);
+        $this->gluetun->bindInstance($this->instances->getGluetunFor($instance));
     }
 
     /**
@@ -103,6 +118,7 @@ final class MultiInstanceBinderSubscriber implements EventSubscriberInterface
      *   - `app_media_*`  → MediaController routes; films/series sub-paths
      *                      target Radarr (films) or Sonarr (series). The
      *                      route name carries the disambiguator.
+     *   - `app_qbittorrent_*` → QBittorrentController (issue #131)
      */
     private function routeToInstanceType(string $route): ?string
     {
@@ -117,6 +133,9 @@ final class MultiInstanceBinderSubscriber implements EventSubscriberInterface
         }
         if (str_starts_with($route, 'app_media_series') || str_starts_with($route, 'app_media_sonarr')) {
             return ServiceInstance::TYPE_SONARR;
+        }
+        if (str_starts_with($route, 'app_qbittorrent_')) {
+            return ServiceInstance::TYPE_QBITTORRENT;
         }
         return null;
     }

@@ -5,6 +5,13 @@ All notable changes to Prismarr are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Multiple qBittorrent instances** ([#131](https://github.com/Shoshuo/Prismarr/issues/131)). qBittorrent moves to the same multi-instance model as Radarr / Sonarr: add as many instances as you need in `/admin/settings → Services` (name, URL, optional username / password), each with its own enable switch and Test button. The qBittorrent page gains an instance switcher in the topbar when 2+ instances are enabled, and every page URL carries the instance (`/qbittorrent/<slug>`); the sidebar lists the instances (1 / 2-3 / 4+ layout, like Radarr) with a per-instance active-downloads badge, and completion toasts name the instance. Reverse-proxy mode ([#10](https://github.com/Shoshuo/Prismarr/issues/10)) is decided per instance: leaving the username or password empty skips `/auth/login`. The health views (topbar, dashboard chips) expand qBittorrent to one row per instance once there are two or more.
+- **Multiple Gluetun instances, linked from qBittorrent** ([#131](https://github.com/Shoshuo/Prismarr/issues/131)). Gluetun becomes its own multi-instance service in `/admin/settings → Services → Downloads` (name, control-server URL, optional API key, read-only Test button), with or without any qBittorrent. Each qBittorrent instance picks its Gluetun from a dropdown (or None), and the VPN / public IP / forwarded-port panel of the qBittorrent page follows the selected instance's Gluetun; with none linked it shows its usual empty state. Deleting a Gluetun instance only unlinks the qBittorrent instances that used it.
+- **Existing installs need no action:** a migration turns the current `gluetun_url` / `gluetun_api_key` settings into instance `gluetun-1` (kept even when no qBittorrent is configured), and `qbittorrent_url` / `_user` / `_password` into instance `qbittorrent-1` (the default) linked to `gluetun-1`, so a single-instance setup keeps working exactly as before. Old `/qbittorrent/…` URLs and bookmarks redirect to the default instance, and the existing qBittorrent kill switch and sidebar toggle still apply to every instance. Settings exports now include qBittorrent and Gluetun instances (usernames, URLs and the Gluetun links; passwords and API keys stay out, as for every secret), and importing an export made before this change recreates `gluetun-1` and `qbittorrent-1`, linked.
+
 ## [1.3.0] - 2026-10-21
 
 ### Security

@@ -80,6 +80,7 @@ class FlatServiceClientDisabledTest extends TestCase
             $this->configReturning(['qbittorrent_enabled' => '0']),
             new NullLogger(),
             new ServiceHealthCache(new ArrayAdapter()),
+            $this->createMock(\App\Service\ServiceInstanceProvider::class),
         );
 
         $this->expectException(ServiceNotConfiguredException::class);

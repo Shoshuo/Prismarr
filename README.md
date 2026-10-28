@@ -112,7 +112,7 @@ queued for later.
 - **Movies & Series:** Radarr and Sonarr libraries with five view modes, **multiple instances side by side** (1080p / 4K / Anime, each first-class in the UI), global `Ctrl+K` search and a quick-add modal with a per-instance target picker.
 - **Unified calendar:** movie and episode releases merged across instances, deduped by `tmdbId` / `tvdbId`, with month / week / day views and iCal export.
 - **Dashboard:** hero spotlight, upcoming releases, pending Seerr requests, live service health, watchlist, trending and latest additions. Paints instantly, each widget hydrates on its own.
-- **Downloads:** full qBittorrent dashboard (server-side pagination, sorting, filters, drag-and-drop upload), Deluge and Transmission pages, and dedicated SABnzbd and NZBGet pages, plus an optional Transmission dashboard widget. Optional Gluetun integration.
+- **Downloads:** full qBittorrent dashboard (server-side pagination, sorting, filters, drag-and-drop upload) with **multiple qBittorrent instances** and an instance switcher, each optionally linked to one of your Gluetun instances for its VPN panel; Deluge and Transmission pages, and dedicated SABnzbd and NZBGet pages, plus an optional Transmission dashboard widget.
 - **Search:** one box for movies, series and people, typo-tolerant with a Google-style "did you mean", inline filters (type, genre, rating, sort, hide what you have), a large best-match card and each result's library status. With the box empty: trending movie and series banners, recommendations from your library, trending rows, plus the watchlist and an explorer.
 - **Plex activity (Tautulli):** optional read-only page (now playing, watch stats, graphs, history) plus a "Current Plex activity" dashboard widget. The API key stays server-side and responses are sanitised.
 - **Subtitles (Bazarr):** optional admin-only page with Wanted / Movies / Series / History views, plus a per-title subtitle badge on the Films and Series pages, in the quick-look modal and in `Ctrl+K` results — click a badge to search and download a subtitle without leaving Prismarr. Refreshes happen off the request path, so the badges cost nothing to render.
@@ -131,7 +131,7 @@ queued for later.
 - Docker and Docker Compose
 - At least one of: Radarr, Sonarr, Prowlarr, Seerr, or a download client
   (qBittorrent, Deluge, Transmission, SABnzbd, NZBGet)
-- Optional: Gluetun if qBittorrent runs behind a VPN
+- Optional: Gluetun if qBittorrent runs behind a VPN (one or more Gluetun instances, each qBittorrent instance picks its own)
 - Optional: Tautulli, Tracearr or Emby for playback activity, Bazarr for subtitles
 - Optional: a TMDb API key (free) to enable the Search page
 
@@ -222,7 +222,8 @@ Everything is configured from the UI:
 
 External service credentials (TMDb / Radarr / Sonarr / Prowlarr / Seerr
 API keys, qBittorrent password, service URLs), display preferences and
-language are stored in the SQLite database (`setting` table). They never
+language are stored in the SQLite database (`setting` table, plus
+`service_instance` for Radarr / Sonarr / qBittorrent / Gluetun instances). They never
 appear in environment variables or in any committable file.
 
 Two framework-level secrets - `APP_SECRET` and `MERCURE_JWT_SECRET` - are

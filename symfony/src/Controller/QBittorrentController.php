@@ -3,10 +3,11 @@
 namespace App\Controller;
 
 use App\Controller\Concerns\ApiClientErrorTrait;
-use App\Service\ConfigService;
+use App\Entity\ServiceInstance;
 use App\Service\Media\GluetunClient;
 use App\Service\Media\QBittorrentClient;
 use App\Service\Media\TorrentResolverService;
+use App\Service\ServiceInstanceProvider;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,8 +17,18 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
+/**
+ * qBittorrent page + its JSON API, scoped to one instance (issue #131).
+ *
+ * The class-level `/qbittorrent/{slug}` prefix makes every action slug-aware:
+ * MultiInstanceBinderSubscriber binds the autowired QBittorrentClient and
+ * GluetunClient to that instance before the action runs (unknown slug → 404),
+ * so the actions keep calling `$this->qbt` / `$this->gluetun` unchanged.
+ * Slug-less legacy URLs (`/qbittorrent`, `/qbittorrent/api/…`) and the
+ * cross-instance poll summary live in QBittorrentAggregateController.
+ */
 #[IsGranted('ROLE_ADMIN')]
-#[Route('/qbittorrent', name: 'app_qbittorrent_')]
+#[Route('/qbittorrent/{slug}', name: 'app_qbittorrent_', requirements: ['slug' => '[a-z0-9][a-z0-9-]*'])]
 class QBittorrentController extends AbstractController
 {
     use ApiClientErrorTrait;
@@ -26,41 +37,10 @@ class QBittorrentController extends AbstractController
         private readonly QBittorrentClient $qbt,
         private readonly GluetunClient $gluetun,
         private readonly TorrentResolverService $resolver,
-        private readonly ConfigService $config,
+        private readonly ServiceInstanceProvider $instances,
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
     ) {}
-
-    /**
-     * Lightweight endpoint for the global poll (sidebar + toasts) — returns only important transitions.
-     * Returns only hash + state + name — no heavy details.
-     */
-    #[Route('/api/poll-summary', name: 'api_poll_summary', methods: ['GET'])]
-    public function apiPollSummary(): JsonResponse
-    {
-        try {
-            $torrents = $this->qbt->getTorrents();
-            $active   = 0;
-            $items    = [];
-            foreach ($torrents as $t) {
-                $state = $t['state'] ?? '';
-                if ($state === 'downloading') $active++;
-                // Only the states watched for toasts: completed + error
-                if (in_array($state, ['completed', 'error', 'downloading', 'seeding'], true)) {
-                    $items[] = [
-                        'hash'  => $t['hash'] ?? '',
-                        'state' => $state,
-                        'name'  => $t['name'] ?? '—',
-                        'size'  => (int)($t['size'] ?? 0),
-                    ];
-                }
-            }
-            return $this->json(['active' => $active, 'items' => $items]);
-        } catch (\Throwable $e) {
-            $this->logger->warning('QBittorrent poll-summary failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
-            return $this->json(['error' => $e->getMessage()], 500);
-        }
-    }
 
     #[Route('/api/vpn', name: 'api_vpn', methods: ['GET'])]
     public function apiVpn(): JsonResponse
@@ -131,6 +111,9 @@ class QBittorrentController extends AbstractController
             $this->logger->warning('Gluetun summary failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
         }
 
+        // The binder subscriber already resolved the slug (404 otherwise).
+        $instance = $this->qbt->getInstance() ?? $this->instances->getDefault(ServiceInstance::TYPE_QBITTORRENT);
+
         return $this->render('qbittorrent/index.html.twig', [
             'torrents'   => $torrents,
             'stats'      => $stats,
@@ -138,7 +121,10 @@ class QBittorrentController extends AbstractController
             'tags'       => $tags,
             'error'      => $error,
             'vpn'        => $vpn,
-            'service_url' => $this->config->get('qbittorrent_url'),
+            'service_url' => $instance?->getUrl(),
+            // Instance switcher (issue #131) — only rendered with 2+ enabled.
+            'current_instance' => $instance,
+            'qbt_instances'    => $this->instances->getEnabled(ServiceInstance::TYPE_QBITTORRENT),
         ]);
     }
 

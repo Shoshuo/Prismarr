@@ -48,8 +48,10 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         'app_media_sonarr'  => ['service' => 'Sonarr',      'service_id' => 'sonarr',      'instance_type' => ServiceInstance::TYPE_SONARR,    'index' => 'app_media_series'],
         'prowlarr_'         => ['service' => 'Prowlarr',    'service_id' => 'prowlarr',    'keys' => ['prowlarr_api_key', 'prowlarr_url'],     'index' => 'prowlarr_index'],
         'jellyseerr_'       => ['service' => 'Jellyseerr',  'service_id' => 'jellyseerr',  'keys' => ['jellyseerr_api_key', 'jellyseerr_url'], 'index' => 'jellyseerr_index'],
-        'qbittorrent_'      => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'keys' => ['qbittorrent_url', 'qbittorrent_user'],  'index' => 'app_qbittorrent_index'],
-        'app_qbittorrent'   => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'keys' => ['qbittorrent_url', 'qbittorrent_user'],  'index' => 'app_qbittorrent_index'],
+        // Issue #131 — qBittorrent lives in service_instance; an instance only
+        // needs a URL (empty user/password = reverse-proxy mode, issue #10).
+        'qbittorrent_'      => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'instance_type' => ServiceInstance::TYPE_QBITTORRENT, 'index' => 'app_qbittorrent_index'],
+        'app_qbittorrent'   => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'instance_type' => ServiceInstance::TYPE_QBITTORRENT, 'index' => 'app_qbittorrent_index'],
         'deluge_'           => ['service' => 'Deluge',      'service_id' => 'deluge',      'keys' => ['deluge_url'],                            'index' => 'app_deluge_index'],
         'app_deluge'        => ['service' => 'Deluge',      'service_id' => 'deluge',      'keys' => ['deluge_url'],                            'index' => 'app_deluge_index'],
         'transmission_'     => ['service' => 'Transmission', 'service_id' => 'transmission', 'keys' => ['transmission_url'],                   'index' => 'app_transmission_index'],
@@ -101,7 +103,7 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // 0b. URL targets a disabled Radarr/Sonarr instance — same treatment,
+        // 0b. URL targets a disabled Radarr/Sonarr/qBittorrent instance — same treatment,
         //     named after the instance. (Unknown slug stays a 404, handled by
         //     MultiInstanceBinderSubscriber which runs after this one.)
         if (isset($rule['instance_type'])) {
@@ -138,6 +140,12 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         $slug = is_string($event->getRequest()->attributes->get('slug'))
             ? $event->getRequest()->attributes->get('slug')
             : null;
+        //    The slug-less qBittorrent route (the cross-instance poll) is
+        //    skipped: there is no single instance to probe, the index needs a
+        //    slug, and it reports per-instance failures in its own JSON.
+        if (($rule['instance_type'] ?? null) === ServiceInstance::TYPE_QBITTORRENT && $slug === null) {
+            return;
+        }
         if ($route !== $rule['index'] && $this->health->isHealthy($rule['service_id'], $slug) === false) {
             $params = $slug !== null ? ['slug' => $slug] : [];
             $event->setResponse(new RedirectResponse($this->urls->generate($rule['index'], $params)));

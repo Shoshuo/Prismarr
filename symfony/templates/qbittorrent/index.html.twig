@@ -1,7 +1,28 @@
 {% extends 'base.html.twig' %}
 {% import '_icons.html.twig' as ico %}
-{% block title %}{{ 'qbittorrent.page_title'|trans }}{% endblock %}
-{% block page_title %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f67ba" stroke-width="2"><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path d="M7 11l5 5 5-5"/><path d="M12 4v12"/></svg> {{ 'qbittorrent.page_title'|trans }}{% endblock %}
+{# Issue #131 — with 2+ enabled instances the title carries the instance
+   name and the topbar gets an instance switcher; a single-instance install
+   renders exactly as before. #}
+{% set _qbt_multi = (qbt_instances|default([]))|length > 1 and current_instance %}
+{% set _qbt_label = _qbt_multi ? current_instance.name : 'qbittorrent.page_title'|trans %}
+{% block title %}{{ _qbt_label }}{% endblock %}
+{% block page_title %}<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f67ba" stroke-width="2"><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path d="M7 11l5 5 5-5"/><path d="M12 4v12"/></svg> {{ _qbt_label }}{% endblock %}
+{% block page_actions %}
+  {% if _qbt_multi %}
+    <div class="dropdown" style="position:relative;">
+      <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-prismarr-dropdown="qbt-instance-switcher"
+              title="{{ 'qbittorrent.instances.switch'|trans }}" aria-label="{{ 'qbittorrent.instances.switch'|trans }}">
+        {{ current_instance.name }}
+      </button>
+      <div class="dropdown-menu dropdown-menu-end" id="qbt-instance-switcher">
+        {% for _inst in qbt_instances %}
+          <a class="dropdown-item {{ _inst.slug == current_instance.slug ? 'active' }}"
+             href="{{ path('app_qbittorrent_index', { slug: _inst.slug }) }}">{{ _inst.name }}</a>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
 {# Always a full reload in/out of this page — its 3s poller uses a
    window-global timer handle shared with the other torrent client pages
    (qBittorrent/Deluge/Transmission); a Turbo in-place visit can leave the
@@ -868,7 +889,8 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
 {% block javascripts %}
 <script>
 (function(){
-    var BASE = '{{ path("app_qbittorrent_index") }}';
+    // Every JSON call below is relative to the current instance (issue #131).
+    var BASE = {{ path('app_qbittorrent_index', { slug: current_instance.slug })|json_encode|raw }};
     var currentFilter = 'all';
     var selectedHashes = {};
     var deleteTarget = { hashes: [], mode: 'single' };

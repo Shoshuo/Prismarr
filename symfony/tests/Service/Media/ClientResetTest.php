@@ -128,13 +128,15 @@ class ClientResetTest extends TestCase
 
     public function testQBittorrentClientResetClearsSessionAndCaches(): void
     {
-        $config = $this->createMock(ConfigService::class);
-        $config->method('require')->willReturn('dummy');
+        $instance = new \App\Entity\ServiceInstance(\App\Entity\ServiceInstance::TYPE_QBITTORRENT, 'qbittorrent-1', 'qBittorrent 1', 'http://qbit.lan:8080');
+        $provider = $this->createMock(\App\Service\ServiceInstanceProvider::class);
+        $provider->method('getDefault')->willReturn($instance);
 
         $client = new QBittorrentClient(
-            $config,
+            $this->createMock(ConfigService::class),
             $this->createMock(LoggerInterface::class),
             new ServiceHealthCache(new ArrayAdapter()),
+            $provider,
         );
 
         $ref = new \ReflectionClass($client);
@@ -166,15 +168,14 @@ class ClientResetTest extends TestCase
         $this->assertNull($sid->getValue($client));
         $this->assertNull($stateCache->getValue($client));
         $this->assertSame(0.0, $stateCacheAt->getValue($client));
+        // Issue #131 — the instance binding must not survive the request.
+        $this->assertNull($client->getInstance());
     }
 
     public function testGluetunClientResetDropsAllCaches(): void
     {
-        $config = $this->createMock(ConfigService::class);
-        $config->method('get')->willReturn(null);
-
         $client = new GluetunClient(
-            $config,
+            $this->createMock(\App\Service\ServiceInstanceProvider::class),
             $this->createMock(LoggerInterface::class),
         );
 

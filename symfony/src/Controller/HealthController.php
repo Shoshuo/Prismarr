@@ -37,8 +37,8 @@ class HealthController extends AbstractController
     /**
      * Per-service health snapshot for the topbar indicator. Returns a flat
      * `services` map (kept for back-compat with older JS — `bool|null` per
-     * service) plus an `instances` map detailing each Radarr/Sonarr
-     * instance individually, so the topbar can render one row per
+     * service) plus an `instances` map detailing each Radarr/Sonarr/
+     * qBittorrent instance individually, so the topbar can render one row per
      * configured instance ("Radarr 4K — Up", "Radarr 1080p — Down")
      * instead of a single aggregate "Radarr" entry.
      *
@@ -51,12 +51,17 @@ class HealthController extends AbstractController
         ServiceInstanceProvider $instances,
     ): JsonResponse {
         $services = [];
-        $instancesMap = ['radarr' => [], 'sonarr' => []];
+        $instancesMap = ['radarr' => [], 'sonarr' => [], 'qbittorrent' => []];
         $ok    = 0;
         $total = 0;
 
-        // Flat single-instance services first.
+        // Flat single-instance services first. qBittorrent keeps its catalog
+        // slot (the kill switch is still service-level) but is probed per
+        // instance below (issue #131).
         foreach (array_keys(HealthCatalog::FLAT_SERVICES) as $service) {
+            if ($service === ServiceInstance::TYPE_QBITTORRENT) {
+                continue;
+            }
             try {
                 $state = $health->isHealthy($service);
             } catch (\Throwable) {
@@ -69,13 +74,17 @@ class HealthController extends AbstractController
             }
         }
 
-        // Multi-instance Radarr / Sonarr — ping each enabled instance and
-        // aggregate. Service-level state = AND of every instance state
-        // (so the dot turns red as soon as any one is down). null when
-        // no instance is configured / enabled.
-        foreach ([ServiceInstance::TYPE_RADARR, ServiceInstance::TYPE_SONARR] as $type) {
+        // Multi-instance Radarr / Sonarr / qBittorrent — ping each enabled
+        // instance and aggregate. Service-level state = AND of every
+        // instance state (so the dot turns red as soon as any one is down).
+        // null when no instance is configured / enabled.
+        foreach ([ServiceInstance::TYPE_RADARR, ServiceInstance::TYPE_SONARR, ServiceInstance::TYPE_QBITTORRENT] as $type) {
             $aggregate = null;
-            foreach ($instances->getEnabled($type) as $instance) {
+            // The qBittorrent kill switch (issue #15) hides every instance.
+            $enabled = $type === ServiceInstance::TYPE_QBITTORRENT && !$health->isConfigured($type)
+                ? []
+                : $instances->getEnabled($type);
+            foreach ($enabled as $instance) {
                 try {
                     $state = $health->isHealthy($type, $instance->getSlug());
                 } catch (\Throwable) {

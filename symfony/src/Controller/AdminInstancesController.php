@@ -43,7 +43,7 @@ class AdminInstancesController extends AbstractController
         private readonly TranslatorInterface $translator,
     ) {}
 
-    #[Route('/{type}/add', name: 'add', methods: ['POST'], requirements: ['type' => 'radarr|sonarr'])]
+    #[Route('/{type}/add', name: 'add', methods: ['POST'], requirements: ['type' => 'radarr|sonarr|qbittorrent|gluetun'])]
     public function add(string $type, Request $request): RedirectResponse
     {
         if (!$this->isCsrfTokenValid('admin_instance_add_' . $type, (string) $request->request->get('_csrf_token'))) {
@@ -59,6 +59,10 @@ class AdminInstancesController extends AbstractController
                 apiKey:  (string) $request->request->get('api_key', ''),
                 slug:    $this->trimToNull($request->request->get('slug')),
                 enabled: $request->request->get('enabled', '1') === '1',
+                // qBittorrent only (issue #131) — absent for the other types.
+                username:          $this->trimToNull($request->request->get('username')),
+                password:          $this->trimToNull($request->request->get('password')),
+                gluetunInstanceId: $this->gluetunLink($request) ?: null,
             );
             $this->afterMutation();
             $this->addFlash('success', $this->translator->trans('admin.instances.flash.created'));
@@ -91,6 +95,15 @@ class AdminInstancesController extends AbstractController
                 slug:     $this->trimToNull($request->request->get('slug')),
                 enabled:  $request->request->get('enabled', '1') === '1',
                 defaultQualityProfileId: $this->parseQualityProfileId($request),
+                // qBittorrent only (issue #131). Username: absent = leave
+                // unchanged, empty = clear. Password: empty = unchanged, the
+                // explicit "clear" checkbox wipes (reverse-proxy mode, #10).
+                username:          $this->textField($request, 'username'),
+                password:          (string) $request->request->get('password', ''),
+                clearPassword:     $request->request->get('clear_password') === '1',
+                gluetunInstanceId: $this->gluetunLink($request),
+                // Gluetun's API key is optional: its edit form can clear it.
+                clearApiKey:       $request->request->get('clear_api_key') === '1',
             );
             $this->afterMutation();
             $this->addFlash('success', $this->translator->trans('admin.instances.flash.updated'));
@@ -193,11 +206,19 @@ class AdminInstancesController extends AbstractController
             return new JsonResponse(['ok' => false, 'category' => 'unknown'], 400);
         }
 
-        $overrides = [
-            $instance->getType() . '_url'     => $instance->getUrl(),
-            $instance->getType() . '_api_key' => $instance->getApiKey() ?? '',
-        ];
-        $result = $this->health->diagnose($instance->getType(), $overrides);
+        if (in_array($instance->getType(), [ServiceInstance::TYPE_QBITTORRENT, ServiceInstance::TYPE_GLUETUN], true)) {
+            // Probe exactly this instance's stored values: an empty qBittorrent
+            // username/password is its reverse-proxy mode (#10), it must not
+            // fall back to another instance's values like overrides would.
+            // Gluetun: a read-only GET to its control server.
+            $result = $this->health->diagnoseInstance($instance);
+        } else {
+            $overrides = [
+                $instance->getType() . '_url'     => $instance->getUrl(),
+                $instance->getType() . '_api_key' => $instance->getApiKey() ?? '',
+            ];
+            $result = $this->health->diagnose($instance->getType(), $overrides);
+        }
 
         $resp = new JsonResponse([
             'ok'       => (bool) $result['ok'],
@@ -227,6 +248,26 @@ class AdminInstancesController extends AbstractController
     {
         $s = trim((string) ($raw ?? ''));
         return $s === '' ? null : $s;
+    }
+
+    /** Plain text input: absent → false (leave unchanged), else trimmed value ('' = clear). */
+    private function textField(Request $request, string $key): string|false
+    {
+        return $request->request->has($key) ? trim((string) $request->request->get($key, '')) : false;
+    }
+
+    /**
+     * Map the qBittorrent form's Gluetun select to the provider's tri-state:
+     * field absent → false (leave unchanged); empty "None" → null (unlink);
+     * a numeric id → link to that Gluetun instance.
+     */
+    private function gluetunLink(Request $request): int|false|null
+    {
+        if (!$request->request->has('gluetun_instance_id')) {
+            return false;
+        }
+        $raw = trim((string) $request->request->get('gluetun_instance_id', ''));
+        return ctype_digit($raw) ? (int) $raw : null;
     }
 
     /**

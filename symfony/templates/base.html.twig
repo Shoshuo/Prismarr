@@ -1048,18 +1048,62 @@
             </li>
             {% endif %}
 
+            {# Issue #131 — qBittorrent: same 1 / 2-3 / 4+ layout as Radarr above.
+               The global poll fills #sidebar-qbt-badge with the total and each
+               [data-qbt-badge] with that instance's own count. #}
             {% if service_visible_in_sidebar('qbittorrent') %}
-            <li class="nav-item">
-              <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_qbittorrent_' ? 'active' }}"
-                 href="{{ path('app_qbittorrent_index') }}">
+              {% set _qbt_instances = service_instances('qbittorrent') %}
+              {% set _qbt_count = _qbt_instances|length %}
+              {% set _qbt_active = app.request.attributes.get('_route') starts with 'app_qbittorrent_' %}
+              {% set _qbt_slug = app.request.attributes.get('slug') %}
+              {% set _qbt_icon %}
                 <span class="nav-link-icon d-md-none d-lg-inline-block">
                   <img src="{{ asset('img/services/qbittorrent.svg') }}" width="24" height="24" alt="" class="icon">
                 </span>
-                <span class="nav-link-title d-flex align-items-center">{{ 'sidebar.nav.qbittorrent'|trans }}
-                  <span id="sidebar-qbt-badge" class="sidebar-dl-badge" style="display:none;">0</span>
-                </span>
-              </a>
-            </li>
+              {% endset %}
+
+              {% if _qbt_count <= 1 %}
+                <li class="nav-item">
+                  <a class="nav-link {{ _qbt_active ? 'active' }}" href="{{ instance_path('app_qbittorrent_index') }}">
+                    {{ _qbt_icon|raw }}
+                    <span class="nav-link-title d-flex align-items-center">{{ 'sidebar.nav.qbittorrent'|trans }}
+                      <span id="sidebar-qbt-badge" class="sidebar-dl-badge" style="display:none;">0</span>
+                    </span>
+                  </a>
+                </li>
+              {% elseif _qbt_count <= 3 %}
+                {% for _inst in _qbt_instances %}
+                  <li class="nav-item">
+                    <a class="nav-link {{ _qbt_active and _qbt_slug == _inst.slug ? 'active' }}"
+                       href="{{ instance_path('app_qbittorrent_index', { slug: _inst.slug }) }}">
+                      {{ _qbt_icon|raw }}
+                      <span class="nav-link-title d-flex align-items-center">{{ _inst.name }}
+                        <span class="sidebar-dl-badge" data-qbt-badge="{{ _inst.slug }}" style="display:none;">0</span>
+                      </span>
+                    </a>
+                  </li>
+                {% endfor %}
+              {% else %}
+                {% set _qbt_active_inst = _qbt_active ? _qbt_instances|filter(i => i.slug == _qbt_slug)|first : null %}
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle {{ _qbt_active ? 'active' }}"
+                     href="#" data-prismarr-dropdown="qbittorrent-instances-menu" role="button" aria-expanded="false">
+                    {{ _qbt_icon|raw }}
+                    <span class="nav-link-title d-flex align-items-center">{{ _qbt_active_inst ? _qbt_active_inst.name : 'sidebar.nav.qbittorrent'|trans }}
+                      <span id="sidebar-qbt-badge" class="sidebar-dl-badge" style="display:none;">0</span>
+                    </span>
+                  </a>
+                  <div class="dropdown-menu" id="qbittorrent-instances-menu">
+                    {% for _inst in _qbt_instances %}
+                      <a class="dropdown-item d-flex align-items-center {{ _qbt_active and _qbt_slug == _inst.slug ? 'active' }}"
+                         href="{{ instance_path('app_qbittorrent_index', { slug: _inst.slug }) }}">
+                        {{ _inst.name }}
+                        <span class="sidebar-dl-badge" data-qbt-badge="{{ _inst.slug }}" style="display:none;">0</span>
+                      </a>
+                    {% endfor %}
+                  </div>
+                </li>
+              {% endif %}
             {% endif %}
 
             {% if service_visible_in_sidebar('deluge') %}
@@ -2566,17 +2610,22 @@
     // block below.
     function fmtGo(bytes) { return window.prismarrBytes(bytes); }
 
-    function updateBadge(active) {
-      var label = active > 99 ? '99+' : String(active);
+    function setBadge(badge, active) {
+      if (!badge) return;
+      if (active > 0) {
+        badge.textContent = active > 99 ? '99+' : String(active);
+        badge.style.display = '';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+    function updateBadge(active, bySlug) {
       ['sidebar-qbt-badge', 'sidebar-media-badge'].forEach(function (id) {
-        var badge = document.getElementById(id);
-        if (!badge) return;
-        if (active > 0) {
-          badge.textContent = label;
-          badge.style.display = '';
-        } else {
-          badge.style.display = 'none';
-        }
+        setBadge(document.getElementById(id), active);
+      });
+      // Issue #131 — per-instance sidebar entries carry their own count.
+      document.querySelectorAll('[data-qbt-badge]').forEach(function (badge) {
+        setBadge(badge, (bySlug || {})[badge.getAttribute('data-qbt-badge')] || 0);
       });
     }
 
@@ -2613,16 +2662,19 @@
 
           // Success: reset backoff and resume base interval.
           window._prismarrQbtFailCount = 0;
-          updateBadge(d.active || 0);
+          updateBadge(d.active || 0, d.active_by_instance);
 
           // Detect transitions (vs previous snapshot)
           var prev = loadPrev();
           var next = {};
           var justCompleted = [];
           var justErrored = [];
+          // `key` = "<instance slug>:<hash>" (issue #131): the same torrent
+          // can live on several instances, each copy completing on its own.
           (d.items || []).forEach(function (it) {
-            next[it.hash] = it.state;
-            var was = prev[it.hash];
+            it.key = it.key || it.hash;
+            next[it.key] = it.state;
+            var was = prev[it.key];
             if (was === 'downloading' && (it.state === 'completed' || it.state === 'seeding')) {
               justCompleted.push(it);
             }
@@ -2632,17 +2684,18 @@
           });
 
           if (window._prismarrToast) {
+            // `instance` is only sent when 2+ instances are enabled.
             justCompleted.forEach(function (it) {
-              if (alreadyNotified(it.hash)) return;
+              if (alreadyNotified(it.key)) return;
               var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
-              window._prismarrToast(truncated + ' — ' + fmtGo(it.size), 'success', 6000);
-              markNotified(it.hash);
+              window._prismarrToast(truncated + ' — ' + fmtGo(it.size) + (it.instance ? ' · ' + it.instance : ''), 'success', 6000);
+              markNotified(it.key);
             });
             justErrored.forEach(function (it) {
-              if (alreadyNotified(it.hash)) return;
+              if (alreadyNotified(it.key)) return;
               var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
-              window._prismarrToast('Erreur sur : ' + truncated, 'danger', 8000);
-              markNotified(it.hash);
+              window._prismarrToast('Erreur sur : ' + truncated + (it.instance ? ' · ' + it.instance : ''), 'danger', 8000);
+              markNotified(it.key);
             });
           }
 
@@ -2785,16 +2838,19 @@
 
           // Success: reset backoff and resume base interval.
           window._prismarrDelugeFailCount = 0;
-          updateBadge(d.active || 0);
+          updateBadge(d.active || 0, d.active_by_instance);
 
           // Detect transitions (vs previous snapshot)
           var prev = loadPrev();
           var next = {};
           var justCompleted = [];
           var justErrored = [];
+          // `key` = "<instance slug>:<hash>" (issue #131): the same torrent
+          // can live on several instances, each copy completing on its own.
           (d.items || []).forEach(function (it) {
-            next[it.hash] = it.state;
-            var was = prev[it.hash];
+            it.key = it.key || it.hash;
+            next[it.key] = it.state;
+            var was = prev[it.key];
             if (was === 'downloading' && (it.state === 'completed' || it.state === 'seeding')) {
               justCompleted.push(it);
             }
@@ -2804,17 +2860,18 @@
           });
 
           if (window._prismarrToast) {
+            // `instance` is only sent when 2+ instances are enabled.
             justCompleted.forEach(function (it) {
-              if (alreadyNotified(it.hash)) return;
+              if (alreadyNotified(it.key)) return;
               var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
-              window._prismarrToast(truncated + ' — ' + fmtGo(it.size), 'success', 6000);
-              markNotified(it.hash);
+              window._prismarrToast(truncated + ' — ' + fmtGo(it.size) + (it.instance ? ' · ' + it.instance : ''), 'success', 6000);
+              markNotified(it.key);
             });
             justErrored.forEach(function (it) {
-              if (alreadyNotified(it.hash)) return;
+              if (alreadyNotified(it.key)) return;
               var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
-              window._prismarrToast('Erreur sur : ' + truncated, 'danger', 8000);
-              markNotified(it.hash);
+              window._prismarrToast('Erreur sur : ' + truncated + (it.instance ? ' · ' + it.instance : ''), 'danger', 8000);
+              markNotified(it.key);
             });
           }
 
@@ -2959,16 +3016,19 @@
 
           // Success: reset backoff and resume base interval.
           window._prismarrTransmissionFailCount = 0;
-          updateBadge(d.active || 0);
+          updateBadge(d.active || 0, d.active_by_instance);
 
           // Detect transitions (vs previous snapshot)
           var prev = loadPrev();
           var next = {};
           var justCompleted = [];
           var justErrored = [];
+          // `key` = "<instance slug>:<hash>" (issue #131): the same torrent
+          // can live on several instances, each copy completing on its own.
           (d.items || []).forEach(function (it) {
-            next[it.hash] = it.state;
-            var was = prev[it.hash];
+            it.key = it.key || it.hash;
+            next[it.key] = it.state;
+            var was = prev[it.key];
             if (was === 'downloading' && (it.state === 'completed' || it.state === 'seeding')) {
               justCompleted.push(it);
             }
@@ -2978,17 +3038,18 @@
           });
 
           if (window._prismarrToast) {
+            // `instance` is only sent when 2+ instances are enabled.
             justCompleted.forEach(function (it) {
-              if (alreadyNotified(it.hash)) return;
+              if (alreadyNotified(it.key)) return;
               var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
-              window._prismarrToast(truncated + ' — ' + fmtGo(it.size), 'success', 6000);
-              markNotified(it.hash);
+              window._prismarrToast(truncated + ' — ' + fmtGo(it.size) + (it.instance ? ' · ' + it.instance : ''), 'success', 6000);
+              markNotified(it.key);
             });
             justErrored.forEach(function (it) {
-              if (alreadyNotified(it.hash)) return;
+              if (alreadyNotified(it.key)) return;
               var truncated = (it.name || '').length > 60 ? it.name.substring(0, 60) + '…' : it.name;
-              window._prismarrToast('Erreur sur : ' + truncated, 'danger', 8000);
-              markNotified(it.hash);
+              window._prismarrToast('Erreur sur : ' + truncated + (it.instance ? ' · ' + it.instance : ''), 'danger', 8000);
+              markNotified(it.key);
             });
           }
 
@@ -3253,9 +3314,17 @@
             html += rowFor(inst.name, inst.state);
           });
         });
-        // Remaining flat services, in catalog order.
+        // Remaining flat services, in catalog order. qBittorrent keeps its
+        // slot but expands to one row per instance once there are 2+
+        // (issue #131); a single instance reads "qBittorrent" as before.
         Object.keys(FLAT_LABELS).forEach(function (id) {
-          if (id !== 'tmdb') html += rowFor(FLAT_LABELS[id], services[id]);
+          if (id === 'tmdb') return;
+          var flatInsts = (data.instances || {})[id] || [];
+          if (flatInsts.length > 1) {
+            flatInsts.forEach(function (inst) { html += rowFor(inst.name, inst.state); });
+            return;
+          }
+          html += rowFor(FLAT_LABELS[id], services[id]);
         });
         list.innerHTML = html;
       }

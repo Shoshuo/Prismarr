@@ -200,7 +200,11 @@
   .inst-url { font-family: var(--tblr-font-monospace); font-size: .74rem; color: var(--tblr-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .inst-default { font-size: .7rem; font-weight: 600; padding: .15rem .5rem; border-radius: 4px; background: rgba(var(--tblr-primary-rgb), .15); color: var(--tblr-primary); }
   .inst-empty { font-size: .82rem; color: var(--tblr-secondary); margin: .25rem 0; }
-  .inst-add { align-self: flex-start; margin-top: .4rem; }
+  .inst-link { font-size: .72rem; color: var(--tblr-secondary); }
+  .inst-foot { display: flex; align-items: center; gap: .75rem; margin-top: .4rem; }
+  .inst-foot .form-check { display: flex; align-items: center; gap: .5rem; min-height: 0; padding-left: 0; }
+  .inst-foot .form-check-input { float: none; margin: 0; }
+  .inst-foot .form-check-label { font-size: .8rem; color: var(--tblr-secondary); }
   @media (max-width: 640px) {
     .svc-body { padding-left: .9rem; }
     .inst-row { flex-wrap: wrap; }
@@ -695,6 +699,7 @@
             service_id:    service_id,
             service_label: service_labels[service_id],
             instances:     instances_list,
+            gluetun_instances: instances_by_type.gluetun|default([]),
           } only %}
         {% endfor %}
 
@@ -1292,7 +1297,7 @@
               svcPaint(el, services[el.dataset.svcStatus]);
             });
             var bySlug = {};
-            ['radarr', 'sonarr'].forEach(function (type) {
+            ['radarr', 'sonarr', 'qbittorrent'].forEach(function (type) {
               ((data.instances || {})[type] || []).forEach(function (i) { bySlug[type + ':' + i.slug] = i.state; });
             });
             document.querySelectorAll('[data-svc-instance-status]').forEach(function (el) {
@@ -1476,6 +1481,9 @@
             ? {{ 'admin.instances.action.delete_last_confirm'|trans({ '%name%': '__NAME__', '%service%': '__SERVICE__' })|json_encode|raw }}
             : {{ 'admin.instances.action.delete_confirm'|trans({ '%name%': '__NAME__' })|json_encode|raw }};
           var msg = tpl.replace('__NAME__', name).replace('__SERVICE__', service);
+          // A Gluetun linked to qBittorrent instances carries its own
+          // server-rendered warning: deleting it unlinks them.
+          if (btn.dataset.instanceConfirm) msg = btn.dataset.instanceConfirm;
           if (!confirm(msg)) return;
           btn.disabled = true;
           instanceFetch(btn).then(reloadAfterMutation).catch(function () {

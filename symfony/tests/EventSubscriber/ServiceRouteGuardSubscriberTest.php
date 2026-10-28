@@ -20,10 +20,13 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 #[AllowMockObjectsWithoutExpectations]
 class ServiceRouteGuardSubscriberTest extends TestCase
 {
-    private function event(string $routeName): RequestEvent
+    private function event(string $routeName, ?string $slug = null): RequestEvent
     {
         $request = Request::create('/whatever');
         $request->attributes->set('_route', $routeName);
+        if ($slug !== null) {
+            $request->attributes->set('slug', $slug);
+        }
         $request->setSession(new Session(new MockArraySessionStorage()));
         $kernel = $this->createMock(HttpKernelInterface::class);
         return new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
@@ -54,6 +57,9 @@ class ServiceRouteGuardSubscriberTest extends TestCase
                 ServiceInstance::TYPE_SONARR =>
                     in_array('sonarr_api_key', $configuredKeys, true)
                     && in_array('sonarr_url',     $configuredKeys, true),
+                // Issue #131 — marker for "an enabled qBittorrent instance".
+                ServiceInstance::TYPE_QBITTORRENT =>
+                    in_array('qbittorrent_instance', $configuredKeys, true),
                 default => false,
             }
         );
@@ -255,5 +261,49 @@ class ServiceRouteGuardSubscriberTest extends TestCase
         $sub->onKernelRequest($event);
 
         $this->assertFalse($event->hasResponse());
+    }
+
+    public function testQbittorrentInstanceConfiguredAndHealthyLetsThrough(): void
+    {
+        $event = $this->event('app_qbittorrent_api_torrents', 'qbittorrent-1');
+        $sub = $this->subscriber(configuredKeys: ['qbittorrent_instance'], healthy: ['qbittorrent']);
+        $sub->onKernelRequest($event);
+
+        $this->assertFalse($event->hasResponse());
+    }
+
+    public function testQbittorrentUnhealthyInstanceRedirectsToItsIndex(): void
+    {
+        $event = $this->event('app_qbittorrent_api_torrents', 'qbittorrent-2');
+        $sub = $this->subscriber(configuredKeys: ['qbittorrent_instance'], healthy: []);
+        $sub->onKernelRequest($event);
+
+        $response = $event->getResponse();
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertSame('/_route/app_qbittorrent_index', $response->getTargetUrl());
+    }
+
+    public function testQbittorrentSlugLessAggregateRouteSkipsHealthRedirect(): void
+    {
+        // The cross-instance poll summary has no slug: no single instance to
+        // probe and the index needs one, so the guard must let it through
+        // even when the default instance is down.
+        $event = $this->event('app_qbittorrent_api_poll_summary');
+        $sub = $this->subscriber(configuredKeys: ['qbittorrent_instance'], healthy: []);
+        $sub->onKernelRequest($event);
+
+        $this->assertFalse($event->hasResponse());
+    }
+
+    public function testQbittorrentLegacyFlatKeysAloneAreNotConfigured(): void
+    {
+        // A leftover flat qbittorrent_url (no instance row) must not count.
+        $event = $this->event('app_qbittorrent_index', 'qbittorrent-1');
+        $sub = $this->subscriber(configuredKeys: ['qbittorrent_url', 'qbittorrent_user'], healthy: ['qbittorrent']);
+        $sub->onKernelRequest($event);
+
+        $response = $event->getResponse();
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertSame('/_route/app_configure_services', $response->getTargetUrl());
     }
 }

@@ -7,10 +7,66 @@
    closing </form> tag, once per service_id (radarr, sonarr).
 
    Inputs:
-     - service_id: 'radarr' | 'sonarr'
+     - service_id: 'radarr' | 'sonarr' | 'qbittorrent' | 'gluetun'
      - service_label: human label
      - instances: list<ServiceInstance>
+     - gluetun_instances: list<ServiceInstance> (the qBittorrent Gluetun picker)
+
+   Issue #131: qBittorrent swaps the API key for an optional username /
+   password (both empty = reverse-proxy mode, issue #10) and a picker for
+   the Gluetun instance its VPN panel reads. Gluetun takes a URL and an
+   optional API key (only needed when its control server is protected).
 #}
+{% macro secret_input(id, name, value) %}
+  {% import '_icons.html.twig' as ico %}
+  <div class="secret-wrapper">
+    <input type="password" id="{{ id }}" name="{{ name }}" class="form-control"
+           value="{{ value }}" autocomplete="new-password" spellcheck="false"/>
+    <button type="button" class="secret-toggle" data-toggle-for="{{ id }}"
+            aria-label="{{ 'setup.step.admin.toggle_visibility'|trans }}">{{ ico.icon('eye', '', 16) }}</button>
+  </div>
+{% endmacro %}
+{% macro qbt_fields(prefix, instance, gluetun_instances) %}
+  {% import _self as m %}
+  {% set clearable = instance is not null %}
+  <div class="row g-2 mb-1">
+    <div class="col-sm-6 mb-2">
+      <label class="form-label" for="{{ prefix }}-user">{{ 'admin.field.username'|trans }}</label>
+      <input type="text" id="{{ prefix }}-user" name="username" class="form-control"
+             value="{{ instance ? instance.username ?? '' : '' }}" autocomplete="off" spellcheck="false"/>
+    </div>
+    <div class="col-sm-6 mb-2">
+      <label class="form-label" for="{{ prefix }}-pass">{{ 'admin.field.password'|trans }}</label>
+      {{ m.secret_input(prefix ~ '-pass', 'password', instance ? instance.password ?? '' : '') }}
+      {% if clearable and instance.password %}
+        <label class="form-check mt-1 mb-0"><input class="form-check-input" type="checkbox" name="clear_password" value="1">
+          <span class="form-check-label small">{{ 'admin.instances.field.clear_password'|trans }}</span></label>
+      {% endif %}
+    </div>
+  </div>
+  <small class="form-hint d-block mb-3">{{ 'admin.instances.field.qbittorrent_auth_hint'|trans }}</small>
+  <div class="mb-3">
+    <label class="form-label" for="{{ prefix }}-gluetun">{{ 'admin.instances.field.gluetun'|trans }}</label>
+    <select id="{{ prefix }}-gluetun" name="gluetun_instance_id" class="form-select">
+      <option value="">{{ 'admin.instances.field.gluetun_none'|trans }}</option>
+      {% for g in gluetun_instances %}
+        <option value="{{ g.id }}"{{ instance and instance.gluetunInstanceId == g.id ? ' selected' : '' }}>{{ g.name }}{{ g.enabled ? '' : ' (' ~ 'admin.services.state.disabled'|trans ~ ')' }}</option>
+      {% endfor %}
+    </select>
+    <small class="form-hint">{{ 'admin.instances.field.gluetun_hint'|trans }}</small>
+  </div>
+{% endmacro %}
+{% macro gluetun_fields(prefix, instance) %}
+  {% import _self as m %}
+  <div class="mb-3">
+    <label class="form-label" for="{{ prefix }}-key">{{ 'admin.field.api_key_if_protected'|trans }}</label>
+    {{ m.secret_input(prefix ~ '-key', 'api_key', instance ? instance.apiKey ?? '' : '') }}
+    {% if instance and instance.apiKey %}
+      <label class="form-check mt-1 mb-0"><input class="form-check-input" type="checkbox" name="clear_api_key" value="1">
+        <span class="form-check-label small">{{ 'admin.instances.field.clear_api_key'|trans }}</span></label>
+    {% endif %}
+  </div>
+{% endmacro %}
 
 {# ─── Add modale ─────────────────────────────────────────────── #}
 <div class="modal modal-blur fade" id="instance-add-modal-{{ service_id }}" tabindex="-1" aria-hidden="true">
@@ -31,9 +87,14 @@
         <div class="mb-3">
           <label class="form-label" for="instance-add-url-{{ service_id }}">{{ 'admin.field.url'|trans }}</label>
           <input type="text" id="instance-add-url-{{ service_id }}" name="url" class="form-control"
-                 placeholder="{% if service_id == 'radarr' %}http://host.docker.internal:7878{% else %}http://host.docker.internal:8989{% endif %}"
+                 placeholder="{{ {radarr: 'http://host.docker.internal:7878', sonarr: 'http://host.docker.internal:8989', qbittorrent: 'http://host.docker.internal:8080', gluetun: 'http://gluetun:8000'}[service_id] }}"
                  required/>
         </div>
+        {% if service_id == 'qbittorrent' %}
+          {{ _self.qbt_fields('instance-add-' ~ service_id, null, gluetun_instances|default([])) }}
+        {% elseif service_id == 'gluetun' %}
+          {{ _self.gluetun_fields('instance-add-' ~ service_id, null) }}
+        {% else %}
         <div class="mb-3">
           <label class="form-label" for="instance-add-key-{{ service_id }}">{{ 'admin.field.api_key'|trans }}</label>
           <div class="secret-wrapper">
@@ -50,6 +111,10 @@
             </button>
           </div>
         </div>
+        {% endif %}
+        {# Gluetun has no pages, so its slug never appears in a URL: it stays
+           auto-generated from the name and the field is hidden. #}
+        {% if service_id != 'gluetun' %}
         <details>
           <summary style="cursor: pointer; font-size: .85rem; color: var(--tblr-secondary);">
             {{ 'admin.instances.field.advanced'|trans }}
@@ -61,6 +126,7 @@
             <small class="form-hint">{{ 'admin.instances.field.slug_hint'|trans }}</small>
           </div>
         </details>
+        {% endif %}
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'common.action.cancel'|trans }}</button>
@@ -92,6 +158,11 @@
             <input type="text" id="instance-edit-url-{{ instance.id }}" name="url" class="form-control"
                    value="{{ instance.url }}" required/>
           </div>
+          {% if service_id == 'qbittorrent' %}
+            {{ _self.qbt_fields('instance-edit-' ~ instance.id, instance, gluetun_instances|default([])) }}
+          {% elseif service_id == 'gluetun' %}
+            {{ _self.gluetun_fields('instance-edit-' ~ instance.id, instance) }}
+          {% else %}
           <div class="mb-3">
             <label class="form-label" for="instance-edit-key-{{ instance.id }}">{{ 'admin.field.api_key'|trans }}</label>
             <div class="secret-wrapper">
@@ -128,6 +199,8 @@
             </select>
             <small class="form-hint">{{ 'admin.instances.field.default_quality_profile_hint'|trans }}</small>
           </div>
+          {% endif %}
+          {% if service_id != 'gluetun' %}
           <details>
             <summary style="cursor: pointer; font-size: .85rem; color: var(--tblr-secondary);">
               {{ 'admin.instances.field.advanced'|trans }}
@@ -139,6 +212,7 @@
               <small class="form-hint text-danger">{{ ico.icon('alert-triangle', '', 14) }} {{ 'admin.instances.field.slug_warning'|trans }}</small>
             </div>
           </details>
+          {% endif %}
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'common.action.cancel'|trans }}</button>
