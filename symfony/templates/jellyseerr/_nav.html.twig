@@ -16,6 +16,13 @@
     {{ 'jellyseerr.nav.requests'|trans }}
   </a>
 
+  <a href="{{ path('jellyseerr_issues') }}"
+     class="btn btn-sm {{ _route == 'jellyseerr_issues' ? 'btn-primary' : 'btn-ghost-primary' }}"
+     title="{{ 'jellyseerr.nav.issues'|trans }}"
+     style="{{ _route == 'jellyseerr_issues' ? 'background:#a259ff;border-color:#a259ff;' : '' }}">
+    {{ 'jellyseerr.nav.issues'|trans }}
+  </a>
+
   <a href="{{ path('jellyseerr_users') }}"
      class="btn btn-sm {{ _isUsers ? 'btn-secondary' : 'btn-ghost-secondary' }}"
      title="{{ 'jellyseerr.nav.users'|trans }}">

@@ -5,6 +5,11 @@ All notable changes to Prismarr are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Seerr media issues in Prismarr** ([#133](https://github.com/Shoshuo/Prismarr/issues/133)). Problems users report in Seerr (bad video or audio, missing subtitles, other) now have a read-only **Issues** page next to Requests: each issue shows the movie or show (a click opens the quick-look), the issue type, open/resolved, the season and episode for shows, the reporter's description, who reported it and when, and the reply count, with an "Open in Seerr" link for commenting or resolving. Open / Resolved / All filters (open by default), newest / last-modified sort and a counts row (open, resolved, per type). The dashboard's Requests card gains an "N open issues reported" row linking to the page, shown only when something is open; if Seerr fails to answer the row is hidden rather than showing zero. Reporter avatars hosted outside Seerr (Plex, Gravatar) show an initial instead, since the CSP only allows Seerr's own images. EN + FR.
+
 ## [1.3.0] - 2026-10-21
 
 ### Security

@@ -2,6 +2,20 @@
    by DashboardController::widgetRequests into the card's [data-dash-body].
    Returns the empty-state message when there are no pending requests. #}
 {% import '_icons.html.twig' as ico %}
+{# Open Seerr issues (upstream #133) — one summary row on top, only when
+   there is something to look at. #}
+{% set open_issues = jellyseerr_open_issues ?? 0 %}
+{% if open_issues > 0 %}
+  <a href="{{ path('jellyseerr_issues') }}" class="list-group-item list-group-item-action text-reset text-decoration-none" data-dash-open-issues>
+    <div class="dash-poster-placeholder text-warning">{{ ico.icon('alert-triangle', '', 24) }}</div>
+    <div class="dash-item-body">
+      <div class="dash-item-title text-truncate">{{ 'dashboard.requests.open_issues'|trans({count: open_issues}) }}</div>
+    </div>
+    <div class="dash-item-aside">
+      <span class="badge bg-warning-lt text-warning">{{ 'dashboard.requests.view_issues'|trans }}</span>
+    </div>
+  </a>
+{% endif %}
 {% if jellyseerr_requests is empty %}
   <div class="card-body text-center text-secondary py-4">
     {{ 'dashboard.requests.empty'|trans }}

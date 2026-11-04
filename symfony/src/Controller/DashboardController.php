@@ -317,8 +317,14 @@ class DashboardController extends AbstractController implements ResetInterface
         }
         set_time_limit(60);
 
+        // Open Seerr issues (upstream #133) ride along in the same card as a
+        // single summary row: one cheap /issue/count call, null on failure so
+        // a Seerr blip hides the row instead of showing a misleading zero.
+        $issueCounts = $this->safeFetch('jellyseerr.issue_count', fn() => $this->jellyseerr->getIssueCount());
+
         return $this->render('dashboard/_requests.html.twig', [
-            'jellyseerr_requests' => $this->pendingRequests(),
+            'jellyseerr_requests'    => $this->pendingRequests(),
+            'jellyseerr_open_issues' => is_array($issueCounts) && isset($issueCounts['open']) ? (int) $issueCounts['open'] : 0,
         ]);
     }
 

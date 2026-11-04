@@ -312,6 +312,8 @@ dashboard:
     manage_cta: 'Manage →'
     by: by
     status_pending: Pending
+    open_issues: '{count, plural, one {# open issue reported} other {# open issues reported}}'
+    view_issues: 'View →'
   health:
     title: Services health
     settings_cta: 'Settings →'
@@ -4840,6 +4842,7 @@ prowlarr:
 jellyseerr:
   nav:
     requests: Requests
+    issues: Issues
     users: Users
     tasks_cache: Tasks & Cache
     settings: Settings
@@ -4932,6 +4935,35 @@ jellyseerr:
     season_status_approved: Approved
     season_status_pending: Pending
     season_status_processing: Processing
+  issues:
+    title: Issues
+    stat_open: Open
+    stat_resolved: Resolved
+    stat_video: Video
+    stat_audio: Audio
+    stat_subtitles: Subtitles
+    stat_other: Other
+    filter_open: Open
+    filter_resolved: Resolved
+    filter_all: All
+    sort_added: Most recent
+    sort_modified: Last modified
+    type_video: Video
+    type_audio: Audio
+    type_subtitles: Subtitles
+    type_other: Other
+    status_open: Open
+    status_resolved: Resolved
+    all_seasons: All seasons
+    season_tpl: 'Season {season}'
+    season_episode_tpl: 'S{season} · E{episode}'
+    no_description: No description
+    replies: '{count, plural, one {# reply} other {# replies}}'
+    open_in_seerr: Open in Seerr
+    none_open: No open issues.
+    none_resolved: No resolved issues.
+    none: No issues reported.
+    reported_by: Reported by
   user_detail:
     page_title_tpl: '__NAME__ — Seerr'
     member_since_tpl: 'Member since __DATE__'

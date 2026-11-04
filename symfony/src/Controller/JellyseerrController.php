@@ -12,6 +12,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[IsGranted('ROLE_ADMIN')]
@@ -21,13 +24,23 @@ class JellyseerrController extends AbstractController
     use ApiClientErrorTrait;
 
     private const VALID_FILTERS = ['all', 'pending', 'approved', 'processing', 'available', 'partial', 'unavailable', 'failed'];
+    private const ISSUE_FILTERS = ['open', 'resolved', 'all'];
+    /** Keeps ($page - 1) * take an int: a huge ?page= overflowed into a float → TypeError. */
+    private const ISSUE_MAX_PAGE = 10000;
+    /** Issue-card titles: they barely change, and each one is a Seerr round trip. */
+    private const ISSUE_TITLE_TTL = 21600;
+
+    private readonly CacheInterface $cache;
 
     public function __construct(
         private readonly JellyseerrClient $jellyseerr,
         private readonly ConfigService $config,
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
-    ) {}
+        ?CacheInterface $cache = null,
+    ) {
+        $this->cache = $cache ?? new ArrayAdapter();
+    }
 
     // ── Main page — Requests ─────────────────────────────────────────────────
 
@@ -137,6 +150,141 @@ class JellyseerrController extends AbstractController
             $this->logger->warning('Jellyseerr pending-count failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    // ── Issues page (read-only, upstream #133) ───────────────────────────────
+
+    /**
+     * Media issues users reported in Seerr (bad video/audio, missing
+     * subtitles, ...). Read-only: each card links out to the issue in Seerr
+     * for commenting/resolving.
+     */
+    #[Route('/issues', name: 'issues')]
+    public function issues(Request $request): Response
+    {
+        $filter = $request->query->get('filter', 'open');
+        if (!in_array($filter, self::ISSUE_FILTERS, true)) {
+            $filter = 'open';
+        }
+        $sort = $request->query->get('sort', 'added');
+        if (!in_array($sort, ['added', 'modified'], true)) {
+            $sort = 'added';
+        }
+        $page = min(self::ISSUE_MAX_PAGE, max(1, $request->query->getInt('page', 1)));
+        $take = 20;
+
+        $error  = false;
+        $issues = [];
+        $pageInfo = [];
+        $counts = [];
+        $serviceUrl = rtrim((string) $this->config->get('jellyseerr_url'), '/');
+
+        try {
+            // Same reachability probe as the requests page: /status is
+            // public, /settings/about needs a valid API key.
+            if ($this->jellyseerr->getAbout() === null) {
+                $error = true;
+            } else {
+                $data     = $this->jellyseerr->getIssues($take, ($page - 1) * $take, $filter, $sort);
+                $pageInfo = $data['pageInfo'] ?? [];
+                // Past the end (a stale link, a filter that now has fewer
+                // pages): go to the last page instead of an empty list under
+                // a pager that counts backwards.
+                $pages = (int) ($pageInfo['pages'] ?? 0);
+                if ($pages >= 1 && $page > $pages && ($data['results'] ?? []) === []) {
+                    return $this->redirectToRoute('jellyseerr_issues', ['filter' => $filter, 'sort' => $sort, 'page' => $pages]);
+                }
+                $counts   = $this->jellyseerr->getIssueCount();
+                // Several issues often point at the same title: look each
+                // one up once per page. Local, not a property — controllers
+                // outlive requests in worker mode.
+                $tmdbMemo = [];
+                foreach ($data['results'] ?? [] as $issue) {
+                    if (is_array($issue)) {
+                        $issues[] = $this->normalizeIssue($issue, $serviceUrl, $tmdbMemo);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning('Jellyseerr issues failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
+            $error = true;
+        }
+
+        return $this->render('jellyseerr/issues.html.twig', [
+            'issues'      => $issues,
+            'pageInfo'    => $pageInfo,
+            'counts'      => $counts,
+            'filter'      => $filter,
+            'sort'        => $sort,
+            'page'        => $page,
+            'error'       => $error,
+            'service_url' => $serviceUrl,
+        ]);
+    }
+
+    /**
+     * Flatten one Seerr issue into what the template needs. Seerr stores the
+     * reporter's description as the issue's first comment; later comments are
+     * replies. Enum values (server/constants/issue.ts): issueType 1 video,
+     * 2 audio, 3 subtitles, 4 other; status 1 open, 2 resolved;
+     * problemSeason/problemEpisode 0 = "all".
+     *
+     * @param array<string, mixed> $issue
+     * @param array<string, array<string, mixed>|null> $tmdbMemo per-page TMDb lookup memo, keyed "type:id"
+     * @return array<string, mixed>
+     */
+    private function normalizeIssue(array $issue, string $serviceUrl, array &$tmdbMemo): array
+    {
+        $media  = is_array($issue['media'] ?? null) ? $issue['media'] : [];
+        $type   = ($media['mediaType'] ?? 'movie') === 'tv' ? 'tv' : 'movie';
+        $tmdbId = (int) ($media['tmdbId'] ?? 0);
+
+        $comments = array_values(array_filter(
+            is_array($issue['comments'] ?? null) ? $issue['comments'] : [],
+            'is_array',
+        ));
+        usort($comments, fn(array $a, array $b) => ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0)));
+
+        $reporter = is_array($issue['createdBy'] ?? null) ? $issue['createdBy'] : [];
+        // Only Seerr-hosted avatars (/avatarproxy/...): img-src whitelists the
+        // Seerr origin but not plex.tv/gravatar, so an absolute avatar URL
+        // would be CSP-blocked. Those fall back to the initial-letter avatar.
+        $avatar = (string) ($reporter['avatar'] ?? '');
+        $avatar = ($avatar !== '' && $serviceUrl !== '' && !preg_match('#^[a-z][a-z0-9+.-]*:|^//#i', $avatar))
+            ? $serviceUrl . '/' . ltrim($avatar, '/')
+            : '';
+
+        $id = (int) ($issue['id'] ?? 0);
+
+        $memoKey = $type . ':' . $tmdbId;
+        if (!array_key_exists($memoKey, $tmdbMemo)) {
+            $tmdbMemo[$memoKey] = $this->cachedIssueTitle($tmdbId, $type, $serviceUrl);
+        }
+
+        return [
+            'id'        => $id,
+            'type'      => $type,
+            'tmdbId'    => $tmdbId,
+            'tmdb'      => $tmdbMemo[$memoKey],
+            'issueType' => match ((int) ($issue['issueType'] ?? 4)) {
+                1       => 'video',
+                2       => 'audio',
+                3       => 'subtitles',
+                default => 'other',
+            },
+            'open'      => (int) ($issue['status'] ?? 1) !== 2,
+            'season'    => (int) ($issue['problemSeason'] ?? 0),
+            'episode'   => (int) ($issue['problemEpisode'] ?? 0),
+            'message'   => trim((string) ($comments[0]['message'] ?? '')),
+            'replies'   => max(0, count($comments) - 1),
+            'reporter'  => [
+                'name'   => $reporter['displayName'] ?? $reporter['jellyfinUsername'] ?? $reporter['plexUsername'] ?? $reporter['email'] ?? '?',
+                'avatar' => $avatar !== '' ? $avatar : null,
+            ],
+            'createdAt' => $issue['createdAt'] ?? null,
+            'updatedAt' => $issue['updatedAt'] ?? null,
+            'seerrUrl'  => $serviceUrl !== '' && $id > 0 ? $serviceUrl . '/issues/' . $id : null,
+        ];
     }
 
     // ── Users page ───────────────────────────────────────────────────────────
@@ -823,32 +971,76 @@ class JellyseerrController extends AbstractController
         return $result;
     }
 
+    /**
+     * tmdbSummary() for an issue card, shared across requests: a page is up
+     * to 20 sequential Seerr lookups otherwise. Keyed by the Seerr instance
+     * too, so pointing Prismarr at another Seerr can't show old titles. A
+     * failed lookup isn't cached — the next load retries it.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function cachedIssueTitle(int $tmdbId, string $type, string $serviceUrl): ?array
+    {
+        if ($tmdbId <= 0) {
+            return null;
+        }
+        $key = 'seerr.issue_title.' . hash('xxh128', $serviceUrl) . '.' . $type . '.' . $tmdbId;
+
+        return $this->cache->get($key, function (ItemInterface $item, bool &$save) use ($tmdbId, $type): ?array {
+            $item->expiresAfter(self::ISSUE_TITLE_TTL);
+            $summary = $this->tmdbSummary($tmdbId, $type, 'normalizeIssue');
+            $save = $summary !== null;
+            return $summary;
+        });
+    }
+
+    /**
+     * TMDb title/poster/etc. for a Seerr media entry, via Seerr's own
+     * /movie|/tv proxy. Null when the id/type is missing or the lookup fails
+     * (callers render a "TMDb #id" fallback instead).
+     *
+     * @return array{title: string, overview: string, posterPath: ?string, backdropPath: ?string, releaseDate: ?string, voteAverage: mixed, genres: list<mixed>}|null
+     */
+    private function tmdbSummary(mixed $tmdbId, mixed $type, string $context): ?array
+    {
+        if (!$tmdbId || !$type) {
+            return null;
+        }
+
+        try {
+            $tmdb = ($type === 'movie')
+                ? $this->jellyseerr->searchMovie((int) $tmdbId)
+                : $this->jellyseerr->searchTv((int) $tmdbId);
+        } catch (\Throwable $e) {
+            $this->logger->warning("Jellyseerr {$context} failed", ['exception' => $e::class, 'message' => $e->getMessage()]);
+            // No big deal, render without enrichment
+            return null;
+        }
+
+        if (!$tmdb) {
+            return null;
+        }
+
+        return [
+            'title'        => $tmdb['title'] ?? $tmdb['name'] ?? '?',
+            'overview'     => $tmdb['overview'] ?? '',
+            'posterPath'   => $tmdb['posterPath'] ?? null,
+            'backdropPath' => $tmdb['backdropPath'] ?? null,
+            'releaseDate'  => $tmdb['releaseDate'] ?? $tmdb['firstAirDate'] ?? null,
+            'voteAverage'  => $tmdb['voteAverage'] ?? null,
+            'genres'       => array_values(array_map(fn($g) => $g['name'] ?? $g, $tmdb['genres'] ?? [])),
+        ];
+    }
+
     private function enrichRequest(array $req): array
     {
-        $tmdbId = $req['media']['tmdbId'] ?? null;
-        $type   = $req['type'] ?? $req['media']['mediaType'] ?? null;
-
-        if ($tmdbId && $type) {
-            try {
-                $tmdb = ($type === 'movie')
-                    ? $this->jellyseerr->searchMovie($tmdbId)
-                    : $this->jellyseerr->searchTv($tmdbId);
-
-                if ($tmdb) {
-                    $req['_tmdb'] = [
-                        'title'        => $tmdb['title'] ?? $tmdb['name'] ?? '?',
-                        'overview'     => $tmdb['overview'] ?? '',
-                        'posterPath'   => $tmdb['posterPath'] ?? null,
-                        'backdropPath' => $tmdb['backdropPath'] ?? null,
-                        'releaseDate'  => $tmdb['releaseDate'] ?? $tmdb['firstAirDate'] ?? null,
-                        'voteAverage'  => $tmdb['voteAverage'] ?? null,
-                        'genres'       => array_map(fn($g) => $g['name'] ?? $g, $tmdb['genres'] ?? []),
-                    ];
-                }
-            } catch (\Throwable $e) {
-                $this->logger->warning('Jellyseerr enrichRequest failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
-                // No big deal, render without enrichment
-            }
+        $tmdb = $this->tmdbSummary(
+            $req['media']['tmdbId'] ?? null,
+            $req['type'] ?? $req['media']['mediaType'] ?? null,
+            'enrichRequest',
+        );
+        if ($tmdb !== null) {
+            $req['_tmdb'] = $tmdb;
         }
 
         // Human-readable status — based on media.status (not request.status for availability)
