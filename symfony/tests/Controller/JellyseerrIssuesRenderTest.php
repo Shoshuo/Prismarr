@@ -36,6 +36,13 @@ class JellyseerrIssuesRenderTest extends WebTestCase
     {
         $this->client = static::createClient();
 
+        // HealthService keeps its verdicts in cache.app (a filesystem pool
+        // that outlives the SQLite reset below). Start clean, and see
+        // tearDown(): the stubbed ping() records Seerr as "up", which would
+        // otherwise leak into later classes (TopbarHealthServicesTest
+        // asserts Seerr is unconfigured).
+        static::getContainer()->get('cache.app')->clear();
+
         $em = static::getContainer()->get('doctrine')->getManager();
         $tool = new SchemaTool($em);
         $metadata = $em->getMetadataFactory()->getAllMetadata();
@@ -61,6 +68,14 @@ class JellyseerrIssuesRenderTest extends WebTestCase
 
         $this->client->loginUser($admin);
         $this->client->disableReboot();
+    }
+
+    protected function tearDown(): void
+    {
+        if (static::$booted) {
+            static::getContainer()->get('cache.app')->clear();
+        }
+        parent::tearDown();
     }
 
     /** @return array<string, mixed> */
