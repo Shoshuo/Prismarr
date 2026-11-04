@@ -189,12 +189,74 @@ class JellyseerrIssuesRenderTest extends WebTestCase
         $this->assertSelectorCount(3, '[data-issue-id]');
     }
 
+    /**
+     * The per-page memo only dedupes within one render; each title was still
+     * looked up again on every page load (up to 20 sequential Seerr calls).
+     * Titles barely change, so the lookup is cached across requests.
+     */
+    public function testTitleLookupIsCachedAcrossRequests(): void
+    {
+        $this->boot(function (JellyseerrClient&MockObject $seerr): void {
+            $seerr->method('getAbout')->willReturn(['version' => '2.0.0']);
+            $seerr->method('getIssueCount')->willReturn(['open' => 1]);
+            $seerr->method('getIssues')->willReturn(['pageInfo' => ['pages' => 1], 'results' => [self::issue(1)]]);
+            $seerr->expects($this->once())->method('searchMovie')->with(550)->willReturn(['title' => 'Fight Club']);
+        });
+
+        $this->client->request('GET', '/jellyseerr/issues');
+        $this->assertResponseIsSuccessful();
+        $this->client->request('GET', '/jellyseerr/issues?sort=modified');
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('Fight Club', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testAFailedTitleLookupIsRetriedOnTheNextRequest(): void
+    {
+        $this->boot(function (JellyseerrClient&MockObject $seerr): void {
+            $seerr->method('getAbout')->willReturn(['version' => '2.0.0']);
+            $seerr->method('getIssueCount')->willReturn(['open' => 1]);
+            $seerr->method('getIssues')->willReturn(['pageInfo' => ['pages' => 1], 'results' => [self::issue(1)]]);
+            $seerr->expects($this->exactly(2))->method('searchMovie')->with(550)
+                ->willReturnOnConsecutiveCalls(null, ['title' => 'Fight Club']);
+        });
+
+        $this->client->request('GET', '/jellyseerr/issues');
+        $this->client->request('GET', '/jellyseerr/issues');
+        $this->assertStringContainsString('Fight Club', (string) $this->client->getResponse()->getContent());
+    }
+
+    /** A page past the end used to say "No open issues" under a backwards pager. */
+    public function testPageBeyondTheLastRedirectsToTheLastPage(): void
+    {
+        $this->boot($this->seerrWith([], function (JellyseerrClient&MockObject $seerr): void {
+            $seerr->method('getIssues')->willReturn(['pageInfo' => ['pages' => 3], 'results' => []]);
+        }));
+
+        $this->client->request('GET', '/jellyseerr/issues?filter=all&sort=modified&page=9');
+
+        $this->assertResponseRedirects('/jellyseerr/issues?filter=all&sort=modified&page=3');
+    }
+
+    /** A huge page used to overflow the skip into a float → TypeError → "unreachable" banner. */
+    public function testHugePageIsCappedInsteadOfBreakingThePage(): void
+    {
+        $this->boot($this->seerrWith([], function (JellyseerrClient&MockObject $seerr): void {
+            $seerr->expects($this->once())->method('getIssues')
+                ->with(20, (10000 - 1) * 20, 'open', 'added')
+                ->willReturn(['pageInfo' => ['pages' => 2], 'results' => []]);
+        }));
+
+        $this->client->request('GET', '/jellyseerr/issues?page=9223372036854775807');
+
+        $this->assertResponseRedirects('/jellyseerr/issues?filter=open&sort=added&page=2');
+    }
+
     public function testUnknownFilterFallsBackToOpen(): void
     {
         $this->boot($this->seerrWith([], function (JellyseerrClient&MockObject $seerr): void {
             $seerr->expects($this->once())->method('getIssues')
                 ->with(20, 20, 'open', 'added')
-                ->willReturn(['pageInfo' => ['pages' => 1], 'results' => []]);
+                ->willReturn(['pageInfo' => ['pages' => 2], 'results' => []]);
         }));
 
         $this->client->request('GET', '/jellyseerr/issues?filter=bogus&sort=bogus&page=2');

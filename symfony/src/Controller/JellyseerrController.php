@@ -12,6 +12,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[IsGranted('ROLE_ADMIN')]
@@ -22,13 +25,22 @@ class JellyseerrController extends AbstractController
 
     private const VALID_FILTERS = ['all', 'pending', 'approved', 'processing', 'available', 'partial', 'unavailable', 'failed'];
     private const ISSUE_FILTERS = ['open', 'resolved', 'all'];
+    /** Keeps ($page - 1) * take an int: a huge ?page= overflowed into a float → TypeError. */
+    private const ISSUE_MAX_PAGE = 10000;
+    /** Issue-card titles: they barely change, and each one is a Seerr round trip. */
+    private const ISSUE_TITLE_TTL = 21600;
+
+    private readonly CacheInterface $cache;
 
     public function __construct(
         private readonly JellyseerrClient $jellyseerr,
         private readonly ConfigService $config,
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
-    ) {}
+        ?CacheInterface $cache = null,
+    ) {
+        $this->cache = $cache ?? new ArrayAdapter();
+    }
 
     // ── Main page — Requests ─────────────────────────────────────────────────
 
@@ -158,7 +170,7 @@ class JellyseerrController extends AbstractController
         if (!in_array($sort, ['added', 'modified'], true)) {
             $sort = 'added';
         }
-        $page = max(1, $request->query->getInt('page', 1));
+        $page = min(self::ISSUE_MAX_PAGE, max(1, $request->query->getInt('page', 1)));
         $take = 20;
 
         $error  = false;
@@ -175,6 +187,13 @@ class JellyseerrController extends AbstractController
             } else {
                 $data     = $this->jellyseerr->getIssues($take, ($page - 1) * $take, $filter, $sort);
                 $pageInfo = $data['pageInfo'] ?? [];
+                // Past the end (a stale link, a filter that now has fewer
+                // pages): go to the last page instead of an empty list under
+                // a pager that counts backwards.
+                $pages = (int) ($pageInfo['pages'] ?? 0);
+                if ($pages >= 1 && $page > $pages && ($data['results'] ?? []) === []) {
+                    return $this->redirectToRoute('jellyseerr_issues', ['filter' => $filter, 'sort' => $sort, 'page' => $pages]);
+                }
                 $counts   = $this->jellyseerr->getIssueCount();
                 // Several issues often point at the same title: look each
                 // one up once per page. Local, not a property — controllers
@@ -239,7 +258,7 @@ class JellyseerrController extends AbstractController
 
         $memoKey = $type . ':' . $tmdbId;
         if (!array_key_exists($memoKey, $tmdbMemo)) {
-            $tmdbMemo[$memoKey] = $this->tmdbSummary($tmdbId ?: null, $type, 'normalizeIssue');
+            $tmdbMemo[$memoKey] = $this->cachedIssueTitle($tmdbId, $type, $serviceUrl);
         }
 
         return [
@@ -950,6 +969,29 @@ class JellyseerrController extends AbstractController
             }
         }
         return $result;
+    }
+
+    /**
+     * tmdbSummary() for an issue card, shared across requests: a page is up
+     * to 20 sequential Seerr lookups otherwise. Keyed by the Seerr instance
+     * too, so pointing Prismarr at another Seerr can't show old titles. A
+     * failed lookup isn't cached — the next load retries it.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function cachedIssueTitle(int $tmdbId, string $type, string $serviceUrl): ?array
+    {
+        if ($tmdbId <= 0) {
+            return null;
+        }
+        $key = 'seerr.issue_title.' . hash('xxh128', $serviceUrl) . '.' . $type . '.' . $tmdbId;
+
+        return $this->cache->get($key, function (ItemInterface $item, bool &$save) use ($tmdbId, $type): ?array {
+            $item->expiresAfter(self::ISSUE_TITLE_TTL);
+            $summary = $this->tmdbSummary($tmdbId, $type, 'normalizeIssue');
+            $save = $summary !== null;
+            return $summary;
+        });
     }
 
     /**
