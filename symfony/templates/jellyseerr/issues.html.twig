@@ -101,7 +101,9 @@
                class="btn btn-sm {{ filter == f.key ? 'btn-' ~ f.color : 'btn-ghost-' ~ f.color }}">
                 {{ f.label }}
                 {% if f.count is not null and f.count > 0 %}
-                    <span class="badge bg-{{ f.color }}-lt ms-1">{{ f.count }}</span>
+                    {# The -lt tint is the button's own colour, so on the
+                       selected (solid) button the count would vanish. #}
+                    <span class="badge ms-1 {{ filter == f.key ? 'bg-white text-' ~ f.color : 'bg-' ~ f.color ~ '-lt' }}">{{ f.count }}</span>
                 {% endif %}
             </a>
         {% endfor %}

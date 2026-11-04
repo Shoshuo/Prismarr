@@ -154,6 +154,8 @@ class JellyseerrIssuesRenderTest extends WebTestCase
         $this->assertStringContainsString('http://seerr.test:5055/issues/1', $html, 'each card links to the issue in Seerr');
         $this->assertStringContainsString('data-ql-id="550"', $html, 'the title opens the global quick-look');
         $this->assertStringNotContainsString('plex.tv/users', $html, 'off-origin avatars are dropped (CSP would block them)');
+        $this->assertSelectorExists('a.btn-warning .badge.bg-white', 'the selected filter keeps a readable count badge');
+        $this->assertSelectorExists('a.btn-ghost-primary .badge.bg-primary-lt');
     }
 
     public function testReporterTextIsEscaped(): void
