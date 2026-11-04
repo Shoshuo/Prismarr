@@ -311,6 +311,8 @@ dashboard:
     manage_cta: 'Gérer →'
     by: par
     status_pending: En attente
+    open_issues: '{count, plural, one {# signalement ouvert} other {# signalements ouverts}}'
+    view_issues: 'Voir →'
   health:
     title: Santé des services
     settings_cta: 'Paramètres →'
@@ -4838,6 +4840,7 @@ prowlarr:
 jellyseerr:
   nav:
     requests: Requêtes
+    issues: Signalements
     users: Utilisateurs
     tasks_cache: Tâches & Cache
     settings: Paramètres
@@ -4930,6 +4933,35 @@ jellyseerr:
     season_status_approved: Approuvée
     season_status_pending: En attente
     season_status_processing: En cours
+  issues:
+    title: Signalements
+    stat_open: Ouverts
+    stat_resolved: Résolus
+    stat_video: Vidéo
+    stat_audio: Audio
+    stat_subtitles: Sous-titres
+    stat_other: Autre
+    filter_open: Ouverts
+    filter_resolved: Résolus
+    filter_all: Tous
+    sort_added: Plus récents
+    sort_modified: Dernière modification
+    type_video: Vidéo
+    type_audio: Audio
+    type_subtitles: Sous-titres
+    type_other: Autre
+    status_open: Ouvert
+    status_resolved: Résolu
+    all_seasons: Toutes les saisons
+    season_tpl: 'Saison {season}'
+    season_episode_tpl: 'S{season} · E{episode}'
+    no_description: Aucune description
+    replies: '{count, plural, one {# réponse} other {# réponses}}'
+    open_in_seerr: Ouvrir dans Seerr
+    none_open: Aucun signalement ouvert.
+    none_resolved: Aucun signalement résolu.
+    none: Aucun signalement.
+    reported_by: Signalé par
   user_detail:
     page_title_tpl: '__NAME__ — Seerr'
     member_since_tpl: 'Membre depuis le __DATE__'

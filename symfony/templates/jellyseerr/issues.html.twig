@@ -1,0 +1,273 @@
+{% extends 'base.html.twig' %}
+{% import '_icons.html.twig' as ico %}
+{# Seerr media issues — read-only list (upstream #133). Each card opens the
+   media in the global quick-look and links out to the issue in Seerr for
+   commenting/resolving. Rendered by JellyseerrController::issues; every
+   issue arrives pre-flattened by normalizeIssue(). #}
+{% block title %}Seerr · {{ 'jellyseerr.issues.title'|trans }}{% endblock %}
+{% block page_title %}<svg width="24" height="24" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 48C141.1 48 48 141.1 48 256s93.1 208 208 208 208-93.1 208-208S370.9 48 256 48zm0 368c-88.4 0-160-71.6-160-160S167.6 96 256 96s160 71.6 160 160-71.6 160-160 160z" fill="#a259ff"/><circle cx="256" cy="256" r="80" fill="#a259ff"/><path d="M256 176c-44.2 0-80 35.8-80 80s35.8 80 80 80 80-35.8 80-80-35.8-80-80-80zm0 120c-22.1 0-40-17.9-40-40s17.9-40 40-40 40 17.9 40 40-17.9 40-40 40z" fill="#c084fc" opacity=".6"/></svg> {{ 'jellyseerr.issues.title'|trans }}{% endblock %}
+
+{% block stylesheets %}
+<style>
+.js-issue-card {
+    border-radius:.6rem;
+    background:var(--tblr-card-bg);
+    border:1px solid var(--tblr-border-color);
+    padding:.75rem;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    gap:.75rem;
+}
+.js-issue-card.is-open { border-left:3px solid #f59e0b; }
+.js-issue-poster {
+    width:60px;
+    height:90px;
+    border-radius:.4rem;
+    object-fit:cover;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);
+    flex-shrink:0;
+}
+.js-issue-poster-placeholder {
+    width:60px;
+    height:90px;
+    border-radius:.4rem;
+    background:var(--tblr-bg-surface-secondary);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    color:var(--tblr-text-secondary);
+}
+.js-issue-title {
+    font-weight:600;
+    font-size:.95rem;
+    color:inherit;
+    display:block;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.js-issue-title:hover { color:#a259ff; text-decoration:none; }
+.js-issue-meta { font-size:.8rem; color:var(--tblr-text-secondary); }
+.js-issue-message {
+    font-size:.85rem;
+    line-height:1.4;
+    display:-webkit-box;
+    -webkit-line-clamp:3;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    overflow-wrap:anywhere;
+}
+.js-issue-badge { font-size:.72rem; }
+.js-type-badge {
+    font-size:.72rem;
+    padding:1px 6px;
+    border-radius:3px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+}
+.js-type-movie { background:rgba(239,68,68,.12); color:#ef4444; }
+.js-type-tv { background:rgba(56,189,248,.12); color:#38bdf8; }
+.js-stat { font-size:1.5rem; font-weight:700; line-height:1; }
+.js-pagination a {
+    padding:4px 10px;
+    border-radius:4px;
+    text-decoration:none;
+    font-size:.8rem;
+    border:1px solid var(--tblr-border-color);
+    color:var(--tblr-body-color);
+}
+.js-pagination a:hover { border-color:#a259ff; color:#a259ff; }
+.js-pagination a.active { background:#a259ff; color:#fff; border-color:#a259ff; }
+</style>
+{% endblock %}
+
+{% block body %}
+{% if not error %}
+<div class="container-xl py-2">
+    <div class="d-flex align-items-center justify-content-end">
+        {% include 'jellyseerr/_nav.html.twig' %}
+    </div>
+    <div class="mt-2 d-flex align-items-center gap-2 flex-wrap w-100">
+        {% set filters = [
+            {key: 'open',     label: 'jellyseerr.issues.filter_open'|trans,     color: 'warning', count: counts.open ?? null},
+            {key: 'resolved', label: 'jellyseerr.issues.filter_resolved'|trans, color: 'success', count: counts.closed ?? null},
+            {key: 'all',      label: 'jellyseerr.issues.filter_all'|trans,      color: 'primary', count: counts.total ?? null},
+        ] %}
+        {% for f in filters %}
+            <a href="{{ path('jellyseerr_issues', {filter: f.key, sort: sort}) }}"
+               class="btn btn-sm {{ filter == f.key ? 'btn-' ~ f.color : 'btn-ghost-' ~ f.color }}">
+                {{ f.label }}
+                {% if f.count is not null and f.count > 0 %}
+                    <span class="badge bg-{{ f.color }}-lt ms-1">{{ f.count }}</span>
+                {% endif %}
+            </a>
+        {% endfor %}
+
+        <div class="ms-auto btn-group btn-group-sm" role="group">
+            <a href="{{ path('jellyseerr_issues', {filter: filter, sort: 'added'}) }}"
+               class="btn btn-sm {{ sort == 'added' ? 'btn-secondary' : 'btn-ghost-secondary' }}">{{ 'jellyseerr.issues.sort_added'|trans }}</a>
+            <a href="{{ path('jellyseerr_issues', {filter: filter, sort: 'modified'}) }}"
+               class="btn btn-sm {{ sort == 'modified' ? 'btn-secondary' : 'btn-ghost-secondary' }}">{{ 'jellyseerr.issues.sort_modified'|trans }}</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="page-body">
+<div class="container-xl">
+
+{% if error %}
+  {% include 'error/_service_banner.html.twig' with {
+    service: 'Seerr',
+    configured_url: service_url,
+    reason: 'unreachable'
+  } %}
+{% else %}
+
+{# ── Stats ── #}
+{% set stats = [
+    {key: 'stat_open',      value: counts.open ?? 0,      color: (counts.open ?? 0) > 0 ? '#f59e0b' : 'var(--tblr-text-secondary)'},
+    {key: 'stat_resolved',  value: counts.closed ?? 0,    color: '#22c55e'},
+    {key: 'stat_video',     value: counts.video ?? 0,     color: '#a259ff'},
+    {key: 'stat_audio',     value: counts.audio ?? 0,     color: '#a259ff'},
+    {key: 'stat_subtitles', value: counts.subtitles ?? 0, color: '#a259ff'},
+    {key: 'stat_other',     value: counts.others ?? 0,    color: '#a259ff'},
+] %}
+<div class="row g-3 mb-3">
+    {% for s in stats %}
+    <div class="col-4 col-lg-2">
+        <div class="card card-sm"><div class="card-body text-center">
+            <div class="js-stat" style="color:{{ s.color }};">{{ s.value }}</div>
+            <div class="text-secondary small">{{ ('jellyseerr.issues.' ~ s.key)|trans }}</div>
+        </div></div>
+    </div>
+    {% endfor %}
+</div>
+
+{# ── Issue list ── #}
+{% if issues is empty %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <div class="text-secondary" style="opacity:.4;">{{ ico.icon('check', '', 48) }}</div>
+            <div class="text-secondary mt-2">
+                {%- if filter == 'open' -%}{{ 'jellyseerr.issues.none_open'|trans }}
+                {%- elseif filter == 'resolved' -%}{{ 'jellyseerr.issues.none_resolved'|trans }}
+                {%- else -%}{{ 'jellyseerr.issues.none'|trans }}{%- endif -%}
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+{% set type_icons = {video: 'movie', audio: 'broadcast', subtitles: 'language', other: 'info-circle'} %}
+<div class="row g-3">
+{% for issue in issues %}
+    {% set tmdb = issue.tmdb %}
+    {% set title = tmdb ? tmdb.title : 'TMDb #' ~ issue.tmdbId %}
+    {% set poster = tmdb and tmdb.posterPath ? 'https://image.tmdb.org/t/p/w185' ~ tmdb.posterPath : null %}
+    <div class="col-12 col-lg-6">
+        <div class="js-issue-card {{ issue.open ? 'is-open' }}" data-issue-id="{{ issue.id }}">
+            <div class="d-flex gap-3">
+                {% if poster %}
+                    <img src="{{ poster }}" class="js-issue-poster" alt="" loading="lazy">
+                {% else %}
+                    <div class="js-issue-poster-placeholder">{{ ico.icon(issue.type == 'tv' ? 'device-tv' : 'movie', '', 24) }}</div>
+                {% endif %}
+
+                <div class="flex-fill" style="min-width:0;">
+                    <div class="d-flex align-items-center gap-1 flex-wrap mb-1">
+                        <span class="js-type-badge {{ issue.type == 'movie' ? 'js-type-movie' : 'js-type-tv' }}">
+                            {{ issue.type == 'movie' ? 'jellyseerr.common.movie'|trans : 'jellyseerr.common.tv'|trans }}
+                        </span>
+                        <span class="badge bg-purple-lt text-purple js-issue-badge d-inline-flex align-items-center gap-1">
+                            {{ ico.icon(type_icons[issue.issueType] ?? 'info-circle', '', 14) }}
+                            {{ ('jellyseerr.issues.type_' ~ issue.issueType)|trans }}
+                        </span>
+                        {% if issue.open %}
+                            <span class="badge bg-warning-lt text-warning js-issue-badge">{{ 'jellyseerr.issues.status_open'|trans }}</span>
+                        {% else %}
+                            <span class="badge bg-success-lt text-success js-issue-badge">{{ 'jellyseerr.issues.status_resolved'|trans }}</span>
+                        {% endif %}
+                    </div>
+
+                    {% if issue.tmdbId > 0 %}
+                        <a href="{{ path('tmdb_index') }}?detail={{ issue.type }}/{{ issue.tmdbId }}"
+                           class="js-issue-title" title="{{ title }}"
+                           data-ql-trigger data-ql-source="tmdb" data-ql-type="{{ issue.type }}" data-ql-id="{{ issue.tmdbId }}">{{ title }}</a>
+                    {% else %}
+                        <span class="js-issue-title" title="{{ title }}">{{ title }}</span>
+                    {% endif %}
+
+                    <div class="js-issue-meta mt-1">
+                        {%- if issue.type == 'tv' -%}
+                            {%- if issue.season > 0 and issue.episode > 0 -%}
+                                {{ 'jellyseerr.issues.season_episode_tpl'|trans({season: issue.season, episode: issue.episode}) }}
+                            {%- elseif issue.season > 0 -%}
+                                {{ 'jellyseerr.issues.season_tpl'|trans({season: issue.season}) }}
+                            {%- else -%}
+                                {{ 'jellyseerr.issues.all_seasons'|trans }}
+                            {%- endif %} ·
+                        {% endif -%}
+                        {%- if tmdb and tmdb.releaseDate -%}{{ tmdb.releaseDate|slice(0, 4) }}{%- endif -%}
+                    </div>
+
+                    <div class="js-issue-message mt-2">
+                        {%- if issue.message -%}
+                            {{ issue.message|nl2br }}
+                        {%- else -%}
+                            <span class="text-secondary fst-italic">{{ 'jellyseerr.issues.no_description'|trans }}</span>
+                        {%- endif -%}
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mt-auto pt-2" style="border-top:1px solid var(--tblr-border-color-translucent);">
+                <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size:.82rem;min-width:0;">
+                    {% if issue.reporter.avatar %}
+                        <span class="avatar avatar-xs" style="width:26px;height:26px;background-image:url('{{ issue.reporter.avatar|e('css') }}')" title="{{ 'jellyseerr.issues.reported_by'|trans }}"></span>
+                    {% else %}
+                        <span class="avatar avatar-xs" style="width:26px;height:26px;" title="{{ 'jellyseerr.issues.reported_by'|trans }}">{{ issue.reporter.name|first|upper }}</span>
+                    {% endif %}
+                    <span style="font-weight:500;">{{ issue.reporter.name }}</span>
+                    {% if issue.createdAt %}
+                        <span class="text-muted">·</span>
+                        <span class="text-secondary">{{ issue.createdAt|prismarr_date }}</span>
+                    {% endif %}
+                    {% if issue.replies > 0 %}
+                        <span class="text-muted">·</span>
+                        <span class="text-secondary">{{ 'jellyseerr.issues.replies'|trans({count: issue.replies}) }}</span>
+                    {% endif %}
+                </div>
+                {% if issue.seerrUrl %}
+                    <a href="{{ issue.seerrUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-ghost-primary py-0 px-2" style="font-size:.8rem;">
+                        {{ 'jellyseerr.issues.open_in_seerr'|trans }} ↗
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endfor %}
+</div>
+
+{# ── Pagination ── #}
+{% set totalPages = pageInfo.pages ?? 1 %}
+{% if totalPages > 1 %}
+<div class="d-flex justify-content-center gap-1 mt-3 mb-2 js-pagination">
+    {% if page > 1 %}
+        <a href="{{ path('jellyseerr_issues', {filter: filter, sort: sort, page: page - 1}) }}">←</a>
+    {% endif %}
+    {% for p in max(1, page - 3)..min(totalPages, page + 3) %}
+        <a href="{{ path('jellyseerr_issues', {filter: filter, sort: sort, page: p}) }}" class="{{ p == page ? 'active' }}">{{ p }}</a>
+    {% endfor %}
+    {% if page < totalPages %}
+        <a href="{{ path('jellyseerr_issues', {filter: filter, sort: sort, page: page + 1}) }}">→</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endif %}
+</div>
+</div>
+{% endblock %}
