@@ -244,7 +244,7 @@ class JellyseerrIssuesRenderTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertSelectorNotExists('[data-dash-open-issues]');
-        $this->assertSelectorExists('.empty', 'the usual empty state still renders');
+        $this->assertStringContainsString('No pending requests.', (string) $this->client->getResponse()->getContent(), 'the usual empty state still renders');
     }
 
     public function testUnreachableSeerrShowsTheServiceBanner(): void
