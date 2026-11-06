@@ -1265,6 +1265,7 @@ media:
     series_not_found: TV show not found
     series_data_missing: TV show data missing
     no_movies_selected: No movie selected
+    no_series_selected: No series selected
     no_movie: No movie
     no_series: No TV show
     queue_item_not_found: Item not found in the queue

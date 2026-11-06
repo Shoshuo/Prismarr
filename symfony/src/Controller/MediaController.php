@@ -1044,6 +1044,64 @@ class MediaController extends AbstractController
         ]);
     }
 
+    /**
+     * MT-10 (review 2026-11-06): one RefreshSeries command with every id —
+     * the page used to POST /series/{id}/refresh once per series (300
+     * concurrent requests on 4 workers) and count rejections as done.
+     */
+    #[Route('/series/bulk/refresh', name: 'series_bulk_refresh', methods: ['POST'])]
+    public function seriesBulkRefresh(Request $request): JsonResponse
+    {
+        $ids = self::positiveIntList($request->toArray()['seriesIds'] ?? []);
+        if ($ids === []) return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.no_series_selected')]);
+        $result = $this->sonarr->sendCommand('RefreshSeries', ['seriesIds' => $ids]);
+        if ($result === null) return $this->jsonClientError('Sonarr', $this->sonarr, $this->translator->trans('media.api.network_error'), 502);
+        return $this->json(['ok' => true, 'cmdId' => $result['id'] ?? null]);
+    }
+
+    /**
+     * MT-10: Sonarr has no multi-series search command, so one SeriesSearch
+     * per id is issued HERE, sequentially (not as N concurrent browser
+     * POSTs), and a rejected command counts as failed, not "launched".
+     */
+    #[Route('/series/bulk/search', name: 'series_bulk_search', methods: ['POST'])]
+    public function seriesBulkSearch(Request $request): JsonResponse
+    {
+        $ids = array_slice(self::positiveIntList($request->toArray()['seriesIds'] ?? []), 0, 500);
+        if ($ids === []) return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.no_series_selected')]);
+        $cmdIds = [];
+        $failed = 0;
+        foreach ($ids as $id) {
+            $result = $this->sonarr->sendCommand('SeriesSearch', ['seriesId' => $id]);
+            if ($result === null) {
+                $failed++;
+                continue;
+            }
+            $cmdIds[] = (int) ($result['id'] ?? 0);
+        }
+        if ($cmdIds === []) {
+            return $this->jsonClientError('Sonarr', $this->sonarr, $this->translator->trans('media.api.network_error'), 502);
+        }
+        return $this->json(['ok' => true, 'launched' => count($cmdIds), 'failed' => $failed, 'cmdIds' => $cmdIds, 'cmdId' => $cmdIds[0]]);
+    }
+
+    /**
+     * @param mixed $raw
+     * @return list<int>
+     */
+    private static function positiveIntList(mixed $raw): array
+    {
+        if (!is_array($raw)) return [];
+        $out = [];
+        foreach ($raw as $v) {
+            if (is_int($v) || (is_string($v) && ctype_digit($v))) {
+                $i = (int) $v;
+                if ($i > 0 && !in_array($i, $out, true)) $out[] = $i;
+            }
+        }
+        return $out;
+    }
+
     #[Route('/series/bulk/edit', name: 'series_bulk_edit', methods: ['POST'])]
     public function seriesBulkEdit(Request $request): JsonResponse
     {
@@ -1127,7 +1185,13 @@ class MediaController extends AbstractController
     #[Route('/films/queue', name: 'films_queue', methods: ['GET'])]
     public function filmQueue(): JsonResponse
     {
-        return $this->json($this->radarr->getQueue());
+        $queue = $this->radarr->getQueue();
+        if ($queue === [] && $this->radarr->getLastError() !== null) {
+            // C1: [] on transport failure is an outage, not an empty queue —
+            // the page must not paint every queued card "imported".
+            return $this->jsonClientError('Radarr', $this->radarr, $this->translator->trans('media.api.network_error'), 502);
+        }
+        return $this->json($queue);
     }
 
     #[Route('/films/queue/{queueId}/import', name: 'films_queue_import', methods: ['POST'])]

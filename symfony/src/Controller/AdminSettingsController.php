@@ -633,8 +633,22 @@ class AdminSettingsController extends AbstractController
     #[Route('/health/invalidate/{service}', name: 'health_invalidate', methods: ['POST'])]
     public function healthInvalidate(string $service): JsonResponse
     {
-        $service = strtolower($service);
+        $service = strtolower(trim($service));
         $allowed = array_merge(['radarr', 'sonarr'], HealthService::TOGGLEABLE_SERVICES);
+        // AS-6 (review 2026-11-06): the banner posts its display label ("Seerr",
+        // "Radarr 4K"); map labels back to a service id instead of answering
+        // 400 and leaving the breaker set.
+        if ($service === 'seerr') {
+            $service = 'jellyseerr';
+        }
+        if (!in_array($service, $allowed, true)) {
+            foreach ($allowed as $id) {
+                if (str_starts_with($service, $id)) {
+                    $service = $id;
+                    break;
+                }
+            }
+        }
         if (!in_array($service, $allowed, true)) {
             return new JsonResponse(['ok' => false], 400);
         }
@@ -672,8 +686,16 @@ class AdminSettingsController extends AbstractController
         }
 
         $payload = ['dashboard_section_order' => $orderKeys === [] ? null : implode(',', $orderKeys)];
+        // DD-1 (review 2026-11-06): the edit mode only knows the sections it
+        // rendered — ones hidden in an earlier session are not in the DOM and
+        // arrive in neither list. Touch only the keys the client mentioned,
+        // so a Save no longer un-hides everything hidden before.
         foreach (DashboardSections::keys() as $key) {
-            $payload['dashboard_hide_' . $key] = isset($hidden[$key]) ? '1' : null;
+            if (isset($hidden[$key])) {
+                $payload['dashboard_hide_' . $key] = '1';
+            } elseif (in_array($key, $orderKeys, true)) {
+                $payload['dashboard_hide_' . $key] = null;
+            }
         }
 
         $this->settings->setMany($payload);

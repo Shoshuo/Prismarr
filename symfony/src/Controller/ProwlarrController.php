@@ -122,9 +122,16 @@ class ProwlarrController extends AbstractController
     {
         $raw = $this->prowlarr->getRawIndexer($id);
         if (!$raw) return $this->json(['ok' => false, 'error' => $this->translator->trans('prowlarr.index.indexer_not_found')]);
-        $raw['enable'] = !($raw['enable'] ?? false);
-        $result = $this->prowlarr->updateIndexer($id, $raw);
-        return $this->json(['ok' => $result !== null, 'enabled' => $raw['enable']]);
+        $wasEnabled    = (bool) ($raw['enable'] ?? false);
+        $raw['enable'] = !$wasEnabled;
+        // MS-7 (review 2026-11-06): forceSave skips Prowlarr's inline
+        // connection test, and the reason for a refusal reaches the page
+        // instead of the switch silently flipping back.
+        $result = $this->prowlarr->updateIndexerWithError($id, $raw, true);
+        if (!($result['ok'] ?? false)) {
+            return $this->json(['ok' => false, 'error' => (string) ($result['error'] ?? 'unknown error'), 'enabled' => $wasEnabled]);
+        }
+        return $this->json(['ok' => true, 'enabled' => $raw['enable']]);
     }
 
     // ── Search ────────────────────────────────────────────────────────────────

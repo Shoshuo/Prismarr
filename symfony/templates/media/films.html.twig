@@ -1178,6 +1178,27 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
 {% block javascripts %}
 <script>
+  // MT-7 (review 2026-11-06): command pollers — *arr terminal states beyond
+  // completed/failed (aborted, cancelled, orphaned), a hard cap, repeated
+  // "unknown" answers (our controller's fallback when the *arr can't be
+  // reached), teardown on Turbo navigation, and reloads that only fire while
+  // THIS page is still the one on screen.
+  var CMD_TERMINAL = ['failed', 'aborted', 'cancelled', 'orphaned'];
+  var CMD_POLL_CAP = 240;
+  var _cmdPolls = {}, _cmdUnknown = 0, _cmdTimers = [];
+  function cmdState(cmd) {
+    var st = (cmd.status || '').toLowerCase();
+    if (st === 'unknown' || st === '') { _cmdUnknown++; return _cmdUnknown >= 5 ? 'failed' : 'unknown'; }
+    _cmdUnknown = 0;
+    if (CMD_TERMINAL.indexOf(st) !== -1) return 'failed';
+    var key = String(cmd.id || 'x');
+    _cmdPolls[key] = (_cmdPolls[key] || 0) + 1;
+    if (st !== 'completed' && _cmdPolls[key] >= CMD_POLL_CAP) return 'failed';
+    return st;
+  }
+  function cmdInterval(fn, ms) { var id = setInterval(fn, ms); _cmdTimers.push(id); return id; }
+  function safeReload() { if (document.getElementById('movies-grid')) location.reload(); }
+  if (window.registerPageLifecycle) window.registerPageLifecycle(function () { return function () { _cmdTimers.forEach(clearInterval); _cmdTimers.length = 0; }; });
 (function () {
   var BASE = window.BASE_PATH;
   /* ══════════════════════════════════════════════════════════════════════════
@@ -1666,12 +1687,12 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         var bulkPollCount = 0;
         var lastFilmSeen = '';
         var filmsDone = 0;
-        var bulkPoll = setInterval(function() {
+        var bulkPoll = cmdInterval(function() {
           bulkPollCount++;
           var elapsed = bulkPollCount * 2;
           ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId)
           .then(function(cmd) {
-            var st = (cmd.status || '').toLowerCase();
+            var st = cmdState(cmd);
             var msg = cmd.message || '';
 
             if (st === 'completed') {
@@ -2366,11 +2387,11 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + FILM_I18N.search_indexers_short;
       var pollCount = 0;
 
-      pollTimer = setInterval(function () {
+      pollTimer = cmdInterval(function () {
         pollCount++;
         ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId)
         .then(function (cmd) {
-          var st = (cmd.status || '').toLowerCase();
+          var st = cmdState(cmd);
 
           if (st === 'completed') {
             stopPoll();
@@ -2415,7 +2436,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
                 // Normal search found nothing — try via interactive search
                 showSearchFeedback(FILM_I18N.search_no_auto_result, 'info', true);
                 var releaseTimer = 0;
-                var releaseCountdown = setInterval(function() {
+                var releaseCountdown = cmdInterval(function() {
                   releaseTimer++;
                   var msgs = [
                     FILM_I18N.search_idx_connect,
@@ -2648,10 +2669,10 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         showSearchFeedback(FILM_I18N.refresh_launch_error, 'danger', false);
         return;
       }
-      pollTimer = setInterval(function () {
+      pollTimer = cmdInterval(function () {
         ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId)
         .then(function (cmd) {
-          var st = (cmd.status || '').toLowerCase();
+          var st = cmdState(cmd);
           if (st === 'completed') {
             stopPoll();
             btn.disabled = false;
@@ -3004,7 +3025,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         if (data.ok) {
           deleteStatusMsg(FILM_I18N.delete_success, 'success');
           setTimeout(function() {
-            location.reload();
+            safeReload();
           }, 800);
         } else { deleteStatusMsg(FILM_I18N.delete_error_msg, 'danger'); }
       }).catch(function () { deleteStatusMsg(FILM_I18N.network_error, 'danger'); });
@@ -3164,10 +3185,10 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       }
 
       // Poll command status
-      var renamePoll = setInterval(function () {
+      var renamePoll = cmdInterval(function () {
         ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId)
         .then(function (cmd) {
-          var st = (cmd.status || '').toLowerCase();
+          var st = cmdState(cmd);
           if (st === 'completed') {
             clearInterval(renamePoll);
             btn.disabled = false;
@@ -3578,6 +3599,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
      ══════════════════════════════════════════════════════════════════════════ */
 
   function refreshWarnings() {
+    if (document.hidden) return; // MT-8: three uncached Radarr calls per 10 s — not for a hidden tab
     if (bannerLocked) return;
     var el = document.getElementById('warnings-banner');
     if (!el) return;
@@ -3748,9 +3770,9 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue/' + queueId + '/import', {})
         .then(function(data) {
           if (data.ok && data.cmdId) {
-            var importPoll = setInterval(function() {
+            var importPoll = cmdInterval(function() {
               ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId).then(function(cmd) {
-                var st = (cmd.status || '').toLowerCase();
+                var st = cmdState(cmd);
                 var msg = cmd.message || '';
                 if (progCell && st === 'started') {
                   progCell.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:100%;background:#9b59b6;animation:pulse 1.5s infinite"></div></div><span style="color:#9b59b6" class="small fw-medium">' + esc(msg || FILM_I18N.q_importing) + '</span></div>';
@@ -3890,7 +3912,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_in_progress_tpl, {LBL: label}), 'info');
 
       var pollCount = 0;
-      var pollCmd = setInterval(function() {
+      var pollCmd = cmdInterval(function() {
         pollCount++;
         var elapsed = pollCount * 2;
         ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + cmd.id).then(function(st) {
@@ -3942,14 +3964,20 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/refresh-downloads', {}).catch(function(){});
     }
     ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue?_t=' + Date.now()).then(function(items) {
+      if (!Array.isArray(items)) return;
       var currentIds = new Set();
-      (items || []).forEach(function(q) { if (q.movieId) currentIds.add(q.movieId); });
+      items.forEach(function(q) { if (q.movieId) currentIds.add(q.movieId); });
 
-      // Detect movies that just left the queue = imported
+      // Detect movies that just left the queue. MT-6 (review 2026-11-06):
+      // leaving the queue is NOT "imported" — a Radarr blip empties the
+      // queue too, and the user may have removed the item — so ask Radarr
+      // for the file state before painting the card green.
       previousQueueIds.forEach(function(mid) {
         if (!currentIds.has(mid)) {
           var card = document.querySelector('.media-card[data-id="' + mid + '"]');
-          if (card) {
+          if (!card) return;
+          ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + mid + '/info').then(function(movie) {
+            if (!movie || !movie.id || !movie.hasFile) return;
             // Update data-has-file
             card.dataset.hasFile = '1';
 
@@ -3957,12 +3985,8 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
             var dot = card.querySelector('.status-dot');
             if (dot) { dot.style.background = '#22c55e'; dot.title = FILM_I18N.downloaded; }
 
-            // Update the cached data-movie
-            try {
-              var m = JSON.parse(card.dataset.movie);
-              m.hasFile = true;
-              card.dataset.movie = JSON.stringify(m);
-            } catch(e) {}
+            // Update the cached data-movie with Radarr's answer
+            try { card.dataset.movie = JSON.stringify(movie); } catch(e) {}
 
             // Badge "Importé" temporaire
             var existing = card.querySelector('.import-badge');
@@ -3977,21 +4001,17 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
             // Si la modal est ouverte pour ce film → rafraîchir les infos
             if (currentId && String(currentId) === String(mid)) {
-              ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + mid + '/info').then(function(movie) {
-                if (!movie || !movie.id) return;
-                currentMovie = movie;
-                try { card.dataset.movie = JSON.stringify(movie); } catch(e) {}
-                populateHeader(currentMovie);
-                populateLeftCol(currentMovie);
-                populateRightCol(currentMovie);
-                showFileActions(currentMovie);
-                // Recharger fichiers + nommage
-                fileManagerLoaded = false;
-                loadRenameProposals(mid);
-                loadCredits(mid);
-              });
+              currentMovie = movie;
+              populateHeader(currentMovie);
+              populateLeftCol(currentMovie);
+              populateRightCol(currentMovie);
+              showFileActions(currentMovie);
+              // Recharger fichiers + nommage
+              fileManagerLoaded = false;
+              loadRenameProposals(mid);
+              loadCredits(mid);
             }
-          }
+          }).catch(function(){});
         }
       });
 
@@ -4024,6 +4044,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
   });
 
   var addSearchTimer = null;
+  var addSearchSeq = 0; // MT-9: a slow earlier lookup must not overwrite the latest results
   function doAddSearch() {
     var term = document.getElementById('add-search-input').value.trim();
     if (!term || term.length < 2) return;
@@ -4032,9 +4053,11 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     loading.style.display = '';
     results.innerHTML = '';
     document.getElementById('add-film-form').style.display = 'none';
+    var seq = ++addSearchSeq;
 
     ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/lookup?term=' + encodeURIComponent(term))
     .then(function (movies) {
+      if (seq !== addSearchSeq) return;
       loading.style.display = 'none';
       if (!movies.length) {
         results.innerHTML = '<div class="col-12 text-muted text-center py-3">' + esc(FILM_I18N.m_no_results) + '</div>';
@@ -4066,6 +4089,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
 
     })
     .catch(function () {
+      if (seq !== addSearchSeq) return;
       loading.style.display = 'none';
       results.innerHTML = '<div class="col-12 text-danger text-center py-3">' + esc(FILM_I18N.m_search_error) + '</div>';
     });
@@ -4193,7 +4217,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
           // Poll rapide : max 20 polls × 3s = 60s pour la détection initiale
           var pollCount = 0;
           var maxPolls = 20;
-          var addPoll = setInterval(function() {
+          var addPoll = cmdInterval(function() {
             pollCount++;
             var elapsed = pollCount * 3;
             var dots = '.'.repeat((pollCount % 3) + 1);
@@ -4223,24 +4247,24 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
                 var src = inQueue[0].indexer || '';
                 result.className = 'mt-3 alert alert-success';
                 result.innerHTML = tpl(FILM_I18N.m_dl_started_tpl, {TITLE: esc(movieTitle), SRC: src ? tpl(FILM_I18N.m_via_prefix_tpl, {SRC: esc(src)}) : ''});
-                setTimeout(function() { location.reload(); }, 1500);
+                setTimeout(function() { safeReload(); }, 1500);
               } else if (recentFails.length > 0) {
                 clearInterval(addPoll);
                 result.className = 'mt-3 alert alert-danger';
                 result.innerHTML = tpl(FILM_I18N.m_dl_failed_tpl, {TITLE: esc(movieTitle)});
-                setTimeout(function() { location.reload(); }, 5000);
+                setTimeout(function() { safeReload(); }, 5000);
               } else if (recentGrabs.length > 0 && pollCount >= 10) {
                 // Grabé mais pas dans la queue après 30s — problème client DL
                 clearInterval(addPoll);
                 var src = (recentGrabs[0].data || {}).indexer || '';
                 result.className = 'mt-3 alert alert-warning';
                 result.innerHTML = tpl(FILM_I18N.m_grab_but_no_queue_tpl, {TITLE: esc(movieTitle), SRC: src ? tpl(FILM_I18N.m_via_prefix_tpl, {SRC: esc(src)}) : ''});
-                setTimeout(function() { location.reload(); }, 4000);
+                setTimeout(function() { safeReload(); }, 4000);
               } else if (pollCount >= maxPolls) {
                 clearInterval(addPoll);
                 result.className = 'mt-3 alert alert-warning';
                 result.innerHTML = tpl(FILM_I18N.m_no_download_detected_tpl, {TITLE: esc(movieTitle)});
-                setTimeout(function() { location.reload(); }, 4000);
+                setTimeout(function() { safeReload(); }, 4000);
               }
             }).catch(function() {});
           }, 3000);
@@ -4248,7 +4272,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
           // Pas monitored, pas de recherche auto
           result.className = 'mt-3 alert alert-success';
           result.innerHTML = tpl(FILM_I18N.m_added_not_monitored_tpl, {TITLE: esc(movieTitle)});
-          setTimeout(function() { location.reload(); }, 2000);
+          setTimeout(function() { safeReload(); }, 2000);
         }
         selectedMovie = null;
       } else {
@@ -4268,10 +4292,10 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
   function pollFilmCmd(cmdId, label) {
     var pollCount = 0;
     showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_in_progress_tpl, {LBL: label}), 'info');
-    var timer = setInterval(function() {
+    var timer = cmdInterval(function() {
       pollCount++;
       ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + cmdId).then(function(cmd) {
-        var st = (cmd.status || '').toLowerCase();
+        var st = cmdState(cmd);
         var msg = cmd.message || '';
         if (st === 'completed') {
           clearInterval(timer);
@@ -4661,7 +4685,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/edit', payload).then(function(d) {
       btn.disabled = false; btn.innerHTML = FILM_I18N.b_save;
       closeBulkModal('modal-bulk-edit');
-      if (d.ok) { showPageBanner(tpl(FILM_I18N.w_bulk_modified_tpl, {COUNT: ids.length}), 'success'); setTimeout(function() { location.reload(); }, 1500); }
+      if (d.ok) { showPageBanner(tpl(FILM_I18N.w_bulk_modified_tpl, {COUNT: ids.length}), 'success'); setTimeout(function() { safeReload(); }, 1500); }
       else showPageBanner(tpl(FILM_I18N.edit_error_tpl, {ERR: d.error || FILM_I18N.unknown_error}), 'danger');
     });
   });
@@ -4798,7 +4822,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         showPageBanner(tpl(FILM_I18N.w_bulk_delete_ok_tpl, {COUNT: ids.length}), 'success');
         // Reload the same URL after the success banner so the server-side
         // pagination counters ("1-200 of N") drop the deleted movies.
-        setTimeout(function() { location.reload(); }, 1500);
+        setTimeout(function() { safeReload(); }, 1500);
       } else {
         showPageBanner(FILM_I18N.w_generic_error, 'danger');
       }

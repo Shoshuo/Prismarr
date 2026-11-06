@@ -48,8 +48,10 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         'app_media_sonarr'  => ['service' => 'Sonarr',      'service_id' => 'sonarr',      'instance_type' => ServiceInstance::TYPE_SONARR,    'index' => 'app_media_series'],
         'prowlarr_'         => ['service' => 'Prowlarr',    'service_id' => 'prowlarr',    'keys' => ['prowlarr_api_key', 'prowlarr_url'],     'index' => 'prowlarr_index'],
         'jellyseerr_'       => ['service' => 'Jellyseerr',  'service_id' => 'jellyseerr',  'keys' => ['jellyseerr_api_key', 'jellyseerr_url'], 'index' => 'jellyseerr_index'],
-        'qbittorrent_'      => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'keys' => ['qbittorrent_url', 'qbittorrent_user'],  'index' => 'app_qbittorrent_index'],
-        'app_qbittorrent'   => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'keys' => ['qbittorrent_url', 'qbittorrent_user'],  'index' => 'app_qbittorrent_index'],
+        // H7 (review 2026-11-06): URL only, like isConfigured()/SERVICE_KEYS/
+        // login() — an auth-injecting reverse proxy (issue #10) has no user.
+        'qbittorrent_'      => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'keys' => ['qbittorrent_url'],                       'index' => 'app_qbittorrent_index'],
+        'app_qbittorrent'   => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'keys' => ['qbittorrent_url'],                       'index' => 'app_qbittorrent_index'],
         'deluge_'           => ['service' => 'Deluge',      'service_id' => 'deluge',      'keys' => ['deluge_url'],                            'index' => 'app_deluge_index'],
         'app_deluge'        => ['service' => 'Deluge',      'service_id' => 'deluge',      'keys' => ['deluge_url'],                            'index' => 'app_deluge_index'],
         'transmission_'     => ['service' => 'Transmission', 'service_id' => 'transmission', 'keys' => ['transmission_url'],                   'index' => 'app_transmission_index'],
@@ -91,7 +93,7 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $rule = $this->matchRule($route);
+        $rule = self::matchRule($route);
         if ($rule === null) {
             return;
         }
@@ -156,9 +158,19 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
     }
 
     /**
+     * The service id a route name is guarded under, or null for routes not
+     * tied to a connected service (review 2026-11-06, AS-5: HomeController's
+     * "last visited" pre-check used its own six-service copy of this list).
+     */
+    public static function serviceIdForRoute(string $route): ?string
+    {
+        return self::matchRule($route)['service_id'] ?? null;
+    }
+
+    /**
      * @return array{service: string, service_id: string, keys?: list<string>, instance_type?: string, exclude_prefix?: string, index: string}|null
      */
-    private function matchRule(string $route): ?array
+    private static function matchRule(string $route): ?array
     {
         foreach (self::RULES as $prefix => $rule) {
             if (!str_starts_with($route, $prefix)) {

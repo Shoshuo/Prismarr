@@ -640,6 +640,7 @@
       method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        action: willAdd ? 'add' : 'remove',
         tmdb_id: parseInt(star.dataset.tmdbId),
         type: star.dataset.tmdbType,
         title: star.dataset.title || '',

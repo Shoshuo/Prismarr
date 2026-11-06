@@ -1070,6 +1070,28 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
 
 {% block javascripts %}
 <script>
+  // MT-7 (review 2026-11-06): command pollers — *arr terminal states beyond
+  // completed/failed (aborted, cancelled, orphaned), a hard cap, repeated
+  // "unknown" answers (our controller's fallback when the *arr can't be
+  // reached), teardown on Turbo navigation, and reloads that only fire while
+  // THIS page is still the one on screen.
+  var CMD_TERMINAL = ['failed', 'aborted', 'cancelled', 'orphaned'];
+  var CMD_POLL_CAP = 240;
+  var _cmdPolls = {}, _cmdUnknown = 0, _cmdTimers = [];
+  function cmdState(cmd) {
+    var st = (cmd.status || '').toLowerCase();
+    if (st === 'unknown' || st === '') { _cmdUnknown++; return _cmdUnknown >= 5 ? 'failed' : 'unknown'; }
+    _cmdUnknown = 0;
+    if (CMD_TERMINAL.indexOf(st) !== -1) return 'failed';
+    var key = String(cmd.id || 'x');
+    _cmdPolls[key] = (_cmdPolls[key] || 0) + 1;
+    if (st !== 'completed' && _cmdPolls[key] >= CMD_POLL_CAP) return 'failed';
+    return st;
+  }
+  function cmdInterval(fn, ms) { var id = setInterval(fn, ms); _cmdTimers.push(id); return id; }
+  function safeReload() { if (document.getElementById('series-grid')) location.reload(); }
+  if (window.registerPageLifecycle) window.registerPageLifecycle(function () { return function () { _cmdTimers.forEach(clearInterval); _cmdTimers.length = 0; }; });
+  var importInFlight = false; // MT-9: the queue banner re-renders its Import button mid-POST
 (function () {
   var BASE = window.BASE_PATH;
   /* ══════════════════════════════════════════════════════════════════════════
@@ -1853,7 +1875,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/bulk/edit', payload).then(function(d) {
       btn.disabled = false; btn.innerHTML = SERIES_I18N.bulk_save;
       closeBulkModal('modal-bulk-edit-series');
-      if (d.ok) { showPageBanner(tpl(SERIES_I18N.w_modified_ok_tpl, { COUNT: ids.length }), 'success'); setTimeout(function() { location.reload(); }, 1500); }
+      if (d.ok) { showPageBanner(tpl(SERIES_I18N.w_modified_ok_tpl, { COUNT: ids.length }), 'success'); setTimeout(function() { safeReload(); }, 1500); }
       else showPageBanner(SERIES_I18N.w_bulk_error, 'danger');
     });
   });
@@ -1904,7 +1926,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         showPageBanner(tpl(SERIES_I18N.w_delete_ok_tpl, { COUNT: ids.length }), 'success');
         // Reload the same URL after the success banner so the server-side
         // pagination counters ("1-200 of N") drop the deleted series.
-        setTimeout(function() { location.reload(); }, 1500);
+        setTimeout(function() { safeReload(); }, 1500);
       } else {
         showPageBanner(tpl(SERIES_I18N.w_error_tpl, { ERR: (d.error || SERIES_I18N.d_unknown_error) }), 'danger');
       }
@@ -2178,7 +2200,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         html += '<button class="btn btn-sm btn-warning" id="btn-clean-queue">' + esc(tpl(SERIES_I18N.queue_clean_duplicates_tpl, { COUNT: staleItems.length })) + '</button>';
       }
       if (realBlocked.length > 0) {
-        html += '<button class="btn btn-sm btn-primary" id="btn-import-blocked">' + esc(tpl(SERIES_I18N.queue_import_files_tpl, { COUNT: realBlocked.length })) + '</button>';
+        html += '<button class="btn btn-sm btn-primary" id="btn-import-blocked"' + (importInFlight ? ' disabled' : '') + '>' + esc(tpl(SERIES_I18N.queue_import_files_tpl, { COUNT: realBlocked.length })) + '</button>';
       }
       html += '</div></div>';
       bannerEl.innerHTML = html;
@@ -2212,6 +2234,8 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
       var importBtn = document.getElementById('btn-import-blocked');
       if (importBtn) {
         importBtn.addEventListener('click', function() {
+          if (importInFlight) return;
+          importInFlight = true;
           importBtn.disabled = true;
           importBtn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:12px;height:12px;"></span> ' + SERIES_I18N.queue_importing;
           var items = realBlocked.map(function(w) {
@@ -2222,6 +2246,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify({ items: items }),
           }).then(function(r) { return r.json(); }).then(function(data) {
+            importInFlight = false;
             var imported = data.imported || 0;
             var skipped  = data.skipped  || 0;
             var total    = imported + skipped;
@@ -2251,6 +2276,10 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
                 : SERIES_I18N.queue_error;
               showPageBanner(msg, 'danger');
             }
+          }).catch(function() {
+            importInFlight = false;
+            importBtn.disabled = false;
+            importBtn.textContent = SERIES_I18N.queue_error;
           });
         });
       }
@@ -2270,7 +2299,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   // Auto-refresh queue every 3s
   setInterval(refreshQueue, 2000);
   // RefreshMonitoredDownloads every 8s (tells Sonarr to check qBittorrent)
-  setInterval(function() {
+  cmdInterval(function() {
     fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/queue/refresh', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
@@ -2928,9 +2957,9 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               goBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + SERIES_I18N.d_rename_in_progress;
               ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + seriesId + '/rename', { fileIds: fileIds }).then(function(data) {
                 if (data.ok && data.cmdId) {
-                  var pollRename = setInterval(function() {
+                  var pollRename = cmdInterval(function() {
                     ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/' + data.cmdId).then(function(cmd) {
-                      var st = (cmd.status || '').toLowerCase();
+                      var st = cmdState(cmd);
                       if (st === 'completed') {
                         clearInterval(pollRename);
                         goBtn.innerHTML = SERIES_I18N.d_renamed;
@@ -3122,13 +3151,13 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     if (pollSeriesId && pollSeriesId == currentId) {
       showBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_cmd_in_progress_tpl, { LBL: label }), 'info');
     }
-    var timer = setInterval(function() {
+    var timer = cmdInterval(function() {
       pollCount++;
       var elapsed = pollCount * 2;
       fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/' + cmdId, { headers: {'X-Requested-With':'XMLHttpRequest'} })
       .then(function(r) { return r.json(); })
       .then(function(cmd) {
-        var st = (cmd.status || '').toLowerCase();
+        var st = cmdState(cmd);
         var msg = cmd.message || '';
         var isCurrentModal = pollSeriesId && pollSeriesId == currentId;
         if (st === 'completed') {
@@ -3753,10 +3782,10 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
           }
 
           // Poll
-          var timer = setInterval(function() {
+          var timer = cmdInterval(function() {
             ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/' + data.cmdId)
             .then(function(cmd) {
-              var st = (cmd.status || '').toLowerCase();
+              var st = cmdState(cmd);
               if (st === 'completed') {
                 clearInterval(timer);
                 showFmFeedback(tpl(SERIES_I18N.d_rename_done_tpl, { COUNT: fileIds.length }), 'success');
@@ -3805,7 +3834,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
       shelfBuilt = false;
       applyFilters();
       // Fermer la modal
-      location.reload();
+      safeReload();
     });
   });
 
@@ -4982,6 +5011,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   var addConfigLoaded = false;
   var addSelectedSerie = null;
   var addSearchTimer = null;
+  var addLookupSeq = 0; // MT-9: a slow earlier lookup must not overwrite the latest results
 
   document.getElementById('modal-add-serie').addEventListener('show.bs.modal', function() {
     document.getElementById('add-serie-search').value = '';
@@ -5042,7 +5072,9 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     addSearchTimer = setTimeout(function() {
       document.getElementById('add-serie-loading').style.display = '';
       document.getElementById('add-serie-results').innerHTML = '';
+      var seq = ++addLookupSeq;
       ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/lookup?term=' + encodeURIComponent(q)).then(function(results) {
+        if (seq !== addLookupSeq) return;
         document.getElementById('add-serie-loading').style.display = 'none';
         var container = document.getElementById('add-serie-results');
         container.innerHTML = '';
@@ -5088,6 +5120,10 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
             el.style.borderColor = '#6366f1';
           });
         });
+      }).catch(function() {
+        if (seq !== addLookupSeq) return;
+        document.getElementById('add-serie-loading').style.display = 'none';
+        document.getElementById('add-serie-results').innerHTML = '<div class="col-12 text-danger text-center py-3">' + esc(SERIES_I18N.w_network_error || 'Network error') + '</div>';
       });
     }, 400);
   });
@@ -5122,7 +5158,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         resultEl.textContent = SERIES_I18N.modal_added_success;
         resultEl.classList.remove('d-none');
         btn.style.display = 'none';
-        setTimeout(function() { location.reload(); }, 2000);
+        setTimeout(function() { safeReload(); }, 2000);
       } else {
         var resultEl = document.getElementById('add-serie-result');
         resultEl.className = 'mt-2 alert alert-danger';

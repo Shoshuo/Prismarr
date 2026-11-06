@@ -371,11 +371,33 @@ class HealthService implements ResetInterface
             if ($this->serviceHealthCache !== null) {
                 foreach (['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr', 'emby'] as $svc) {
                     $this->serviceHealthCache->clear($svc);
+                    $this->clearInstanceBreakers($svc);
                 }
             }
         } else {
             unset($this->statusCache[$service]);
             $this->serviceHealthCache?->clear($service);
+            $this->clearInstanceBreakers($service);
+        }
+    }
+
+    /**
+     * HC-4 (review 2026-11-06): RadarrClient/SonarrClient mark themselves
+     * down PER INSTANCE (`service_down.radarr.<slug>`); clearing only the
+     * flat key made the banner's Retry a no-op for every instance page.
+     */
+    private function clearInstanceBreakers(string $service): void
+    {
+        $type = match ($service) {
+            'radarr' => ServiceInstance::TYPE_RADARR,
+            'sonarr' => ServiceInstance::TYPE_SONARR,
+            default  => null,
+        };
+        if ($type === null || $this->instances === null || $this->serviceHealthCache === null) {
+            return;
+        }
+        foreach ($this->instances->getAll($type) as $instance) {
+            $this->serviceHealthCache->clear($service, $instance->getSlug());
         }
     }
 

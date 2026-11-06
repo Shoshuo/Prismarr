@@ -1264,6 +1264,7 @@ media:
     series_not_found: Série introuvable
     series_data_missing: Données série introuvables
     no_movies_selected: Aucun film sélectionné
+    no_series_selected: Aucune série sélectionnée
     no_movie: Aucun film
     no_series: Aucune série
     queue_item_not_found: Item non trouvé dans la queue

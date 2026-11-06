@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -509,5 +510,82 @@ class TmdbControllerTest extends TestCase
 
         $this->smartSearchController($tmdb)
             ->smartSearch(new \Symfony\Component\HttpFoundation\Request(['q' => str_repeat('matrix ', 60), 'exact' => '1']));
+    }
+
+    // ── DD-7: the watchlist toggle must honour the client's intent ──────────
+
+    private function watchlistController(\App\Repository\Media\WatchlistItemRepository $repo, \Doctrine\ORM\EntityManagerInterface $em): TmdbController
+    {
+        $translator = $this->createMock(TranslatorInterface::class);
+        $translator->method('trans')->willReturnArgument(0);
+        $config = $this->createMock(ConfigService::class);
+        $radarr = $this->createMock(RadarrClient::class);
+        $sonarr = $this->createMock(SonarrClient::class);
+        $controller = new TmdbController(
+            $this->createMock(TmdbClient::class),
+            $radarr,
+            $sonarr,
+            $repo,
+            $em,
+            $config,
+            $this->createMock(LoggerInterface::class),
+            $translator,
+            $this->createMock(ServiceInstanceProvider::class),
+            null,
+        );
+        $container = $this->createMock(ContainerInterface::class);
+        $container->method('has')->willReturn(false);
+        $controller->setContainer($container);
+        return $controller;
+    }
+
+    public function testWatchlistToggleWithAnExplicitAddDoesNotRemoveAnExistingItem(): void
+    {
+        // The quick-look decided add/remove from a window-level index that
+        // the watchlist page never updated: after a remove, the next click
+        // meant "add" but the server flipped the (already present) item off.
+        $existing = new \App\Entity\Media\WatchlistItem();
+        $repo = $this->createMock(\App\Repository\Media\WatchlistItemRepository::class);
+        $repo->method('findByTmdb')->willReturn($existing);
+        $em = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
+        $em->expects($this->never())->method('remove');
+        $em->expects($this->never())->method('persist');
+
+        $request = Request::create('/decouverte/watchlist/toggle', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['tmdb_id' => 603, 'type' => 'movie', 'action' => 'add']));
+        $r = $this->watchlistController($repo, $em)->watchlistToggle($request);
+
+        $this->assertSame('added', json_decode((string) $r->getContent(), true)['action']);
+    }
+
+    public function testWatchlistToggleWithAnExplicitRemoveOnAMissingItemIsIdempotent(): void
+    {
+        $repo = $this->createMock(\App\Repository\Media\WatchlistItemRepository::class);
+        $repo->method('findByTmdb')->willReturn(null);
+        $em = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
+        $em->expects($this->never())->method('persist');
+
+        $request = Request::create('/decouverte/watchlist/toggle', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['tmdb_id' => 603, 'type' => 'movie', 'action' => 'remove']));
+        $r = $this->watchlistController($repo, $em)->watchlistToggle($request);
+
+        $this->assertSame('removed', json_decode((string) $r->getContent(), true)['action']);
+    }
+
+    public function testWatchlistToggleRejectsNonStringTitlesInsteadOf500(): void
+    {
+        $repo = $this->createMock(\App\Repository\Media\WatchlistItemRepository::class);
+        $repo->method('findByTmdb')->willReturn(null);
+        $persisted = null;
+        $em = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (object $o) use (&$persisted): void { $persisted = $o; });
+
+        $request = Request::create('/decouverte/watchlist/toggle', 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['tmdb_id' => 603, 'type' => 'movie', 'title' => ['nope'], 'poster_path' => ['x']]));
+        $r = $this->watchlistController($repo, $em)->watchlistToggle($request);
+
+        $this->assertSame(200, $r->getStatusCode());
+        $this->assertInstanceOf(\App\Entity\Media\WatchlistItem::class, $persisted);
+        $this->assertIsString($persisted->getTitle());
     }
 }

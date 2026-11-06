@@ -260,4 +260,76 @@ class MediaArrWritePathsTest extends TestCase
 
         $this->controller(sonarr: $sonarr)->seriesBulkEdit(self::post(['seriesIds' => [4], 'rootFolderPath' => '/new', 'moveFiles' => true]));
     }
+
+    // ── MT-10: series bulk search / refresh go through one endpoint ─────────
+
+    public function testSeriesBulkRefreshSendsOneCommandWithAllIds(): void
+    {
+        $sonarr = $this->createMock(SonarrClient::class);
+        $sonarr->expects($this->once())
+            ->method('sendCommand')
+            ->with('RefreshSeries', ['seriesIds' => [4, 9]])
+            ->willReturn(['id' => 77]);
+
+        $r = $this->controller(sonarr: $sonarr)->seriesBulkRefresh(self::post(['seriesIds' => [4, 9]]));
+
+        $payload = json_decode((string) $r->getContent(), true);
+        $this->assertTrue($payload['ok']);
+        $this->assertSame(77, $payload['cmdId']);
+    }
+
+    public function testSeriesBulkSearchCountsRejectedCommands(): void
+    {
+        // The page used to fire one POST per series straight at Sonarr and
+        // count every rejection as "launched".
+        $sonarr = $this->createMock(SonarrClient::class);
+        $sonarr->expects($this->exactly(3))
+            ->method('sendCommand')
+            ->willReturnCallback(fn(string $name, array $body) => ($body['seriesId'] ?? 0) === 9 ? null : ['id' => 100 + $body['seriesId']]);
+
+        $r = $this->controller(sonarr: $sonarr)->seriesBulkSearch(self::post(['seriesIds' => [4, 9, 12]]));
+
+        $payload = json_decode((string) $r->getContent(), true);
+        $this->assertTrue($payload['ok']);
+        $this->assertSame(2, $payload['launched']);
+        $this->assertSame(1, $payload['failed']);
+        $this->assertSame([104, 112], $payload['cmdIds']);
+    }
+
+    public function testSeriesBulkSearchWithEveryCommandRejectedIsNotOk(): void
+    {
+        $sonarr = $this->createMock(SonarrClient::class);
+        $sonarr->method('sendCommand')->willReturn(null);
+        $sonarr->method('getLastError')->willReturn(['code' => 0, 'method' => 'POST', 'path' => '/api/v3/command', 'message' => 'Failed to connect']);
+
+        $r = $this->controller(sonarr: $sonarr)->seriesBulkSearch(self::post(['seriesIds' => [4]]));
+
+        $this->assertGreaterThanOrEqual(500, $r->getStatusCode());
+        $this->assertFalse(json_decode((string) $r->getContent(), true)['ok']);
+    }
+
+    public function testFilmQueueSurfacesAnOutageInsteadOfAnEmptyQueue(): void
+    {
+        // C1 / MT-6: [] on a Radarr blip made the page paint every queued
+        // card "Downloaded"; the poll must get an error envelope instead.
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('getQueue')->willReturn([]);
+        $radarr->method('getLastError')->willReturn(['code' => 0, 'method' => 'GET', 'path' => '/api/v3/queue', 'message' => 'Failed to connect']);
+
+        $r = $this->controller(radarr: $radarr)->filmQueue();
+
+        $this->assertSame(502, $r->getStatusCode());
+    }
+
+    public function testFilmQueueEmptyWithoutAnErrorIsAnEmptyList(): void
+    {
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('getQueue')->willReturn([]);
+        $radarr->method('getLastError')->willReturn(null);
+
+        $r = $this->controller(radarr: $radarr)->filmQueue();
+
+        $this->assertSame(200, $r->getStatusCode());
+        $this->assertSame([], json_decode((string) $r->getContent(), true));
+    }
 }
