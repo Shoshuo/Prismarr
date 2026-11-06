@@ -40,6 +40,9 @@ class QBittorrentController extends AbstractController
     {
         try {
             $torrents = $this->qbt->getTorrents();
+            if ($torrents === [] && $this->clientFailed($this->qbt)) {
+                return $this->jsonClientError('qBittorrent', $this->qbt, 'unreachable', 502); // C1
+            }
             $active   = 0;
             $items    = [];
             foreach ($torrents as $t) {
@@ -160,6 +163,9 @@ class QBittorrentController extends AbstractController
             $desc     = $request->query->get('desc', '1') === '1';
 
             $all   = $this->qbt->getTorrents();
+            if ($all === [] && $this->clientFailed($this->qbt)) {
+                return $this->jsonClientError('qBittorrent', $this->qbt, 'unreachable', 502); // C1: an outage is not an empty list
+            }
             $stats = $this->qbt->getStats($all);
 
             // State filter

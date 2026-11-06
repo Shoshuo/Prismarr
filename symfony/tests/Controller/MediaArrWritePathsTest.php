@@ -27,7 +27,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 #[AllowMockObjectsWithoutExpectations]
 class MediaArrWritePathsTest extends TestCase
 {
-    private function controller(?RadarrClient $radarr = null, ?SonarrClient $sonarr = null): MediaController
+    private function controller(?RadarrClient $radarr = null, ?SonarrClient $sonarr = null, ?MediaLibraryCache $libraryCache = null): MediaController
     {
         $translator = $this->createMock(TranslatorInterface::class);
         $translator->method('trans')->willReturnArgument(0);
@@ -42,7 +42,7 @@ class MediaArrWritePathsTest extends TestCase
             $this->createMock(ServiceInstanceProvider::class),
             new NullLogger(),
             $translator,
-            $this->createMock(MediaLibraryCache::class),
+            $libraryCache ?? $this->createMock(MediaLibraryCache::class),
             $this->createMock(BazarrSubtitleIndex::class),
         );
         $container = $this->createMock(ContainerInterface::class);
@@ -331,5 +331,26 @@ class MediaArrWritePathsTest extends TestCase
 
         $this->assertSame(200, $r->getStatusCode());
         $this->assertSame([], json_decode((string) $r->getContent(), true));
+    }
+
+    // ── AC-8 (review 2026-11-06): resolvers read the shared library cache ───
+
+    public function testFilmsFilteredIdsReadsTheSharedLibraryCacheForTheBoundInstance(): void
+    {
+        $inst = new \App\Entity\ServiceInstance(\App\Entity\ServiceInstance::TYPE_RADARR, 'radarr-1', 'Radarr', 'http://r:7878', 'k');
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('getInstance')->willReturn($inst);
+        $radarr->expects($this->never())->method('getMovies');
+        $cache = $this->createMock(MediaLibraryCache::class);
+        $cache->expects($this->once())
+            ->method('movies')
+            ->with('radarr-1', $this->callback('is_callable'))
+            ->willReturn([['id' => 2, 'title' => 'Inception', 'sortTitle' => 'inception', 'hasFile' => false, 'monitored' => true, 'genres' => [], 'quality' => '720p']]);
+
+        $r = $this->controller(radarr: $radarr, libraryCache: $cache)->filmsFilteredIds(
+            Request::create('/x?status=missing'), new \App\Service\Media\MovieLibraryFilter()
+        );
+
+        $this->assertSame([2], json_decode((string) $r->getContent(), true)['ids']);
     }
 }

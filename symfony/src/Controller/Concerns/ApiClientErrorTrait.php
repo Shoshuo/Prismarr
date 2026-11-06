@@ -10,6 +10,7 @@ use App\Service\Media\QBittorrentClient;
 use App\Service\Media\RadarrClient;
 use App\Service\Media\SonarrClient;
 use App\Service\Media\TransmissionClient;
+use App\Service\Media\Usenet\UsenetClientInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
@@ -37,7 +38,7 @@ trait ApiClientErrorTrait
      * Returns a generic fallback if the client did not record a structured error
      * (e.g. exception thrown before any HTTP call).
      */
-    private function buildClientErrorFlash(string $service, RadarrClient|SonarrClient|ProwlarrClient|JellyseerrClient|QBittorrentClient|DelugeClient|TransmissionClient|BazarrClient $client, ?string $fallback = null): string
+    private function buildClientErrorFlash(string $service, RadarrClient|SonarrClient|ProwlarrClient|JellyseerrClient|QBittorrentClient|DelugeClient|TransmissionClient|BazarrClient|UsenetClientInterface $client, ?string $fallback = null): string
     {
         $err = $client->getLastError();
         if ($err === null) {
@@ -61,7 +62,7 @@ trait ApiClientErrorTrait
      * Output shape:
      *   { ok: false, error: string, http_code: int, service: string, path: string, method: string }
      */
-    private function jsonClientError(string $service, RadarrClient|SonarrClient|ProwlarrClient|JellyseerrClient|QBittorrentClient|DelugeClient|TransmissionClient|BazarrClient $client, ?string $fallback = null, int $statusCode = 500): JsonResponse
+    private function jsonClientError(string $service, RadarrClient|SonarrClient|ProwlarrClient|JellyseerrClient|QBittorrentClient|DelugeClient|TransmissionClient|BazarrClient|UsenetClientInterface $client, ?string $fallback = null, int $statusCode = 500): JsonResponse
     {
         $err = $client->getLastError();
         if ($err === null) {
@@ -83,6 +84,20 @@ trait ApiClientErrorTrait
             'path'      => $err['path']   ?? null,
             'method'    => $err['method'] ?? null,
         ], $statusCode);
+    }
+
+    /**
+     * C1 (review 2026-11-06): no media client throws on a transport failure —
+     * they answer [] (or an empty snapshot) and record the error. A controller
+     * that treats that [] as truth paints "nothing here" during an outage,
+     * so after a read that came back empty, ask the client whether it failed.
+     */
+    private function clientFailed(object $client): bool
+    {
+        if (method_exists($client, 'isUnavailable') && $client->isUnavailable()) {
+            return true;
+        }
+        return method_exists($client, 'getLastError') && $client->getLastError() !== null;
     }
 
     /**

@@ -588,4 +588,39 @@ class TmdbControllerTest extends TestCase
         $this->assertInstanceOf(\App\Entity\Media\WatchlistItem::class, $persisted);
         $this->assertIsString($persisted->getTitle());
     }
+
+    // ── DD-2 (review 2026-11-06): Discover reads the shared library cache ───
+
+    public function testBuildLibraryIndexReadsMoviesFromTheSharedLibraryCache(): void
+    {
+        $radarrInst = new ServiceInstance(ServiceInstance::TYPE_RADARR, 'radarr-1', 'Radarr', 'http://r:7878', 'k');
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getEnabled')->willReturnCallback(fn(string $type) => $type === ServiceInstance::TYPE_RADARR ? [$radarrInst] : []);
+
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('withInstance')->willReturn($radarr);
+        $radarr->expects($this->never())->method('getMovies');
+        $sonarr = $this->createMock(SonarrClient::class);
+        $sonarr->method('withInstance')->willReturn($sonarr);
+
+        $libraryCache = $this->createMock(\App\Service\Media\MediaLibraryCache::class);
+        $libraryCache->expects($this->once())
+            ->method('movies')
+            ->with('radarr-1', $this->callback('is_callable'))
+            ->willReturn([['id' => 11, 'tmdbId' => 603, 'hasFile' => true, 'monitored' => true, 'status' => 'released']]);
+
+        $translator = $this->createMock(TranslatorInterface::class);
+        $controller = new TmdbController(
+            $this->createMock(TmdbClient::class), $radarr, $sonarr,
+            $this->createMock(WatchlistItemRepository::class), $this->createMock(EntityManagerInterface::class),
+            $this->createMock(ConfigService::class), $this->createMock(LoggerInterface::class), $translator,
+            $instances, null, $libraryCache,
+        );
+
+        $m = new \ReflectionMethod(TmdbController::class, 'buildLibraryIndex');
+        $m->setAccessible(true);
+        $index = $m->invoke($controller);
+
+        $this->assertSame(['id' => 11, 'status' => 'downloaded', 'slug' => 'radarr-1'], $index['movie'][603]);
+    }
 }

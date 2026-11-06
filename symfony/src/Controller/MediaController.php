@@ -711,10 +711,13 @@ class MediaController extends AbstractController
     public function filmsFilteredIds(Request $request, MovieLibraryFilter $filter): JsonResponse
     {
         try {
-            $movies = $this->radarr->getMovies(RadarrClient::LIBRARY_TIMEOUT);
+            $movies = $this->cachedMovies();
         } catch (\Throwable $e) {
             $this->logger->warning('Media filmsFilteredIds failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->jsonClientError('Radarr', $this->radarr, $this->translator->trans('media.api.network_error'));
+        }
+        if ($movies === [] && $this->clientFailed($this->radarr)) {
+            return $this->jsonClientError('Radarr', $this->radarr, $this->translator->trans('media.api.network_error'), 502); // C1
         }
         $query = MovieLibraryQuery::fromRequest($request)->withoutPagination();
         $result = $filter->apply($movies, $query);
@@ -1013,10 +1016,13 @@ class MediaController extends AbstractController
     public function seriesFilteredIds(Request $request, SeriesLibraryFilter $filter): JsonResponse
     {
         try {
-            $series = $this->sonarr->getSeries(SonarrClient::LIBRARY_TIMEOUT);
+            $series = $this->cachedSeries();
         } catch (\Throwable $e) {
             $this->logger->warning('Media seriesFilteredIds failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return $this->jsonClientError('Sonarr', $this->sonarr, $this->translator->trans('media.api.network_error'));
+        }
+        if ($series === [] && $this->clientFailed($this->sonarr)) {
+            return $this->jsonClientError('Sonarr', $this->sonarr, $this->translator->trans('media.api.network_error'), 502); // C1
         }
         $query = SeriesLibraryQuery::fromRequest($request)->withoutPagination();
         $result = $filter->apply($series, $query);
@@ -1083,6 +1089,28 @@ class MediaController extends AbstractController
             return $this->jsonClientError('Sonarr', $this->sonarr, $this->translator->trans('media.api.network_error'), 502);
         }
         return $this->json(['ok' => true, 'launched' => count($cmdIds), 'failed' => $failed, 'cmdIds' => $cmdIds, 'cmdId' => $cmdIds[0]]);
+    }
+
+    /**
+     * AC-8 (review 2026-11-06): the full library through the shared SWR cache
+     * when an instance is bound (every /medias/{slug}/… route), else a direct
+     * timed call — the filtered-ids / collections resolvers used to refetch
+     * the whole library on every click.
+     */
+    private function cachedMovies(): array
+    {
+        $slug = $this->radarr->getInstance()?->getSlug();
+        return $slug !== null
+            ? $this->libraryCache->movies($slug, fn() => $this->radarr->getMovies(RadarrClient::LIBRARY_TIMEOUT))
+            : $this->radarr->getMovies(RadarrClient::LIBRARY_TIMEOUT);
+    }
+
+    private function cachedSeries(): array
+    {
+        $slug = $this->sonarr->getInstance()?->getSlug();
+        return $slug !== null
+            ? $this->libraryCache->series($slug, fn() => $this->sonarr->getSeries(SonarrClient::LIBRARY_TIMEOUT))
+            : $this->sonarr->getSeries(SonarrClient::LIBRARY_TIMEOUT);
     }
 
     /**
@@ -1272,7 +1300,7 @@ class MediaController extends AbstractController
     {
         $collections = $this->radarr->getCollections();
         // Build tmdbId → hasFile lookup from library
-        $movies = $this->radarr->getMovies(RadarrClient::LIBRARY_TIMEOUT);
+        $movies = $this->cachedMovies();
         $movieIndex = [];
         foreach ($movies as $m) {
             if ($tmdb = $m['tmdbId'] ?? null) {

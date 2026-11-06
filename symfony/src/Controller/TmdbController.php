@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\Media\MediaLibraryCache;
 use App\Entity\Media\WatchlistItem;
 use App\Entity\ServiceInstance;
 use App\Repository\Media\WatchlistItemRepository;
@@ -38,6 +39,11 @@ class TmdbController extends AbstractController
         // Typo-correction vocabulary; nullable + last so positional test
         // constructions keep working (null = suggestions from TMDb probes only).
         private readonly ?SearchVocabulary $vocabulary = null,
+        // DD-2 (review 2026-11-06): the Discover library index reads the
+        // shared SWR library cache instead of downloading every library per
+        // request (3 passes per page load). Nullable + last for the
+        // positional test constructors.
+        private readonly ?MediaLibraryCache $libraryCache = null,
     ) {}
 
     #[Route('/decouverte', name: 'tmdb_index')]
@@ -1293,7 +1299,10 @@ class TmdbController extends AbstractController
 
         foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
             try {
-                $movies = $this->radarr->withInstance($inst)->getMovies();
+                $bound  = $this->radarr->withInstance($inst);
+                $movies = $this->libraryCache !== null
+                    ? $this->libraryCache->movies($inst->getSlug(), fn() => $bound->getMovies(RadarrClient::LIBRARY_TIMEOUT))
+                    : $bound->getMovies(RadarrClient::LIBRARY_TIMEOUT);
             } catch (\Throwable $e) {
                 $this->logger->warning('TMDb buildLibraryIndex radarr failed', [
                     'instance'  => $inst->getSlug(),
@@ -1331,7 +1340,7 @@ class TmdbController extends AbstractController
 
         foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
             try {
-                $allSeries = $this->sonarr->withInstance($inst)->getRawAllSeries();
+                $allSeries = $this->sonarr->withInstance($inst)->getRawAllSeries(SonarrClient::LIBRARY_TIMEOUT);
             } catch (\Throwable $e) {
                 $this->logger->warning('TMDb buildLibraryIndex sonarr failed', [
                     'instance'  => $inst->getSlug(),
