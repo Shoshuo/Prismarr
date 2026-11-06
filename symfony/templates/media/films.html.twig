@@ -567,6 +567,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
             <select class="form-select form-select-sm" id="bulk-edit-root">
               <option value="">{{ 'media.films.bulk.edit_keep'|trans }}</option>
             </select>
+            <label class="form-check form-check-sm mt-2 mb-0"><input class="form-check-input" type="checkbox" id="bulk-edit-move-files" checked><span class="form-check-label small">{{ 'media.films.bulk.edit_move_files'|trans }}</span></label>
           </div>
         </div>
         <div class="text-muted small mt-3" id="bulk-edit-info"></div>
@@ -1311,6 +1312,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     edit_cancel: {{ 'media.films.detail.edit_cancel'|trans|json_encode|raw }},
     edit_save: {{ 'media.films.detail.edit_save'|trans|json_encode|raw }},
     edit_update_path_confirm_tpl: {{ 'media.films.detail.edit_update_path_confirm'|trans({path: '__PATH__'})|json_encode|raw }},
+    edit_move_files: {{ 'media.films.detail.edit_move_files'|trans|json_encode|raw }},
     edit_path_updated: {{ 'media.films.detail.edit_path_updated'|trans|json_encode|raw }},
     edit_delete_confirm_tpl: {{ 'media.films.detail.edit_delete_confirm'|trans({title: '__TITLE__'})|json_encode|raw }},
     edit_delete_files_confirm: {{ 'media.films.detail.edit_delete_files_confirm'|trans|json_encode|raw }},
@@ -1382,6 +1384,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     q_import_done_status: {{ 'media.films.queue.import_done_status'|trans|json_encode|raw }},
     q_import_failed_tpl: {{ 'media.films.queue.import_failed'|trans({message: '__MSG__'})|json_encode|raw }},
     q_import_failed_short: {{ 'media.films.queue.import_failed_short'|trans|json_encode|raw }},
+    q_import_unconfirmed_tpl: {{ 'media.films.queue.import_unconfirmed'|trans({state: '__STATE__'})|json_encode|raw }},
     q_import_failed_status: {{ 'media.films.queue.import_failed_status'|trans|json_encode|raw }},
     q_network_error: {{ 'media.films.queue.network_error'|trans|json_encode|raw }},
     q_error_generic_tpl: {{ 'media.films.queue.error_generic'|trans({error: '__ERR__'})|json_encode|raw }},
@@ -2790,6 +2793,8 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       html += '<button class="btn btn-outline-secondary" type="button" id="edit-path-update" title="' + esc(FILM_I18N.edit_update_path) + '"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg></button>';
       html += '</div>';
       html += '<div id="edit-path-browser" style="display:none;border:1px solid var(--tblr-border-color);border-radius:0 0 .25rem .25rem;max-height:200px;overflow-y:auto;background:var(--tblr-bg-surface);"></div>';
+      // AC-10: without moveFiles Radarr only repoints the DB and the files stay behind.
+      html += '<label class="form-check form-check-sm mt-1 mb-0"><input class="form-check-input" type="checkbox" id="edit-move-files" checked><span class="form-check-label small">' + esc(FILM_I18N.edit_move_files) + '</span></label>';
       html += '</div>';
 
       // Tags
@@ -2885,7 +2890,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
       document.getElementById('edit-path-update').addEventListener('click', function() {
         var newPath = document.getElementById('edit-path').value;
         if (!newPath || !confirm(tpl(FILM_I18N.edit_update_path_confirm_tpl, {PATH: newPath}))) return;
-        ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/edit', { path: newPath }).then(function(data) {
+        ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/edit', { path: newPath, moveFiles: document.getElementById('edit-move-files').checked }).then(function(data) {
           if (data.ok) showPageBanner(FILM_I18N.banner_path_update, 'success');
         });
       });
@@ -2924,6 +2929,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
           minimumAvailability: document.getElementById('edit-availability').value,
           qualityProfileId: parseInt(document.getElementById('edit-qualityProfile').value),
           path: document.getElementById('edit-path').value,
+          moveFiles: document.getElementById('edit-move-files').checked,
           tags: selectedTags
         }).then(function(data) {
           saveBtn.disabled = false;
@@ -3213,20 +3219,12 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
   var fileManagerFiles   = [];
   var qualityDefsCache   = null;
 
-  var LANG_LIST = [
-    { id: 2,  name: 'French' },
-    { id: 1,  name: 'English' },
-    { id: 4,  name: 'German' },
-    { id: 3,  name: 'Spanish' },
-    { id: 5,  name: 'Italian' },
-    { id: 13, name: 'Japanese' },
-    { id: 17, name: 'Korean' },
-    { id: 16, name: 'Chinese' },
-    { id: 7,  name: 'Portuguese' },
-    { id: 10, name: 'Russian' },
-    { id: 14, name: 'Arabic' },
-    { id: 11, name: 'Hindi' }
-  ];
+  // Review 2026-11-06 (H4): filled from THIS instance's /api/v3/language —
+  // the old literal table mapped 7 of 12 names to the wrong id (13 is
+  // Vietnamese, 17 Turkish, …) and Arabic/Hindi differ between Radarr and
+  // Sonarr, so no shared literal list can be right.
+  var LANG_LIST = [];
+  var langListCache = null;
 
   // Toggle collapse
   document.getElementById('filemanager-toggle').addEventListener('click', function () {
@@ -3268,11 +3266,16 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     var pQuals = qualityDefsCache
       ? Promise.resolve(qualityDefsCache)
       : ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/quality-definitions');
+    var pLangs = langListCache
+      ? Promise.resolve(langListCache)
+      : ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/languages').catch(function () { return []; });
 
-    Promise.all([pFiles, pQuals]).then(function (results) {
+    Promise.all([pFiles, pQuals, pLangs]).then(function (results) {
       var files = results[0] || [];
       var quals = results[1] || [];
       qualityDefsCache = quals;
+      if (Array.isArray(results[2]) && results[2].length) langListCache = results[2];
+      LANG_LIST = langListCache || [];
       fileManagerFiles = files;
       fileManagerLoaded = true;
       loading.style.display = 'none';
@@ -3336,8 +3339,14 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         qualOpts += '<option value="' + qId + '"' + sel + '>' + esc(qName) + '</option>';
       });
 
+      // H5: every stored language must be an option, or the row looks
+      // dirty from render and a Save posts languages: [] for it.
+      var langOptions = LANG_LIST.slice();
+      (f.languages || []).forEach(function (l) {
+        if (!langOptions.some(function (o) { return o.id === l.id; })) langOptions.push({ id: l.id, name: l.name || ('#' + l.id) });
+      });
       var langChecks = '';
-      LANG_LIST.forEach(function (l) {
+      langOptions.forEach(function (l) {
         var checked = curLangs[l.id] ? ' checked' : '';
         langChecks += '<label class="form-check form-check-inline" style="min-width:100px">' +
           '<input class="form-check-input fm-lang-cb" type="checkbox" value="' + l.id + '" data-name="' + esc(l.name) + '"' + checked + '>' +
@@ -3749,12 +3758,28 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
                 if (st === 'completed') {
                   clearInterval(importPoll);
                   importingQueueIds.delete(queueId);
-                  if (progCell) progCell.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="queue-progress flex-grow-1"><div class="queue-progress-bar bg-success" style="width:100%"></div></div><span class="text-success small fw-medium">' + esc(FILM_I18N.q_import_done_status) + '</span></div>';
-                  if (statusCell) statusCell.innerHTML = '<span class="badge bg-success-lt text-success">' + esc(FILM_I18N.q_import_done_status) + '</span>';
-                  btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>';
-                  ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue/' + queueId + '/delete', { blacklist: false, skipReimport: true }).catch(function(){});
-                  if (btn.dataset.movieId) ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + btn.dataset.movieId + '/rescan', {}).catch(function(){});
-                  setTimeout(refreshQueue, 2000);
+                  // Review 2026-11-06 (H3): the command "completing" is not an
+                  // import — a preview-approved file can still fail. Re-read
+                  // the queue and only drop the item once Radarr itself
+                  // reports it imported (or already removed it).
+                  ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue').then(function(q) {
+                    var still = (Array.isArray(q) ? q : []).filter(function(it) { return String(it.id) === String(queueId); })[0];
+                    var confirmed = !still || (still.trackedState || '').toLowerCase() === 'imported';
+                    if (confirmed) {
+                      if (progCell) progCell.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="queue-progress flex-grow-1"><div class="queue-progress-bar bg-success" style="width:100%"></div></div><span class="text-success small fw-medium">' + esc(FILM_I18N.q_import_done_status) + '</span></div>';
+                      if (statusCell) statusCell.innerHTML = '<span class="badge bg-success-lt text-success">' + esc(FILM_I18N.q_import_done_status) + '</span>';
+                      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>';
+                      if (still) ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue/' + queueId + '/delete', { blacklist: false, skipReimport: true }).catch(function(){});
+                      if (btn.dataset.movieId) ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + btn.dataset.movieId + '/rescan', {}).catch(function(){});
+                    } else {
+                      var state = still.trackedState || still.status || '?';
+                      if (progCell) progCell.innerHTML = '<span class="text-warning small">' + esc(tpl(FILM_I18N.q_import_unconfirmed_tpl, {STATE: state})) + '</span>';
+                      if (statusCell) statusCell.innerHTML = '<span class="badge bg-warning-lt text-warning">' + esc(state) + '</span>';
+                      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>';
+                      btn.disabled = false;
+                    }
+                    setTimeout(refreshQueue, 2000);
+                  }).catch(function() { setTimeout(refreshQueue, 2000); });
                 } else if (st === 'failed') {
                   clearInterval(importPoll);
                   importingQueueIds.delete(queueId);
@@ -3768,7 +3793,9 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
             }, 2000);
           } else {
             importingQueueIds.delete(queueId);
-            if (progCell) progCell.innerHTML = '<span class="text-danger small">' + esc(tpl(FILM_I18N.q_error_generic_tpl, {ERR: data.error || FILM_I18N.q_error})) + '</span>';
+            // Preview found nothing importable: show Radarr's per-file reasons.
+            var why = data.error || (data.imported === 0 && Array.isArray(data.reasons) && data.reasons.length ? data.reasons.join('; ') : '') || FILM_I18N.q_error;
+            if (progCell) progCell.innerHTML = '<span class="text-danger small">' + esc(tpl(FILM_I18N.q_error_generic_tpl, {ERR: why})) + '</span>';
             btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
             btn.disabled = false;
           }
@@ -4614,6 +4641,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     document.getElementById('bulk-edit-quality').value = '';
     document.getElementById('bulk-edit-avail').value = '';
     document.getElementById('bulk-edit-root').value = '';
+    document.getElementById('bulk-edit-move-files').checked = true;
     document.getElementById('bulk-edit-info').textContent = tpl(FILM_I18N.b_edit_hint_tpl, {COUNT: selectedIds.size});
     openBulkModal('modal-bulk-edit');
   });
@@ -4628,7 +4656,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     if (mon !== '') payload.monitored = mon === 'true';
     if (qual) payload.qualityProfileId = parseInt(qual);
     if (avail) payload.minimumAvailability = avail;
-    if (root) payload.rootFolderPath = root;
+    if (root) { payload.rootFolderPath = root; payload.moveFiles = document.getElementById('bulk-edit-move-files').checked; }
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/bulk/edit', payload).then(function(d) {
       btn.disabled = false; btn.innerHTML = FILM_I18N.b_save;
