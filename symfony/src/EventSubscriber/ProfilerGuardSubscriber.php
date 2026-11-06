@@ -68,8 +68,15 @@ class ProfilerGuardSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $clientIp = $event->getRequest()->getClientIp();
-        if ($clientIp !== null && IpUtils::checkIp($clientIp, self::TRUSTED_RANGES)) {
+        $request  = $event->getRequest();
+        $peer     = (string) $request->server->get('REMOTE_ADDR', '');
+        $clientIp = $request->getClientIp();
+        // Review 2026-11-06 (S1): with the REMOTE_ADDR placeholder every
+        // direct peer is a trusted proxy, so a public client could forward a
+        // private ip and unlock the dev tools. The raw peer must be private
+        // as well as the (possibly forwarded) client ip.
+        if ($peer !== '' && IpUtils::checkIp($peer, self::TRUSTED_RANGES)
+            && $clientIp !== null && IpUtils::checkIp($clientIp, self::TRUSTED_RANGES)) {
             return;
         }
 

@@ -452,7 +452,7 @@
                         <div style="font-weight:600;font-size:.9rem;">Jellyfin</div>
                         <div class="text-secondary" style="font-size:.78rem;">
                             {% if user.jellyfinUsername is defined and user.jellyfinUsername %}
-                                {{ 'jellyseerr.common.linked_as_tpl'|trans|replace({'__NAME__': '<strong>' ~ user.jellyfinUsername ~ '</strong>'})|raw }}
+                                {{ 'jellyseerr.common.linked_as_tpl'|trans|replace({'__NAME__': '<strong>' ~ user.jellyfinUsername|e ~ '</strong>'})|raw }}
                             {% else %}
                                 {{ 'jellyseerr.common.not_linked'|trans }}
                             {% endif %}

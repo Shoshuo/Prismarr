@@ -256,4 +256,33 @@ class ServiceRouteGuardSubscriberTest extends TestCase
 
         $this->assertFalse($event->hasResponse());
     }
+
+    public function testRunsAfterTheFirewall(): void
+    {
+        // Review 2026-11-06 (S5): anonymous requests used to get
+        // state-dependent answers (302 settings / 302 index / 404 / flash)
+        // before the firewall could send them to /login.
+        $prio = ServiceRouteGuardSubscriber::getSubscribedEvents()[\Symfony\Component\HttpKernel\KernelEvents::REQUEST][1];
+        $this->assertLessThan(8, $prio, 'the Symfony firewall listener runs at priority 8');
+    }
+
+    public function testUnknownInstanceSlugIsNotProbed(): void
+    {
+        // A random slug on a non-index route reached isHealthy() before the
+        // binder's 404 and pooled a bogus {status:null} forever.
+        $config    = $this->createMock(ConfigService::class);
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('hasAnyEnabled')->willReturn(true);
+        $instances->method('getBySlug')->willReturn(null);
+        $health = $this->createMock(HealthService::class);
+        $health->expects($this->never())->method('isHealthy');
+        $urls = $this->createMock(UrlGeneratorInterface::class);
+        $sub = new ServiceRouteGuardSubscriber($config, $instances, $health, $urls, $this->createMock(\Symfony\Contracts\Translation\TranslatorInterface::class));
+
+        $event = $this->event('radarr_files');
+        $event->getRequest()->attributes->set('slug', 'does-not-exist');
+        $sub->onKernelRequest($event);
+
+        $this->assertFalse($event->hasResponse(), 'left to MultiInstanceBinderSubscriber, which answers 404');
+    }
 }

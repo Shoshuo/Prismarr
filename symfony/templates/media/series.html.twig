@@ -2547,7 +2547,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
           html += '<button class="btn btn-ghost-secondary btn-icon btn-sm btn-ep-monitor" data-ep-id="' + (ep.id || '') + '" data-monitored="' + (epMon ? '1' : '0') + '" title="' + esc(epMon ? SERIES_I18N.d_unmonitor : SERIES_I18N.d_monitor) + '" style="' + epMonStyle + '"' + (!currentMonitored ? ' disabled' : '') + '>' + (epMon ? SVG_MONITOR_ON : SVG_MONITOR_OFF) + '</button>';
           html += '<span style="width:10px;height:10px;border-radius:50%;background:' + dotColor + ';' + dotGlow + 'flex-shrink:0;"></span>';
           html += '<span style="min-width:40px;color:var(--tblr-secondary);font-weight:600;font-size:.78rem;">E' + String(ep.episodeNumber || 0).padStart(2, '0') + '</span>';
-          html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (ep.title || '—') + '</span>';
+          html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(ep.title || '—') + '</span>';
           html += '<span style="min-width:80px;color:var(--tblr-secondary);font-size:.72rem;text-align:right;">' + (ep.airDate || '—') + '</span>';
           if (hasFile) {
             // Media info tooltip
@@ -2783,7 +2783,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               var color = eventColors[h.eventType] || 'secondary';
               var quality = (h.quality && h.quality.quality) ? h.quality.quality.name : '—';
               var date = h.date ? h.date.substring(0, 10) : '—';
-              html += '<tr><td class="fw-medium">' + epNum + '</td><td><span class="badge bg-' + color + '-lt">' + action + '</span></td><td class="text-muted text-truncate" style="max-width:250px;" title="' + esc(h.sourceTitle || '') + '">' + esc(h.sourceTitle || '—') + '</td><td><span class="badge bg-blue-lt">' + quality + '</span></td><td class="text-muted">' + date + '</td></tr>';
+              html += '<tr><td class="fw-medium">' + epNum + '</td><td><span class="badge bg-' + color + '-lt">' + esc(action) + '</span></td><td class="text-muted text-truncate" style="max-width:250px;" title="' + esc(h.sourceTitle || '') + '">' + esc(h.sourceTitle || '—') + '</td><td><span class="badge bg-blue-lt">' + esc(quality) + '</span></td><td class="text-muted">' + date + '</td></tr>';
             });
             html += '</tbody></table></div>';
             content.innerHTML = html;
@@ -3268,7 +3268,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         var color = eventColors[h.eventType] || 'secondary';
         var quality = (h.quality && h.quality.quality) ? h.quality.quality.name : '—';
         var date = h.date ? h.date.substring(0, 10) : '—';
-        html += '<tr><td class="fw-medium">' + epLabel + '</td><td><span class="badge bg-' + color + '-lt">' + action + '</span></td><td class="text-muted text-truncate" style="max-width:250px;" title="' + esc(h.sourceTitle || '') + '">' + esc(h.sourceTitle || '—') + '</td><td><span class="badge bg-blue-lt">' + quality + '</span></td><td class="text-muted">' + date + '</td></tr>';
+        html += '<tr><td class="fw-medium">' + epLabel + '</td><td><span class="badge bg-' + color + '-lt">' + esc(action) + '</span></td><td class="text-muted text-truncate" style="max-width:250px;" title="' + esc(h.sourceTitle || '') + '">' + esc(h.sourceTitle || '—') + '</td><td><span class="badge bg-blue-lt">' + esc(quality) + '</span></td><td class="text-muted">' + date + '</td></tr>';
       });
       html += '</tbody></table></div>';
       content.innerHTML = html;
@@ -5021,7 +5021,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
           var lbl = document.createElement('label');
           lbl.className = 'badge bg-secondary-lt';
           lbl.style.cursor = 'pointer';
-          lbl.innerHTML = '<input type="checkbox" class="d-none add-tag-cb" value="' + t.id + '"> ' + t.label;
+          lbl.innerHTML = '<input type="checkbox" class="d-none add-tag-cb" value="' + t.id + '"> ' + esc(t.label);
           lbl.addEventListener('click', function() {
             var cb = lbl.querySelector('input');
             cb.checked = !cb.checked;
@@ -5065,7 +5065,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
             (s.poster ? '<img src="' + esc(s.poster) + '" style="width:60px;height:90px;object-fit:cover;border-radius:.4rem;flex-shrink:0;" loading="lazy">' : '<div style="width:60px;height:90px;background:var(--tblr-bg-surface-secondary);border-radius:.4rem;flex-shrink:0;"></div>') +
             '<div class="flex-grow-1 min-width-0">' +
             '<div class="fw-bold" style="font-size:.82rem;">' + esc(s.title) + (s.year ? ' <span class="text-muted fw-normal">(' + s.year + ')</span>' : '') + statusBadge + '</div>' +
-            '<div class="text-muted small">' + (s.network || '') + (s.seasonCount ? ' · ' + tpl(SERIES_I18N.season_tpl, { COUNT: s.seasonCount }) : '') + '</div>' +
+            '<div class="text-muted small">' + esc(s.network || '') + (s.seasonCount ? ' · ' + tpl(SERIES_I18N.season_tpl, { COUNT: s.seasonCount }) : '') + '</div>' +
             (genres ? '<div class="mt-1">' + genres + '</div>' : '') +
             (s.overview ? '<div class="text-muted mt-1" style="font-size:.7rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">' + esc(s.overview) + '</div>' : '') +
             '</div></div>';

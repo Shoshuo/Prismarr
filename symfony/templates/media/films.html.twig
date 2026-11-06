@@ -1700,7 +1700,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
               }
               var progress = filmsDone > 0 ? tpl(FILM_I18N.w_search_progress_suffix_tpl, {DONE: filmsDone, TOTAL: ids.length}) : '';
               var display = msg || tpl(FILM_I18N.w_search_in_progress_tpl, {SEC: elapsed});
-              showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_search_elapsed_tpl, {MSG: display, PROG: progress}), 'info');
+              showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_search_elapsed_tpl, {MSG: esc(display), PROG: progress}), 'info');
             }
           });
         }, 2000);
@@ -2349,7 +2349,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     // Étape 1 : lancement
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + FILM_I18N.search_launch;
-    showSearchFeedback(tpl(FILM_I18N.search_start_tpl, {TITLE: movieTitle}), 'info', true);
+    showSearchFeedback(tpl(FILM_I18N.search_start_tpl, {TITLE: esc(movieTitle)}), 'info', true);
 
     ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + currentId + '/search')
     .then(function (data) {
@@ -3926,7 +3926,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
             showPageBanner(tpl(FILM_I18N.w_cmd_failed_tpl, {LBL: label, ERR: msg || FILM_I18N.unknown_error}), 'danger');
           } else {
             var display = msg || tpl(FILM_I18N.w_search_in_progress_tpl, {SEC: elapsed});
-            showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_elapsed_tpl, {LBL: label, MSG: display}), 'info');
+            showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_elapsed_tpl, {LBL: label, MSG: esc(display)}), 'info');
           }
         });
       }, 2000);
@@ -4182,13 +4182,13 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         var movieId = d.movieId || d.id;
         var movieTitle = selectedMovie.title;
         result.className = 'mt-3 alert alert-success';
-        result.innerHTML = tpl(FILM_I18N.m_added_success_tpl, {TITLE: movieTitle});
+        result.innerHTML = tpl(FILM_I18N.m_added_success_tpl, {TITLE: esc(movieTitle)});
 
         if (monitored && movieId) {
           // Radarr cherche automatiquement via addOptions.searchForMovie
           // On poll la queue/historique pour afficher le résultat
           result.className = 'mt-3 alert alert-info';
-          result.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.m_added_searching_tpl, {TITLE: movieTitle, COUNT: INDEXER_COUNT});
+          result.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.m_added_searching_tpl, {TITLE: esc(movieTitle), COUNT: INDEXER_COUNT});
 
           // Poll rapide : max 20 polls × 3s = 60s pour la détection initiale
           var pollCount = 0;
@@ -4222,24 +4222,24 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
                 clearInterval(addPoll);
                 var src = inQueue[0].indexer || '';
                 result.className = 'mt-3 alert alert-success';
-                result.innerHTML = tpl(FILM_I18N.m_dl_started_tpl, {TITLE: movieTitle, SRC: src ? tpl(FILM_I18N.m_via_prefix_tpl, {SRC: src}) : ''});
+                result.innerHTML = tpl(FILM_I18N.m_dl_started_tpl, {TITLE: esc(movieTitle), SRC: src ? tpl(FILM_I18N.m_via_prefix_tpl, {SRC: esc(src)}) : ''});
                 setTimeout(function() { location.reload(); }, 1500);
               } else if (recentFails.length > 0) {
                 clearInterval(addPoll);
                 result.className = 'mt-3 alert alert-danger';
-                result.innerHTML = tpl(FILM_I18N.m_dl_failed_tpl, {TITLE: movieTitle});
+                result.innerHTML = tpl(FILM_I18N.m_dl_failed_tpl, {TITLE: esc(movieTitle)});
                 setTimeout(function() { location.reload(); }, 5000);
               } else if (recentGrabs.length > 0 && pollCount >= 10) {
                 // Grabé mais pas dans la queue après 30s — problème client DL
                 clearInterval(addPoll);
                 var src = (recentGrabs[0].data || {}).indexer || '';
                 result.className = 'mt-3 alert alert-warning';
-                result.innerHTML = tpl(FILM_I18N.m_grab_but_no_queue_tpl, {TITLE: movieTitle, SRC: src ? tpl(FILM_I18N.m_via_prefix_tpl, {SRC: src}) : ''});
+                result.innerHTML = tpl(FILM_I18N.m_grab_but_no_queue_tpl, {TITLE: esc(movieTitle), SRC: src ? tpl(FILM_I18N.m_via_prefix_tpl, {SRC: esc(src)}) : ''});
                 setTimeout(function() { location.reload(); }, 4000);
               } else if (pollCount >= maxPolls) {
                 clearInterval(addPoll);
                 result.className = 'mt-3 alert alert-warning';
-                result.innerHTML = tpl(FILM_I18N.m_no_download_detected_tpl, {TITLE: movieTitle});
+                result.innerHTML = tpl(FILM_I18N.m_no_download_detected_tpl, {TITLE: esc(movieTitle)});
                 setTimeout(function() { location.reload(); }, 4000);
               }
             }).catch(function() {});
@@ -4247,7 +4247,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         } else {
           // Pas monitored, pas de recherche auto
           result.className = 'mt-3 alert alert-success';
-          result.innerHTML = tpl(FILM_I18N.m_added_not_monitored_tpl, {TITLE: movieTitle});
+          result.innerHTML = tpl(FILM_I18N.m_added_not_monitored_tpl, {TITLE: esc(movieTitle)});
           setTimeout(function() { location.reload(); }, 2000);
         }
         selectedMovie = null;
@@ -4281,7 +4281,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
           showPageBanner(tpl(FILM_I18N.w_cmd_failed_tpl, {LBL: label, ERR: msg || FILM_I18N.unknown_error}), 'danger');
         } else {
           var display = msg || tpl(FILM_I18N.w_search_in_progress_tpl, {SEC: pollCount * 2});
-          showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_elapsed_tpl, {LBL: label, MSG: display}), 'info');
+          showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_elapsed_tpl, {LBL: label, MSG: esc(display)}), 'info');
         }
       });
     }, 2000);

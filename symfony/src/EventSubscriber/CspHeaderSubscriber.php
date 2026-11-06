@@ -142,10 +142,21 @@ final class CspHeaderSubscriber implements EventSubscriberInterface
         if (!is_array($parts) || empty($parts['host'])) {
             return null;
         }
-        $scheme = $parts['scheme'] ?? 'http';
+        // Review 2026-11-06 (S3): the origin is spliced into the policy
+        // ahead of script-src, and parse_url() keeps `;` / spaces in the
+        // host — "x.lan;script-src * 'unsafe-inline';x" would have switched
+        // the nonce policy off. Only http(s), a hostname or a bracketed
+        // IPv6 literal, and a numeric port may pass.
+        $scheme = strtolower((string) ($parts['scheme'] ?? 'http'));
+        if ($scheme !== 'http' && $scheme !== 'https') {
+            return null;
+        }
+        if (!preg_match('/^(?:[A-Za-z0-9._\-]+|\[[0-9A-Fa-f:.]+\])$/', (string) $parts['host'])) {
+            return null;
+        }
         $origin = $scheme . '://' . $parts['host'];
         if (!empty($parts['port'])) {
-            $origin .= ':' . $parts['port'];
+            $origin .= ':' . (int) $parts['port'];
         }
         return $origin;
     }

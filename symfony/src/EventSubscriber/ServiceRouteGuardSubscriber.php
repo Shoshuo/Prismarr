@@ -70,9 +70,13 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
 
     public static function getSubscribedEvents(): array
     {
-        // Priority 15: after SetupRedirectSubscriber (prio 20), before the Symfony firewall.
+        // Priority 7: after SetupRedirectSubscriber (prio 20) and after the
+        // Symfony firewall (prio 8), so anonymous requests are sent to /login
+        // before this guard can answer with a state-dependent redirect / 404
+        // (review 2026-11-06, S5: integrations, instance slugs and up/down
+        // status were enumerable without a session).
         return [
-            KernelEvents::REQUEST => ['onKernelRequest', 15],
+            KernelEvents::REQUEST => ['onKernelRequest', 7],
         ];
     }
 
@@ -120,8 +124,8 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         if (!$this->isConfigured($rule)) {
             $this->flash($event, $this->translator->trans('error.service_not_configured.service_unavailable_flash', ['service' => $rule['service']]));
             // app_configure_services sends admins to the Services settings and
-            // everyone else home: this guard runs before the firewall and cannot
-            // check roles itself.
+            // everyone else home (the route checks roles; this guard stays
+            // role-agnostic).
             $event->setResponse(new RedirectResponse($this->urls->generate('app_configure_services')));
             return;
         }
@@ -138,6 +142,13 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         $slug = is_string($event->getRequest()->attributes->get('slug'))
             ? $event->getRequest()->attributes->get('slug')
             : null;
+        if (isset($rule['instance_type']) && $slug !== null
+            && $this->instances->getBySlug($rule['instance_type'], $slug) === null) {
+            // Unknown slug: MultiInstanceBinderSubscriber answers 404 right
+            // after us. Probing would pool a bogus status for a made-up slug
+            // (one file per slug in cache.app, never pruned).
+            return;
+        }
         if ($route !== $rule['index'] && $this->health->isHealthy($rule['service_id'], $slug) === false) {
             $params = $slug !== null ? ['slug' => $slug] : [];
             $event->setResponse(new RedirectResponse($this->urls->generate($rule['index'], $params)));

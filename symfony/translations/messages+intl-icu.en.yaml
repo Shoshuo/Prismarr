@@ -949,6 +949,7 @@ admin:
     import_failed: Import failed.
     display_reset: Display preferences reset.
     display_reset_full: Display preferences reset to their defaults.
+    invalid_url: 'Settings saved, but {key} was refused: invalid or blocked URL host ({reason}).'
   test:
     unknown_service: Unknown service
     unreachable: Service unreachable
@@ -970,6 +971,8 @@ admin:
     read_failed: Cannot read file.
     invalid_json: Invalid JSON
     unknown_format: 'Unknown format (export v1 or v2 expected).'
+    invalid_url_skipped: '{count, plural, one {# service URL was refused (invalid or blocked host).} other {# service URLs were refused (invalid or blocked host).}}'
+    secrets_dropped: '{count, plural, one {# stored secret was cleared because its service URL moved to another host — re-enter it under Services.} other {# stored secrets were cleared because their service URLs moved to another host — re-enter them under Services.}}'
     result: '{applied, plural, =0 {No settings imported} one {# setting imported} other {# settings imported}}, {skipped, plural, one {# skipped.} other {# skipped.}} {instances_applied, plural, =0 {} one {# instance restored.} other {# instances restored.}}'
   updates:
     title: Updates
