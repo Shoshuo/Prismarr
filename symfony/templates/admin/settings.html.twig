@@ -1215,6 +1215,18 @@
           if (row)   row.classList.add('is-cleared');
         };
       });
+      // AS-11 (review 2026-11-06): typing a new value after Clear must save
+      // the value, not the wipe — the flag stayed raised until the page reloaded.
+      document.querySelectorAll('input[type="hidden"][id^="_clear_"]').forEach(function (flag) {
+        var input = document.getElementById(flag.id.slice('_clear_'.length));
+        if (!input) return;
+        input.addEventListener('input', function () {
+          if (input.value === '') return;
+          flag.value = '0';
+          var row = input.closest('.field-row');
+          if (row) row.classList.remove('is-cleared');
+        });
+      });
 
       // ── Services section: rows, add buttons, search, live status ─────
       function svcSetOpen(item, open) {

@@ -100,4 +100,22 @@ class ProfilerGuardSubscriberTest extends TestCase
         // No AccessDeniedHttpException thrown even though IP is public.
         $this->assertFalse($event->hasResponse());
     }
+
+    public function testASpoofedForwardedHeaderCannotUnlockTheProfiler(): void
+    {
+        // Review 2026-11-06 (S1): with the REMOTE_ADDR placeholder every
+        // direct peer is a trusted proxy, so a public client could forward a
+        // private ip and pass. The raw REMOTE_ADDR must be private too.
+        Request::setTrustedProxies(['203.0.113.9'], Request::HEADER_X_FORWARDED_FOR);
+        try {
+            $event = $this->event('/_profiler/abc', '203.0.113.9');
+            $event->getRequest()->headers->set('X-Forwarded-For', '192.168.1.5');
+            $this->assertSame('192.168.1.5', $event->getRequest()->getClientIp(), 'precondition: the forwarded ip is believed');
+
+            $this->expectException(AccessDeniedHttpException::class);
+            ($this->subscriber('dev'))->onKernelRequest($event);
+        } finally {
+            Request::setTrustedProxies([], Request::HEADER_X_FORWARDED_FOR);
+        }
+    }
 }

@@ -193,10 +193,13 @@ class TransmissionClient implements ResetInterface
         $peersTotal = 0;
         foreach (($t['trackerStats'] ?? []) as $tr) {
             $trackers[] = [
-                'url'    => $tr['announce'] ?? '',
-                'tier'   => (int) ($tr['tier'] ?? 0),
-                'status' => self::trackerStatusLabel((int) ($tr['announceState'] ?? 0)),
-                'msg'    => (string) ($tr['lastAnnounceResult'] ?? ''),
+                'url'         => $tr['announce'] ?? '',
+                'tier'        => (int) ($tr['tier'] ?? 0),
+                'status'      => self::trackerStatusLabel((int) ($tr['announceState'] ?? 0)),
+                'msg'         => (string) ($tr['lastAnnounceResult'] ?? ''),
+                // DC-11: the detail modal reads num_seeds / num_leeches (qBit names).
+                'num_seeds'   => max(0, (int) ($tr['seederCount'] ?? -1)),
+                'num_leeches' => max(0, (int) ($tr['leecherCount'] ?? -1)),
             ];
             $seedsTotal += max(0, (int) ($tr['seederCount'] ?? -1));
             $peersTotal += max(0, (int) ($tr['leecherCount'] ?? -1));

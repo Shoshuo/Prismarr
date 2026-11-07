@@ -728,4 +728,46 @@ class AdminSettingsControllerTest extends TestCase
         self::assertSame('1', $saved['dashboard_hide_health']);   // unchecked => hidden
         self::assertNull($saved['dashboard_hide_plex']);          // checked => visible
     }
+
+    public function testDashboardLayoutLeavesSectionsAbsentFromBothListsUntouched(): void
+    {
+        // DD-1: the edit-mode Save only knows the sections rendered in THIS
+        // session; sections hidden earlier are not in the DOM, so they were
+        // posted as neither ordered nor hidden and got un-hidden on every save.
+        $saved = [];
+        $settings = $this->createMock(SettingRepository::class);
+        $settings->method('setMany')->willReturnCallback(function (array $p) use (&$saved) { $saved = $p; });
+        $config = $this->createMock(ConfigService::class);
+        $health = $this->createMock(HealthService::class);
+
+        $request = Request::create('/admin/settings/dashboard-layout', 'POST', [
+            '_csrf_token' => 'x',
+            'order'       => 'recent,plex',
+            'hidden'      => 'health',
+        ]);
+        $request->setSession(new \Symfony\Component\HttpFoundation\Session\Session(
+            new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage()
+        ));
+
+        $this->controller($settings, $config, $health)->dashboardLayout($request);
+
+        self::assertSame('1', $saved['dashboard_hide_health']);
+        self::assertNull($saved['dashboard_hide_plex']);
+        self::assertArrayNotHasKey('dashboard_hide_trending', $saved, 'a section in neither list keeps its stored flag');
+        self::assertArrayNotHasKey('dashboard_hide_upcoming', $saved);
+    }
+
+    public function testHealthInvalidateAcceptsTheSeerrBannerLabel(): void
+    {
+        // AS-6: the two Seerr pages label their banner "Seerr"; the Retry
+        // button posted /health/invalidate/seerr → 400 → breaker never cleared.
+        $settings = $this->createMock(SettingRepository::class);
+        $config   = $this->createMock(ConfigService::class);
+        $health   = $this->createMock(HealthService::class);
+        $health->expects($this->once())->method('invalidate')->with('jellyseerr');
+
+        $response = $this->controller($settings, $config, $health)->healthInvalidate('Seerr');
+
+        self::assertSame(200, $response->getStatusCode());
+    }
 }

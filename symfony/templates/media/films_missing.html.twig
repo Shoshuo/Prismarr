@@ -146,6 +146,27 @@
 
 {% block javascripts %}
 <script>
+  // MT-7 (review 2026-11-06): command pollers — *arr terminal states beyond
+  // completed/failed (aborted, cancelled, orphaned), a hard cap, repeated
+  // "unknown" answers (our controller's fallback when the *arr can't be
+  // reached), teardown on Turbo navigation, and reloads that only fire while
+  // THIS page is still the one on screen.
+  var CMD_TERMINAL = ['failed', 'aborted', 'cancelled', 'orphaned'];
+  var CMD_POLL_CAP = 240;
+  var _cmdPolls = {}, _cmdUnknown = 0, _cmdTimers = [];
+  function cmdState(cmd) {
+    var st = (cmd.status || '').toLowerCase();
+    if (st === 'unknown' || st === '') { _cmdUnknown++; return _cmdUnknown >= 5 ? 'failed' : 'unknown'; }
+    _cmdUnknown = 0;
+    if (CMD_TERMINAL.indexOf(st) !== -1) return 'failed';
+    var key = String(cmd.id || 'x');
+    _cmdPolls[key] = (_cmdPolls[key] || 0) + 1;
+    if (st !== 'completed' && _cmdPolls[key] >= CMD_POLL_CAP) return 'failed';
+    return st;
+  }
+  function cmdInterval(fn, ms) { var id = setInterval(fn, ms); _cmdTimers.push(id); return id; }
+  function safeReload() { if (document.getElementById('btn-search-all')) location.reload(); }
+  if (window.registerPageLifecycle) window.registerPageLifecycle(function () { return function () { _cmdTimers.forEach(clearInterval); _cmdTimers.length = 0; }; });
 (function () {
   var BASE = window.BASE_PATH;
   var FM_I18N = {
@@ -173,6 +194,10 @@
   var SVG_OK = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>';
   var SVG_FAIL = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
   var SEARCH_ICON_SM = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
 
   var banner = document.getElementById('page-banner');
   function showBanner(html, type) {
@@ -215,13 +240,13 @@
           setTimeout(function() { btn.innerHTML = SVG_SEARCH; statusEl.classList.add('d-none'); }, 3000);
           return;
         }
-        var pollTimer = setInterval(function() {
+        var pollTimer = cmdInterval(function() {
           getJson(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId).then(function(cmd) {
-            var st = (cmd.status || '').toLowerCase();
+            var st = cmdState(cmd);
             var msg = cmd.message || '';
             if (st === 'completed') {
               clearInterval(pollTimer);
-              var dlMatch = msg.match(/(\d+) reports downloaded/);
+              var dlMatch = msg.match(/(\d+)\s+reports?\s+(?:downloaded|grabbed)/i);
               var dlCount = dlMatch ? parseInt(dlMatch[1]) : 0;
               if (dlCount > 0) {
                 btn.innerHTML = SVG_OK;
@@ -239,7 +264,7 @@
               btn.disabled = false;
               setTimeout(function() { btn.innerHTML = SVG_SEARCH; }, 3000);
             } else if (msg) {
-              statusEl.innerHTML = '<span class="text-muted">' + msg + '</span>';
+              statusEl.innerHTML = '<span class="text-muted">' + esc(msg) + '</span>';
             }
           });
         }, 1500);
@@ -280,18 +305,18 @@
       var filmsDone = 0;
       var pollCount = 0;
 
-      var pollTimer = setInterval(function() {
+      var pollTimer = cmdInterval(function() {
         pollCount++;
         var elapsed = Math.round(pollCount * 1.5);
         getJson(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + data.cmdId).then(function(cmd) {
-          var st = (cmd.status || '').toLowerCase();
+          var st = cmdState(cmd);
           var msg = cmd.message || '';
 
           if (st === 'completed') {
             clearInterval(pollTimer);
             btn.disabled = false;
             btn.innerHTML = SEARCH_ICON_SM + ' ' + FM_I18N.search_all_label;
-            var downloaded = msg.match(/(\d+) reports downloaded/);
+            var downloaded = msg.match(/(\d+)\s+reports?\s+(?:downloaded|grabbed)/i);
             var searchedMatch = msg.match(/(\d+) movies/);
             var dlCount = downloaded ? parseInt(downloaded[1]) : 0;
             var searchedCount = searchedMatch ? parseInt(searchedMatch[1]) : ids.length;
@@ -300,7 +325,7 @@
             } else {
               showBanner(FM_I18N.search_done_none_tpl.replace('__TOTAL__', searchedCount), 'warning');
             }
-            setTimeout(function() { location.reload(); }, 3000);
+            setTimeout(function() { safeReload(); }, 3000);
           } else if (st === 'failed') {
             clearInterval(pollTimer);
             btn.disabled = false;
@@ -318,9 +343,9 @@
               progressText = FM_I18N.search_progress_tpl
                 .replace('__DONE__', filmsDone)
                 .replace('__TOTAL__', ids.length)
-                .replace('__TITLE__', lastFilmSeen);
+                .replace('__TITLE__', esc(lastFilmSeen));
             } else if (msg) {
-              progressText = msg;
+              progressText = esc(msg);
             } else {
               progressText = FM_I18N.search_in_progress_tpl.replace('__SEC__', elapsed);
             }

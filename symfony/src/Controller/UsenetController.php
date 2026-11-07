@@ -233,7 +233,13 @@ class UsenetController extends AbstractController
         try {
             // History lives on its own paginated page now — the live queue feed
             // only carries the active queue, saving a call per poll.
-            $queue = $this->client($client)->getQueue();
+            $c     = $this->client($client);
+            $queue = $c->getQueue();
+            if ($c->getLastError() !== null && $queue->items === [] && $queue->activeCount === 0 && $queue->queuedCount === 0) {
+                // C1 (review 2026-11-06): an empty snapshot on a transport
+                // failure is an outage, not an empty queue.
+                return $this->json(['error' => $this->translator->trans('usenet.api.unreachable')], 502);
+            }
 
             return $this->json([
                 'paused'      => $queue->paused,
@@ -267,7 +273,11 @@ class UsenetController extends AbstractController
             return $this->json(['error' => 'disabled'], 403);
         }
         try {
-            $queue = $this->client($client)->getQueue();
+            $c     = $this->client($client);
+            $queue = $c->getQueue();
+            if ($c->getLastError() !== null && $queue->items === [] && $queue->activeCount === 0 && $queue->queuedCount === 0) {
+                return $this->json(['error' => 'unreachable'], 502); // C1
+            }
             return $this->json(['active' => $queue->activeCount]);
         } catch (\Throwable $e) {
             $this->logger->warning('Usenet poll-summary failed', [

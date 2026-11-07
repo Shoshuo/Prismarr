@@ -430,4 +430,57 @@ class HealthServiceTest extends TestCase
     {
         $this->assertNull(HealthService::urlBlockedReason('https://api.themoviedb.org/3/configuration'));
     }
+
+    // ─── Review 2026-11-06 (S3): host syntax ───
+
+    public function testUrlBlockedReasonRejectsHostsWithCspOrHeaderMetacharacters(): void
+    {
+        self::assertSame('host', HealthService::urlBlockedReason("http://x.lan;script-src * 'unsafe-inline';x/"));
+        self::assertSame('host', HealthService::urlBlockedReason('http://x.lan,evil/'));
+        self::assertSame('host', HealthService::urlBlockedReason('http://x.lan evil/'));
+    }
+
+    public function testUrlBlockedReasonAcceptsDockerNamesUnderscoresAndIpv6Literals(): void
+    {
+        self::assertNull(HealthService::urlBlockedReason('http://host.docker.internal:7878'));
+        self::assertNull(HealthService::urlBlockedReason('http://my_radarr:7878/'));
+        self::assertNull(HealthService::urlBlockedReason('http://[::1]:8080/'));
+        self::assertNull(HealthService::urlBlockedReason('https://tower.local./'));
+    }
+
+    // ─── Review 2026-11-06 (HC-4): Retry must clear per-instance breakers ───
+
+    public function testInvalidateClearsThePerInstanceBreakerKeys(): void
+    {
+        $cache = new \App\Service\Media\ServiceHealthCache(new \Symfony\Component\Cache\Adapter\ArrayAdapter());
+        $inst1 = new ServiceInstance(ServiceInstance::TYPE_RADARR, 'radarr-1', 'Radarr', 'http://r1:7878', 'k');
+        $inst2 = new ServiceInstance(ServiceInstance::TYPE_RADARR, 'radarr-4k', 'Radarr 4K', 'http://r2:7878', 'k');
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getAll')->willReturnCallback(fn(string $type) => $type === ServiceInstance::TYPE_RADARR ? [$inst1, $inst2] : []);
+
+        $service = new HealthService(
+            $this->createMock(RadarrClient::class),
+            $this->createMock(SonarrClient::class),
+            $this->createMock(ProwlarrClient::class),
+            $this->createMock(JellyseerrClient::class),
+            $this->createMock(QBittorrentClient::class),
+            $this->createMock(TmdbClient::class),
+            null,
+            $cache,
+            $instances,
+        );
+
+        // The clients mark down PER INSTANCE (service_down.radarr.<slug>).
+        $cache->markDown('radarr', 'radarr-4k');
+        $cache->markDown('radarr');
+        self::assertTrue($cache->isDown('radarr', 'radarr-4k'));
+
+        $service->invalidate('radarr');
+        self::assertFalse($cache->isDown('radarr', 'radarr-4k'), 'Retry on a Radarr instance page must clear that instance\'s breaker');
+        self::assertFalse($cache->isDown('radarr'));
+
+        $cache->markDown('radarr', 'radarr-1');
+        $service->invalidate(null);
+        self::assertFalse($cache->isDown('radarr', 'radarr-1'), 'invalidate(null) covers every instance too');
+    }
 }

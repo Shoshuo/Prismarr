@@ -196,4 +196,36 @@ class CalendrierControllerTest extends TestCase
         $this->assertSame(0, $captured['totalFilms']);
         $this->assertSame(0, $captured['totalEpisodes']);
     }
+
+    // ── DD-10 (review 2026-11-06): the iCal feed ────────────────────────────
+
+    public function testIcalEmitsEpisodesAsAllDayEventsInTheDisplayZoneWithFoldedLines(): void
+    {
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('getCalendar')->willReturn([]);
+        $sonarr = $this->createMock(SonarrClient::class);
+        $sonarr->method('getCalendar')->willReturn([[
+            'airDate'     => new \DateTimeImmutable('2026-11-06', new \DateTimeZone('UTC')),
+            'seriesTitle' => str_repeat('A very long series title ', 8),
+            'season'      => 1,
+            'episode'     => 2,
+            'tvdbId'      => 7,
+            'title'       => 'Episode',
+            'overview'    => str_repeat('overview text ', 30),
+            'runtime'     => 45,
+        ]]);
+        $config = $this->createMock(ConfigService::class);
+        $config->method('get')->willReturnCallback(fn(string $k) => $k === 'display_timezone' ? 'America/New_York' : 'configured');
+
+        $body = (string) $this->newController($radarr, $sonarr, config: $config)->ical()->getContent();
+
+        $this->assertStringContainsString('DTSTART;VALUE=DATE:20261106', $body, 'an air DATE is an all-day event, not a 00:00Z instant (the previous evening in the Americas)');
+        $this->assertStringContainsString('DTEND;VALUE=DATE:20261107', $body);
+        $this->assertStringNotContainsString('T000000Z', $body);
+        $this->assertStringContainsString('X-WR-TIMEZONE:America/New_York', $body);
+        $this->assertStringNotContainsString('X-WR-TIMEZONE:Europe/Paris', $body);
+        foreach (explode("\r\n", $body) as $line) {
+            $this->assertLessThanOrEqual(75, strlen($line), 'RFC 5545 §3.1: content lines are folded at 75 octets');
+        }
+    }
 }

@@ -993,7 +993,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
           <div class="col-md-6"><label class="form-label small">{{ 'media.series.bulk.edit_monitored'|trans }}</label><select class="form-select form-select-sm" id="bulk-s-monitored"><option value="">{{ 'media.series.bulk.edit_keep'|trans }}</option><option value="true">{{ 'media.series.bulk.edit_follow'|trans }}</option><option value="false">{{ 'media.series.bulk.edit_unfollow'|trans }}</option></select></div>
           <div class="col-md-6"><label class="form-label small">{{ 'media.series.bulk.edit_quality'|trans }}</label><select class="form-select form-select-sm" id="bulk-s-quality"><option value="">{{ 'media.series.bulk.edit_keep'|trans }}</option></select></div>
           <div class="col-md-6"><label class="form-label small">{{ 'media.series.bulk.edit_type'|trans }}</label><select class="form-select form-select-sm" id="bulk-s-type"><option value="">{{ 'media.series.bulk.edit_keep'|trans }}</option><option value="standard">{{ 'media.series.bulk.type_standard'|trans }}</option><option value="daily">{{ 'media.series.bulk.type_daily'|trans }}</option><option value="anime">{{ 'media.series.bulk.type_anime'|trans }}</option></select></div>
-          <div class="col-md-6"><label class="form-label small">{{ 'media.series.bulk.edit_root'|trans }}</label><select class="form-select form-select-sm" id="bulk-s-root"><option value="">{{ 'media.series.bulk.edit_keep'|trans }}</option></select></div>
+          <div class="col-md-6"><label class="form-label small">{{ 'media.series.bulk.edit_root'|trans }}</label><select class="form-select form-select-sm" id="bulk-s-root"><option value="">{{ 'media.series.bulk.edit_keep'|trans }}</option></select><label class="form-check form-check-sm mt-2 mb-0"><input class="form-check-input" type="checkbox" id="bulk-s-move-files" checked><span class="form-check-label small">{{ 'media.series.bulk.edit_move_files'|trans }}</span></label></div>
           <div class="col-md-6"><label class="form-label small">{{ 'media.series.bulk.edit_season_folder'|trans }}</label><select class="form-select form-select-sm" id="bulk-s-season-folder"><option value="">{{ 'media.series.bulk.edit_keep'|trans }}</option><option value="true">{{ 'media.series.bulk.yes'|trans }}</option><option value="false">{{ 'media.series.bulk.no'|trans }}</option></select></div>
         </div>
         <div class="text-muted small mt-3" id="bulk-s-edit-info"></div>
@@ -1070,6 +1070,28 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
 
 {% block javascripts %}
 <script>
+  // MT-7 (review 2026-11-06): command pollers — *arr terminal states beyond
+  // completed/failed (aborted, cancelled, orphaned), a hard cap, repeated
+  // "unknown" answers (our controller's fallback when the *arr can't be
+  // reached), teardown on Turbo navigation, and reloads that only fire while
+  // THIS page is still the one on screen.
+  var CMD_TERMINAL = ['failed', 'aborted', 'cancelled', 'orphaned'];
+  var CMD_POLL_CAP = 240;
+  var _cmdPolls = {}, _cmdUnknown = 0, _cmdTimers = [];
+  function cmdState(cmd) {
+    var st = (cmd.status || '').toLowerCase();
+    if (st === 'unknown' || st === '') { _cmdUnknown++; return _cmdUnknown >= 5 ? 'failed' : 'unknown'; }
+    _cmdUnknown = 0;
+    if (CMD_TERMINAL.indexOf(st) !== -1) return 'failed';
+    var key = String(cmd.id || 'x');
+    _cmdPolls[key] = (_cmdPolls[key] || 0) + 1;
+    if (st !== 'completed' && _cmdPolls[key] >= CMD_POLL_CAP) return 'failed';
+    return st;
+  }
+  function cmdInterval(fn, ms) { var id = setInterval(fn, ms); _cmdTimers.push(id); return id; }
+  function safeReload() { if (document.getElementById('series-grid')) location.reload(); }
+  if (window.registerPageLifecycle) window.registerPageLifecycle(function () { return function () { _cmdTimers.forEach(clearInterval); _cmdTimers.length = 0; }; });
+  var importInFlight = false; // MT-9: the queue banner re-renders its Import button mid-POST
 (function () {
   var BASE = window.BASE_PATH;
   /* ══════════════════════════════════════════════════════════════════════════
@@ -1240,6 +1262,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     d_edit_path: {{ 'media.series.detail.edit_path'|trans|json_encode|raw }},
     d_edit_path_browse: {{ 'media.series.detail.edit_path_browse'|trans|json_encode|raw }},
     d_edit_path_update: {{ 'media.series.detail.edit_path_update'|trans|json_encode|raw }},
+    d_edit_move_files: {{ 'media.series.detail.edit_move_files'|trans|json_encode|raw }},
     d_edit_empty_folder: {{ 'media.series.detail.edit_empty_folder'|trans|json_encode|raw }},
     d_edit_browse_loading: {{ 'media.series.detail.edit_browse_loading'|trans|json_encode|raw }},
     d_edit_tags: {{ 'media.series.detail.edit_tags'|trans|json_encode|raw }},
@@ -1318,6 +1341,9 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     fm_release_type_single: {{ 'media.series.filemanager.release_type_single'|trans|json_encode|raw }},
     fm_release_type_multi: {{ 'media.series.filemanager.release_type_multi'|trans|json_encode|raw }},
     fm_release_type_pack: {{ 'media.series.filemanager.release_type_pack'|trans|json_encode|raw }},
+    fm_release_type_unknown: {{ 'media.series.filemanager.release_type_unknown'|trans|json_encode|raw }},
+    fm_release_type_multi_season: {{ 'media.series.filemanager.release_type_multi_season'|trans|json_encode|raw }},
+    fm_indexer_flag_combined_tpl: {{ 'media.series.filemanager.indexer_flag_combined'|trans({flags: '__FLAGS__'})|json_encode|raw }},
     fm_indexer_flag_none: {{ 'media.series.filemanager.indexer_flag_none'|trans|json_encode|raw }},
     // Bazarr subtitles
     bazarr_episode_missing_title: {{ 'bazarr.detail.episode_missing'|trans|json_encode|raw }},
@@ -1830,6 +1856,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
       document.getElementById('bulk-s-quality').value = '';
       document.getElementById('bulk-s-type').value = '';
       document.getElementById('bulk-s-root').value = '';
+      document.getElementById('bulk-s-move-files').checked = true;
       document.getElementById('bulk-s-season-folder').value = '';
       document.getElementById('bulk-s-edit-info').textContent = tpl(SERIES_I18N.bulk_selected_info_tpl, { COUNT: selectedSeriesIds.size });
       openBulkModal('modal-bulk-edit-series');
@@ -1842,13 +1869,13 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     v = document.getElementById('bulk-s-monitored').value; if (v) payload.monitored = v === 'true';
     v = document.getElementById('bulk-s-quality').value; if (v) payload.qualityProfileId = parseInt(v);
     v = document.getElementById('bulk-s-type').value; if (v) payload.seriesType = v;
-    v = document.getElementById('bulk-s-root').value; if (v) payload.rootFolderPath = v;
+    v = document.getElementById('bulk-s-root').value; if (v) { payload.rootFolderPath = v; payload.moveFiles = document.getElementById('bulk-s-move-files').checked; }
     v = document.getElementById('bulk-s-season-folder').value; if (v) payload.seasonFolder = v === 'true';
     var btn = this; btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/bulk/edit', payload).then(function(d) {
       btn.disabled = false; btn.innerHTML = SERIES_I18N.bulk_save;
       closeBulkModal('modal-bulk-edit-series');
-      if (d.ok) { showPageBanner(tpl(SERIES_I18N.w_modified_ok_tpl, { COUNT: ids.length }), 'success'); setTimeout(function() { location.reload(); }, 1500); }
+      if (d.ok) { showPageBanner(tpl(SERIES_I18N.w_modified_ok_tpl, { COUNT: ids.length }), 'success'); setTimeout(function() { safeReload(); }, 1500); }
       else showPageBanner(SERIES_I18N.w_bulk_error, 'danger');
     });
   });
@@ -1899,7 +1926,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         showPageBanner(tpl(SERIES_I18N.w_delete_ok_tpl, { COUNT: ids.length }), 'success');
         // Reload the same URL after the success banner so the server-side
         // pagination counters ("1-200 of N") drop the deleted series.
-        setTimeout(function() { location.reload(); }, 1500);
+        setTimeout(function() { safeReload(); }, 1500);
       } else {
         showPageBanner(tpl(SERIES_I18N.w_error_tpl, { ERR: (d.error || SERIES_I18N.d_unknown_error) }), 'danger');
       }
@@ -2011,6 +2038,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   var queueCount = document.getElementById('queue-count');
 
   function fmtSize(bytes) {
+    if (window.prismarrBytes) return window.prismarrBytes(bytes); // MH-3: honour the byte-unit preference
     if (!bytes) return '0';
     var gb = bytes / 1073741824;
     if (gb >= 1) return gb.toFixed(1) + ' ' + SERIES_I18N.gb_suffix;
@@ -2173,7 +2201,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         html += '<button class="btn btn-sm btn-warning" id="btn-clean-queue">' + esc(tpl(SERIES_I18N.queue_clean_duplicates_tpl, { COUNT: staleItems.length })) + '</button>';
       }
       if (realBlocked.length > 0) {
-        html += '<button class="btn btn-sm btn-primary" id="btn-import-blocked">' + esc(tpl(SERIES_I18N.queue_import_files_tpl, { COUNT: realBlocked.length })) + '</button>';
+        html += '<button class="btn btn-sm btn-primary" id="btn-import-blocked"' + (importInFlight ? ' disabled' : '') + '>' + esc(tpl(SERIES_I18N.queue_import_files_tpl, { COUNT: realBlocked.length })) + '</button>';
       }
       html += '</div></div>';
       bannerEl.innerHTML = html;
@@ -2207,6 +2235,8 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
       var importBtn = document.getElementById('btn-import-blocked');
       if (importBtn) {
         importBtn.addEventListener('click', function() {
+          if (importInFlight) return;
+          importInFlight = true;
           importBtn.disabled = true;
           importBtn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:12px;height:12px;"></span> ' + SERIES_I18N.queue_importing;
           var items = realBlocked.map(function(w) {
@@ -2217,6 +2247,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
             headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
             body: JSON.stringify({ items: items }),
           }).then(function(r) { return r.json(); }).then(function(data) {
+            importInFlight = false;
             var imported = data.imported || 0;
             var skipped  = data.skipped  || 0;
             var total    = imported + skipped;
@@ -2246,6 +2277,10 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
                 : SERIES_I18N.queue_error;
               showPageBanner(msg, 'danger');
             }
+          }).catch(function() {
+            importInFlight = false;
+            importBtn.disabled = false;
+            importBtn.textContent = SERIES_I18N.queue_error;
           });
         });
       }
@@ -2265,7 +2300,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   // Auto-refresh queue every 3s
   setInterval(refreshQueue, 2000);
   // RefreshMonitoredDownloads every 8s (tells Sonarr to check qBittorrent)
-  setInterval(function() {
+  cmdInterval(function() {
     fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/queue/refresh', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
@@ -2542,7 +2577,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
           html += '<button class="btn btn-ghost-secondary btn-icon btn-sm btn-ep-monitor" data-ep-id="' + (ep.id || '') + '" data-monitored="' + (epMon ? '1' : '0') + '" title="' + esc(epMon ? SERIES_I18N.d_unmonitor : SERIES_I18N.d_monitor) + '" style="' + epMonStyle + '"' + (!currentMonitored ? ' disabled' : '') + '>' + (epMon ? SVG_MONITOR_ON : SVG_MONITOR_OFF) + '</button>';
           html += '<span style="width:10px;height:10px;border-radius:50%;background:' + dotColor + ';' + dotGlow + 'flex-shrink:0;"></span>';
           html += '<span style="min-width:40px;color:var(--tblr-secondary);font-weight:600;font-size:.78rem;">E' + String(ep.episodeNumber || 0).padStart(2, '0') + '</span>';
-          html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (ep.title || '—') + '</span>';
+          html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(ep.title || '—') + '</span>';
           html += '<span style="min-width:80px;color:var(--tblr-secondary);font-size:.72rem;text-align:right;">' + (ep.airDate || '—') + '</span>';
           if (hasFile) {
             // Media info tooltip
@@ -2761,6 +2796,14 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               return;
             }
             var eventLabels = {
+              // MT-11 (review 2026-11-06): Sonarr v4 returns string enums; the numeric keys are the legacy v3 form.
+              grabbed: {{ 'media.series_history.event_grabbed'|trans|json_encode|raw }},
+              downloadFolderImported: {{ 'media.series_history.event_imported'|trans|json_encode|raw }},
+              seriesFolderImported: {{ 'media.series_history.event_imported'|trans|json_encode|raw }},
+              episodeFileRenamed: {{ 'media.series_history.event_renamed'|trans|json_encode|raw }},
+              episodeFileDeleted: {{ 'media.series_history.event_deleted'|trans|json_encode|raw }},
+              downloadFailed: {{ 'media.series_history.event_failed'|trans|json_encode|raw }},
+              downloadIgnored: {{ 'media.series_history.event_failed'|trans|json_encode|raw }},
               1: {{ 'media.series_history.event_grabbed'|trans|json_encode|raw }},
               2: {{ 'media.series_history.event_imported'|trans|json_encode|raw }},
               3: {{ 'media.series_history.event_renamed'|trans|json_encode|raw }},
@@ -2770,7 +2813,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               8: {{ 'media.series_history.event_grabbed'|trans|json_encode|raw }},
               9: {{ 'media.series_history.event_failed'|trans|json_encode|raw }}
             };
-            var eventColors = {1:'success',2:'primary',3:'secondary',4:'danger',6:'warning',7:'danger',8:'success',9:'warning'};
+            var eventColors = {grabbed:'success',downloadFolderImported:'primary',seriesFolderImported:'primary',episodeFileRenamed:'secondary',episodeFileDeleted:'danger',downloadFailed:'danger',downloadIgnored:'warning',1:'success',2:'primary',3:'secondary',4:'danger',6:'warning',7:'danger',8:'success',9:'warning'};
             var html = '<div class="table-responsive" style="max-height:calc(100% - 1rem);overflow-y:auto"><table class="table table-sm table-vcenter table-hover mb-0" style="font-size:.78rem"><thead class="sticky-top" style="background:var(--tblr-bg-surface)"><tr><th>' + esc(SERIES_I18N.d_col_episode) + '</th><th>' + esc(SERIES_I18N.d_col_action) + '</th><th>' + esc(SERIES_I18N.d_col_source) + '</th><th>' + esc(SERIES_I18N.d_col_quality) + '</th><th>' + esc(SERIES_I18N.d_col_date) + '</th></tr></thead><tbody>';
             seasonHist.slice(0, 50).forEach(function(h) {
               var epNum = h.episode ? 'E' + String(h.episode.episodeNumber || 0).padStart(2,'0') : '?';
@@ -2778,7 +2821,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               var color = eventColors[h.eventType] || 'secondary';
               var quality = (h.quality && h.quality.quality) ? h.quality.quality.name : '—';
               var date = h.date ? h.date.substring(0, 10) : '—';
-              html += '<tr><td class="fw-medium">' + epNum + '</td><td><span class="badge bg-' + color + '-lt">' + action + '</span></td><td class="text-muted text-truncate" style="max-width:250px;" title="' + esc(h.sourceTitle || '') + '">' + esc(h.sourceTitle || '—') + '</td><td><span class="badge bg-blue-lt">' + quality + '</span></td><td class="text-muted">' + date + '</td></tr>';
+              html += '<tr><td class="fw-medium">' + epNum + '</td><td><span class="badge bg-' + color + '-lt">' + esc(action) + '</span></td><td class="text-muted text-truncate" style="max-width:250px;" title="' + esc(h.sourceTitle || '') + '">' + esc(h.sourceTitle || '—') + '</td><td><span class="badge bg-blue-lt">' + esc(quality) + '</span></td><td class="text-muted">' + date + '</td></tr>';
             });
             html += '</tbody></table></div>';
             content.innerHTML = html;
@@ -2923,9 +2966,9 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               goBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + SERIES_I18N.d_rename_in_progress;
               ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + seriesId + '/rename', { fileIds: fileIds }).then(function(data) {
                 if (data.ok && data.cmdId) {
-                  var pollRename = setInterval(function() {
+                  var pollRename = cmdInterval(function() {
                     ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/' + data.cmdId).then(function(cmd) {
-                      var st = (cmd.status || '').toLowerCase();
+                      var st = cmdState(cmd);
                       if (st === 'completed') {
                         clearInterval(pollRename);
                         goBtn.innerHTML = SERIES_I18N.d_renamed;
@@ -3117,13 +3160,13 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     if (pollSeriesId && pollSeriesId == currentId) {
       showBanner('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(SERIES_I18N.w_cmd_in_progress_tpl, { LBL: label }), 'info');
     }
-    var timer = setInterval(function() {
+    var timer = cmdInterval(function() {
       pollCount++;
       var elapsed = pollCount * 2;
       fetch(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/' + cmdId, { headers: {'X-Requested-With':'XMLHttpRequest'} })
       .then(function(r) { return r.json(); })
       .then(function(cmd) {
-        var st = (cmd.status || '').toLowerCase();
+        var st = cmdState(cmd);
         var msg = cmd.message || '';
         var isCurrentModal = pollSeriesId && pollSeriesId == currentId;
         if (st === 'completed') {
@@ -3246,6 +3289,14 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         return;
       }
       var eventLabels = {
+        // MT-11 (review 2026-11-06): Sonarr v4 returns string enums; the numeric keys are the legacy v3 form.
+        grabbed: {{ 'media.series_history.event_grabbed'|trans|json_encode|raw }},
+        downloadFolderImported: {{ 'media.series_history.event_imported'|trans|json_encode|raw }},
+        seriesFolderImported: {{ 'media.series_history.event_imported'|trans|json_encode|raw }},
+        episodeFileRenamed: {{ 'media.series_history.event_renamed'|trans|json_encode|raw }},
+        episodeFileDeleted: {{ 'media.series_history.event_deleted'|trans|json_encode|raw }},
+        downloadFailed: {{ 'media.series_history.event_failed'|trans|json_encode|raw }},
+        downloadIgnored: {{ 'media.series_history.event_failed'|trans|json_encode|raw }},
         1: {{ 'media.series_history.event_grabbed'|trans|json_encode|raw }},
         2: {{ 'media.series_history.event_imported'|trans|json_encode|raw }},
         3: {{ 'media.series_history.event_renamed'|trans|json_encode|raw }},
@@ -3255,7 +3306,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         8: {{ 'media.series_history.event_grabbed'|trans|json_encode|raw }},
         9: {{ 'media.series_history.event_failed'|trans|json_encode|raw }}
       };
-      var eventColors = {1:'success',2:'primary',3:'secondary',4:'danger',6:'warning',7:'danger',8:'success',9:'warning'};
+      var eventColors = {grabbed:'success',downloadFolderImported:'primary',seriesFolderImported:'primary',episodeFileRenamed:'secondary',episodeFileDeleted:'danger',downloadFailed:'danger',downloadIgnored:'warning',1:'success',2:'primary',3:'secondary',4:'danger',6:'warning',7:'danger',8:'success',9:'warning'};
       var html = '<div class="table-responsive" style="max-height:calc(100% - 1rem);overflow-y:auto"><table class="table table-sm table-vcenter table-hover mb-0" style="font-size:.78rem"><thead class="sticky-top" style="background:var(--tblr-bg-surface)"><tr><th>' + esc(SERIES_I18N.d_col_episode) + '</th><th>' + esc(SERIES_I18N.d_col_action) + '</th><th>' + esc(SERIES_I18N.d_col_source) + '</th><th>' + esc(SERIES_I18N.d_col_quality) + '</th><th>' + esc(SERIES_I18N.d_col_date) + '</th></tr></thead><tbody>';
       history.slice(0, 100).forEach(function(h) {
         var epLabel = h.episode ? 'S' + String(h.episode.seasonNumber || 0).padStart(2,'0') + 'E' + String(h.episode.episodeNumber || 0).padStart(2,'0') : '—';
@@ -3263,7 +3314,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         var color = eventColors[h.eventType] || 'secondary';
         var quality = (h.quality && h.quality.quality) ? h.quality.quality.name : '—';
         var date = h.date ? h.date.substring(0, 10) : '—';
-        html += '<tr><td class="fw-medium">' + epLabel + '</td><td><span class="badge bg-' + color + '-lt">' + action + '</span></td><td class="text-muted text-truncate" style="max-width:250px;" title="' + esc(h.sourceTitle || '') + '">' + esc(h.sourceTitle || '—') + '</td><td><span class="badge bg-blue-lt">' + quality + '</span></td><td class="text-muted">' + date + '</td></tr>';
+        html += '<tr><td class="fw-medium">' + epLabel + '</td><td><span class="badge bg-' + color + '-lt">' + esc(action) + '</span></td><td class="text-muted text-truncate" style="max-width:250px;" title="' + esc(h.sourceTitle || '') + '">' + esc(h.sourceTitle || '—') + '</td><td><span class="badge bg-blue-lt">' + esc(quality) + '</span></td><td class="text-muted">' + date + '</td></tr>';
       });
       html += '</tbody></table></div>';
       content.innerHTML = html;
@@ -3424,6 +3475,8 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
       html += '<button class="btn btn-outline-secondary" type="button" id="edit-path-update" title="' + esc(SERIES_I18N.d_edit_path_update) + '"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 9 15 9"/></svg></button>';
       html += '</div>';
       html += '<div id="edit-path-browser" style="display:none;border:1px solid var(--tblr-border-color);border-radius:0 0 .25rem .25rem;max-height:200px;overflow-y:auto;background:var(--tblr-bg-surface);"></div>';
+      // AC-10: without moveFiles Sonarr only repoints the DB and the files stay behind.
+      html += '<label class="form-check form-check-sm mt-1 mb-0"><input class="form-check-input" type="checkbox" id="edit-move-files" checked><span class="form-check-label small">' + esc(SERIES_I18N.d_edit_move_files) + '</span></label>';
       html += '</div>';
 
       // Tags
@@ -3534,7 +3587,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         if (!confirm(tpl(SERIES_I18N.d_confirm_move_tpl, { PATH: newPath }))) return;
         var updateBtn = this;
         updateBtn.disabled = true;
-        ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/edit', { path: newPath })
+        ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/edit', { path: newPath, moveFiles: document.getElementById('edit-move-files').checked })
         .then(function(data) {
           updateBtn.disabled = false;
           if (data.ok) {
@@ -3582,6 +3635,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
           qualityProfileId: parseInt(document.getElementById('edit-qualityProfile').value),
           seriesType: document.getElementById('edit-seriesType').value,
           path: document.getElementById('edit-path').value,
+          moveFiles: document.getElementById('edit-move-files').checked,
           tags: selectedTags
         };
         ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + currentId + '/edit', payload)
@@ -3745,10 +3799,10 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
           }
 
           // Poll
-          var timer = setInterval(function() {
+          var timer = cmdInterval(function() {
             ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/command/' + data.cmdId)
             .then(function(cmd) {
-              var st = (cmd.status || '').toLowerCase();
+              var st = cmdState(cmd);
               if (st === 'completed') {
                 clearInterval(timer);
                 showFmFeedback(tpl(SERIES_I18N.d_rename_done_tpl, { COUNT: fileIds.length }), 'success');
@@ -3797,7 +3851,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
       shelfBuilt = false;
       applyFilters();
       // Fermer la modal
-      location.reload();
+      safeReload();
     });
   });
 
@@ -4140,20 +4194,12 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   var fileManagerFiles = [];
   var qualityDefsCache = null;
 
-  var LANG_LIST = [
-    { id: 2,  name: 'French' },
-    { id: 1,  name: 'English' },
-    { id: 4,  name: 'German' },
-    { id: 3,  name: 'Spanish' },
-    { id: 5,  name: 'Italian' },
-    { id: 13, name: 'Japanese' },
-    { id: 17, name: 'Korean' },
-    { id: 16, name: 'Chinese' },
-    { id: 7,  name: 'Portuguese' },
-    { id: 10, name: 'Russian' },
-    { id: 14, name: 'Arabic' },
-    { id: 11, name: 'Hindi' }
-  ];
+  // Review 2026-11-06 (H4): filled from THIS instance's /api/v3/language —
+  // the old literal table mapped 7 of 12 names to the wrong id (13 is
+  // Vietnamese, 17 Turkish, …) and Arabic/Hindi differ between Radarr and
+  // Sonarr, so no shared literal list can be right.
+  var LANG_LIST = [];
+  var langListCache = null;
 
   function openFileManager(seriesId, seasonNumber) {
     var overlay = document.getElementById('ep-filemanager-overlay');
@@ -4172,12 +4218,17 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
       ? Promise.resolve(qualityDefsCache)
       : ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/quality-definitions');
     var pEpisodes = ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/' + seriesId + '/episodes');
+    var pLangs = langListCache
+      ? Promise.resolve(langListCache)
+      : ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/languages').catch(function() { return []; });
 
-    Promise.all([pFiles, pQuals, pEpisodes]).then(function(results) {
+    Promise.all([pFiles, pQuals, pEpisodes, pLangs]).then(function(results) {
       var allFiles = results[0] || [];
       var quals = results[1] || [];
       var episodes = results[2] || [];
       qualityDefsCache = quals;
+      if (Array.isArray(results[3]) && results[3].length) langListCache = results[3];
+      LANG_LIST = langListCache || [];
       loading.style.display = 'none';
 
       var seasonFiles = allFiles.filter(function(f) { return f.seasonNumber === seasonNumber; });
@@ -4228,10 +4279,16 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
 
     var seasonNums = Object.keys(fmSeasonsMap).map(Number).sort(function(a,b) { return a - b; });
 
+    // Review 2026-11-06 (H5): Sonarr's ReleaseType enum is Unknown(0),
+    // SingleEpisode, MultiEpisode, SeasonPack, MultiSeasonPack(4); a row
+    // whose stored value had no option was "dirty" from render and "Save
+    // all" rewrote it to singleEpisode.
     var RELEASE_TYPES = [
+      { value: 'unknown', label: SERIES_I18N.fm_release_type_unknown },
       { value: 'singleEpisode', label: SERIES_I18N.fm_release_type_single },
       { value: 'multiEpisode', label: SERIES_I18N.fm_release_type_multi },
-      { value: 'seasonPack', label: SERIES_I18N.fm_release_type_pack }
+      { value: 'seasonPack', label: SERIES_I18N.fm_release_type_pack },
+      { value: 'multiSeasonPack', label: SERIES_I18N.fm_release_type_multi_season }
     ];
     var INDEXER_FLAGS = [
       { value: 0, label: SERIES_I18N.fm_indexer_flag_none },
@@ -4308,12 +4365,18 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         qualOpts += '<option value="' + qId + '"' + sel + '>' + esc(qName) + '</option>';
       });
 
-      // Languages display
+      // Languages display — H5: merge the file's own languages so every
+      // stored id is an option (else the row is dirty from render and
+      // "Save all" posts languages: [] for it).
+      var langOptions = LANG_LIST.slice();
+      (f.languages || []).forEach(function(l) {
+        if (!langOptions.some(function(o) { return o.id === l.id; })) langOptions.push({ id: l.id, name: l.name || ('#' + l.id) });
+      });
       var selLangNames = [];
-      LANG_LIST.forEach(function(l) { if (curLangs[l.id]) selLangNames.push(l.name); });
+      langOptions.forEach(function(l) { if (curLangs[l.id]) selLangNames.push(l.name); });
       var langLabel = selLangNames.length ? selLangNames.join(', ') : '—';
       var langItems = '';
-      LANG_LIST.forEach(function(l) {
+      langOptions.forEach(function(l) {
         var checked = curLangs[l.id] ? ' checked' : '';
         langItems += '<label class="dropdown-item d-flex align-items-center gap-2 py-1" style="font-size:.75rem;cursor:pointer;">' +
           '<input class="form-check-input fm-lang-cb m-0" type="checkbox" value="' + l.id + '" data-name="' + esc(l.name) + '"' + checked + ' style="width:14px;height:14px;">' +
@@ -4334,7 +4397,13 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
 
       // Indexer flags select
       var ifOpts = '';
-      INDEXER_FLAGS.forEach(function(fl) {
+      // A combined bitmask (e.g. 3 = Freeleech|Halfleech) needs its own
+      // option or the select falls back to 0 and the row is dirty (H5).
+      var ifList = INDEXER_FLAGS.slice();
+      if (!ifList.some(function(fl) { return fl.value === curIndexerFlags; })) {
+        ifList.push({ value: curIndexerFlags, label: tpl(SERIES_I18N.fm_indexer_flag_combined_tpl, { FLAGS: curIndexerFlags }) });
+      }
+      ifList.forEach(function(fl) {
         ifOpts += '<option value="' + fl.value + '"' + (fl.value === curIndexerFlags ? ' selected' : '') + '>' + esc(fl.label) + '</option>';
       });
 
@@ -4959,6 +5028,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   var addConfigLoaded = false;
   var addSelectedSerie = null;
   var addSearchTimer = null;
+  var addLookupSeq = 0; // MT-9: a slow earlier lookup must not overwrite the latest results
 
   document.getElementById('modal-add-serie').addEventListener('show.bs.modal', function() {
     document.getElementById('add-serie-search').value = '';
@@ -4998,7 +5068,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
           var lbl = document.createElement('label');
           lbl.className = 'badge bg-secondary-lt';
           lbl.style.cursor = 'pointer';
-          lbl.innerHTML = '<input type="checkbox" class="d-none add-tag-cb" value="' + t.id + '"> ' + t.label;
+          lbl.innerHTML = '<input type="checkbox" class="d-none add-tag-cb" value="' + t.id + '"> ' + esc(t.label);
           lbl.addEventListener('click', function() {
             var cb = lbl.querySelector('input');
             cb.checked = !cb.checked;
@@ -5019,7 +5089,9 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     addSearchTimer = setTimeout(function() {
       document.getElementById('add-serie-loading').style.display = '';
       document.getElementById('add-serie-results').innerHTML = '';
+      var seq = ++addLookupSeq;
       ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_SONARR_SLUG) + '/series/lookup?term=' + encodeURIComponent(q)).then(function(results) {
+        if (seq !== addLookupSeq) return;
         document.getElementById('add-serie-loading').style.display = 'none';
         var container = document.getElementById('add-serie-results');
         container.innerHTML = '';
@@ -5042,7 +5114,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
             (s.poster ? '<img src="' + esc(s.poster) + '" style="width:60px;height:90px;object-fit:cover;border-radius:.4rem;flex-shrink:0;" loading="lazy">' : '<div style="width:60px;height:90px;background:var(--tblr-bg-surface-secondary);border-radius:.4rem;flex-shrink:0;"></div>') +
             '<div class="flex-grow-1 min-width-0">' +
             '<div class="fw-bold" style="font-size:.82rem;">' + esc(s.title) + (s.year ? ' <span class="text-muted fw-normal">(' + s.year + ')</span>' : '') + statusBadge + '</div>' +
-            '<div class="text-muted small">' + (s.network || '') + (s.seasonCount ? ' · ' + tpl(SERIES_I18N.season_tpl, { COUNT: s.seasonCount }) : '') + '</div>' +
+            '<div class="text-muted small">' + esc(s.network || '') + (s.seasonCount ? ' · ' + tpl(SERIES_I18N.season_tpl, { COUNT: s.seasonCount }) : '') + '</div>' +
             (genres ? '<div class="mt-1">' + genres + '</div>' : '') +
             (s.overview ? '<div class="text-muted mt-1" style="font-size:.7rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">' + esc(s.overview) + '</div>' : '') +
             '</div></div>';
@@ -5065,6 +5137,10 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
             el.style.borderColor = '#6366f1';
           });
         });
+      }).catch(function() {
+        if (seq !== addLookupSeq) return;
+        document.getElementById('add-serie-loading').style.display = 'none';
+        document.getElementById('add-serie-results').innerHTML = '<div class="col-12 text-danger text-center py-3">' + esc(SERIES_I18N.w_network_error || 'Network error') + '</div>';
       });
     }, 400);
   });
@@ -5099,7 +5175,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         resultEl.textContent = SERIES_I18N.modal_added_success;
         resultEl.classList.remove('d-none');
         btn.style.display = 'none';
-        setTimeout(function() { location.reload(); }, 2000);
+        setTimeout(function() { safeReload(); }, 2000);
       } else {
         var resultEl = document.getElementById('add-serie-result');
         resultEl.className = 'mt-2 alert alert-danger';

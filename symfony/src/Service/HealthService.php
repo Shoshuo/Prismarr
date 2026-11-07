@@ -371,11 +371,33 @@ class HealthService implements ResetInterface
             if ($this->serviceHealthCache !== null) {
                 foreach (['radarr', 'sonarr', 'prowlarr', 'jellyseerr', 'qbittorrent', 'deluge', 'transmission', 'tmdb', 'sabnzbd', 'nzbget', 'tautulli', 'bazarr', 'tracearr', 'emby'] as $svc) {
                     $this->serviceHealthCache->clear($svc);
+                    $this->clearInstanceBreakers($svc);
                 }
             }
         } else {
             unset($this->statusCache[$service]);
             $this->serviceHealthCache?->clear($service);
+            $this->clearInstanceBreakers($service);
+        }
+    }
+
+    /**
+     * HC-4 (review 2026-11-06): RadarrClient/SonarrClient mark themselves
+     * down PER INSTANCE (`service_down.radarr.<slug>`); clearing only the
+     * flat key made the banner's Retry a no-op for every instance page.
+     */
+    private function clearInstanceBreakers(string $service): void
+    {
+        $type = match ($service) {
+            'radarr' => ServiceInstance::TYPE_RADARR,
+            'sonarr' => ServiceInstance::TYPE_SONARR,
+            default  => null,
+        };
+        if ($type === null || $this->instances === null || $this->serviceHealthCache === null) {
+            return;
+        }
+        foreach ($this->instances->getAll($type) as $instance) {
+            $this->serviceHealthCache->clear($service, $instance->getSlug());
         }
     }
 
@@ -753,19 +775,14 @@ class HealthService implements ResetInterface
     }
 
     /**
-     * Validate a target URL before issuing the probe. Reject anything that
-     * isn't HTTP(S), then resolve the hostname and reject link-local IPs
-     * (169.254.0.0/16) which are how AWS / GCP / Azure expose unauthenticated
-     * cloud-metadata endpoints. Returns null when the URL is acceptable, or
-     * a short reason string when it must be blocked.
-     *
-     * Important: we deliberately do NOT block the rest of RFC1918 — Prismarr
-     * legitimately talks to LAN services like Radarr on 192.168.x or 10.x.
-     * The SSRF surface here is mostly an admin-supplied URL, so the goal is
-     * "bar the violent exploits" (file://, gopher://, cloud-metadata) rather
-     * than "fully prevent intra-LAN scanning".
+     * The DNS-free half of urlBlockedReason(): scheme and host SHAPE only.
+     * This is what the settings form and an instance create/update check —
+     * it answers at once, whereas the link-local check below resolves the
+     * host and belongs where a request is about to be made (the probe, or
+     * the settings import, whose file is untrusted input). Returns null
+     * when the URL is well-formed, else 'malformed' | 'scheme' | 'host'.
      */
-    public static function urlBlockedReason(string $url): ?string
+    public static function urlShapeReason(string $url): ?string
     {
         // parse_url returns false on a seriously malformed URL — notably a
         // port outside 0-65535 (PHP 7+). Surface that as its own reason so
@@ -781,6 +798,36 @@ class HealthService implements ResetInterface
         if (!is_string($host) || $host === '') {
             return 'host';
         }
+        // Review 2026-11-06 (S3): parse_url() accepts `;`, `,`, spaces and
+        // quotes inside the host. Such a "host" can never be dialled, but it
+        // DID land verbatim in the CSP img-src list (directive injection) and
+        // in log lines. Only hostname characters, or a bracketed IPv6
+        // literal, pass.
+        if (!preg_match('/^(?:[A-Za-z0-9._\-]+|\[[0-9A-Fa-f:.]+\])$/', $host)) {
+            return 'host';
+        }
+        return null;
+    }
+
+    /**
+     * Validate a target URL before issuing the probe. Reject anything that
+     * isn't HTTP(S), then resolve the hostname and reject link-local IPs
+     * (169.254.0.0/16) which are how AWS / GCP / Azure expose unauthenticated
+     * cloud-metadata endpoints. Returns null when the URL is acceptable, or
+     * a short reason string when it must be blocked.
+     *
+     * Important: we deliberately do NOT block the rest of RFC1918 — Prismarr
+     * legitimately talks to LAN services like Radarr on 192.168.x or 10.x.
+     * The SSRF surface here is mostly an admin-supplied URL, so the goal is
+     * "bar the violent exploits" (file://, gopher://, cloud-metadata) rather
+     * than "fully prevent intra-LAN scanning".
+     */
+    public static function urlBlockedReason(string $url): ?string
+    {
+        if (($reason = self::urlShapeReason($url)) !== null) {
+            return $reason;
+        }
+        $host = (string) parse_url($url, PHP_URL_HOST);
         // Normalize evasions: a trailing dot (rooted FQDN / numeric) and IPv6
         // literal brackets, both of which slip past FILTER_VALIDATE_IP yet still
         // resolve at curl time.
