@@ -40,6 +40,9 @@ class QBittorrentController extends AbstractController
     {
         try {
             $torrents = $this->qbt->getTorrents();
+            if ($torrents === [] && $this->clientFailed($this->qbt)) {
+                return $this->jsonClientError('qBittorrent', $this->qbt, 'unreachable', 502); // C1
+            }
             $active   = 0;
             $items    = [];
             foreach ($torrents as $t) {
@@ -160,11 +163,17 @@ class QBittorrentController extends AbstractController
             $desc     = $request->query->get('desc', '1') === '1';
 
             $all   = $this->qbt->getTorrents();
+            if ($all === [] && $this->clientFailed($this->qbt)) {
+                return $this->jsonClientError('qBittorrent', $this->qbt, 'unreachable', 502); // C1: an outage is not an empty list
+            }
             $stats = $this->qbt->getStats($all);
 
             // State filter
             if ($filter === 'active') {
                 $all = array_values(array_filter($all, fn($t) => ($t['dlspeed'] ?? 0) > 0 || ($t['upspeed'] ?? 0) > 0));
+            } elseif ($filter === 'completed') {
+                // DC-5: finished torrents are seeding/paused/queued at 100 %.
+                $all = array_values(array_filter($all, fn($t) => ($t['progress'] ?? 0) >= 100 && !in_array($t['state'], ['error', 'checking', 'moving'], true)));
             } elseif ($filter !== 'all') {
                 $all = array_values(array_filter($all, fn($t) => $t['state'] === $filter));
             }

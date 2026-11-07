@@ -47,7 +47,7 @@ test:
 
 # Lint all PHP sources (syntax errors only — fast)
 lint:
-	docker exec prismarr sh -c 'find src tests migrations -name "*.php" -exec php -l {} \; 2>&1 | grep -v "No syntax errors" || echo "PHP syntax OK"'
+	docker exec prismarr sh -c 'rc=0; for f in $$(find src tests migrations -name "*.php"); do out=$$(php -l "$$f" 2>&1) || { echo "$$out"; rc=1; }; done; [ $$rc -eq 0 ] && echo "PHP syntax OK"; exit $$rc'
 
 # Lint Twig templates
 lint-twig:

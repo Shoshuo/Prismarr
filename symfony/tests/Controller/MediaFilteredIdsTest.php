@@ -136,4 +136,41 @@ class MediaFilteredIdsTest extends TestCase
 
         $this->assertGreaterThanOrEqual(500, $response->getStatusCode(), 'a client failure is surfaced, not swallowed');
     }
+
+    // ── C1 (review 2026-11-06): the clients answer [] on a transport failure ──
+
+    public function testFilmsFilteredIdsReportsAnOutageWhenRadarrAnswersEmptyWithAnError(): void
+    {
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('getMovies')->willReturn([]);
+        $radarr->method('getLastError')->willReturn(['code' => 0, 'method' => 'GET', 'path' => '/api/v3/movie', 'message' => 'Failed to connect']);
+
+        $response = $this->controller(radarr: $radarr)->filmsFilteredIds(Request::create('/x?status=missing'), new MovieLibraryFilter());
+
+        $this->assertSame(502, $response->getStatusCode(), '[] + a recorded error is an outage, not "no match"');
+        $this->assertFalse(json_decode((string) $response->getContent(), true)['ok']);
+    }
+
+    public function testSeriesFilteredIdsReportsAnOutageWhenSonarrAnswersEmptyWithAnError(): void
+    {
+        $sonarr = $this->createMock(SonarrClient::class);
+        $sonarr->method('getSeries')->willReturn([]);
+        $sonarr->method('getLastError')->willReturn(['code' => 0, 'method' => 'GET', 'path' => '/api/v3/series', 'message' => 'Failed to connect']);
+
+        $response = $this->controller(sonarr: $sonarr)->seriesFilteredIds(Request::create('/x'), new SeriesLibraryFilter());
+
+        $this->assertSame(502, $response->getStatusCode());
+    }
+
+    public function testAnEmptyLibraryWithoutAnErrorIsAnEmptyResult(): void
+    {
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('getMovies')->willReturn([]);
+        $radarr->method('getLastError')->willReturn(null);
+
+        $response = $this->controller(radarr: $radarr)->filmsFilteredIds(Request::create('/x'), new MovieLibraryFilter());
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame([], json_decode((string) $response->getContent(), true)['ids']);
+    }
 }

@@ -31,7 +31,9 @@
         {% for d in ql.releaseDates|default([]) %}
           <span class="ql-date{% if d.upcoming %} is-upcoming{% endif %}">
             <span class="ql-date-label">{{ d.label }}</span>
-            <span class="ql-date-val">{{ d.date|prismarr_date }}</span>
+            {# `?? true`, not `|default(true)`: Twig's default filter treats false as
+               empty and would float every chip (live check on :beta, 2026-11-07). #}
+            <span class="ql-date-val">{{ (d.floating ?? true) ? d.date|prismarr_date(true) : d.date|prismarr_date }}</span>
           </span>
         {% endfor %}
       </div>

@@ -245,9 +245,21 @@ class JellyseerrClient implements ResetInterface
         return $this->request('POST', "/api/v1/user/{$userId}/settings/notifications", [], $data);
     }
 
-    public function createLocalUser(string $email, string $password): ?array
+    /**
+     * MS-2 (review 2026-11-06): a missing password tells Seerr to generate one
+     * and e-mail it (its "auto-generate" option); an empty string made that
+     * option always fail. The display username is forwarded when given.
+     */
+    public function createLocalUser(string $email, ?string $password = null, ?string $username = null): ?array
     {
-        return $this->request('POST', '/api/v1/user', [], ['email' => $email, 'password' => $password]);
+        $body = ['email' => $email];
+        if ($password !== null && $password !== '') {
+            $body['password'] = $password;
+        }
+        if ($username !== null && trim($username) !== '') {
+            $body['username'] = trim($username);
+        }
+        return $this->request('POST', '/api/v1/user', [], $body);
     }
 
     public function getJellyfinUsers(): array
@@ -584,7 +596,10 @@ class JellyseerrClient implements ResetInterface
     private function get(string $path, array $params = []): ?array
     {
         if ($this->health->isDown(self::SERVICE_KEY)) {
+            // C1 (review 2026-11-06): record WHY the call was skipped so the
+            // controllers can tell "outage" from "genuinely empty".
             $this->serviceUnavailable = true;
+            $this->recordError('GET', $path, 0, '', 'circuit open — Jellyseerr was unreachable moments ago, retrying shortly');
             return null;
         }
         if ($this->serviceUnavailable) {
@@ -598,7 +613,7 @@ class JellyseerrClient implements ResetInterface
         }
 
         $ch = curl_init();
-        curl_setopt_array($ch, [
+        [$body, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
             CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
@@ -609,29 +624,28 @@ class JellyseerrClient implements ResetInterface
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Accept: application/json'],
         ]);
 
-        $body = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
-
         if ($err || $code !== 200) {
             $this->logger->warning("JellyseerrClient GET {$path} → HTTP {$code} {$err}");
             $this->recordError('GET', $path, (int) $code, is_string($body) ? $body : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
+                // Final review #5: unlike the *arr clients (issue #41, long library
+                // scans) Seerr has no legitimately slow call, so a connected-then-hung
+                // Seerr opens the breaker like a refused connection would.
                 $this->health->markDown(self::SERVICE_KEY);
             }
             return null;
         }
 
         $this->health->clear(self::SERVICE_KEY);
-        return json_decode($body, true);
+        return json_decode((string) $body, true);
     }
 
     private function delete(string $path, array $params = []): bool
     {
         if ($this->health->isDown(self::SERVICE_KEY)) {
             $this->serviceUnavailable = true;
+            $this->recordError('DELETE', $path, 0, '', 'circuit open — Jellyseerr was unreachable moments ago, retrying shortly');
             return false;
         }
         if ($this->serviceUnavailable) {
@@ -643,7 +657,8 @@ class JellyseerrClient implements ResetInterface
         if ($params) $url .= '?' . http_build_query($params);
 
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        [$resp, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -653,16 +668,15 @@ class JellyseerrClient implements ResetInterface
             CURLOPT_CUSTOMREQUEST  => 'DELETE',
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}"],
         ]);
-        $resp = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
 
         if ($err || $code < 200 || $code >= 300) {
             $this->logger->warning("JellyseerrClient DELETE {$path} → HTTP {$code} {$err}");
             $this->recordError('DELETE', $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
+                // Final review #5: unlike the *arr clients (issue #41, long library
+                // scans) Seerr has no legitimately slow call, so a connected-then-hung
+                // Seerr opens the breaker like a refused connection would.
                 $this->health->markDown(self::SERVICE_KEY);
             }
             return false;
@@ -675,6 +689,7 @@ class JellyseerrClient implements ResetInterface
     {
         if ($this->health->isDown(self::SERVICE_KEY)) {
             $this->serviceUnavailable = true;
+            $this->recordError($method, $path, 0, '', 'circuit open — Jellyseerr was unreachable moments ago, retrying shortly');
             return null;
         }
         if ($this->serviceUnavailable) {
@@ -686,7 +701,8 @@ class JellyseerrClient implements ResetInterface
         if ($params) $url .= '?' . http_build_query($params);
 
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        [$resp, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -698,16 +714,14 @@ class JellyseerrClient implements ResetInterface
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Content-Type: application/json', 'Accept: application/json'],
         ]);
 
-        $resp = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
-
         if ($err || $code < 200 || $code >= 300) {
             $this->logger->warning("JellyseerrClient {$method} {$path} → HTTP {$code} {$err}");
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
+                // Final review #5: unlike the *arr clients (issue #41, long library
+                // scans) Seerr has no legitimately slow call, so a connected-then-hung
+                // Seerr opens the breaker like a refused connection would.
                 $this->health->markDown(self::SERVICE_KEY);
             }
             return null;
@@ -715,5 +729,29 @@ class JellyseerrClient implements ResetInterface
 
         $this->health->clear(self::SERVICE_KEY);
         return json_decode($resp ?: '{}', true) ?? [];
+    }
+
+    /**
+     * cURL execution seam (review 2026-11-06, TQ-3): applies the options,
+     * performs the transfer and returns the raw facts the helpers classify
+     * on. Protected so tests can script transport outcomes and inspect the
+     * request each public method sends.
+     *
+     * @param \CurlHandle       $ch
+     * @param array<int, mixed> $opts
+     * @return array{0: string|false, 1: int, 2: string, 3: bool} [body, http code, curl error, timed out after the connection was established]
+     */
+    protected function exec(\CurlHandle $ch, array $opts): array
+    {
+        curl_setopt_array($ch, $opts);
+        /** @var string|false $body */
+        $body = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        $timedOutAfterConnect = curl_errno($ch) === CURLE_OPERATION_TIMEDOUT
+            && (float) curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
+        curl_close($ch);
+
+        return [$body, $code, $err, $timedOutAfterConnect];
     }
 }

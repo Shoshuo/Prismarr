@@ -283,9 +283,15 @@ class RadarrClient implements ResetInterface
         return $result ? $this->normalizeMovie($result) : null;
     }
 
-    public function updateMovie(int $id, array $data): ?array
+    /**
+     * @param bool $moveFiles Ask Radarr to move the movie files when the
+     *                        path / root folder changed (AC-10). Without it
+     *                        Radarr only repoints the DB and the files stay
+     *                        where they were (then show as missing).
+     */
+    public function updateMovie(int $id, array $data, bool $moveFiles = false): ?array
     {
-        $result = $this->request('PUT', "/api/v3/movie/{$id}", [], $data);
+        $result = $this->request('PUT', "/api/v3/movie/{$id}", $moveFiles ? ['moveFiles' => 'true'] : [], $data);
         return $result ? $this->normalizeMovie($result) : null;
     }
 
@@ -605,11 +611,19 @@ class RadarrClient implements ResetInterface
 
     public function updateCollection(int $id, bool $monitored, int $qualityProfileId = 0): bool
     {
-        $body = ['monitored' => $monitored];
-        if ($qualityProfileId > 0) {
-            $body['qualityProfileId'] = $qualityProfileId;
+        // Review 2026-11-06 (H2): Radarr's CollectionController.UpdateCollection
+        // → MovieCollection.ApplyChanges has no null guards, so a partial
+        // body ({monitored}) stored TmdbId=0 / QualityProfileId=0 /
+        // RootFolderPath=null / Tags reset. Always PUT the full resource.
+        $current = $this->getCollection($id);
+        if ($current === null) {
+            return false;
         }
-        return $this->request('PUT', "/api/v3/collection/{$id}", [], $body) !== null;
+        $current['monitored'] = $monitored;
+        if ($qualityProfileId > 0) {
+            $current['qualityProfileId'] = $qualityProfileId;
+        }
+        return $this->request('PUT', "/api/v3/collection/{$id}", [], $current) !== null;
     }
 
     // ── Blocklist ─────────────────────────────────────────────────────────────
@@ -1430,12 +1444,89 @@ class RadarrClient implements ResetInterface
 
     // ── Manual Import (preview) ───────────────────────────────────────────────
 
-    public function getManualImportPreview(string $folder, bool $filterExistingFiles = true): array
+    /**
+     * @param ?string $downloadId When given, Radarr resolves the candidates in
+     *                            the original grab's context (files already
+     *                            matched to the movie, quality/languages
+     *                            filled in) instead of scanning the folder.
+     */
+    public function getManualImportPreview(string $folder, bool $filterExistingFiles = true, ?string $downloadId = null): array
     {
-        return $this->get('/api/v3/manualimport', [
-            'folder'              => $folder,
-            'filterExistingFiles' => $filterExistingFiles ? 'true' : 'false',
-        ]) ?? [];
+        $query = ['filterExistingFiles' => $filterExistingFiles ? 'true' : 'false'];
+        if ($downloadId !== null && $downloadId !== '') {
+            $query['downloadId'] = $downloadId;
+        } else {
+            $query['folder'] = $folder;
+        }
+        return $this->get('/api/v3/manualimport', $query) ?? [];
+    }
+
+    /**
+     * Run a Radarr manual import for one download-queue item (review
+     * 2026-11-06, H3). Mirrors SonarrClient::manualImportFromQueueItems:
+     *   1. GET /api/v3/manualimport?downloadId=<hash> (or ?folder= for
+     *      drop-ins without a tracker) so Radarr matches each file to the
+     *      movie and fills quality / languages / release group itself;
+     *   2. keep only candidates with a movie match and no rejection;
+     *   3. POST the ManualImport command with that enriched payload.
+     * Posting the queue item's outputPath (a FOLDER for multi-file
+     * releases) made Radarr "complete" the command with a failed per-file
+     * import, and the UI then deleted the queue item as done.
+     *
+     * @return array{ok: bool, cmdId: int|null, imported: int, skipped: int, reasons: list<string>}
+     */
+    public function manualImportFromQueueItem(?string $path, ?string $downloadId): array
+    {
+        $path       = trim((string) $path);
+        $downloadId = trim((string) $downloadId);
+        if ($path === '' && $downloadId === '') {
+            return ['ok' => false, 'cmdId' => null, 'imported' => 0, 'skipped' => 0, 'reasons' => ['empty item']];
+        }
+
+        $candidates = $this->getManualImportPreview($path, false, $downloadId !== '' ? $downloadId : null);
+        $label      = $path !== '' ? basename($path) : ('downloadId ' . substr($downloadId, 0, 8));
+        if ($candidates === []) {
+            return ['ok' => false, 'cmdId' => null, 'imported' => 0, 'skipped' => 1, 'reasons' => [sprintf('no preview for %s', $label)]];
+        }
+
+        $files   = [];
+        $skipped = 0;
+        $reasons = [];
+        foreach ($candidates as $c) {
+            $name       = basename((string) ($c['path'] ?? $label));
+            $rejections = $c['rejections'] ?? [];
+            $movieId    = (int) ($c['movie']['id'] ?? 0);
+            if ($rejections !== []) {
+                $skipped++;
+                $reasons[] = sprintf('%s: %s', $name, (string) ($rejections[0]['reason'] ?? 'rejected'));
+                continue;
+            }
+            if ($movieId <= 0) {
+                $skipped++;
+                $reasons[] = sprintf('%s: no movie match', $name);
+                continue;
+            }
+            $files[] = [
+                'path'         => $c['path']         ?? $path,
+                'folderName'   => $c['folderName']   ?? null,
+                'movieId'      => $movieId,
+                'quality'      => $c['quality']      ?? null,
+                'languages'    => $c['languages']    ?? [],
+                'releaseGroup' => $c['releaseGroup'] ?? null,
+                'indexerFlags' => $c['indexerFlags'] ?? 0,
+                'downloadId'   => $c['downloadId']   ?? ($downloadId !== '' ? $downloadId : null),
+            ];
+        }
+
+        if ($files === []) {
+            return ['ok' => false, 'cmdId' => null, 'imported' => 0, 'skipped' => $skipped, 'reasons' => $reasons];
+        }
+
+        $cmdData = $this->sendCommand('ManualImport', ['importMode' => 'auto', 'files' => $files]);
+        if ($cmdData === null) {
+            return ['ok' => false, 'cmdId' => null, 'imported' => 0, 'skipped' => $skipped + count($files), 'reasons' => array_merge($reasons, ['Radarr command rejected'])];
+        }
+        return ['ok' => true, 'cmdId' => isset($cmdData['id']) ? (int) $cmdData['id'] : null, 'imported' => count($files), 'skipped' => $skipped, 'reasons' => $reasons];
     }
 
     // ── Remote Path Mappings ──────────────────────────────────────────────────
@@ -1608,7 +1699,7 @@ class RadarrClient implements ResetInterface
         }
 
         $ch = curl_init();
-        curl_setopt_array($ch, [
+        [$body, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
             CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
@@ -1618,13 +1709,6 @@ class RadarrClient implements ResetInterface
             CURLOPT_NOSIGNAL       => 1,
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Accept: application/json'],
         ]);
-
-        $body = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        $errno     = curl_errno($ch);
-        $connected = curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
-        curl_close($ch);
 
         if ($err || $code !== 200) {
             $this->logger->warning("RadarrClient GET {$path} → HTTP {$code} {$err}");
@@ -1638,7 +1722,7 @@ class RadarrClient implements ResetInterface
                 // "unreachable" for the breaker window (issue #41's root
                 // failure mode).
                 $this->serviceUnavailable = true;
-                if (!($errno === CURLE_OPERATION_TIMEDOUT && $connected)) {
+                if (!$timedOutAfterConnect) {
                     $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
                 }
             }
@@ -1646,7 +1730,7 @@ class RadarrClient implements ResetInterface
         }
 
         $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
-        return json_decode($body, true);
+        return json_decode((string) $body, true);
     }
 
     /**
@@ -1773,7 +1857,8 @@ class RadarrClient implements ResetInterface
         if ($params) $url .= '?' . http_build_query($params);
 
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        [$resp, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -1783,16 +1868,17 @@ class RadarrClient implements ResetInterface
             CURLOPT_CUSTOMREQUEST  => 'DELETE',
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}"],
         ]);
-        $resp = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
         if ($code < 200 || $code >= 300) {
             $this->logger->warning("RadarrClient DELETE {$path} → HTTP {$code}");
             $this->recordError('DELETE', $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
+                // Same rule as get(): a read timeout after a successful
+                // connect is "busy" (a bulk delete with files can legitimately
+                // outlive the budget), not "down" — don't open the breaker.
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                if (!$timedOutAfterConnect) {
+                    $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                }
             }
             return false;
         }
@@ -1813,7 +1899,8 @@ class RadarrClient implements ResetInterface
         $this->ensureConfig();
         $url = rtrim($this->baseUrl, '/') . $path;
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        [$resp, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -1824,16 +1911,14 @@ class RadarrClient implements ResetInterface
             CURLOPT_POSTFIELDS     => json_encode($body),
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Content-Type: application/json'],
         ]);
-        $resp = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
         if ($code < 200 || $code >= 300) {
             $this->logger->warning("RadarrClient DELETE (body) {$path} → HTTP {$code}");
             $this->recordError('DELETE', $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                if (!$timedOutAfterConnect) {
+                    $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                }
             }
             return false;
         }
@@ -1856,7 +1941,8 @@ class RadarrClient implements ResetInterface
         if ($params) $url .= '?' . http_build_query($params);
 
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        [$resp, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -1868,17 +1954,17 @@ class RadarrClient implements ResetInterface
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Content-Type: application/json', 'Accept: application/json'],
         ]);
 
-        $resp = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
-
         if ($code < 200 || $code >= 300) {
             $this->logger->warning("RadarrClient {$method} {$path} → HTTP {$code}");
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
+                // A POST that connected and then outlived the budget (SkyHook
+                // lookups, big adds) completes server-side — report it failed
+                // to the caller but don't blind the instance for 10 s.
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                if (!$timedOutAfterConnect) {
+                    $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                }
             }
             return null;
         }
@@ -1908,25 +1994,25 @@ class RadarrClient implements ResetInterface
         $url = rtrim($this->baseUrl, '/') . $path;
 
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        [$resp, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 15,
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_NOSIGNAL       => 1,
             CURLOPT_CUSTOMREQUEST  => $method,
             CURLOPT_POSTFIELDS     => json_encode($body),
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Content-Type: application/json', 'Accept: application/json'],
         ]);
 
-        $resp = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
-
         if ($err) {
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+            if (!$timedOutAfterConnect) {
+                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+            }
             return ['ok' => false, 'error' => "Network error: {$err}"];
         }
         if ((int) $code === 0) {
@@ -1940,7 +2026,7 @@ class RadarrClient implements ResetInterface
         $data    = is_array($decoded) ? $decoded : [];
 
         if ($code < 200 || $code >= 300) {
-            $this->logger->warning("RadarrClient {$method} {$path} → HTTP {$code}", ['response' => self::sanitizeLogBody($resp)]);
+            $this->logger->warning("RadarrClient {$method} {$path} → HTTP {$code}", ['response' => self::sanitizeLogBody(is_string($resp) ? $resp : null)]);
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             // Radarr may return either a {message} object or an array [{propertyName, errorMessage}]
             if (isset($data[0]['errorMessage'])) {
@@ -1954,5 +2040,30 @@ class RadarrClient implements ResetInterface
 
         $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         return ['ok' => true, 'data' => $data];
+    }
+    /**
+     * cURL execution seam (review 2026-11-06, AC-7 / TQ-3): applies the
+     * options, performs the transfer and returns the raw facts the HTTP
+     * helpers classify on. Protected so unit tests can feed fabricated
+     * responses through the classification branches (transport failure vs
+     * non-2xx vs connected-then-timed-out drive different circuit-breaker
+     * decisions) and inspect the exact request each public method sends.
+     *
+     * @param \CurlHandle       $ch
+     * @param array<int, mixed> $opts
+     * @return array{0: string|false, 1: int, 2: string, 3: bool} [body, http code, curl error, timed out after the connection was established]
+     */
+    protected function exec(\CurlHandle $ch, array $opts): array
+    {
+        curl_setopt_array($ch, $opts);
+        /** @var string|false $body */
+        $body = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        $timedOutAfterConnect = curl_errno($ch) === CURLE_OPERATION_TIMEDOUT
+            && (float) curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
+        curl_close($ch);
+
+        return [$body, $code, $err, $timedOutAfterConnect];
     }
 }

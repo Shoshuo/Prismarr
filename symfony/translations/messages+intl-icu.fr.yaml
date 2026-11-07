@@ -350,8 +350,8 @@ dashboard:
     unknown_title: Inconnu
     empty: Aucun flux Plex en cours
     summary:
-      direct_play: '{count} Direct Play'
-      direct_stream: '{count} Direct Stream'
+      direct_play: '{count} en lecture directe'
+      direct_stream: '{count} en flux direct'
       transcode: '{count} Transcodage'
     bandwidth:
       total: Bande passante totale
@@ -362,8 +362,8 @@ dashboard:
       paused: En pause
       buffering: Mise en mémoire tampon
     decision:
-      direct_play: Direct Play
-      direct_stream: Direct Stream
+      direct_play: Lecture directe
+      direct_stream: Flux direct
       transcode: Transcodage
     track:
       video: 'Vidéo :'
@@ -948,6 +948,7 @@ admin:
     import_failed: Import échoué.
     display_reset: Préférences d'affichage réinitialisées.
     display_reset_full: Préférences d'affichage réinitialisées aux valeurs par défaut.
+    invalid_url: 'Réglages enregistrés, mais {key} a été refusé : hôte d''URL invalide ou bloqué ({reason}).'
   test:
     unknown_service: Service inconnu
     unreachable: Service injoignable
@@ -969,6 +970,8 @@ admin:
     read_failed: Lecture du fichier impossible.
     invalid_json: JSON invalide
     unknown_format: 'Format non reconnu (version export v1 ou v2 attendue).'
+    invalid_url_skipped: '{count, plural, one {# URL de service refusée (hôte invalide ou bloqué).} other {# URL de service refusées (hôte invalide ou bloqué).}}'
+    secrets_dropped: '{count, plural, one {# secret enregistré a été effacé car l''URL de son service a changé d''hôte — ressaisissez-le dans Services.} other {# secrets enregistrés ont été effacés car l''URL de leur service a changé d''hôte — ressaisissez-les dans Services.}}'
     result: '{applied, plural, =0 {Aucun réglage importé} one {# réglage importé} other {# réglages importés}}, {skipped, plural, one {# ignoré.} other {# ignorés.}} {instances_applied, plural, =0 {} one {# instance restaurée.} other {# instances restaurées.}}'
   updates:
     title: Mises à jour
@@ -1261,6 +1264,7 @@ media:
     series_not_found: Série introuvable
     series_data_missing: Données série introuvables
     no_movies_selected: Aucun film sélectionné
+    no_series_selected: Aucune série sélectionnée
     no_movie: Aucun film
     no_series: Aucune série
     queue_item_not_found: Item non trouvé dans la queue
@@ -1419,6 +1423,7 @@ media:
       edit_quality: Profil de qualité
       edit_availability: Disponibilité minimale
       edit_root: Dossier racine
+      edit_move_files: Déplacer les fichiers vers le nouveau dossier racine
       availability_announced: Annoncé
       availability_in_cinemas: En salles
       availability_released: Sorti
@@ -1516,6 +1521,7 @@ media:
       edit_path: Chemin
       edit_explorer: Explorateur
       edit_update_path: Mettre à jour le chemin
+      edit_move_files: Déplacer les fichiers vers le nouveau chemin
       edit_empty_folder: Dossier vide
       edit_tags: Étiquettes
       edit_tag_placeholder: "Nouvelle étiquette..."
@@ -1647,6 +1653,7 @@ media:
     warnings_cmd_import_done: "Import terminé."
     warnings_cmd_nothing: "{label} — terminé, aucun résultat trouvé."
     warnings_cmd_failed: "{label} — échoué : {error}"
+    warnings_cmd_stalled: "Radarr y travaille encore — vérification arrêtée après quelques minutes. Rechargez la page plus tard pour voir le résultat."
     warnings_cmd_elapsed: "🔍 {label} — {msg}"
     warnings_cmd_done: "{label} — terminé."
     warnings_bulk_modified: "{count} film(s) modifié(s)."
@@ -1683,6 +1690,7 @@ media:
       delete_cancel: Annuler
       import_done_status: "✓ Importé"
       import_failed: "{message}"
+      import_unconfirmed: "Import terminé, mais Radarr liste toujours le téléchargement ({state}) — conservé dans la file"
       import_failed_short: "Import échoué"
       import_failed_status: "✗ Échoué"
       network_error: "Erreur réseau"
@@ -1816,6 +1824,7 @@ media:
     search_done_dl: "Recherche terminée — {dl} téléchargement(s) lancé(s) sur {total} film(s) recherché(s)."
     search_done_none: "Recherche terminée pour {total} film(s) — aucun résultat correspondant aux critères."
     search_failed: "Recherche échouée : {error}"
+    cmd_stalled: "Radarr y travaille encore — vérification arrêtée après quelques minutes. Rechargez la page plus tard pour voir le résultat."
     search_progress: "Film {done}/{total} — {title}"
     search_in_progress: "Recherche en cours... ({seconds}s)"
     unknown_error: "erreur inconnue"
@@ -1950,6 +1959,7 @@ media:
       edit_quality: Profil de qualité
       edit_type: Type de série
       edit_root: Dossier racine
+      edit_move_files: Déplacer les fichiers vers le nouveau dossier racine
       edit_season_folder: Dossier saison
       edit_keep: '— Ne pas modifier —'
       edit_follow: Suivre
@@ -2125,6 +2135,7 @@ media:
       edit_save: Sauvegarder
       confirm_move_tpl: "Déplacer la série vers :\n{path}\n\nContinuer ?"
       path_updated: Chemin mis à jour.
+      edit_move_files: Déplacer les fichiers vers le nouveau chemin
       confirm_delete_series_tpl: "Supprimer « {title} » ?"
       confirm_delete_series_default: "cette série"
       confirm_delete_files: "Supprimer également les fichiers sur le disque ?"
@@ -2194,6 +2205,9 @@ media:
       release_type_single: Épisode unique
       release_type_multi: Multi-épisodes
       release_type_pack: Pack saison
+      release_type_unknown: Inconnu
+      release_type_multi_season: Pack multi-saisons
+      indexer_flag_combined: "Drapeaux combinés ({flags})"
       indexer_flag_none: Aucun
       back: Retour
       close: Fermer
@@ -2221,6 +2235,7 @@ media:
       cmd_dl_ok_tpl: "{label} — {count} téléchargement(s) lancé(s). Vérifiez la queue."
       cmd_nothing_tpl: "{label} — terminé, aucun résultat trouvé."
       cmd_failed_tpl: "{label} — échoué : {error}"
+      cmd_stalled: "Sonarr y travaille encore — vérification arrêtée après quelques minutes. Rechargez la page plus tard pour voir le résultat."
       cmd_elapsed_tpl: "🔍 {label} — {msg}"
       cmd_done_tpl: "{label} — terminé."
 
@@ -4462,10 +4477,10 @@ prowlarr:
     test_all_in_progress: 'Test en cours…'
     test_all_ok: Tous OK
     test_all_errors: Erreurs détectées
-    sync_apps_btn: Sync apps
+    sync_apps_btn: Synchroniser les apps
     sync_apps_title: Synchroniser avec Radarr/Sonarr
     sync_in_progress: 'Sync…'
-    sync_done: Synced!
+    sync_done: Synchronisé !
     sync_failed: Échec
     filter_all: Tous
     filter_enabled: Actifs
@@ -4474,7 +4489,7 @@ prowlarr:
     filter_usenet: Usenet
     col_name: Nom
     col_protocol: Protocole
-    col_privacy: Privacy
+    col_privacy: Confidentialité
     col_priority: Priorité
     col_functions: Fonctions
     col_categories: Catégories
@@ -4513,7 +4528,7 @@ prowlarr:
     modal_edit_title: Modifier l'indexeur
     modal_search_placeholder: 'Rechercher (ex: YGG, 1337x…)'
     filter_protocol: Protocole
-    filter_privacy: Privacy
+    filter_privacy: Confidentialité
     filter_lang: Langue
     filter_category: Catégorie
     field_name_label: Nom
@@ -4533,7 +4548,7 @@ prowlarr:
     info_label_description: Description
     info_label_language: Langue
     info_label_protocol: Protocole
-    info_label_privacy: Privacy
+    info_label_privacy: Confidentialité
     info_label_urls: URL(s)
     info_search_capabilities: Capacités de recherche
     info_cap_rss: RSS
@@ -4602,7 +4617,7 @@ prowlarr:
     sync_disabled: Désactivé
     sync_add_only: Ajout uniquement
     sync_full: Sync complète
-    sync_level_label: Sync Level
+    sync_level_label: Niveau de synchro
     field_name: Nom
     add_modal_title: Ajouter une application
     edit_modal_title: Modifier
@@ -4742,9 +4757,9 @@ prowlarr:
     info_version: Version
     info_branch: Branche
     info_os: OS
-    info_runtime: Runtime
+    info_runtime: Environnement d'exécution
     info_started: Démarrage
-    info_appdata: App Data
+    info_appdata: Données de l'app
     info_migration: Migration
     info_authentication: Authentification
     documentation: Documentation
@@ -5403,7 +5418,7 @@ jellyseerr:
       changes_security: Sécurité
       changes_features: Nouveautés
       changes_fixes: Corrections
-      changes_refactor: Refactoring
+      changes_refactor: Refactorisation
       changes_performance: Performance
     settings_users:
       title: Paramètres utilisateur

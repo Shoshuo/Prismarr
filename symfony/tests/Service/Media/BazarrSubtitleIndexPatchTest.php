@@ -75,6 +75,36 @@ class BazarrSubtitleIndexPatchTest extends TestCase
         $this->assertSame('complete', $this->swr($pool)->read(BazarrSubtitleIndex::KEY_MOVIES, 60)['value'][7]['state']);
     }
 
+    public function testAJournalledPatchSurvivesAResponseCacheClear(): void
+    {
+        // Final review, minor #15: HC-1 moved the datasets to the cache.swr
+        // pool but the patch journal stayed in cache.app, which every
+        // settings save clears — a mutation landing while a bulk fetch was in
+        // flight lost its C2 protection with it. The journal lives next to
+        // the datasets now; cache.app keeps only the throttle marker.
+        $app     = new ArrayAdapter();
+        $swrPool = new ArrayAdapter();
+        $this->swr($swrPool)->write(BazarrSubtitleIndex::KEY_MOVIES, [7 => ['state' => 'missing', 'count' => 2]], BazarrSubtitleIndex::HARD_TTL);
+        $this->swr($swrPool)->write(BazarrSubtitleIndex::KEY_MOVIE_LANGS, [7 => ['present' => [], 'missing' => [], 'tracked' => true]], BazarrSubtitleIndex::HARD_TTL);
+
+        $client = $this->createMock(BazarrClient::class);
+        $client->expects($this->once())->method('getMovies')->with([7])->willReturn([
+            ['radarrId' => 7, 'title' => 'A', 'profileId' => 1, 'subtitles' => [['code2' => 'fr']], 'missing_subtitles' => []],
+        ]);
+        $client->method('getLastError')->willReturn(null);
+
+        $index = new BazarrSubtitleIndex($client, $app, $this->instances(), $this->swr($swrPool), new NullLogger());
+        $index->refreshItem('movie', 7);
+        $this->assertSame('complete', $this->swr($swrPool)->read(BazarrSubtitleIndex::KEY_MOVIES, 60)['value'][7]['state'], 'the pooled map is patched in place: the envelope is read from the dataset pool, not cache.app (HC-1 regression)');
+        $app->clear(); // what AdminSettingsController does on every save
+
+        [$status] = $index->applyPatchesNewerThan('movie', 0, [7 => ['state' => 'missing', 'count' => 2]], []);
+
+        $this->assertSame('complete', $status[7]['state'], 'the in-flight bulk result is still patched after a settings save');
+        $this->assertTrue($swrPool->getItem(BazarrSubtitleIndex::KEY_PATCHES)->isHit(), 'the journal lives in the dataset pool');
+        $this->assertFalse($app->getItem(BazarrSubtitleIndex::KEY_PATCHES)->isHit());
+    }
+
     public function testRefreshItemPreservesTheMapFetchedAtSoItDoesNotLookFresher(): void
     {
         $pool = new ArrayAdapter();

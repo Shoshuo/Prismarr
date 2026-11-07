@@ -98,6 +98,23 @@ class CspHeaderSubscriberTest extends TestCase
         $this->assertStringNotContainsString('/api/v3', $csp);
     }
 
+    public function testAnInternationalisedServiceUrlLandsInImgSrcAsPunycode(): void
+    {
+        // Final review, minor #14: the same hostname regex as the SSRF guard
+        // dropped the origin, so the posters of a service on an IDN host were
+        // blocked by the policy. Browsers match CSP host-sources against the
+        // ASCII serialisation, so the punycode form is what the policy needs.
+        $sub = $this->subscriberWithUrls([
+            'radarr_url' => 'http://bücher.example:7878',
+        ]);
+        $response = new Response();
+        $sub->onResponse($this->event($response));
+
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+        $this->assertStringContainsString('http://xn--bcher-kva.example:7878', $csp);
+        $this->assertStringNotContainsString('bücher', $csp);
+    }
+
     public function testInvalidUrlIsIgnored(): void
     {
         $sub = $this->subscriberWithUrls([
@@ -208,5 +225,39 @@ class CspHeaderSubscriberTest extends TestCase
         $this->assertStringNotContainsString('; default-src *', $csp);
         $this->assertStringContainsString("default-src 'self';", $csp);
         $this->assertStringContainsString('https://a.test', $csp);
+    }
+
+    public function testAHostCarryingCspMetacharactersIsNeverSpliced(): void
+    {
+        // Review 2026-11-06 (S3): parse_url() keeps `;` and spaces in the
+        // host, and img-src precedes script-src, so an injected
+        // `script-src * 'unsafe-inline'` (first occurrence wins) switched the
+        // nonce policy off for every innerHTML sink.
+        $sub = $this->subscriberWithUrls([
+            'radarr_url' => "http://x.lan;script-src * 'unsafe-inline';x/",
+            'sonarr_url' => 'javascript://sonarr.lan/',
+        ]);
+        $response = new Response();
+        $sub->onResponse($this->event($response));
+
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+        $this->assertStringNotContainsString('x.lan', $csp);
+        $this->assertStringNotContainsString("'unsafe-inline';x", $csp);
+        $this->assertStringNotContainsString('javascript:', $csp);
+        $this->assertStringNotContainsString('sonarr.lan', $csp);
+    }
+
+    public function testIpv6LiteralsAndDockerHostnamesStillLandInImgSrc(): void
+    {
+        $sub = $this->subscriberWithUrls([
+            'radarr_url' => 'http://[::1]:7878/',
+            'sonarr_url' => 'http://host.docker.internal:8989',
+        ]);
+        $response = new Response();
+        $sub->onResponse($this->event($response));
+
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+        $this->assertStringContainsString('http://[::1]:7878', $csp);
+        $this->assertStringContainsString('http://host.docker.internal:8989', $csp);
     }
 }
