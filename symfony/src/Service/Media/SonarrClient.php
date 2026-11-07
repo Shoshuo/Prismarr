@@ -376,7 +376,9 @@ class SonarrClient implements ResetInterface
         $file = $this->getEpisodeFile($id);
         if (!$file) return ['ok' => false, 'error' => 'File not found'];
         if (isset($data['quality'])) $file['quality'] = $data['quality'];
-        if (isset($data['languages'])) $file['languages'] = $data['languages'];
+        // isset([]) is true — an empty list must not wipe the stored languages
+        // (review 2026-11-06 H5 fixed the bulk route; final review minor #9).
+        if (!empty($data['languages']) && is_array($data['languages'])) $file['languages'] = $data['languages'];
         if (isset($data['releaseGroup'])) $file['releaseGroup'] = $data['releaseGroup'];
         if (isset($data['releaseType'])) $file['releaseType'] = $data['releaseType'];
         if (array_key_exists('indexerFlags', $data)) $file['indexerFlags'] = (int) $data['indexerFlags'];

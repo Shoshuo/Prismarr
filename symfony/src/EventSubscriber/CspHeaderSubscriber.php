@@ -4,6 +4,7 @@ namespace App\EventSubscriber;
 
 use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
+use App\Service\HealthService;
 use App\Service\ServiceInstanceProvider;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -151,10 +152,13 @@ final class CspHeaderSubscriber implements EventSubscriberInterface
         if ($scheme !== 'http' && $scheme !== 'https') {
             return null;
         }
-        if (!preg_match('/^(?:[A-Za-z0-9._\-]+|\[[0-9A-Fa-f:.]+\])$/', (string) $parts['host'])) {
+        // Final review, minor #14: an IDN host enters the policy as punycode,
+        // the serialisation browsers match host-sources against.
+        $host = HealthService::asciiHost((string) $parts['host']);
+        if ($host === null || !preg_match('/^(?:[A-Za-z0-9._\-]+|\[[0-9A-Fa-f:.]+\])$/', $host)) {
             return null;
         }
-        $origin = $scheme . '://' . $parts['host'];
+        $origin = $scheme . '://' . $host;
         if (!empty($parts['port'])) {
             $origin .= ':' . (int) $parts['port'];
         }

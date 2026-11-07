@@ -210,4 +210,41 @@ class ArrClientWriteContractTest extends TestCase
         $this->assertFalse($client->updateCollection(5, false));
         $this->assertCount(1, $this->calls, 'no PUT without the merged resource');
     }
+
+    // ── Final review, minor #9: the single-file PUT kept the isset([]) bug ──
+
+    public function testSonarrUpdateEpisodeFileIgnoresAnEmptyLanguageList(): void
+    {
+        // H5 fixed /series/files/bulk-update; SonarrClient::updateEpisodeFile()
+        // (behind /series/file/{id}/update) still replaced the stored
+        // languages with [] because isset([]) is true.
+        $sonarr = $this->sonarr([
+            [json_encode(['id' => 3, 'languages' => [['id' => 8, 'name' => 'Japanese']], 'releaseGroup' => 'OLD']), 200, '', false],
+            [json_encode(['id' => 3]), 202, '', false],
+        ]);
+
+        $result = $sonarr->updateEpisodeFile(3, ['languages' => [], 'releaseGroup' => 'GRP']);
+
+        $this->assertTrue($result['ok']);
+        $this->assertCount(2, $this->calls, 'GET the file, then PUT it back');
+        $put = $this->calls[1];
+        $this->assertSame('PUT', $put[CURLOPT_CUSTOMREQUEST]);
+        $this->assertStringEndsWith('/api/v3/episodefile/3', $put[CURLOPT_URL]);
+        $body = json_decode((string) $put[CURLOPT_POSTFIELDS], true);
+        $this->assertSame([['id' => 8, 'name' => 'Japanese']], $body['languages'], 'an empty list must not wipe the stored languages');
+        $this->assertSame('GRP', $body['releaseGroup']);
+    }
+
+    public function testSonarrUpdateEpisodeFileReplacesTheLanguagesWhenSomeAreGiven(): void
+    {
+        $sonarr = $this->sonarr([
+            [json_encode(['id' => 3, 'languages' => [['id' => 8, 'name' => 'Japanese']]]), 200, '', false],
+            [json_encode(['id' => 3]), 202, '', false],
+        ]);
+
+        $sonarr->updateEpisodeFile(3, ['languages' => [['id' => 1, 'name' => 'English']]]);
+
+        $body = json_decode((string) $this->calls[1][CURLOPT_POSTFIELDS], true);
+        $this->assertSame([['id' => 1, 'name' => 'English']], $body['languages']);
+    }
 }

@@ -98,6 +98,23 @@ class CspHeaderSubscriberTest extends TestCase
         $this->assertStringNotContainsString('/api/v3', $csp);
     }
 
+    public function testAnInternationalisedServiceUrlLandsInImgSrcAsPunycode(): void
+    {
+        // Final review, minor #14: the same hostname regex as the SSRF guard
+        // dropped the origin, so the posters of a service on an IDN host were
+        // blocked by the policy. Browsers match CSP host-sources against the
+        // ASCII serialisation, so the punycode form is what the policy needs.
+        $sub = $this->subscriberWithUrls([
+            'radarr_url' => 'http://bücher.example:7878',
+        ]);
+        $response = new Response();
+        $sub->onResponse($this->event($response));
+
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+        $this->assertStringContainsString('http://xn--bcher-kva.example:7878', $csp);
+        $this->assertStringNotContainsString('bücher', $csp);
+    }
+
     public function testInvalidUrlIsIgnored(): void
     {
         $sub = $this->subscriberWithUrls([

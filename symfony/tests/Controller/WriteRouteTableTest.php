@@ -12,7 +12,8 @@ use Symfony\Component\Routing\RouterInterface;
  * so a renamed route (404) or a dropped method restriction stayed green.
  * For every POST route of those controllers: anonymous → /login,
  * same-origin JSON →
- * the route is wired (anything but 404/405).
+ * the route is wired (anything but 404/405) and does not crash on an empty
+ * body (a 500; 502/503/504 are the unreachable fixture hosts).
  */
 class WriteRouteTableTest extends AbstractWebTestCase
 {
@@ -53,6 +54,12 @@ class WriteRouteTableTest extends AbstractWebTestCase
             $status = $this->client->getResponse()->getStatusCode();
             if (in_array($status, [404, 405], true)) {
                 $offenders[] = "$name ($path) is not wired (HTTP $status)";
+            }
+            // Final review, minor #12: a 500 is an unhandled exception on an
+            // empty JSON body, not a wired route. 502/503/504 are legitimate
+            // here (the fixture hosts are unreachable: C1 envelopes).
+            if ($status === 500) {
+                $offenders[] = "$name ($path) crashed on an empty JSON body (HTTP 500)";
             }
         }
 

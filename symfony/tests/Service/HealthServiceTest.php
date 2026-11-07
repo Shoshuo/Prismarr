@@ -426,6 +426,50 @@ class HealthServiceTest extends TestCase
         $this->assertNull(HealthService::urlBlockedReason('http://172.16.5.5:9696/'));
     }
 
+    /**
+     * Final review, minor #14: the S3 hostname regex refused every
+     * internationalised hostname although curl (libidn2) dials them. The
+     * host is converted to its ASCII (punycode) form first, and that is
+     * what the resolver and the link-local check see.
+     */
+    public function testUrlBlockedReasonAcceptsAnInternationalisedHostname(): void
+    {
+        HostResolver::usePool(null);
+        HostResolver::reset();
+        $asked = [];
+        HostResolver::setResolver(function (string $h) use (&$asked): array {
+            $asked[] = $h;
+            return ['192.168.1.50'];
+        });
+        try {
+            $this->assertNull(HealthService::urlBlockedReason('http://bücher.example:7878/api/v3/system/status'));
+            $this->assertSame(['xn--bcher-kva.example'], $asked, 'resolved by its ASCII form');
+        } finally {
+            HostResolver::setResolver(null);
+            HostResolver::reset();
+        }
+    }
+
+    public function testUrlBlockedReasonStillBlocksAnInternationalisedHostnameOnLinkLocal(): void
+    {
+        HostResolver::usePool(null);
+        HostResolver::reset();
+        HostResolver::setResolver(fn (string $h) => ['169.254.169.254']);
+        try {
+            $this->assertSame('link-local', HealthService::urlBlockedReason('http://bücher.example/'));
+        } finally {
+            HostResolver::setResolver(null);
+            HostResolver::reset();
+        }
+    }
+
+    public function testUrlBlockedReasonStillRefusesDirectiveInjectionInAUnicodeHost(): void
+    {
+        // Non-ASCII does not open the door the S3 regex closed.
+        $this->assertSame('host', HealthService::urlBlockedReason("http://bücher.example;script-src *;x/"));
+        $this->assertSame('host', HealthService::urlBlockedReason("http://bü cher.example/"));
+    }
+
     public function testUrlBlockedReasonAllowsPublicHttps(): void
     {
         $this->assertNull(HealthService::urlBlockedReason('https://api.themoviedb.org/3/configuration'));

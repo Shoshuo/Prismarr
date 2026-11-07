@@ -775,6 +775,26 @@ class HealthService implements ResetInterface
     }
 
     /**
+     * A hostname in the form DNS, curl (libidn2) and a browser's CSP matcher
+     * work with: an internationalised name (bücher.example) becomes its
+     * punycode (xn--bcher-kva.example); plain ASCII is returned as is. Null
+     * when the name is not a valid IDN label set — and so not a hostname
+     * either. Only printable ASCII counts as "plain": a space or a control
+     * character goes through the IDN check, which refuses it.
+     */
+    public static function asciiHost(string $host): ?string
+    {
+        if (!preg_match('/[^\x21-\x7E]/', $host)) {
+            return $host;
+        }
+        if (!function_exists('idn_to_ascii')) {
+            return null; // no intl: keep the pre-#14 refusal
+        }
+        $ascii = idn_to_ascii($host, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
+        return is_string($ascii) && $ascii !== '' ? $ascii : null;
+    }
+
+    /**
      * The DNS-free half of urlBlockedReason(): scheme and host SHAPE only.
      * This is what the settings form and an instance create/update check —
      * it answers at once, whereas the link-local check below resolves the
@@ -796,6 +816,12 @@ class HealthService implements ResetInterface
         }
         $host = parse_url($url, PHP_URL_HOST);
         if (!is_string($host) || $host === '') {
+            return 'host';
+        }
+        // Final review, minor #14: an internationalised hostname is checked
+        // and resolved in its ASCII form — what DNS and curl (libidn2) dial.
+        $host = self::asciiHost($host);
+        if ($host === null) {
             return 'host';
         }
         // Review 2026-11-06 (S3): parse_url() accepts `;`, `,`, spaces and
@@ -827,7 +853,7 @@ class HealthService implements ResetInterface
         if (($reason = self::urlShapeReason($url)) !== null) {
             return $reason;
         }
-        $host = (string) parse_url($url, PHP_URL_HOST);
+        $host = (string) self::asciiHost((string) parse_url($url, PHP_URL_HOST)); // shape-checked above: never null
         // Normalize evasions: a trailing dot (rooted FQDN / numeric) and IPv6
         // literal brackets, both of which slip past FILTER_VALIDATE_IP yet still
         // resolve at curl time.

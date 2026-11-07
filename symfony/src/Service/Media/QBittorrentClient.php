@@ -863,8 +863,11 @@ class QBittorrentClient implements ResetInterface
         // must NOT be echoed as a real qBit cookie (qBit would reject it).
         if ($sid && $sid !== self::NO_AUTH_SID) $headers[] = 'Cookie: ' . $sid;
 
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        // Final review, minor #11: through the exec() seam like postAction(),
+        // so the read side (TQ-3) is testable without a qBittorrent.
+        $ch = curl_init();
+        [$body, $code, $curlErr] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -874,19 +877,13 @@ class QBittorrentClient implements ResetInterface
             CURLOPT_HTTPHEADER     => $headers,
         ]);
 
-        $body = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErr = curl_error($ch);
-
         if ($body === false) {
             $this->logger->warning('QBittorrentClient GET error', ['path' => $path, 'error' => $curlErr]);
             $this->recordError('GET', $path, (int) $code, '', $curlErr);
-            curl_close($ch);
             $this->serviceUnavailable = true;
             $this->health->markDown(self::SERVICE_KEY);
             return null;
         }
-        curl_close($ch);
 
         if (!self::isOkStatus((int) $code)) {
             // Expired SID → invalidate; the next call will auto re-login
@@ -894,7 +891,7 @@ class QBittorrentClient implements ResetInterface
                 $this->invalidateSession();
             }
             $this->logger->warning('QBittorrentClient GET error', ['path' => $path, 'code' => $code]);
-            $this->recordError('GET', $path, (int) $code, is_string($body) ? $body : '', $curlErr);
+            $this->recordError('GET', $path, (int) $code, $body, $curlErr);
             if ($curlErr !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
                 $this->health->markDown(self::SERVICE_KEY);
@@ -991,6 +988,8 @@ class QBittorrentClient implements ResetInterface
     protected function exec(\CurlHandle $ch, array $opts): array
     {
         curl_setopt_array($ch, $opts);
+        // curl_exec() IS curl_exec() outside a runner-owned fiber;
+        // inside one (the health sweep) the transfer overlaps its siblings.
         /** @var string|false $body */
         $body = curl_exec($ch);
         $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);

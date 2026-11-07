@@ -688,12 +688,13 @@ class MediaController extends AbstractController
     /**
      * Review 2026-11-06 (H4): the file manager's language picker must use
      * THIS Radarr's language table (ids differ between Radarr and Sonarr,
-     * and the old literal list mapped 7 of 12 names to the wrong id).
+     * and the old literal list mapped 7 of 12 names to the wrong id). Pseudo
+     * entries (Any / Original / Unknown) are left out — see realLanguages().
      */
     #[Route('/films/languages', name: 'films_languages_json', methods: ['GET'])]
     public function filmsLanguagesJson(): JsonResponse
     {
-        return $this->json($this->radarr->getLanguages());
+        return $this->json(self::realLanguages($this->radarr->getLanguages()));
     }
 
     // ── Queue ─────────────────────────────────────────────────────────────────
@@ -1111,6 +1112,21 @@ class MediaController extends AbstractController
         return $slug !== null
             ? $this->libraryCache->series($slug, fn() => $this->sonarr->getSeries(SonarrClient::LIBRARY_TIMEOUT))
             : $this->sonarr->getSeries(SonarrClient::LIBRARY_TIMEOUT);
+    }
+
+    /**
+     * Final review, minor #8: the *arr `/language` table also carries Any
+     * (-1), Original (-2) and Unknown (0) — profile settings, not something a
+     * file can be tagged with — so the file-manager pickers only list real
+     * languages. A file that already carries Unknown keeps it through the
+     * page's own-languages merge (H5).
+     *
+     * @param array<int, mixed> $languages
+     * @return list<array<string, mixed>>
+     */
+    private static function realLanguages(array $languages): array
+    {
+        return array_values(array_filter($languages, static fn($l) => is_array($l) && (int) ($l['id'] ?? 0) > 0));
     }
 
     /**
@@ -1907,7 +1923,7 @@ class MediaController extends AbstractController
     #[Route('/series/languages', name: 'series_languages_json', methods: ['GET'])]
     public function seriesLanguagesJson(): JsonResponse
     {
-        return $this->json($this->sonarr->getLanguages());
+        return $this->json(self::realLanguages($this->sonarr->getLanguages()));
     }
 
     #[Route('/series/file/{id}/reassign', name: 'series_file_reassign', methods: ['POST'], requirements: ['id' => '\d+'])]

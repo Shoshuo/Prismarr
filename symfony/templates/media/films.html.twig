@@ -3769,6 +3769,15 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         var queueId = btn.dataset.id;
         importingQueueIds.add(queueId);
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:14px;height:14px;"></span>';
+        // Final review, minor #13: the post-import queue re-read can fail
+        // too (a Radarr blip) — the row must come back as "unconfirmed" with
+        // a usable button, not a spinner that never ends.
+        function showUnconfirmed(state) {
+          if (progCell) progCell.innerHTML = '<span class="text-warning small">' + esc(tpl(FILM_I18N.q_import_unconfirmed_tpl, {STATE: state})) + '</span>';
+          if (statusCell) statusCell.innerHTML = '<span class="badge bg-warning-lt text-warning">' + esc(state) + '</span>';
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>';
+          btn.disabled = false;
+        }
 
         // Update the row visually
         if (progCell) progCell.innerHTML = '<div class="d-flex align-items-center gap-2"><div class="queue-progress flex-grow-1"><div class="queue-progress-bar" style="width:100%;background:#9b59b6;animation:pulse 1.5s infinite"></div></div><span style="color:#9b59b6" class="small fw-medium">' + esc(FILM_I18N.q_importing) + '</span></div>';
@@ -3801,14 +3810,10 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
                       if (still) ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/queue/' + queueId + '/delete', { blacklist: false, skipReimport: true }).catch(function(){});
                       if (btn.dataset.movieId) ajaxPost(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/' + btn.dataset.movieId + '/rescan', {}).catch(function(){});
                     } else {
-                      var state = still.trackedState || still.status || '?';
-                      if (progCell) progCell.innerHTML = '<span class="text-warning small">' + esc(tpl(FILM_I18N.q_import_unconfirmed_tpl, {STATE: state})) + '</span>';
-                      if (statusCell) statusCell.innerHTML = '<span class="badge bg-warning-lt text-warning">' + esc(state) + '</span>';
-                      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>';
-                      btn.disabled = false;
+                      showUnconfirmed(still.trackedState || still.status || '?');
                     }
                     setTimeout(refreshQueue, 2000);
-                  }).catch(function() { setTimeout(refreshQueue, 2000); });
+                  }).catch(function() { showUnconfirmed('?'); setTimeout(refreshQueue, 2000); });
                 } else if (st === 'failed' || st === 'stalled') {
                   clearInterval(importPoll);
                   importingQueueIds.delete(queueId);

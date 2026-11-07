@@ -91,6 +91,25 @@ class ReviewSection3TemplateGuardTest extends TestCase
         );
     }
 
+    // Final review, minor #13 — the 2 s queue poll must not log an unhandled rejection per tick during an outage
+    public function testFilmsQueuePollSwallowsATransportFailure(): void
+    {
+        $s = self::src('media/films.html.twig');
+        $this->assertMatchesRegularExpression(
+            '/previousQueueIds = currentIds;\s*renderQueue\(items\);\s*\}\)\.catch\(function\s*\(\)\s*\{\s*\}\);/',
+            $s,
+            'refreshQueue(): the stale render is kept (C1 envelope → not an array → return) and the rejection is swallowed'
+        );
+        // H3's post-import queue re-read is a one-off, but a rejection there
+        // left the Import button spinning forever.
+        $this->assertStringContainsString(
+            "}).catch(function() { showUnconfirmed('?'); setTimeout(refreshQueue, 2000); });",
+            $s,
+            'the H3 re-read shows the row as unconfirmed, with a usable button, when the queue cannot be read'
+        );
+        $this->assertStringNotContainsString('.catch(function() { setTimeout(refreshQueue, 2000); });', $s);
+    }
+
     // DC-2 — the usenet visibility handler must belong to the current page instance
     public function testUsenetVisibilityHandlerIsBoundPerPageInstance(): void
     {
