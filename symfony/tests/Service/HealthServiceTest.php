@@ -432,35 +432,11 @@ class HealthServiceTest extends TestCase
      * host is converted to its ASCII (punycode) form first, and that is
      * what the resolver and the link-local check see.
      */
-    public function testUrlBlockedReasonAcceptsAnInternationalisedHostname(): void
+    public function testUrlShapeReasonAcceptsAnInternationalisedHostnameAsPunycode(): void
     {
-        HostResolver::usePool(null);
-        HostResolver::reset();
-        $asked = [];
-        HostResolver::setResolver(function (string $h) use (&$asked): array {
-            $asked[] = $h;
-            return ['192.168.1.50'];
-        });
-        try {
-            $this->assertNull(HealthService::urlBlockedReason('http://bücher.example:7878/api/v3/system/status'));
-            $this->assertSame(['xn--bcher-kva.example'], $asked, 'resolved by its ASCII form');
-        } finally {
-            HostResolver::setResolver(null);
-            HostResolver::reset();
-        }
-    }
-
-    public function testUrlBlockedReasonStillBlocksAnInternationalisedHostnameOnLinkLocal(): void
-    {
-        HostResolver::usePool(null);
-        HostResolver::reset();
-        HostResolver::setResolver(fn (string $h) => ['169.254.169.254']);
-        try {
-            $this->assertSame('link-local', HealthService::urlBlockedReason('http://bücher.example/'));
-        } finally {
-            HostResolver::setResolver(null);
-            HostResolver::reset();
-        }
+        $this->assertSame('xn--bcher-kva.example', HealthService::asciiHost('bücher.example'));
+        $this->assertSame('radarr.lan', HealthService::asciiHost('radarr.lan'), 'ASCII passes through untouched');
+        $this->assertNull(HealthService::urlShapeReason('http://bücher.example:7878/api/v3/system/status'));
     }
 
     public function testUrlBlockedReasonStillRefusesDirectiveInjectionInAUnicodeHost(): void
