@@ -85,10 +85,11 @@ class ReviewSection3TemplateGuardTest extends TestCase
     {
         $s = self::src('dashboard/_quicklook_body.html.twig');
         $this->assertStringContainsString(
-            'd.floating|default(true) ? d.date|prismarr_date(true) : d.date|prismarr_date',
+            '(d.floating ?? true) ? d.date|prismarr_date(true) : d.date|prismarr_date',
             $s,
             "Sonarr's nextAiring/previousAiring are UTC instants: floating them shows the UTC day, off by one for an evening broadcast west of UTC"
         );
+        $this->assertStringNotContainsString('d.floating|default(', $s, "Twig's default filter treats false as empty: `false|default(true)` is true (live check on :beta, 2026-11-07)");
     }
 
     // Final review, minor #13 — the 2 s queue poll must not log an unhandled rejection per tick during an outage

@@ -69,4 +69,27 @@ class ReviewHygieneGuardTest extends TestCase
         $this->assertStringContainsString("'jellyseerr.common.confirm_delete_user_irreversible'|trans", $s);
         $this->assertStringNotContainsString("'jellyseerr.user_detail.confirm_delete_user_irreversible'", $s);
     }
+
+    /**
+     * Live check on :beta (2026-11-07): `d.floating|default(true)` floated
+     * every quick-look chip because Twig's `default` filter treats `false` as
+     * empty — a boolean that is deliberately false comes back as the default.
+     * A boolean with a true default must be read with `?? true` (null
+     * coalescing: undefined or null only).
+     */
+    public function testNoTemplateReadsABooleanThroughDefaultTrue(): void
+    {
+        $offenders = [];
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(__DIR__ . '/../../templates', \FilesystemIterator::SKIP_DOTS));
+        foreach ($it as $file) {
+            if (!str_ends_with((string) $file, '.twig')) {
+                continue;
+            }
+            $src = (string) file_get_contents((string) $file);
+            if (preg_match_all('/[A-Za-z_.]+\\|default\\(true\\)/', $src, $m)) {
+                $offenders[] = basename((string) $file) . ': ' . implode(', ', $m[0]);
+            }
+        }
+        $this->assertSame([], $offenders, "`x|default(true)` turns a deliberate false into true — use `(x ?? true)`:\n" . implode("\n", $offenders));
+    }
 }
