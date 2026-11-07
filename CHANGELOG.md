@@ -5,6 +5,45 @@ All notable changes to Prismarr are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+- **Reverse-proxy trust is re-evaluated on every request.** `TRUSTED_PROXIES=127.0.0.1,REMOTE_ADDR` was resolved once per FrankenPHP worker, at boot, usually to the Docker healthcheck's own address, so a cloudflared or Traefik hop was not trusted on that worker: `https` detection and login throttling keyed on the wrong address. The address is now resolved per request. The default is unchanged; the README, `.env` and compose example now say when to pin a CIDR instead (a port reachable from untrusted networks). The Symfony profiler guard requires both the raw and the forwarded address to be private.
+- **Settings import is allow-listed and drops secrets on a host change.** An imported settings file could point any `*_url` at a new host while keeping the stored API key, which would have been sent to that host on the next request, and could set arbitrary keys. Imports now accept only known settings keys, refuse invalid URLs, and clear the matching API key or password when a service's host changes (Radarr/Sonarr instances included).
+- **Service URLs are validated on save and the CSP origin is derived safely.** Hosts are restricted to DNS names (an internationalised name is checked, resolved and placed in the policy as punycode) or bracketed IPv6 literals, and the CSP origin builder validates scheme, host and port instead of concatenating whatever `parse_url` returned, so a crafted URL can no longer disable the nonce CSP.
+- **Remaining innerHTML sinks escaped** in the Films collections page, the series episode list, Radarr library import, the Seerr user page and the Seerr services settings; the escaping guard test covers each.
+- **Anonymous visitors always reach the login page first.** The service route guard and the Radarr/Sonarr instance binder ran before the firewall, so which services were configured, which instance slugs existed and whether a service was up could be told apart without a session, and a made-up slug left a file in the cache. Both now run after the firewall. New tests sweep every route anonymously and every write route cross-site, and exercise the login form, a wrong password, the five-attempt throttle and logout.
+- **Discover detail requests validate their media type and id** before building a URL.
+
+### Fixed
+- **Sonarr "Library import" imports into the existing folder.** The import form never sent the folder path, so Sonarr created a new series folder next to the existing one.
+- **Collection monitoring no longer wipes the collection.** Toggling a Radarr collection's monitor flag sent only `{monitored}`, which Radarr stored as an empty collection (quality profile, root folder and tags reset). The toggle now reads, merges and writes the whole collection.
+- **Radarr queue "Import" imports the files.** The manual import was handed the download folder instead of its files, Radarr failed per file, and the queue entry was deleted anyway. It now uses Radarr's import preview for that download, imports the files it reports, re-reads the queue and removes the entry only once Radarr reports it imported.
+- **File-manager language lists come from Radarr and Sonarr.** The hardcoded list had 7 of its 12 ids wrong (13 is Vietnamese, not Japanese; Arabic and Hindi differ between the two apps). Both file managers now fetch the instance's language list, keep a file's own languages, unknown release types and combined indexer flags selectable, "Save all" on the series page no longer marks untouched rows dirty, the pickers leave out the apps' pseudo-languages (Any, Original, Unknown), and neither the file managers nor the single-file update endpoint ever send an empty language list.
+- **"Move files" when changing a path.** Editing a movie's or series' path or root folder repointed the database entry and left the files behind; the edit forms and both bulk editors now send Radarr/Sonarr's move-files option, a checkbox that is on by default like the apps' own UI.
+- **Slow Radarr/Sonarr/Prowlarr writes no longer mark the service down.** A write that connected but ran past its timeout opened the circuit breaker; only a failed connection does now, the rule the reads already followed.
+- **Search box and sidebar toggle work after Back/Forward.** Turbo restored a snapshot that carried the "already initialised" marker, so nothing was attached. Init state is now tracked per element, duplicate document listeners are removed, and a stale quick-search answer cannot overwrite a newer one.
+- **qBittorrent behind an auth-injecting proxy** ([#10](https://github.com/Shoshuo/Prismarr/issues/10) setups): the route guard required a username the login path does not, so every qBittorrent page bounced to the settings.
+- **Prowlarr Enabled/Disabled filter** showed no rows; a failed toggle shows a toast and reverts the switch.
+- **Dashboard layout Save keeps earlier-hidden sections hidden.**
+- **Torrent pages render on a slow backend.** The 3 s tick no longer aborts an in-flight refresh, and the usenet page's visibility handling no longer sticks to the first page visited.
+- **Films page no longer marks a torrent "Downloaded" on a queue blip**; it re-checks the movie first. Command pollers stop checking after a few minutes or after a Radarr/Sonarr blip with a neutral "still working on this" notice instead of reporting a failure, and never reload another page.
+- **Health "Retry" on an instance banner clears that instance's breaker**; the Seerr banner posts the right service id.
+- **Seerr: auto-generated passwords and usernames work when creating a local user; the request edit modal loads the right server's profiles; the logs page is capped.**
+- **Discover links open the right instance** and watchlist toggles send an explicit add or remove. Add-movie/series lookups ignore stale answers.
+- **qBittorrent completed count, seeds sort key, Transmission and Deluge tracker seed/leech counts.**
+- **The "service not configured" page renders** (it was an empty 503).
+- **Download-client pages say "unreachable" instead of showing an empty list** when the client is down.
+- **Quick-look "Next episode" and "Ended" chips show the air date in your display zone.** Sonarr reports air times as UTC instants; the chip showed the UTC calendar day, so an evening broadcast west of UTC read as the next day (the calendar beside it already had the right day).
+- **Services on internationalised hostnames work:** the URL check accepts them and their poster origin enters the Content-Security-Policy as punycode, the form browsers match (the raw name never matched, so posters were blocked).
+- **Dates follow the display time zone** on the dashboard, charts and the iCal feed: today's releases were dropped when the server's zone differed, and episode dates are now all-day events.
+- **Small things:** Sonarr v4 history event names on the series history, series queue sizes honour the byte-unit setting, the films backdrop no longer resets the page background, missing-films search progress parsed for "grabbed" too, settings "Clear" is undone by typing a new value, 13 English strings in the French catalogue translated, the Seerr delete confirmation no longer shows a raw key, `make lint` fails on a syntax error.
+
+### Performance
+- **Dedicated cache pool for stale-while-revalidate datasets** (Bazarr, library, search vocabulary, app version): saving settings cleared the whole app cache and threw them all away.
+- **Discover and About read the shared library cache** instead of fetching the full Radarr/Sonarr libraries on every request.
+- **TMDb client has a circuit breaker**, the vocabulary refresher stops after repeated failures, partial dashboard results are no longer cached for 5 minutes, and the Houndarr widget's 45 s memo survives worker-mode resets.
+
 ## [1.3.0] - 2026-10-21
 
 ### Security
