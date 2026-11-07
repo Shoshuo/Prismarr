@@ -228,16 +228,19 @@
         radarrUrlPlaceholder: {{ 'jellyseerr.settings.services.placeholder_radarr_url'|trans|json_encode|raw }}
     };
     function tpl(s, map) { for (var k in map) { s = s.split('__' + k + '__').join(map[k]); } return s; }
+    // Review 2026-11-06 (S4): server fields come from the *arr / Seerr; a quote
+    // in any of them truncated the value attribute and corrupted the next save.
+    function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
     var currentType = '';
     var currentId = -1; // -1 = création
 
     function makeField(label, id, value, placeholder, type) {
         type = type || 'text';
-        return '<div class="col-12 col-sm-6"><label class="form-label small">' + label + '</label><input type="' + type + '" class="form-control form-control-sm" id="' + id + '" value="' + (value || '') + '" placeholder="' + (placeholder || '') + '"></div>';
+        return '<div class="col-12 col-sm-6"><label class="form-label small">' + label + '</label><input type="' + type + '" class="form-control form-control-sm" id="' + id + '" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '"></div>';
     }
     function makeSelect(label, id, options, selected) {
         var h = '<div class="col-12 col-sm-6"><label class="form-label small">' + label + '</label><select class="form-select form-select-sm" id="' + id + '">';
-        options.forEach(function(o){ h += '<option value="' + o.value + '" ' + (String(o.value) === String(selected) ? 'selected' : '') + '>' + o.label + '</option>'; });
+        options.forEach(function(o){ h += '<option value="' + esc(o.value) + '" ' + (String(o.value) === String(selected) ? 'selected' : '') + '>' + esc(o.label) + '</option>'; });
         h += '</select></div>';
         return h;
     }
@@ -295,9 +298,9 @@
         // ── Connexion ──
         html += sep + sectionTitle(_I18N.sectionConnection);
         html += makeField(_I18N.serverName, 'js-srv-name', srv.name, 'Radarr');
-        html += '<div class="col-12 col-sm-6"><label class="form-label small">' + _I18N.hostnameOrIp + '</label><div class="input-group input-group-sm"><input type="text" class="form-control" id="js-srv-host" value="' + (srv.hostname||'') + '"><span class="input-group-text">:</span><input type="number" class="form-control" id="js-srv-port" value="' + (srv.port||'') + '" style="max-width:80px;"></div></div>';
+        html += '<div class="col-12 col-sm-6"><label class="form-label small">' + _I18N.hostnameOrIp + '</label><div class="input-group input-group-sm"><input type="text" class="form-control" id="js-srv-host" value="' + esc(srv.hostname||'') + '"><span class="input-group-text">:</span><input type="number" class="form-control" id="js-srv-port" value="' + esc(srv.port||'') + '" style="max-width:80px;"></div></div>';
         html += makeToggle(_I18N.enableSsl, 'js-srv-ssl', srv.useSsl);
-        html += '<div class="col-12 col-sm-6"><label class="form-label small">' + _I18N.apiKey + '</label><div class="input-group input-group-sm"><input type="password" class="form-control" id="js-srv-apikey" value="' + (srv.apiKey||'') + '"><button class="btn btn-outline-secondary" type="button" onclick="var e=document.getElementById(\'js-srv-apikey\');e.type=e.type===\'password\'?\'text\':\'password\';"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M21 12c-2.4 4-5.4 6-9 6c-3.6 0-6.6-2-9-6c2.4-4 5.4-6 9-6c3.6 0 6.6 2 9 6"/></svg></button></div></div>';
+        html += '<div class="col-12 col-sm-6"><label class="form-label small">' + _I18N.apiKey + '</label><div class="input-group input-group-sm"><input type="password" class="form-control" id="js-srv-apikey" value="' + esc(srv.apiKey||'') + '"><button class="btn btn-outline-secondary" type="button" onclick="var e=document.getElementById(\'js-srv-apikey\');e.type=e.type===\'password\'?\'text\':\'password\';"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M21 12c-2.4 4-5.4 6-9 6c-3.6 0-6.6-2-9-6c2.4-4 5.4-6 9-6c3.6 0 6.6 2 9 6"/></svg></button></div></div>';
         html += makeField(_I18N.baseUrl, 'js-srv-base', srv.baseUrl, _I18N.radarrBasePlaceholder);
         html += makeField(_I18N.externalUrl, 'js-srv-exturl', srv.externalUrl, _I18N.radarrUrlPlaceholder);
 

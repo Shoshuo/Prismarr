@@ -35,6 +35,9 @@ class TransmissionController extends AbstractController
     {
         try {
             $torrents = $this->transmission->getTorrents();
+            if ($torrents === [] && $this->clientFailed($this->transmission)) {
+                return $this->jsonClientError('Transmission', $this->transmission, 'unreachable', 502); // C1
+            }
             $active   = 0;
             $items    = [];
             foreach ($torrents as $t) {
@@ -111,6 +114,9 @@ class TransmissionController extends AbstractController
             $desc     = $request->query->get('desc', '1') === '1';
 
             $all   = $this->transmission->getTorrents();
+            if ($all === [] && $this->clientFailed($this->transmission)) {
+                return $this->jsonClientError('Transmission', $this->transmission, 'unreachable', 502); // C1: an outage is not an empty list
+            }
             $stats = $this->transmission->getStats($all);
 
             if ($filter === 'active') {

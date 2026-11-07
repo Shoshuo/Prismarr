@@ -2,3 +2,11 @@ framework:
     cache:
         # Filesystem — zero external dependencies (no more Redis)
         app: cache.adapter.filesystem
+        pools:
+            # HC-1 (review 2026-11-06): the stale-while-revalidate datasets
+            # (library lists, Bazarr index, search vocabulary, GitHub release
+            # payloads) live apart from the response cache that every settings
+            # save clears, so a save no longer costs the next page a cold
+            # fan-out and never reopens the lost-update window.
+            cache.swr:
+                adapter: cache.adapter.filesystem

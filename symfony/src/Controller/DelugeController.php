@@ -35,6 +35,9 @@ class DelugeController extends AbstractController
     {
         try {
             $torrents = $this->deluge->getTorrents();
+            if ($torrents === [] && $this->clientFailed($this->deluge)) {
+                return $this->jsonClientError('Deluge', $this->deluge, 'unreachable', 502); // C1
+            }
             $active   = 0;
             $items    = [];
             foreach ($torrents as $t) {
@@ -110,6 +113,9 @@ class DelugeController extends AbstractController
             $desc     = $request->query->get('desc', '1') === '1';
 
             $all   = $this->deluge->getTorrents();
+            if ($all === [] && $this->clientFailed($this->deluge)) {
+                return $this->jsonClientError('Deluge', $this->deluge, 'unreachable', 502); // C1: an outage is not an empty list
+            }
             $stats = $this->deluge->getStats($all);
 
             if ($filter === 'active') {
