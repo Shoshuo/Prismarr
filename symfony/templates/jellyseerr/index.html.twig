@@ -706,7 +706,8 @@
             var serviceType = req.type === 'movie' ? 'radarr' : 'sonarr';
             titleEl.textContent = tpl(_I18N.editRequestTitleTpl, {TITLE: tmdb.title || tpl(_I18N.editRequestFallbackTpl, {ID: req.id})});
 
-            var svcP = fetch(BASE + '/jellyseerr/service/' + serviceType, { credentials:'same-origin', headers:{'Accept':'application/json'} }).then(function(r){ return r.json(); }).catch(function(){ return {}; });
+            // MS-8: load the profiles / root folders of the request's OWN server.
+            var svcP = fetch(BASE + '/jellyseerr/service/' + serviceType + (req.serverId != null ? '?serverId=' + encodeURIComponent(req.serverId) : ''), { credentials:'same-origin', headers:{'Accept':'application/json'} }).then(function(r){ return r.json(); }).catch(function(){ return {}; });
             var usersP = fetch(BASE + '/jellyseerr/users', { credentials:'same-origin', headers:{'Accept':'application/json'} }).then(function(r){ return r.json(); }).catch(function(){ return []; });
 
             Promise.all([svcP, usersP]).then(function(results){

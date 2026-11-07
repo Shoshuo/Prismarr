@@ -156,9 +156,15 @@ class ProwlarrClient implements ResetInterface
         return $this->request('PUT', "/api/v1/indexer/{$id}", [], $data);
     }
 
-    public function updateIndexerWithError(int $id, array $data): array
+    /**
+     * @param bool $forceSave Skip Prowlarr's inline connection test (MS-7:
+     *                        ProviderControllerBase.UpdateProvider tests the
+     *                        indexer on every enable, so a failing or slow one
+     *                        could never be re-enabled from the toggle).
+     */
+    public function updateIndexerWithError(int $id, array $data, bool $forceSave = false): array
     {
-        return $this->requestWithError('PUT', "/api/v1/indexer/{$id}", $data);
+        return $this->requestWithError('PUT', "/api/v1/indexer/{$id}" . ($forceSave ? '?forceSave=true' : ''), $data);
     }
 
     public function deleteIndexer(int $id): bool

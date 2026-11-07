@@ -45,6 +45,14 @@ services:
       # itself. Setting it drops X-Frame-Options. (Issue #25.)
       # PRISMARR_FRAME_ANCESTORS: https://organizr.example.com
 
+      # Proxies whose X-Forwarded-* headers are believed. The default
+      # ("127.0.0.1,REMOTE_ADDR") trusts whichever peer connects directly,
+      # re-resolved per request, so a proxy / cloudflared on the Docker
+      # network just works — but a client that reaches the port directly can
+      # then forward a fake IP or scheme for itself. Pin it to the proxy's
+      # address or CIDR when the port is reachable from untrusted networks.
+      # TRUSTED_PROXIES: 172.18.0.0/16
+
       # FrankenPHP/Symfony worker mode (opt-in, OFF by default). Set to 1 to
       # keep the Symfony kernel resident across requests (skips the per-request
       # bootstrap for faster responses). Toggling needs no image rebuild. Leave

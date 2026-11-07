@@ -209,4 +209,38 @@ class CspHeaderSubscriberTest extends TestCase
         $this->assertStringContainsString("default-src 'self';", $csp);
         $this->assertStringContainsString('https://a.test', $csp);
     }
+
+    public function testAHostCarryingCspMetacharactersIsNeverSpliced(): void
+    {
+        // Review 2026-11-06 (S3): parse_url() keeps `;` and spaces in the
+        // host, and img-src precedes script-src, so an injected
+        // `script-src * 'unsafe-inline'` (first occurrence wins) switched the
+        // nonce policy off for every innerHTML sink.
+        $sub = $this->subscriberWithUrls([
+            'radarr_url' => "http://x.lan;script-src * 'unsafe-inline';x/",
+            'sonarr_url' => 'javascript://sonarr.lan/',
+        ]);
+        $response = new Response();
+        $sub->onResponse($this->event($response));
+
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+        $this->assertStringNotContainsString('x.lan', $csp);
+        $this->assertStringNotContainsString("'unsafe-inline';x", $csp);
+        $this->assertStringNotContainsString('javascript:', $csp);
+        $this->assertStringNotContainsString('sonarr.lan', $csp);
+    }
+
+    public function testIpv6LiteralsAndDockerHostnamesStillLandInImgSrc(): void
+    {
+        $sub = $this->subscriberWithUrls([
+            'radarr_url' => 'http://[::1]:7878/',
+            'sonarr_url' => 'http://host.docker.internal:8989',
+        ]);
+        $response = new Response();
+        $sub->onResponse($this->event($response));
+
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+        $this->assertStringContainsString('http://[::1]:7878', $csp);
+        $this->assertStringContainsString('http://host.docker.internal:8989', $csp);
+    }
 }

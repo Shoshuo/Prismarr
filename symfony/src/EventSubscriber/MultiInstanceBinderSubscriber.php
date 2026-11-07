@@ -33,9 +33,11 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * resolve to an existing instance — gives the user a clean 404 instead of
  * a stale-binding silent miss.
  *
- * Priority 12: runs after ServiceRouteGuardSubscriber (15) so the
- * service-not-configured redirect happens first, but before the controller
- * is invoked.
+ * Priority 6: runs after the Symfony firewall (8) and after
+ * ServiceRouteGuardSubscriber (7) so the service-not-configured redirect
+ * happens first, but before the controller is invoked. Below the firewall
+ * since review 2026-11-06 (S5): the 404-vs-302 answer let anonymous
+ * clients enumerate instance slugs.
  */
 final class MultiInstanceBinderSubscriber implements EventSubscriberInterface
 {
@@ -48,7 +50,7 @@ final class MultiInstanceBinderSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => ['onKernelRequest', 12],
+            KernelEvents::REQUEST => ['onKernelRequest', 6],
         ];
     }
 

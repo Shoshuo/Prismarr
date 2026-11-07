@@ -949,6 +949,7 @@ admin:
     import_failed: Import failed.
     display_reset: Display preferences reset.
     display_reset_full: Display preferences reset to their defaults.
+    invalid_url: 'Settings saved, but {key} was refused: invalid or blocked URL host ({reason}).'
   test:
     unknown_service: Unknown service
     unreachable: Service unreachable
@@ -970,6 +971,8 @@ admin:
     read_failed: Cannot read file.
     invalid_json: Invalid JSON
     unknown_format: 'Unknown format (export v1 or v2 expected).'
+    invalid_url_skipped: '{count, plural, one {# service URL was refused (invalid or blocked host).} other {# service URLs were refused (invalid or blocked host).}}'
+    secrets_dropped: '{count, plural, one {# stored secret was cleared because its service URL moved to another host — re-enter it under Services.} other {# stored secrets were cleared because their service URLs moved to another host — re-enter them under Services.}}'
     result: '{applied, plural, =0 {No settings imported} one {# setting imported} other {# settings imported}}, {skipped, plural, one {# skipped.} other {# skipped.}} {instances_applied, plural, =0 {} one {# instance restored.} other {# instances restored.}}'
   updates:
     title: Updates
@@ -1262,6 +1265,7 @@ media:
     series_not_found: TV show not found
     series_data_missing: TV show data missing
     no_movies_selected: No movie selected
+    no_series_selected: No series selected
     no_movie: No movie
     no_series: No TV show
     queue_item_not_found: Item not found in the queue
@@ -1420,6 +1424,7 @@ media:
       edit_quality: Quality profile
       edit_availability: Minimum availability
       edit_root: Root folder
+      edit_move_files: Move the files to the new root folder
       availability_announced: Announced
       availability_in_cinemas: In theatres
       availability_released: Released
@@ -1517,6 +1522,7 @@ media:
       edit_path: Path
       edit_explorer: Explorer
       edit_update_path: Update path
+      edit_move_files: Move the files to the new path
       edit_empty_folder: Empty folder
       edit_tags: Tags
       edit_tag_placeholder: "New tag..."
@@ -1684,6 +1690,7 @@ media:
       delete_cancel: Cancel
       import_done_status: "✓ Imported"
       import_failed: "{message}"
+      import_unconfirmed: "Import finished, but Radarr still lists the download ({state}) — left in the queue"
       import_failed_short: "Import failed"
       import_failed_status: "✗ Failed"
       network_error: "Network error"
@@ -1951,6 +1958,7 @@ media:
       edit_quality: Quality profile
       edit_type: Series type
       edit_root: Root folder
+      edit_move_files: Move the files to the new root folder
       edit_season_folder: Season folder
       edit_keep: '— Keep current —'
       edit_follow: Monitor
@@ -2126,6 +2134,7 @@ media:
       edit_save: Save
       confirm_move_tpl: "Move the series to:\n{path}\n\nContinue?"
       path_updated: Path updated.
+      edit_move_files: Move the files to the new path
       confirm_delete_series_tpl: "Delete «{title}»?"
       confirm_delete_series_default: "this series"
       confirm_delete_files: "Also delete files on disk?"
@@ -2195,6 +2204,9 @@ media:
       release_type_single: Single episode
       release_type_multi: Multi-episode
       release_type_pack: Season pack
+      release_type_unknown: Unknown
+      release_type_multi_season: Multi-season pack
+      indexer_flag_combined: "Combined flags ({flags})"
       indexer_flag_none: None
       back: Back
       close: Close
