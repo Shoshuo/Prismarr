@@ -1185,15 +1185,18 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
   // THIS page is still the one on screen.
   var CMD_TERMINAL = ['failed', 'aborted', 'cancelled', 'orphaned'];
   var CMD_POLL_CAP = 240;
-  var _cmdPolls = {}, _cmdUnknown = 0, _cmdTimers = [];
+  var _cmdPolls = {}, _cmdUnknown = {}, _cmdTimers = [];
+  // 'stalled' = this page stopped watching (poll cap reached, or the command
+  // vanished from the answers for ~10 s): the command may still be running or
+  // may have finished — it is NOT a failure and callers must not paint it as one.
   function cmdState(cmd) {
     var st = (cmd.status || '').toLowerCase();
-    if (st === 'unknown' || st === '') { _cmdUnknown++; return _cmdUnknown >= 5 ? 'failed' : 'unknown'; }
-    _cmdUnknown = 0;
-    if (CMD_TERMINAL.indexOf(st) !== -1) return 'failed';
     var key = String(cmd.id || 'x');
+    if (st === 'unknown' || st === '') { _cmdUnknown[key] = (_cmdUnknown[key] || 0) + 1; return _cmdUnknown[key] >= 5 ? 'stalled' : 'unknown'; }
+    _cmdUnknown[key] = 0;
+    if (CMD_TERMINAL.indexOf(st) !== -1) return 'failed';
     _cmdPolls[key] = (_cmdPolls[key] || 0) + 1;
-    if (st !== 'completed' && _cmdPolls[key] >= CMD_POLL_CAP) return 'failed';
+    if (st !== 'completed' && _cmdPolls[key] >= CMD_POLL_CAP) return 'stalled';
     return st;
   }
   function cmdInterval(fn, ms) { var id = setInterval(fn, ms); _cmdTimers.push(id); return id; }
@@ -1369,6 +1372,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
     w_cmd_import_done: {{ 'media.films.warnings_cmd_import_done'|trans|json_encode|raw }},
     w_cmd_nothing_tpl: {{ 'media.films.warnings_cmd_nothing'|trans({label: '__LBL__'})|json_encode|raw }},
     w_cmd_failed_tpl: {{ 'media.films.warnings_cmd_failed'|trans({label: '__LBL__', error: '__ERR__'})|json_encode|raw }},
+    w_cmd_stalled: {{ 'media.films.warnings_cmd_stalled'|trans|json_encode|raw }},
     w_cmd_elapsed_tpl: {{ 'media.films.warnings_cmd_elapsed'|trans({label: '__LBL__', msg: '__MSG__'})|json_encode|raw }},
     w_cmd_done_tpl: {{ 'media.films.warnings_cmd_done'|trans({label: '__LBL__'})|json_encode|raw }},
     w_bulk_modified_tpl: {{ 'media.films.warnings_bulk_modified'|trans({count: '__COUNT__'})|json_encode|raw }},
@@ -1707,11 +1711,12 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
               } else {
                 showPageBanner(tpl(FILM_I18N.w_search_none_tpl, {TOTAL: ids.length}), 'warning');
               }
-            } else if (st === 'failed') {
+            } else if (st === 'failed' || st === 'stalled') {
               clearInterval(bulkPoll);
               btn.disabled = false;
               btn.innerHTML = ICON_SEARCH + ' ' + FILM_I18N.search_filtered;
-              showPageBanner(tpl(FILM_I18N.w_search_failed_tpl, {ERR: msg || FILM_I18N.unknown_error}), 'danger');
+              if (st === 'stalled') showPageBanner(FILM_I18N.w_cmd_stalled, 'warning');
+              else showPageBanner(tpl(FILM_I18N.w_search_failed_tpl, {ERR: msg || FILM_I18N.unknown_error}), 'danger');
             } else {
               // In progress — count processed movies
               var filmMatch = msg.match(/for\s+\[(.+?)\]/i);
@@ -2489,12 +2494,13 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
               setTimeout(hideSearchFeedback, 5000);
             });
 
-          } else if (st === 'failed') {
+          } else if (st === 'failed' || st === 'stalled') {
             stopPoll();
             btn.disabled = false;
             btn.innerHTML = SEARCH_ICON;
             var errMsg = cmd.message || FILM_I18N.unknown_error;
-            showSearchFeedback(tpl(FILM_I18N.search_failed_tpl, {ERR: errMsg}), 'danger', false);
+            if (st === 'stalled') showSearchFeedback(FILM_I18N.w_cmd_stalled, 'warning', false);
+            else showSearchFeedback(tpl(FILM_I18N.search_failed_tpl, {ERR: errMsg}), 'danger', false);
             setTimeout(hideSearchFeedback, 8000);
           } else {
             // En cours — messages progressifs
@@ -2689,10 +2695,10 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
               fileManagerLoaded = false;
               loadRenameProposals(currentId);
             });
-          } else if (st === 'failed') {
+          } else if (st === 'failed' || st === 'stalled') {
             stopPoll();
             btn.disabled = false;
-            showSearchFeedback(FILM_I18N.refresh_failed, 'danger', false);
+            showSearchFeedback(st === 'stalled' ? FILM_I18N.w_cmd_stalled : FILM_I18N.refresh_failed, st === 'stalled' ? 'warning' : 'danger', false);
           }
         });
       }, 2000);
@@ -3213,11 +3219,12 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
               loadRenameProposals(currentId);
             });
             setTimeout(hideRenameFeedback, 5000);
-          } else if (st === 'failed') {
+          } else if (st === 'failed' || st === 'stalled') {
             clearInterval(renamePoll);
             btn.disabled = false;
             btn.innerHTML = RENAME_SVG + FILM_I18N.rename_label;
-            showRenameFeedback(tpl(FILM_I18N.rename_failed_tpl, {ERR: cmd.message || FILM_I18N.unknown_error}), 'danger', false);
+            if (st === 'stalled') showRenameFeedback(FILM_I18N.w_cmd_stalled, 'warning', false);
+            else showRenameFeedback(tpl(FILM_I18N.rename_failed_tpl, {ERR: cmd.message || FILM_I18N.unknown_error}), 'danger', false);
           }
         });
       }, 2000);
@@ -3802,11 +3809,13 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
                     }
                     setTimeout(refreshQueue, 2000);
                   }).catch(function() { setTimeout(refreshQueue, 2000); });
-                } else if (st === 'failed') {
+                } else if (st === 'failed' || st === 'stalled') {
                   clearInterval(importPoll);
                   importingQueueIds.delete(queueId);
-                  if (progCell) progCell.innerHTML = '<span class="text-danger small">' + esc(tpl(FILM_I18N.q_import_failed_tpl, {MSG: msg || FILM_I18N.q_import_failed_short})) + '</span>';
-                  if (statusCell) statusCell.innerHTML = '<span class="badge bg-danger-lt text-danger">' + esc(FILM_I18N.q_import_failed_status) + '</span>';
+                  if (progCell) progCell.innerHTML = st === 'stalled'
+                    ? '<span class="text-warning small">' + esc(FILM_I18N.w_cmd_stalled) + '</span>'
+                    : '<span class="text-danger small">' + esc(tpl(FILM_I18N.q_import_failed_tpl, {MSG: msg || FILM_I18N.q_import_failed_short})) + '</span>';
+                  if (statusCell && st === 'failed') statusCell.innerHTML = '<span class="badge bg-danger-lt text-danger">' + esc(FILM_I18N.q_import_failed_status) + '</span>';
                   btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
                   btn.disabled = false;
                   setTimeout(refreshQueue, 2000);
@@ -3916,7 +3925,7 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         pollCount++;
         var elapsed = pollCount * 2;
         ajaxGet(BASE + '/medias/' + (INSTANCE_SLUG || DEFAULT_RADARR_SLUG) + '/films/command/' + cmd.id).then(function(st) {
-          var status = (st.status || '').toLowerCase();
+          var status = cmdState(st); // MT-7: capped / terminal-aware like every other poller
           var msg = st.message || '';
           if (status === 'completed') {
             clearInterval(pollCmd);
@@ -3939,13 +3948,14 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
               showPageBanner(tpl(FILM_I18N.w_cmd_done_tpl, {LBL: label}), 'success');
             }
             refreshQueue();
-          } else if (status === 'failed') {
+          } else if (status === 'failed' || status === 'stalled') {
             clearInterval(pollCmd);
             if (cmd.name === 'ManualImport') {
               importingCmdIds.delete(cmd.id);
               importingQueueIds.clear();
             }
-            showPageBanner(tpl(FILM_I18N.w_cmd_failed_tpl, {LBL: label, ERR: msg || FILM_I18N.unknown_error}), 'danger');
+            if (status === 'stalled') showPageBanner(FILM_I18N.w_cmd_stalled, 'warning');
+            else showPageBanner(tpl(FILM_I18N.w_cmd_failed_tpl, {LBL: label, ERR: msg || FILM_I18N.unknown_error}), 'danger');
           } else {
             var display = msg || tpl(FILM_I18N.w_search_in_progress_tpl, {SEC: elapsed});
             showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_elapsed_tpl, {LBL: label, MSG: esc(display)}), 'info');
@@ -4300,9 +4310,10 @@ body.density-compact #modal-film .film-action-btn { font-size: .78rem; padding: 
         if (st === 'completed') {
           clearInterval(timer);
           showPageBanner(tpl(FILM_I18N.w_cmd_done_tpl, {LBL: label}), 'success');
-        } else if (st === 'failed') {
+        } else if (st === 'failed' || st === 'stalled') {
           clearInterval(timer);
-          showPageBanner(tpl(FILM_I18N.w_cmd_failed_tpl, {LBL: label, ERR: msg || FILM_I18N.unknown_error}), 'danger');
+          if (st === 'stalled') showPageBanner(FILM_I18N.w_cmd_stalled, 'warning');
+          else showPageBanner(tpl(FILM_I18N.w_cmd_failed_tpl, {LBL: label, ERR: msg || FILM_I18N.unknown_error}), 'danger');
         } else {
           var display = msg || tpl(FILM_I18N.w_search_in_progress_tpl, {SEC: pollCount * 2});
           showPageBannerHtml('<span class="spinner-border spinner-border-sm me-2"></span> ' + tpl(FILM_I18N.w_cmd_elapsed_tpl, {LBL: label, MSG: esc(display)}), 'info');

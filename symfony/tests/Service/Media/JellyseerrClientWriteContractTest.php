@@ -84,12 +84,16 @@ class JellyseerrClientWriteContractTest extends TestCase
         $this->assertCount(0, $this->calls, 'no transfer while the breaker is open');
     }
 
-    public function testAConnectFailureOpensTheBreakerAndAReadTimeoutDoesNot(): void
+    public function testAnyTransportFailureOpensTheBreaker(): void
     {
+        // Final review, Important #5: Seerr has no long-running-scan case like
+        // the *arr clients (issue #41). A Seerr that accepts the connection and
+        // then hangs must short-circuit for the breaker window, not cost every
+        // dashboard / health / pending-count call its full timeout.
         $health = new ServiceHealthCache(new ArrayAdapter());
         $client = $this->client([[false, 0, 'Operation timed out after 8001 milliseconds', true]], $health);
         $client->getJellyfinUsers();
-        $this->assertFalse($health->isDown('jellyseerr'), 'busy, not dead');
+        $this->assertTrue($health->isDown('jellyseerr'), 'a hung Seerr is down for the breaker window');
 
         $health = new ServiceHealthCache(new ArrayAdapter());
         $client = $this->client([[false, 0, 'Failed to connect', false]], $health);

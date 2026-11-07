@@ -41,9 +41,54 @@ class ReviewSection3TemplateGuardTest extends TestCase
             $s = self::src($tpl);
             $this->assertStringContainsString('function refreshData(force)', $s, $tpl);
             $this->assertStringContainsString('if (refreshInFlight && !force) return;', $s, $tpl);
+            // Final review, Critical #1: Deluge got the in-flight half of the
+            // port without the sequence counter it references — a
+            // ReferenceError in the finally-callback left refreshInFlight stuck
+            // at true and the page never auto-refreshed again. The parts of
+            // the pattern must travel together.
+            $this->assertStringContainsString('var refreshSeq = 0;', $s, $tpl);
+            $this->assertStringContainsString('var seq = ++refreshSeq;', $s, $tpl);
+            $this->assertStringContainsString('if (seq !== refreshSeq) return;', $s, $tpl);
+            $this->assertStringContainsString('if (seq === refreshSeq) refreshInFlight = false;', $s, $tpl);
             $this->assertStringContainsString('setInterval(refreshData, REFRESH_INTERVAL)', $s, "$tpl keeps the lifecycle-tracked timer line");
             $this->assertStringNotContainsString("refreshData();\n", str_replace("\r\n", "\n", $s), "$tpl: user-driven calls pass force=true");
         }
+    }
+
+    // Final review, Important #4 — giving up on a poll is not a failure
+    public function testCommandPollersDistinguishStalledFromFailed(): void
+    {
+        $pages = [
+            'media/films.html.twig'         => ['FILM_I18N.w_cmd_stalled',   'w_cmd_stalled'],
+            'media/series.html.twig'        => ['SERIES_I18N.w_cmd_stalled', 'w_cmd_stalled'],
+            'media/films_missing.html.twig' => ['FM_I18N.cmd_stalled',       'cmd_stalled'],
+        ];
+        foreach ($pages as $tpl => [$use, $def]) {
+            $s = self::src($tpl);
+            $this->assertStringNotContainsString(">= CMD_POLL_CAP) return 'failed';", $s, "$tpl: the cap is a watchdog, not a verdict — a long MoviesSearch is not a failure");
+            $this->assertStringContainsString(">= CMD_POLL_CAP) return 'stalled';", $s, $tpl);
+            $this->assertStringNotContainsString("? 'failed' : 'unknown'", $s, "$tpl: five unknown answers are a Radarr blip, not a failure");
+            $this->assertStringContainsString('_cmdUnknown[key]', $s, "$tpl: the unknown counter is per command, not shared by every poller on the page");
+            $failed  = preg_match_all("/else if \\((?:st|status) === 'failed'/", $s);
+            $stalled = preg_match_all("/else if \\((?:st|status) === 'failed' \\|\\| (?:st|status) === 'stalled'\\)/", $s);
+            $this->assertGreaterThan(0, $failed, $tpl);
+            $this->assertSame($failed, $stalled, "$tpl: every failed branch must also stop on 'stalled'");
+            $this->assertMatchesRegularExpression("/\\b{$def}: \\{\\{ '[a-z_.]+'\\|trans\\|json_encode\\|raw \\}\\}/", $s, "$tpl: a neutral 'still running — stopped checking' string");
+            $this->assertGreaterThanOrEqual($failed, substr_count($s, $use), "$tpl: every stopped branch shows the neutral string");
+        }
+        $films = self::src('media/films.html.twig');
+        $this->assertStringNotContainsString("(st.status || '').toLowerCase()", $films, 'the queue command poller goes through cmdState() too');
+    }
+
+    // Final review, Important #2 — episode air times are instants, release dates are calendar days
+    public function testQuickLookDateChipsHonourTheirFloatingFlag(): void
+    {
+        $s = self::src('dashboard/_quicklook_body.html.twig');
+        $this->assertStringContainsString(
+            'd.floating|default(true) ? d.date|prismarr_date(true) : d.date|prismarr_date',
+            $s,
+            "Sonarr's nextAiring/previousAiring are UTC instants: floating them shows the UTC day, off by one for an evening broadcast west of UTC"
+        );
     }
 
     // DC-2 — the usenet visibility handler must belong to the current page instance

@@ -1654,6 +1654,7 @@ media:
     warnings_cmd_import_done: "Import complete."
     warnings_cmd_nothing: "{label} — done, no result found."
     warnings_cmd_failed: "{label} — failed: {error}"
+    warnings_cmd_stalled: "Radarr is still working on this — stopped checking after a few minutes. Reload the page later to see the result."
     warnings_cmd_elapsed: "🔍 {label} — {msg}"
     warnings_cmd_done: "{label} — complete."
     warnings_bulk_modified: "{count} movie(s) updated."
@@ -1824,6 +1825,7 @@ media:
     search_done_dl: "Search done — {dl} download(s) started out of {total} movie(s) searched."
     search_done_none: "Search done for {total} movie(s) — no matching result."
     search_failed: "Search failed: {error}"
+    cmd_stalled: "Radarr is still working on this — stopped checking after a few minutes. Reload the page later to see the result."
     search_progress: "Movie {done}/{total} — {title}"
     search_in_progress: "Searching... ({seconds}s)"
     unknown_error: "unknown error"
@@ -2234,6 +2236,7 @@ media:
       cmd_dl_ok_tpl: "{label} — {count} download(s) started. Check the queue."
       cmd_nothing_tpl: "{label} — done, no result found."
       cmd_failed_tpl: "{label} — failed: {error}"
+      cmd_stalled: "Sonarr is still working on this — stopped checking after a few minutes. Reload the page later to see the result."
       cmd_elapsed_tpl: "🔍 {label} — {msg}"
       cmd_done_tpl: "{label} — complete."
 

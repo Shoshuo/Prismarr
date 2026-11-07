@@ -153,15 +153,18 @@
   // THIS page is still the one on screen.
   var CMD_TERMINAL = ['failed', 'aborted', 'cancelled', 'orphaned'];
   var CMD_POLL_CAP = 240;
-  var _cmdPolls = {}, _cmdUnknown = 0, _cmdTimers = [];
+  var _cmdPolls = {}, _cmdUnknown = {}, _cmdTimers = [];
+  // 'stalled' = this page stopped watching (poll cap reached, or the command
+  // vanished from the answers for ~10 s): the command may still be running or
+  // may have finished — it is NOT a failure and callers must not paint it as one.
   function cmdState(cmd) {
     var st = (cmd.status || '').toLowerCase();
-    if (st === 'unknown' || st === '') { _cmdUnknown++; return _cmdUnknown >= 5 ? 'failed' : 'unknown'; }
-    _cmdUnknown = 0;
-    if (CMD_TERMINAL.indexOf(st) !== -1) return 'failed';
     var key = String(cmd.id || 'x');
+    if (st === 'unknown' || st === '') { _cmdUnknown[key] = (_cmdUnknown[key] || 0) + 1; return _cmdUnknown[key] >= 5 ? 'stalled' : 'unknown'; }
+    _cmdUnknown[key] = 0;
+    if (CMD_TERMINAL.indexOf(st) !== -1) return 'failed';
     _cmdPolls[key] = (_cmdPolls[key] || 0) + 1;
-    if (st !== 'completed' && _cmdPolls[key] >= CMD_POLL_CAP) return 'failed';
+    if (st !== 'completed' && _cmdPolls[key] >= CMD_POLL_CAP) return 'stalled';
     return st;
   }
   function cmdInterval(fn, ms) { var id = setInterval(fn, ms); _cmdTimers.push(id); return id; }
@@ -181,6 +184,7 @@
     search_done_dl_tpl: {{ 'media.films_missing.search_done_dl'|trans({dl: '__DL__', total: '__TOTAL__'})|json_encode|raw }},
     search_done_none_tpl: {{ 'media.films_missing.search_done_none'|trans({total: '__TOTAL__'})|json_encode|raw }},
     search_failed_tpl: {{ 'media.films_missing.search_failed'|trans({error: '__ERROR__'})|json_encode|raw }},
+    cmd_stalled: {{ 'media.films_missing.cmd_stalled'|trans|json_encode|raw }},
     search_progress_tpl: {{ 'media.films_missing.search_progress'|trans({done: '__DONE__', total: '__TOTAL__', title: '__TITLE__'})|json_encode|raw }},
     search_in_progress_tpl: {{ 'media.films_missing.search_in_progress'|trans({seconds: '__SEC__'})|json_encode|raw }},
     unknown_error: {{ 'media.films_missing.unknown_error'|trans|json_encode|raw }},
@@ -257,10 +261,10 @@
               }
               btn.disabled = false;
               setTimeout(function() { btn.innerHTML = SVG_SEARCH; }, 5000);
-            } else if (st === 'failed') {
+            } else if (st === 'failed' || st === 'stalled') {
               clearInterval(pollTimer);
-              btn.innerHTML = SVG_FAIL;
-              statusEl.innerHTML = '<span class="text-danger">' + FM_I18N.error + '</span>';
+              btn.innerHTML = st === 'stalled' ? SVG_SEARCH : SVG_FAIL;
+              statusEl.innerHTML = st === 'stalled' ? '<span class="text-warning">' + esc(FM_I18N.cmd_stalled) + '</span>' : '<span class="text-danger">' + FM_I18N.error + '</span>';
               btn.disabled = false;
               setTimeout(function() { btn.innerHTML = SVG_SEARCH; }, 3000);
             } else if (msg) {
@@ -326,11 +330,12 @@
               showBanner(FM_I18N.search_done_none_tpl.replace('__TOTAL__', searchedCount), 'warning');
             }
             setTimeout(function() { safeReload(); }, 3000);
-          } else if (st === 'failed') {
+          } else if (st === 'failed' || st === 'stalled') {
             clearInterval(pollTimer);
             btn.disabled = false;
             btn.innerHTML = SEARCH_ICON_SM + ' ' + FM_I18N.search_all_label;
-            showBanner(FM_I18N.search_failed_tpl.replace('__ERROR__', msg || FM_I18N.unknown_error), 'danger');
+            if (st === 'stalled') showBanner(FM_I18N.cmd_stalled, 'warning');
+            else showBanner(FM_I18N.search_failed_tpl.replace('__ERROR__', esc(msg || FM_I18N.unknown_error)), 'danger');
           } else {
             // Progression
             var filmMatch = msg.match(/Searching\s+\d+\s+indexers for\s+\[(.+?)\]/i) || msg.match(/for\s+\[(.+?)\]/i);

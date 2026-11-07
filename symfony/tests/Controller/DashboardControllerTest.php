@@ -568,6 +568,7 @@ class DashboardControllerTest extends TestCase
         self::assertSame(['cinema', 'digital'], $kinds); // physical null → skipped, fixed order
         self::assertFalse($vm['releaseDates'][0]['upcoming']); // cinema 2y ago
         self::assertTrue($vm['releaseDates'][1]['upcoming']);  // digital +30d
+        self::assertTrue($vm['releaseDates'][1]['floating'], 'Radarr release dates are calendar days (final review #2)');
     }
 
     public function testQuickLookTmdbMovieParsesReleaseDates(): void
@@ -678,6 +679,13 @@ class DashboardControllerTest extends TestCase
         self::assertContains('first_aired', $kinds);
         self::assertContains('next_episode', $kinds);
         self::assertNotContains('ended', $kinds);
+
+        // Final review, Important #2: firstAired is a calendar day, but
+        // nextAiring/previousAiring come from Sonarr's airDateUtc — instants
+        // that must be converted to the display zone, never floated.
+        $byKind = array_column($vm['releaseDates'], null, 'kind');
+        self::assertTrue($byKind['first_aired']['floating']);
+        self::assertFalse($byKind['next_episode']['floating'], 'an evening broadcast west of UTC is "tomorrow" in UTC');
     }
 
     public function testQuickLookLibrarySeriesEndedShowsEndDate(): void

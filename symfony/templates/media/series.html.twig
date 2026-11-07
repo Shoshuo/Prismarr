@@ -1077,15 +1077,18 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   // THIS page is still the one on screen.
   var CMD_TERMINAL = ['failed', 'aborted', 'cancelled', 'orphaned'];
   var CMD_POLL_CAP = 240;
-  var _cmdPolls = {}, _cmdUnknown = 0, _cmdTimers = [];
+  var _cmdPolls = {}, _cmdUnknown = {}, _cmdTimers = [];
+  // 'stalled' = this page stopped watching (poll cap reached, or the command
+  // vanished from the answers for ~10 s): the command may still be running or
+  // may have finished — it is NOT a failure and callers must not paint it as one.
   function cmdState(cmd) {
     var st = (cmd.status || '').toLowerCase();
-    if (st === 'unknown' || st === '') { _cmdUnknown++; return _cmdUnknown >= 5 ? 'failed' : 'unknown'; }
-    _cmdUnknown = 0;
-    if (CMD_TERMINAL.indexOf(st) !== -1) return 'failed';
     var key = String(cmd.id || 'x');
+    if (st === 'unknown' || st === '') { _cmdUnknown[key] = (_cmdUnknown[key] || 0) + 1; return _cmdUnknown[key] >= 5 ? 'stalled' : 'unknown'; }
+    _cmdUnknown[key] = 0;
+    if (CMD_TERMINAL.indexOf(st) !== -1) return 'failed';
     _cmdPolls[key] = (_cmdPolls[key] || 0) + 1;
-    if (st !== 'completed' && _cmdPolls[key] >= CMD_POLL_CAP) return 'failed';
+    if (st !== 'completed' && _cmdPolls[key] >= CMD_POLL_CAP) return 'stalled';
     return st;
   }
   function cmdInterval(fn, ms) { var id = setInterval(fn, ms); _cmdTimers.push(id); return id; }
@@ -1175,6 +1178,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
     w_cmd_dl_ok_tpl: {{ 'media.series.warnings.cmd_dl_ok_tpl'|trans({label: '__LBL__', count: '__COUNT__'})|json_encode|raw }},
     w_cmd_nothing_tpl: {{ 'media.series.warnings.cmd_nothing_tpl'|trans({label: '__LBL__'})|json_encode|raw }},
     w_cmd_failed_tpl: {{ 'media.series.warnings.cmd_failed_tpl'|trans({label: '__LBL__', error: '__ERR__'})|json_encode|raw }},
+    w_cmd_stalled: {{ 'media.series.warnings.cmd_stalled'|trans|json_encode|raw }},
     w_cmd_elapsed_tpl: {{ 'media.series.warnings.cmd_elapsed_tpl'|trans({label: '__LBL__', msg: '__MSG__'})|json_encode|raw }},
     w_cmd_done_tpl: {{ 'media.series.warnings.cmd_done_tpl'|trans({label: '__LBL__'})|json_encode|raw }},
     // Detail
@@ -2973,11 +2977,11 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
                         clearInterval(pollRename);
                         goBtn.innerHTML = SERIES_I18N.d_renamed;
                         setTimeout(function() { closeFileOverlay(); loadEpisodes(); }, 1500);
-                      } else if (st === 'failed') {
+                      } else if (st === 'failed' || st === 'stalled') {
                         clearInterval(pollRename);
                         goBtn.disabled = false;
                         goBtn.innerHTML = SERIES_I18N.d_rename_files;
-                        showBanner(SERIES_I18N.d_rename_failed, 'danger');
+                        showBanner(st === 'stalled' ? SERIES_I18N.w_cmd_stalled : SERIES_I18N.d_rename_failed, st === 'stalled' ? 'warning' : 'danger');
                       }
                     });
                   }, 1500);
@@ -3192,11 +3196,13 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
           }
           if (isCurrentModal) setTimeout(hideBanner, 5000);
           if (onDone) onDone(true, msg);
-        } else if (st === 'failed') {
+        } else if (st === 'failed' || st === 'stalled') {
           clearInterval(timer);
           var errMsg = msg || SERIES_I18N.d_unknown_error;
-          if (isCurrentModal) showBanner(tpl(SERIES_I18N.w_cmd_failed_tpl, { LBL: label, ERR: errMsg }), 'danger');
-          showPageBanner(tpl(SERIES_I18N.w_cmd_failed_tpl, { LBL: label, ERR: errMsg }), 'danger', pollSeriesId);
+          var stopText = st === 'stalled' ? SERIES_I18N.w_cmd_stalled : tpl(SERIES_I18N.w_cmd_failed_tpl, { LBL: label, ERR: errMsg });
+          var stopKind = st === 'stalled' ? 'warning' : 'danger';
+          if (isCurrentModal) showBanner(stopText, stopKind);
+          showPageBanner(stopText, stopKind, pollSeriesId);
           if (onDone) onDone(false, msg);
         } else {
           var display = msg || tpl(SERIES_I18N.d_search_in_progress_generic_tpl, { SEC: elapsed });
@@ -3810,11 +3816,11 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
                   overlay.style.display = 'none';
                   loadEpisodes();
                 }, 1500);
-              } else if (st === 'failed') {
+              } else if (st === 'failed' || st === 'stalled') {
                 clearInterval(timer);
                 execBtn.disabled = false;
                 execBtn.innerHTML = SERIES_I18N.d_rename_selection;
-                showFmFeedback(SERIES_I18N.d_rename_failed, 'danger');
+                showFmFeedback(st === 'stalled' ? SERIES_I18N.w_cmd_stalled : SERIES_I18N.d_rename_failed, st === 'stalled' ? 'warning' : 'danger');
               }
             });
           }, 1500);

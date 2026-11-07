@@ -1653,6 +1653,7 @@ media:
     warnings_cmd_import_done: "Import terminé."
     warnings_cmd_nothing: "{label} — terminé, aucun résultat trouvé."
     warnings_cmd_failed: "{label} — échoué : {error}"
+    warnings_cmd_stalled: "Radarr y travaille encore — vérification arrêtée après quelques minutes. Rechargez la page plus tard pour voir le résultat."
     warnings_cmd_elapsed: "🔍 {label} — {msg}"
     warnings_cmd_done: "{label} — terminé."
     warnings_bulk_modified: "{count} film(s) modifié(s)."
@@ -1823,6 +1824,7 @@ media:
     search_done_dl: "Recherche terminée — {dl} téléchargement(s) lancé(s) sur {total} film(s) recherché(s)."
     search_done_none: "Recherche terminée pour {total} film(s) — aucun résultat correspondant aux critères."
     search_failed: "Recherche échouée : {error}"
+    cmd_stalled: "Radarr y travaille encore — vérification arrêtée après quelques minutes. Rechargez la page plus tard pour voir le résultat."
     search_progress: "Film {done}/{total} — {title}"
     search_in_progress: "Recherche en cours... ({seconds}s)"
     unknown_error: "erreur inconnue"
@@ -2233,6 +2235,7 @@ media:
       cmd_dl_ok_tpl: "{label} — {count} téléchargement(s) lancé(s). Vérifiez la queue."
       cmd_nothing_tpl: "{label} — terminé, aucun résultat trouvé."
       cmd_failed_tpl: "{label} — échoué : {error}"
+      cmd_stalled: "Sonarr y travaille encore — vérification arrêtée après quelques minutes. Rechargez la page plus tard pour voir le résultat."
       cmd_elapsed_tpl: "🔍 {label} — {msg}"
       cmd_done_tpl: "{label} — terminé."
 

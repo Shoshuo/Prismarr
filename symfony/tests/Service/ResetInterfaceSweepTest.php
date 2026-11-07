@@ -24,13 +24,18 @@ class ResetInterfaceSweepTest extends KernelTestCase
                 continue;
             }
             $src = (string) file_get_contents($f->getPathname());
-            if (!preg_match('/^(?:final\s+)?class\s+(\w+)\b[^{]*\bResetInterface\b/m', $src, $m)) {
+            if (!preg_match('/^namespace\s+([^;]+);/m', $src, $ns)
+                || !preg_match('/^(?:final\s+|abstract\s+|readonly\s+)*class\s+(\w+)\b/m', $src, $m)) {
                 continue;
             }
-            if (!preg_match('/^namespace\s+([^;]+);/m', $src, $ns)) {
+            $fqcn = $ns[1] . '\\' . $m[1];
+            // Final review #3: resolve through the real class hierarchy, so an
+            // implementer that reaches ResetInterface via another interface
+            // (UsenetClientInterface) or a parent class is found too.
+            if (!class_exists($fqcn) || !is_subclass_of($fqcn, ResetInterface::class) || (new \ReflectionClass($fqcn))->isAbstract()) {
                 continue;
             }
-            $out[] = $ns[1] . '\\' . $m[1];
+            $out[] = $fqcn;
         }
         sort($out);
         return $out;
@@ -41,6 +46,11 @@ class ResetInterfaceSweepTest extends KernelTestCase
         self::bootKernel();
         $classes = self::resettableServices();
         $this->assertGreaterThanOrEqual(15, count($classes), 'the scan must find the services');
+        // Final review, Important #3: ResetInterface reached through another
+        // interface (UsenetClientInterface extends it) must be found too —
+        // TQ-8 named SABnzbd/NZBGet explicitly.
+        $this->assertContains(\App\Service\Media\Usenet\SabnzbdClient::class, $classes);
+        $this->assertContains(\App\Service\Media\Usenet\NzbgetClient::class, $classes);
 
         foreach ($classes as $class) {
             $this->assertTrue(is_subclass_of($class, ResetInterface::class), $class);

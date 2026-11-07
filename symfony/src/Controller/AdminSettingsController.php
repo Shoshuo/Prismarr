@@ -184,7 +184,7 @@ class AdminSettingsController extends AbstractController
      * for defaults and allowed values — DisplayPreferencesService reads the
      * same constants at runtime to validate incoming values.
      *
-     * @var array<string, array{label: string, type: string, default: string, options?: array<string, string>, help?: string}>
+     * @var array<string, array{label: string, type: string, default: string, options?: array<string|int, string>, help?: string, hidden?: bool}>
      */
     public const DISPLAY_OPTIONS = [
         'display_home_page' => [
@@ -1637,7 +1637,7 @@ class AdminSettingsController extends AbstractController
     }
 
     /**
-     * @param array{label: string, type: string, default: string, options?: array<string, string>, help?: string} $spec
+     * @param array{label: string, type: string, default: string, options?: array<string|int, string>, help?: string, hidden?: bool} $spec
      */
     private function normalizeDisplayValue(array $spec, string $raw): ?string
     {

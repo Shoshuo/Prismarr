@@ -707,6 +707,7 @@ class DashboardController extends AbstractController implements ResetInterface
             $chips[] = [
                 'kind'     => $d['kind'],
                 'label'    => $this->translator->trans($d['key']),
+                'floating' => true, // Radarr release dates are calendar days
                 'date'     => $d['at'],
                 'upcoming' => $d['at']->setTime(0, 0) >= $today,
             ];
@@ -747,20 +748,26 @@ class DashboardController extends AbstractController implements ResetInterface
     /**
      * Air-date chips for a series quick-look: first-aired (if known), then
      * either the next upcoming episode (continuing) or the last-aired date
-     * (ended). @return list<array{kind:string,label:string,date:\DateTimeImmutable,upcoming:bool}>
+     * (ended). @return list<array{kind:string,label:string,date:\DateTimeImmutable,upcoming:bool,floating:bool}>
+     *
+     * `floating` says how the template renders the date: a calendar day
+     * (TMDb air_date, Sonarr firstAired) floats; an instant (Sonarr's
+     * nextAiring/previousAiring are airDateUtc) is converted to the display
+     * zone, otherwise an evening broadcast west of UTC shows as "tomorrow".
      */
-    private function seriesReleaseChips(?\DateTimeImmutable $firstAired, ?\DateTimeImmutable $nextEpisode, ?\DateTimeImmutable $lastEpisode, bool $ended, \DateTimeImmutable $today): array
+    private function seriesReleaseChips(?\DateTimeImmutable $firstAired, ?\DateTimeImmutable $nextEpisode, ?\DateTimeImmutable $lastEpisode, bool $ended, \DateTimeImmutable $today, bool $episodesAreInstants = false): array
     {
-        $chip = fn(string $kind, string $key, \DateTimeImmutable $d): array => [
+        $chip = fn(string $kind, string $key, \DateTimeImmutable $d, bool $floating): array => [
             'kind' => $kind, 'label' => $this->translator->trans($key),
             'date' => $d, 'upcoming' => $d->setTime(0, 0) >= $today,
+            'floating' => $floating,
         ];
         $chips = [];
-        if ($firstAired) $chips[] = $chip('first_aired', 'dashboard.quicklook.date.first_aired', $firstAired);
+        if ($firstAired) $chips[] = $chip('first_aired', 'dashboard.quicklook.date.first_aired', $firstAired, true);
         if (!$ended && $nextEpisode) {
-            $chips[] = $chip('next_episode', 'dashboard.quicklook.date.next_episode', $nextEpisode);
+            $chips[] = $chip('next_episode', 'dashboard.quicklook.date.next_episode', $nextEpisode, !$episodesAreInstants);
         } elseif ($ended && $lastEpisode) {
-            $chips[] = $chip('ended', 'dashboard.quicklook.date.ended', $lastEpisode);
+            $chips[] = $chip('ended', 'dashboard.quicklook.date.ended', $lastEpisode, !$episodesAreInstants);
         }
         return $chips;
     }
@@ -1044,6 +1051,7 @@ class DashboardController extends AbstractController implements ResetInterface
                     $row['previousAiring'] ?? null,
                     $ended,
                     $this->today(),
+                    true, // nextAiring/previousAiring are airDateUtc instants
                 )
                 : $this->movieReleaseChips(
                     $row['inCinemasAt'] ?? null,
