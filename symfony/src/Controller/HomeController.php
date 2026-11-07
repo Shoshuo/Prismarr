@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\ServiceInstance;
 use App\EventSubscriber\LastVisitedRouteSubscriber;
+use App\EventSubscriber\ServiceRouteGuardSubscriber;
 use App\Service\ConfigService;
 use App\Service\DisplayPreferencesService;
 use App\Service\HealthService;
@@ -181,17 +182,11 @@ class HomeController extends AbstractController
      */
     private function routeNameToServiceId(string $route): ?string
     {
-        if (str_starts_with($route, 'radarr_') || str_starts_with($route, 'app_media_films') || str_starts_with($route, 'app_media_radarr')) {
-            return 'radarr';
-        }
-        if (str_starts_with($route, 'sonarr_') || str_starts_with($route, 'app_media_series') || str_starts_with($route, 'app_media_sonarr')) {
-            return 'sonarr';
-        }
-        if (str_starts_with($route, 'tmdb_'))           return 'tmdb';
-        if (str_starts_with($route, 'prowlarr_'))       return 'prowlarr';
-        if (str_starts_with($route, 'jellyseerr_'))     return 'jellyseerr';
-        if (str_starts_with($route, 'app_qbittorrent_')) return 'qbittorrent';
-        return null;
+        // AS-5 (review 2026-11-06): one list — the route guard's. A private
+        // copy here only knew six services, so a cookie pointing at a Deluge /
+        // Tautulli / UniFi / Bazarr / Tracearr / Transmission page looped
+        // between / and the guard once that service was switched off.
+        return ServiceRouteGuardSubscriber::serviceIdForRoute($route);
     }
 
     /**

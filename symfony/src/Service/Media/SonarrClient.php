@@ -263,9 +263,14 @@ class SonarrClient implements ResetInterface
         return $this->get('/api/v3/series/lookup', ['term' => $term]) ?? [];
     }
 
-    public function updateSeries(int $id, array $data): ?array
+    /**
+     * @param bool $moveFiles Ask Sonarr to move the episode files when the
+     *                        path / root folder changed (AC-10); otherwise
+     *                        only the DB is repointed.
+     */
+    public function updateSeries(int $id, array $data, bool $moveFiles = false): ?array
     {
-        $result = $this->request('PUT', "/api/v3/series/{$id}", [], $data);
+        $result = $this->request('PUT', "/api/v3/series/{$id}", $moveFiles ? ['moveFiles' => 'true'] : [], $data);
         return $result ? $this->normalizeSeries($result) : null;
     }
 
@@ -1633,7 +1638,8 @@ class SonarrClient implements ResetInterface
         if ($params) $url .= '?' . http_build_query($params);
 
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        [$resp, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -1645,17 +1651,17 @@ class SonarrClient implements ResetInterface
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Content-Type: application/json', 'Accept: application/json'],
         ]);
 
-        $resp = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
-
         if ($code < 200 || $code >= 300) {
             $this->logger->warning("SonarrClient {$method} {$path} → HTTP {$code}");
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
+                // A POST that connected and then outlived the budget (SkyHook
+                // lookups, big adds) completes server-side — report it failed
+                // to the caller but don't blind the instance for 10 s.
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                if (!$timedOutAfterConnect) {
+                    $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                }
             }
             return null;
         }
@@ -1688,25 +1694,25 @@ class SonarrClient implements ResetInterface
         $url = rtrim($this->baseUrl, '/') . $path;
 
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        [$resp, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
             CURLOPT_TIMEOUT        => 15,
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_NOSIGNAL       => 1,
             CURLOPT_CUSTOMREQUEST  => $method,
             CURLOPT_POSTFIELDS     => json_encode($body),
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Content-Type: application/json', 'Accept: application/json'],
         ]);
 
-        $resp = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
-
         if ($err) {
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+            if (!$timedOutAfterConnect) {
+                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+            }
             return ['ok' => false, 'error' => "Network error: {$err}"];
         }
         if ((int) $code === 0) {
@@ -1720,7 +1726,7 @@ class SonarrClient implements ResetInterface
         $data    = is_array($decoded) ? $decoded : [];
 
         if ($code < 200 || $code >= 300) {
-            $this->logger->warning("SonarrClient {$method} {$path} → HTTP {$code}", ['response' => self::sanitizeLogBody($resp)]);
+            $this->logger->warning("SonarrClient {$method} {$path} → HTTP {$code}", ['response' => self::sanitizeLogBody(is_string($resp) ? $resp : null)]);
             $this->recordError($method, $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if (isset($data[0]['errorMessage'])) {
                 $messages = array_map(fn($e) => ($e['propertyName'] ?? '') . ' : ' . ($e['errorMessage'] ?? '?'), $data);
@@ -1752,7 +1758,7 @@ class SonarrClient implements ResetInterface
         }
 
         $ch = curl_init();
-        curl_setopt_array($ch, [
+        [$body, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
             CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
@@ -1762,13 +1768,6 @@ class SonarrClient implements ResetInterface
             CURLOPT_NOSIGNAL       => 1,
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Accept: application/json'],
         ]);
-
-        $body = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        $errno     = curl_errno($ch);
-        $connected = curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
-        curl_close($ch);
 
         if ($err || $code !== 200) {
             $this->logger->warning("SonarrClient {$path} → HTTP {$code} {$err}");
@@ -1782,7 +1781,7 @@ class SonarrClient implements ResetInterface
                 // "unreachable" for the breaker window (issue #41's root
                 // failure mode).
                 $this->serviceUnavailable = true;
-                if (!($errno === CURLE_OPERATION_TIMEDOUT && $connected)) {
+                if (!$timedOutAfterConnect) {
                     $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
                 }
             }
@@ -1790,7 +1789,7 @@ class SonarrClient implements ResetInterface
         }
 
         $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
-        return json_decode($body, true);
+        return json_decode((string) $body, true);
     }
 
     /**
@@ -1907,7 +1906,8 @@ class SonarrClient implements ResetInterface
         if ($params) $url .= '?' . http_build_query($params);
 
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        [$resp, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -1917,16 +1917,17 @@ class SonarrClient implements ResetInterface
             CURLOPT_CUSTOMREQUEST  => 'DELETE',
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}"],
         ]);
-        $resp = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
         if ($code < 200 || $code >= 300) {
             $this->logger->warning("SonarrClient DELETE {$path} → HTTP {$code}");
             $this->recordError('DELETE', $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
+                // Same rule as get(): a read timeout after a successful
+                // connect is "busy" (a bulk delete with files can legitimately
+                // outlive the budget), not "down" — don't open the breaker.
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                if (!$timedOutAfterConnect) {
+                    $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                }
             }
             return false;
         }
@@ -1947,7 +1948,8 @@ class SonarrClient implements ResetInterface
         $this->ensureConfig();
         $url = rtrim($this->baseUrl, '/') . $path;
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        [$resp, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -1958,20 +1960,43 @@ class SonarrClient implements ResetInterface
             CURLOPT_POSTFIELDS     => json_encode($body),
             CURLOPT_HTTPHEADER     => ["X-Api-Key: {$this->apiKey}", 'Content-Type: application/json'],
         ]);
-        $resp = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
         if ($code < 200 || $code >= 300) {
             $this->logger->warning("SonarrClient DELETE (body) {$path} → HTTP {$code}");
             $this->recordError('DELETE', $path, (int) $code, is_string($resp) ? $resp : '', $err);
             if ($err !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
-                $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                if (!$timedOutAfterConnect) {
+                    $this->health->markDown(self::SERVICE_KEY, $this->instance?->getSlug());
+                }
             }
             return false;
         }
         $this->health->clear(self::SERVICE_KEY, $this->instance?->getSlug());
         return true;
+    }
+    /**
+     * cURL execution seam (review 2026-11-06, AC-7 / TQ-3): applies the
+     * options, performs the transfer and returns the raw facts the HTTP
+     * helpers classify on. Protected so unit tests can feed fabricated
+     * responses through the classification branches (transport failure vs
+     * non-2xx vs connected-then-timed-out drive different circuit-breaker
+     * decisions) and inspect the exact request each public method sends.
+     *
+     * @param \CurlHandle       $ch
+     * @param array<int, mixed> $opts
+     * @return array{0: string|false, 1: int, 2: string, 3: bool} [body, http code, curl error, timed out after the connection was established]
+     */
+    protected function exec(\CurlHandle $ch, array $opts): array
+    {
+        curl_setopt_array($ch, $opts);
+        /** @var string|false $body */
+        $body = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        $timedOutAfterConnect = curl_errno($ch) === CURLE_OPERATION_TIMEDOUT
+            && (float) curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
+        curl_close($ch);
+
+        return [$body, $code, $err, $timedOutAfterConnect];
     }
 }

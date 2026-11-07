@@ -152,4 +152,15 @@ class MultiInstanceBinderSubscriberTest extends TestCase
         $this->expectException(NotFoundHttpException::class);
         $this->newSubscriber($instances, $radarr, $sonarr)->onKernelRequest($event);
     }
+
+    public function testRunsAfterTheFirewallAndAfterTheRouteGuard(): void
+    {
+        // Review 2026-11-06 (S5): instance slugs were enumerable without login
+        // (404 vs 302) because the binder ran before the firewall (8).
+        $req   = \Symfony\Component\HttpKernel\KernelEvents::REQUEST;
+        $prio  = MultiInstanceBinderSubscriber::getSubscribedEvents()[$req][1];
+        $guard = \App\EventSubscriber\ServiceRouteGuardSubscriber::getSubscribedEvents()[$req][1];
+        $this->assertLessThan(8, $prio);
+        $this->assertLessThan($guard, $prio, 'the route guard still runs before the binder');
+    }
 }

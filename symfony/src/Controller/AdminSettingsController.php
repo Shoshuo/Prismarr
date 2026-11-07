@@ -633,8 +633,22 @@ class AdminSettingsController extends AbstractController
     #[Route('/health/invalidate/{service}', name: 'health_invalidate', methods: ['POST'])]
     public function healthInvalidate(string $service): JsonResponse
     {
-        $service = strtolower($service);
+        $service = strtolower(trim($service));
         $allowed = array_merge(['radarr', 'sonarr'], HealthService::TOGGLEABLE_SERVICES);
+        // AS-6 (review 2026-11-06): the banner posts its display label ("Seerr",
+        // "Radarr 4K"); map labels back to a service id instead of answering
+        // 400 and leaving the breaker set.
+        if ($service === 'seerr') {
+            $service = 'jellyseerr';
+        }
+        if (!in_array($service, $allowed, true)) {
+            foreach ($allowed as $id) {
+                if (str_starts_with($service, $id)) {
+                    $service = $id;
+                    break;
+                }
+            }
+        }
         if (!in_array($service, $allowed, true)) {
             return new JsonResponse(['ok' => false], 400);
         }
@@ -672,8 +686,16 @@ class AdminSettingsController extends AbstractController
         }
 
         $payload = ['dashboard_section_order' => $orderKeys === [] ? null : implode(',', $orderKeys)];
+        // DD-1 (review 2026-11-06): the edit mode only knows the sections it
+        // rendered — ones hidden in an earlier session are not in the DOM and
+        // arrive in neither list. Touch only the keys the client mentioned,
+        // so a Save no longer un-hides everything hidden before.
         foreach (DashboardSections::keys() as $key) {
-            $payload['dashboard_hide_' . $key] = isset($hidden[$key]) ? '1' : null;
+            if (isset($hidden[$key])) {
+                $payload['dashboard_hide_' . $key] = '1';
+            } elseif (in_array($key, $orderKeys, true)) {
+                $payload['dashboard_hide_' . $key] = null;
+            }
         }
 
         $this->settings->setMany($payload);
@@ -1124,6 +1146,17 @@ class AdminSettingsController extends AbstractController
                     continue;
                 }
 
+                // Review 2026-11-06 (S3): a service URL feeds the CSP img-src
+                // list and every outbound call. Refuse what the shared
+                // validator refuses on shape (non-http scheme, CSP-metacharacter
+                // host) and keep the stored value; the link-local check runs
+                // at probe time, where the DNS cost belongs.
+                if ($value !== '' && str_ends_with($key, '_url') && ($reason = HealthService::urlShapeReason($value)) !== null) {
+                    $this->addFlash('warning', $this->translator?->trans('admin.flash.invalid_url', ['key' => $key, 'reason' => $reason])
+                        ?? sprintf('Settings saved, but %s was refused: invalid or blocked URL host (%s).', $key, $reason));
+                    continue;
+                }
+
                 $payload[$key] = $value !== '' ? $value : null;
             }
         }
@@ -1365,6 +1398,8 @@ class AdminSettingsController extends AbstractController
         $applied = 0;
         $skipped = 0;
         $toApply = [];
+        $droppedSecrets = 0;
+        $refusedUrls    = 0;
         foreach ($payload['settings'] as $name => $value) {
             if (!is_string($name) || $name === '') {
                 $skipped++;
@@ -1381,7 +1416,43 @@ class AdminSettingsController extends AbstractController
                 $skipped++;
                 continue;
             }
-            $toApply[$name] = $value === null ? null : (string) $value;
+            // Review 2026-11-06 (S2): only keys the app itself knows. An
+            // unknown key is never read, so importing it is at best noise
+            // and at worst a foothold for a later feature.
+            if (!$this->isImportableKey($name)) {
+                $skipped++;
+                continue;
+            }
+            $str = $value === null ? null : (string) $value;
+            if ($str !== null && str_ends_with($name, '_url')) {
+                if ($str === '') {
+                    $str = null;
+                } elseif (HealthService::urlBlockedReason($str) !== null) {
+                    // S3: the full validator (link-local too) — an imported
+                    // file is untrusted input, one lookup per URL is fine.
+                    $skipped++;
+                    $refusedUrls++;
+                    continue;
+                } else {
+                    // S2: a URL that moves to another host must not take the
+                    // stored secret with it (the next health sweep would
+                    // send it there). The admin re-enters the key.
+                    $current = $this->config->get($name);
+                    if (is_string($current) && $current !== '' && !self::sameHost($current, $str)) {
+                        foreach ($this->secretKeysOfServiceUrl($name) as $secretKey) {
+                            $toApply[$secretKey] = null;
+                            $droppedSecrets++;
+                        }
+                    }
+                }
+            }
+            if ($str !== null && isset(self::DISPLAY_OPTIONS[$name])) {
+                // AS-10: same allow-list as the form (a raw
+                // display_metadata_language with cache-key reserved
+                // characters made every TmdbClient::cachedGet() throw).
+                $str = $this->normalizeDisplayValue(self::DISPLAY_OPTIONS[$name], $str);
+            }
+            $toApply[$name] = $str;
             $applied++;
         }
 
@@ -1423,6 +1494,8 @@ class AdminSettingsController extends AbstractController
                     : null;
                 try {
                     if ($existing !== null) {
+                        // S2: captured BEFORE update() rewrites the URL.
+                        $hostChanged = !self::sameHost($existing->getUrl(), $url);
                         $this->instances->update(
                             $existing,
                             $name,
@@ -1432,6 +1505,13 @@ class AdminSettingsController extends AbstractController
                             (bool) ($row['enabled'] ?? true),
                             $position,
                         );
+                        if ($hostChanged) {
+                            // The stored key must not follow the instance to a
+                            // new host; the admin re-enters it (same rule as
+                            // the flat *_url keys above).
+                            $this->instances->clearApiKey($existing);
+                            $droppedSecrets++;
+                        }
                     } else {
                         $this->instances->create(
                             $type,
@@ -1474,8 +1554,73 @@ class AdminSettingsController extends AbstractController
                 $instancesApplied, $instancesApplied > 1 ? 's' : '', $instancesSkipped,
             ),
         );
+        if ($refusedUrls > 0) {
+            $this->addFlash('warning', $this->translator?->trans('admin.import.invalid_url_skipped', ['count' => $refusedUrls])
+                ?? sprintf('%d service URL(s) refused (invalid or blocked host).', $refusedUrls));
+        }
+        if ($droppedSecrets > 0) {
+            $this->addFlash('warning', $this->translator?->trans('admin.import.secrets_dropped', ['count' => $droppedSecrets])
+                ?? sprintf('%d stored secret(s) cleared because the service URL changed host — re-enter them in Services.', $droppedSecrets));
+        }
 
         return $this->redirectToRoute('admin_settings_index');
+    }
+
+    /**
+     * Keys an import may write (review 2026-11-06, S2): every settings-form
+     * field, the per-service kill switches, the display preferences, the
+     * sidebar / dashboard visibility families, the dashboard order and the
+     * Anything else is skipped and counted.
+     */
+    private function isImportableKey(string $name): bool
+    {
+        static $exact = null;
+        if ($exact === null) {
+            $exact = [];
+            foreach (self::FIELDS as $group) {
+                foreach ($group as $field) {
+                    $exact[$field['key']] = true;
+                }
+            }
+            foreach (HealthService::TOGGLEABLE_SERVICES as $id) {
+                $exact[$id . '_enabled'] = true;
+            }
+            foreach (array_keys(self::DISPLAY_OPTIONS) as $key) {
+                $exact[$key] = true;
+            }
+            $exact['dashboard_section_order']          = true;
+        }
+        if (isset($exact[$name])) {
+            return true;
+        }
+        return (bool) preg_match('/^(?:sidebar_hide|dashboard_hide)_[a-z0-9_]{1,64}$/', $name);
+    }
+
+    /** Case-insensitive host comparison of two service URLs (port and path ignored). */
+    private static function sameHost(string $a, string $b): bool
+    {
+        $ha = parse_url(trim($a), PHP_URL_HOST);
+        $hb = parse_url(trim($b), PHP_URL_HOST);
+        return is_string($ha) && is_string($hb) && strtolower($ha) === strtolower($hb);
+    }
+
+    /**
+     * The secret keys that belong to the same settings group as a `*_url`
+     * key (e.g. prowlarr_url → prowlarr_api_key, qbittorrent_url →
+     * qbittorrent_password).
+     *
+     * @return list<string>
+     */
+    private function secretKeysOfServiceUrl(string $urlKey): array
+    {
+        foreach (self::FIELDS as $group) {
+            $keys = array_map(static fn(array $f) => $f['key'], $group);
+            if (!in_array($urlKey, $keys, true)) {
+                continue;
+            }
+            return array_values(array_filter($keys, fn(string $k) => $this->isSensitiveKey($k)));
+        }
+        return [];
     }
 
     private function isSensitiveKey(string $name): bool

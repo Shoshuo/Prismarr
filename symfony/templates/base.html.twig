@@ -45,6 +45,17 @@
     // `var BASE = window.BASE_PATH;` reads the same value instead of each
     // re-evaluating app.request.getBasePath() in its own script block.
     window.BASE_PATH = {{ app.request.getBasePath()|json_encode|raw }};
+    // A page script registers an init that returns its teardown; the teardown
+    // runs once, on the next Turbo render, so timers and document listeners
+    // never outlive the page that created them (review 2026-11-06, DC-2 / MT-7).
+    window.registerPageLifecycle = function (init) {
+      var teardown = init();
+      if (typeof teardown !== 'function') return;
+      document.addEventListener('turbo:before-render', function cleanup() {
+        document.removeEventListener('turbo:before-render', cleanup);
+        teardown();
+      });
+    };
 
     // The global search dropdown renders its subtitle badge purely
     // client-side (results are built from a JSON payload, not Twig), so the
@@ -1624,8 +1635,13 @@
       var spinner   = document.getElementById('global-search-spinner');
       var clearBtn  = document.getElementById('global-search-clear');
       if (!input || !resultsDiv) return;
-      if (input.dataset.init) return;
-      input.dataset.init = '1';
+      // H6 (review 2026-11-06): a Turbo snapshot is cloneNode(true) — the
+      // data-init attribute survives the clone but the listeners do not, so
+      // the restored search box was dead after Back/Forward. Mark the LIVE
+      // element in a WeakSet (never cloned) instead.
+      if (!window._prismarrBound) window._prismarrBound = new WeakSet();
+      if (window._prismarrBound.has(input)) return;
+      window._prismarrBound.add(input);
 
       var RECENT_KEY = 'prismarrSearchRecent';
       var RECENT_MAX = 5;
@@ -1922,6 +1938,8 @@
 
       // ── Clear button ──────────────────────────────────────────────
       clearBtn.addEventListener('click', function () {
+        if (currentReq) { currentReq.abort(); currentReq = null; }
+        if (onlineReq)  { onlineReq.abort();  onlineReq  = null; }
         input.value = '';
         clearBtn.style.display = 'none';
         lastLocal = []; lastOnline = [];
@@ -1972,13 +1990,22 @@
       });
 
       // Close on outside click — guard against orphaned targets left behind
-      // by a re-render inside the results panel.
-      document.addEventListener('click', function (e) {
+      // by a re-render inside the results panel. H6: the document-level pair
+      // is re-bound per init (each init owns a fresh input) and the previous
+      // pair is removed first, so Back/Forward doesn't stack handlers aimed
+      // at detached inputs.
+      if (window._prismarrSearchDocHandlers) {
+        document.removeEventListener('click', window._prismarrSearchDocHandlers.click);
+        document.removeEventListener('keydown', window._prismarrSearchDocHandlers.keydown);
+      }
+      var onSearchDocClick = function (e) {
         if (!document.body.contains(e.target)) return;
-        if (!document.getElementById('global-search-wrap').contains(e.target)) {
+        var wrap = document.getElementById('global-search-wrap');
+        if (wrap && !wrap.contains(e.target)) {
           closeResults();
         }
-      });
+      };
+      document.addEventListener('click', onSearchDocClick);
 
       // ── Keyboard ──────────────────────────────────────────────────
       input.addEventListener('keydown', function (e) {
@@ -2008,13 +2035,16 @@
       });
 
       // Ctrl+K / Cmd+K global shortcut
-      document.addEventListener('keydown', function (e) {
+      var onSearchDocKeydown = function (e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
           e.preventDefault();
+          if (!input.isConnected) return;
           input.focus();
           input.select();
         }
-      });
+      };
+      document.addEventListener('keydown', onSearchDocKeydown);
+      window._prismarrSearchDocHandlers = { click: onSearchDocClick, keydown: onSearchDocKeydown };
     }
     document.addEventListener('turbo:load', initGlobalSearch);
     document.addEventListener('DOMContentLoaded', initGlobalSearch);
@@ -2034,6 +2064,7 @@
       // qaSelectedSlug tracks the slug currently chosen in #qa-instance —
       // doAdd() reads it instead of the legacy DEFAULT_*_SLUG.
       var qaSelectedSlug = null;
+      var qaSeq = 0; // MT-9: a slow resolve for a previous item must not overwrite the picker
       // Issue #5 — slug → preferred quality profile id, from the resolve
       // candidates. fillSelects() preselects the matching option so quick-add
       // honors each instance's default instead of the first profile returned.
@@ -2146,9 +2177,11 @@
         // falls back to default-only behaviour so the modal still works.
         var resolveType = isFilm ? 'movie' : 'tv';
         var resolveId   = qaItem.tmdbId || qaItem.id;
+        var seq = ++qaSeq;
         fetch(BASE + '/decouverte/resolve/' + resolveType + '/' + resolveId)
           .then(function (r) { return r.json(); })
           .then(function (resolved) {
+            if (seq !== qaSeq) return;
             var defaultSlug = isFilm ? DEFAULT_RADARR_SLUG : DEFAULT_SONARR_SLUG;
             var owners      = resolved.instances || [];
             var candidates  = resolved.candidates || [];
@@ -2181,6 +2214,7 @@
             }
           })
           .catch(function () {
+            if (seq !== qaSeq) return;
             // Network/resolve failure — degrade to legacy default-only flow.
             var slug = isFilm ? DEFAULT_RADARR_SLUG : DEFAULT_SONARR_SLUG;
             qaSelectedSlug = slug;
@@ -3293,8 +3327,12 @@
 
       function bindToggle() {
         var btn = document.getElementById('sidebar-toggle-btn');
-        if (!btn || btn.dataset.init) return;
-        btn.dataset.init = '1';
+        if (!btn) return;
+        // H6: same WeakSet marker as the search box (data-init is cloned
+        // into Turbo snapshots, listeners are not).
+        if (!window._prismarrBound) window._prismarrBound = new WeakSet();
+        if (window._prismarrBound.has(btn)) return;
+        window._prismarrBound.add(btn);
         btn.addEventListener('click', function () {
           var isCollapsed = document.documentElement.classList.toggle('sidebar-collapsed');
           try {

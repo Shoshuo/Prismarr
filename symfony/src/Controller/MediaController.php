@@ -655,7 +655,10 @@ class MediaController extends AbstractController
         if (isset($data['quality'])) {
             $current['quality'] = $data['quality'];
         }
-        if (isset($data['languages'])) {
+        // An empty list is never a user intent (the picker always had at
+        // least the stored languages); storing [] turned the file "Unknown"
+        // and changed its custom-format score (review 2026-11-06, H5).
+        if (!empty($data['languages']) && is_array($data['languages'])) {
             $current['languages'] = $data['languages'];
         }
         if (array_key_exists('releaseGroup', $data)) {
@@ -680,6 +683,17 @@ class MediaController extends AbstractController
     public function filmsQualityDefinitions(): JsonResponse
     {
         return $this->json($this->radarr->getQualityDefinitions());
+    }
+
+    /**
+     * Review 2026-11-06 (H4): the file manager's language picker must use
+     * THIS Radarr's language table (ids differ between Radarr and Sonarr,
+     * and the old literal list mapped 7 of 12 names to the wrong id).
+     */
+    #[Route('/films/languages', name: 'films_languages_json', methods: ['GET'])]
+    public function filmsLanguagesJson(): JsonResponse
+    {
+        return $this->json($this->radarr->getLanguages());
     }
 
     // ── Queue ─────────────────────────────────────────────────────────────────
@@ -770,6 +784,7 @@ class MediaController extends AbstractController
         if (isset($data['rootFolderPath'])) $changes['rootFolderPath'] = $data['rootFolderPath'];
         if (isset($data['tags'])) $changes['tags'] = $data['tags'];
         if (isset($data['applyTags'])) $changes['applyTags'] = $data['applyTags']; // add, remove, replace
+        if (isset($data['moveFiles'])) $changes['moveFiles'] = (bool) $data['moveFiles']; // AC-10: move the files with the root folder
         $ok = $this->radarr->bulkUpdateMovies($ids, $changes);
         if ($ok) {
             $this->invalidateRadarrLibrary();
@@ -936,12 +951,11 @@ class MediaController extends AbstractController
         $tvdbId = (int) ($data['tvdbId'] ?? 0);
         if (!$tvdbId) return $this->json(['ok' => false, 'error' => 'tvdbId manquant']);
 
-        // Lookup to retrieve full data
-        $lookup = $this->sonarr->lookupSeries('tvdb:' . $tvdbId);
-        if (empty($lookup)) return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.series_not_found')]);
-
+        // Lookup to retrieve full data. One raw lookup is enough (review
+        // 2026-11-06, AC-9: the normalized + raw pair cost two SkyHook round
+        // trips on a 4 s budget and only the raw payload is used).
         $lookupRaw = $this->sonarr->lookupSeriesRaw('tvdb:' . $tvdbId);
-        if (empty($lookupRaw)) return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.series_data_missing')]);
+        if (empty($lookupRaw)) return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.series_not_found')]);
         $raw = $lookupRaw[0];
 
         // Apply options — issue #5: client choice wins, else this instance's
@@ -962,6 +976,13 @@ class MediaController extends AbstractController
         }
         $raw['qualityProfileId'] = $qualityProfileId;
         $raw['rootFolderPath'] = $data['rootFolderPath'] ?? '/jellyfin/Series';
+        // Library import (review 2026-11-06, H1): adopt the scanned folder.
+        // Without an explicit path Sonarr's AddSeriesService builds
+        // RootFolderPath + its own naming format, creates that (empty)
+        // folder and leaves the real files unmanaged. Mirrors filmAdd().
+        if (!empty($data['path']) && is_string($data['path'])) {
+            $raw['path'] = $data['path'];
+        }
         $raw['monitored'] = (bool) ($data['monitored'] ?? true);
         $raw['seasonFolder'] = (bool) ($data['seasonFolder'] ?? true);
         $raw['seriesType'] = $data['seriesType'] ?? $raw['seriesType'] ?? 'standard';
@@ -1023,6 +1044,64 @@ class MediaController extends AbstractController
         ]);
     }
 
+    /**
+     * MT-10 (review 2026-11-06): one RefreshSeries command with every id —
+     * the page used to POST /series/{id}/refresh once per series (300
+     * concurrent requests on 4 workers) and count rejections as done.
+     */
+    #[Route('/series/bulk/refresh', name: 'series_bulk_refresh', methods: ['POST'])]
+    public function seriesBulkRefresh(Request $request): JsonResponse
+    {
+        $ids = self::positiveIntList($request->toArray()['seriesIds'] ?? []);
+        if ($ids === []) return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.no_series_selected')]);
+        $result = $this->sonarr->sendCommand('RefreshSeries', ['seriesIds' => $ids]);
+        if ($result === null) return $this->jsonClientError('Sonarr', $this->sonarr, $this->translator->trans('media.api.network_error'), 502);
+        return $this->json(['ok' => true, 'cmdId' => $result['id'] ?? null]);
+    }
+
+    /**
+     * MT-10: Sonarr has no multi-series search command, so one SeriesSearch
+     * per id is issued HERE, sequentially (not as N concurrent browser
+     * POSTs), and a rejected command counts as failed, not "launched".
+     */
+    #[Route('/series/bulk/search', name: 'series_bulk_search', methods: ['POST'])]
+    public function seriesBulkSearch(Request $request): JsonResponse
+    {
+        $ids = array_slice(self::positiveIntList($request->toArray()['seriesIds'] ?? []), 0, 500);
+        if ($ids === []) return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.no_series_selected')]);
+        $cmdIds = [];
+        $failed = 0;
+        foreach ($ids as $id) {
+            $result = $this->sonarr->sendCommand('SeriesSearch', ['seriesId' => $id]);
+            if ($result === null) {
+                $failed++;
+                continue;
+            }
+            $cmdIds[] = (int) ($result['id'] ?? 0);
+        }
+        if ($cmdIds === []) {
+            return $this->jsonClientError('Sonarr', $this->sonarr, $this->translator->trans('media.api.network_error'), 502);
+        }
+        return $this->json(['ok' => true, 'launched' => count($cmdIds), 'failed' => $failed, 'cmdIds' => $cmdIds, 'cmdId' => $cmdIds[0]]);
+    }
+
+    /**
+     * @param mixed $raw
+     * @return list<int>
+     */
+    private static function positiveIntList(mixed $raw): array
+    {
+        if (!is_array($raw)) return [];
+        $out = [];
+        foreach ($raw as $v) {
+            if (is_int($v) || (is_string($v) && ctype_digit($v))) {
+                $i = (int) $v;
+                if ($i > 0 && !in_array($i, $out, true)) $out[] = $i;
+            }
+        }
+        return $out;
+    }
+
     #[Route('/series/bulk/edit', name: 'series_bulk_edit', methods: ['POST'])]
     public function seriesBulkEdit(Request $request): JsonResponse
     {
@@ -1039,6 +1118,7 @@ class MediaController extends AbstractController
         if (isset($data['rootFolderPath'])) $payload['rootFolderPath'] = $data['rootFolderPath'];
         if (isset($data['tags'])) $payload['tags'] = array_map('intval', $data['tags']);
         if (isset($data['applyTags'])) $payload['applyTags'] = $data['applyTags'];
+        if (isset($data['moveFiles'])) $payload['moveFiles'] = (bool) $data['moveFiles']; // AC-10
 
         $result = $this->sonarr->bulkEditSeries($payload);
         if ($result['ok'] ?? false) {
@@ -1105,38 +1185,45 @@ class MediaController extends AbstractController
     #[Route('/films/queue', name: 'films_queue', methods: ['GET'])]
     public function filmQueue(): JsonResponse
     {
-        return $this->json($this->radarr->getQueue());
+        $queue = $this->radarr->getQueue();
+        if ($queue === [] && $this->radarr->getLastError() !== null) {
+            // C1: [] on transport failure is an outage, not an empty queue —
+            // the page must not paint every queued card "imported".
+            return $this->jsonClientError('Radarr', $this->radarr, $this->translator->trans('media.api.network_error'), 502);
+        }
+        return $this->json($queue);
     }
 
     #[Route('/films/queue/{queueId}/import', name: 'films_queue_import', methods: ['POST'])]
     public function filmQueueImport(int $queueId): JsonResponse
     {
         try {
-            // Fetch queue info to get quality + languages + path
+            // Fetch queue info to get the output path + download id
             $queue = $this->radarr->getQueue();
+            if ($queue === [] && $this->radarr->getLastError() !== null) {
+                // C1: the client answers [] on transport failure — that is an
+                // outage, not "item not found".
+                return $this->jsonClientError('Radarr', $this->radarr, $this->translator->trans('media.api.network_error'), 502);
+            }
             $item = null;
             foreach ($queue as $q) {
                 if (($q['id'] ?? null) == $queueId) { $item = $q; break; }
             }
-            if (!$item || !$item['outputPath']) {
+            $path       = is_string($item['outputPath'] ?? null) ? trim($item['outputPath']) : '';
+            $downloadId = is_string($item['downloadId'] ?? null) ? trim($item['downloadId']) : '';
+            if ($item === null || ($path === '' && $downloadId === '')) {
                 return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.queue_item_not_found')]);
             }
 
-            // Fetch the raw queue data to get quality/languages in Radarr format
-            $rawQueue = $this->radarr->getRawQueue();
-            $rawItem = null;
-            foreach ($rawQueue as $r) {
-                if (($r['id'] ?? null) == $queueId) { $rawItem = $r; break; }
-            }
-
-            $files = [[
-                'path'      => $item['outputPath'],
-                'movieId'   => $item['movieId'],
-                'quality'   => $rawItem['quality'] ?? null,
-                'languages' => $rawItem['languages'] ?? [['id' => 1, 'name' => 'English']],
-            ]];
-
-            $result = $this->radarr->manualImport($files);
+            // Review 2026-11-06 (H3): go through Radarr's manual-import
+            // preview (by downloadId) so each file is matched and enriched by
+            // Radarr itself. Posting outputPath (a folder for multi-file
+            // releases) made the command "complete" with a failed per-file
+            // import, and the UI then deleted the queue item.
+            $result = $this->radarr->manualImportFromQueueItem(
+                $path !== '' ? $path : null,
+                $downloadId !== '' ? $downloadId : null,
+            );
             return $this->json($result);
         } catch (\Throwable $e) {
             $this->logger->warning('Media filmQueueImport failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
@@ -1227,7 +1314,10 @@ class MediaController extends AbstractController
     public function filmCollectionMonitor(int $id, Request $request): JsonResponse
     {
         $monitored = (bool) ($request->toArray()['monitored'] ?? true);
-        $ok        = $this->radarr->updateCollection($id, $monitored);
+        // Review 2026-11-06 (H2): the bulk endpoint updates only the fields
+        // it is given (null guards); PUT /collection/{id} with a partial
+        // body wiped the collection's profile/root folder/tags.
+        $ok        = $this->radarr->bulkUpdateCollections([$id], $monitored);
         return $this->json(['ok' => $ok, 'monitored' => $monitored]);
     }
 
@@ -1310,7 +1400,8 @@ class MediaController extends AbstractController
             return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.raw_movie_failed')], 500);
         }
         $merged = array_merge($fullMovie, $raw);
-        $updated = $this->radarr->updateMovie($id, $merged);
+        // AC-10: a path change without moveFiles only repoints the DB.
+        $updated = $this->radarr->updateMovie($id, $merged, (bool) ($data['moveFiles'] ?? false));
         if ($updated !== null) {
             $this->invalidateRadarrLibrary();
         }
@@ -1768,7 +1859,9 @@ class MediaController extends AbstractController
         if (!$file) return $this->json(['ok' => false, 'error' => $this->translator->trans('media.api.file_not_found')]);
 
         if (isset($data['quality'])) $file['quality'] = $data['quality'];
-        if (isset($data['languages'])) $file['languages'] = $data['languages'];
+        // isset([]) is true — an empty list must not wipe the stored
+        // languages (review 2026-11-06, H5).
+        if (!empty($data['languages']) && is_array($data['languages'])) $file['languages'] = $data['languages'];
         if (isset($data['releaseGroup'])) $file['releaseGroup'] = $data['releaseGroup'];
         if (isset($data['releaseType'])) $file['releaseType'] = $data['releaseType'];
         if (array_key_exists('indexerFlags', $data)) $file['indexerFlags'] = (int) $data['indexerFlags'];
@@ -1780,6 +1873,13 @@ class MediaController extends AbstractController
     public function seriesQualityDefinitions(): JsonResponse
     {
         return $this->json($this->sonarr->getQualityDefinitions());
+    }
+
+    /** Review 2026-11-06 (H4): Sonarr's own language table for the episode file manager. */
+    #[Route('/series/languages', name: 'series_languages_json', methods: ['GET'])]
+    public function seriesLanguagesJson(): JsonResponse
+    {
+        return $this->json($this->sonarr->getLanguages());
     }
 
     #[Route('/series/file/{id}/reassign', name: 'series_file_reassign', methods: ['POST'], requirements: ['id' => '\d+'])]
@@ -1889,7 +1989,8 @@ class MediaController extends AbstractController
         if (isset($data['tags'])) $series['tags'] = $data['tags'];
         if (isset($data['path'])) $series['path'] = $data['path'];
 
-        $result = $this->sonarr->updateSeries($id, $series);
+        // AC-10: a path change without moveFiles only repoints the DB.
+        $result = $this->sonarr->updateSeries($id, $series, (bool) ($data['moveFiles'] ?? false));
         if ($result !== null) {
             $this->invalidateSonarrLibrary();
         }
