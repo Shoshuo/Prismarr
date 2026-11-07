@@ -246,7 +246,7 @@
             var msg = cmd.message || '';
             if (st === 'completed') {
               clearInterval(pollTimer);
-              var dlMatch = msg.match(/(\d+) reports downloaded/);
+              var dlMatch = msg.match(/(\d+)\s+reports?\s+(?:downloaded|grabbed)/i);
               var dlCount = dlMatch ? parseInt(dlMatch[1]) : 0;
               if (dlCount > 0) {
                 btn.innerHTML = SVG_OK;
@@ -316,7 +316,7 @@
             clearInterval(pollTimer);
             btn.disabled = false;
             btn.innerHTML = SEARCH_ICON_SM + ' ' + FM_I18N.search_all_label;
-            var downloaded = msg.match(/(\d+) reports downloaded/);
+            var downloaded = msg.match(/(\d+)\s+reports?\s+(?:downloaded|grabbed)/i);
             var searchedMatch = msg.match(/(\d+) movies/);
             var dlCount = downloaded ? parseInt(downloaded[1]) : 0;
             var searchedCount = searchedMatch ? parseInt(searchedMatch[1]) : ids.length;

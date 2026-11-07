@@ -237,6 +237,11 @@ rotate or back them up manually.
 | `APP_ENV` | `prod` | Switch to `dev` for local development only |
 | `PRISMARR_PORT` | `7070` | Internal listening port |
 | `TRUSTED_PROXIES` | `127.0.0.1,REMOTE_ADDR` | Peers whose `X-Forwarded-*` headers are believed. `REMOTE_ADDR` means "whichever peer connects directly", re-resolved on every request (also in worker mode), so a proxy / cloudflared on the Docker network works out of the box. It also means a client that can reach the port **directly** may forward a fake IP or scheme for itself (login throttling keys on that IP) — when the port is reachable from untrusted networks, pin the value to your proxy's address or CIDR (e.g. `172.18.0.0/16`) or `PRIVATE_SUBNETS` |
+| `DEFAULT_URI` | `http://localhost:7070` | Base URL used when a link has to be generated outside a request (CLI commands, Messenger workers) |
+| `DATABASE_URL` | `sqlite:///%kernel.project_dir%/var/data/prismarr.db` | Doctrine DSN — SQLite inside the data volume by default |
+| `MESSENGER_TRANSPORT_DSN` | `doctrine://default` | Queue transport for the background refreshes (library, Bazarr, search vocabulary) |
+| `MERCURE_URL` / `MERCURE_PUBLIC_URL` | `http://localhost:7070/.well-known/mercure` | Internal and browser-facing URLs of the embedded Mercure hub; point the public one at your external origin behind a proxy |
+| `MERCURE_JWT_SECRET` | _(generated)_ | Hub signing secret — auto-generated on first boot into `.env.local`; 32+ characters if you set it yourself |
 | `TZ` | `UTC` | Container time zone (e.g. `Europe/Paris`, `Pacific/Honolulu`). Drives both the OS clock and the PHP date helpers — see issue [#12](https://github.com/Shoshuo/Prismarr/issues/12) |
 | `PHP_MEMORY_LIMIT` | `1024M` | PHP memory ceiling per request. Bump (e.g. `2048M`, `-1` for unlimited) if you have a very large Radarr / Sonarr library — see issue [#13](https://github.com/Shoshuo/Prismarr/issues/13) |
 | `PHP_MAX_EXECUTION_TIME` | `120` | PHP wall-time ceiling per request, in seconds. Bump alongside `PHP_MEMORY_LIMIT` if the films / series page times out |

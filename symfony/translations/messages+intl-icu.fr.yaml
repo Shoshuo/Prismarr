@@ -350,8 +350,8 @@ dashboard:
     unknown_title: Inconnu
     empty: Aucun flux Plex en cours
     summary:
-      direct_play: '{count} Direct Play'
-      direct_stream: '{count} Direct Stream'
+      direct_play: '{count} en lecture directe'
+      direct_stream: '{count} en flux direct'
       transcode: '{count} Transcodage'
     bandwidth:
       total: Bande passante totale
@@ -362,8 +362,8 @@ dashboard:
       paused: En pause
       buffering: Mise en mémoire tampon
     decision:
-      direct_play: Direct Play
-      direct_stream: Direct Stream
+      direct_play: Lecture directe
+      direct_stream: Flux direct
       transcode: Transcodage
     track:
       video: 'Vidéo :'
@@ -4474,10 +4474,10 @@ prowlarr:
     test_all_in_progress: 'Test en cours…'
     test_all_ok: Tous OK
     test_all_errors: Erreurs détectées
-    sync_apps_btn: Sync apps
+    sync_apps_btn: Synchroniser les apps
     sync_apps_title: Synchroniser avec Radarr/Sonarr
     sync_in_progress: 'Sync…'
-    sync_done: Synced!
+    sync_done: Synchronisé !
     sync_failed: Échec
     filter_all: Tous
     filter_enabled: Actifs
@@ -4486,7 +4486,7 @@ prowlarr:
     filter_usenet: Usenet
     col_name: Nom
     col_protocol: Protocole
-    col_privacy: Privacy
+    col_privacy: Confidentialité
     col_priority: Priorité
     col_functions: Fonctions
     col_categories: Catégories
@@ -4525,7 +4525,7 @@ prowlarr:
     modal_edit_title: Modifier l'indexeur
     modal_search_placeholder: 'Rechercher (ex: YGG, 1337x…)'
     filter_protocol: Protocole
-    filter_privacy: Privacy
+    filter_privacy: Confidentialité
     filter_lang: Langue
     filter_category: Catégorie
     field_name_label: Nom
@@ -4545,7 +4545,7 @@ prowlarr:
     info_label_description: Description
     info_label_language: Langue
     info_label_protocol: Protocole
-    info_label_privacy: Privacy
+    info_label_privacy: Confidentialité
     info_label_urls: URL(s)
     info_search_capabilities: Capacités de recherche
     info_cap_rss: RSS
@@ -4614,7 +4614,7 @@ prowlarr:
     sync_disabled: Désactivé
     sync_add_only: Ajout uniquement
     sync_full: Sync complète
-    sync_level_label: Sync Level
+    sync_level_label: Niveau de synchro
     field_name: Nom
     add_modal_title: Ajouter une application
     edit_modal_title: Modifier
@@ -4754,9 +4754,9 @@ prowlarr:
     info_version: Version
     info_branch: Branche
     info_os: OS
-    info_runtime: Runtime
+    info_runtime: Environnement d'exécution
     info_started: Démarrage
-    info_appdata: App Data
+    info_appdata: Données de l'app
     info_migration: Migration
     info_authentication: Authentification
     documentation: Documentation
@@ -5415,7 +5415,7 @@ jellyseerr:
       changes_security: Sécurité
       changes_features: Nouveautés
       changes_fixes: Corrections
-      changes_refactor: Refactoring
+      changes_refactor: Refactorisation
       changes_performance: Performance
     settings_users:
       title: Paramètres utilisateur

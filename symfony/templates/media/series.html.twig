@@ -2038,6 +2038,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
   var queueCount = document.getElementById('queue-count');
 
   function fmtSize(bytes) {
+    if (window.prismarrBytes) return window.prismarrBytes(bytes); // MH-3: honour the byte-unit preference
     if (!bytes) return '0';
     var gb = bytes / 1073741824;
     if (gb >= 1) return gb.toFixed(1) + ' ' + SERIES_I18N.gb_suffix;
@@ -2795,6 +2796,14 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               return;
             }
             var eventLabels = {
+              // MT-11 (review 2026-11-06): Sonarr v4 returns string enums; the numeric keys are the legacy v3 form.
+              grabbed: {{ 'media.series_history.event_grabbed'|trans|json_encode|raw }},
+              downloadFolderImported: {{ 'media.series_history.event_imported'|trans|json_encode|raw }},
+              seriesFolderImported: {{ 'media.series_history.event_imported'|trans|json_encode|raw }},
+              episodeFileRenamed: {{ 'media.series_history.event_renamed'|trans|json_encode|raw }},
+              episodeFileDeleted: {{ 'media.series_history.event_deleted'|trans|json_encode|raw }},
+              downloadFailed: {{ 'media.series_history.event_failed'|trans|json_encode|raw }},
+              downloadIgnored: {{ 'media.series_history.event_failed'|trans|json_encode|raw }},
               1: {{ 'media.series_history.event_grabbed'|trans|json_encode|raw }},
               2: {{ 'media.series_history.event_imported'|trans|json_encode|raw }},
               3: {{ 'media.series_history.event_renamed'|trans|json_encode|raw }},
@@ -2804,7 +2813,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
               8: {{ 'media.series_history.event_grabbed'|trans|json_encode|raw }},
               9: {{ 'media.series_history.event_failed'|trans|json_encode|raw }}
             };
-            var eventColors = {1:'success',2:'primary',3:'secondary',4:'danger',6:'warning',7:'danger',8:'success',9:'warning'};
+            var eventColors = {grabbed:'success',downloadFolderImported:'primary',seriesFolderImported:'primary',episodeFileRenamed:'secondary',episodeFileDeleted:'danger',downloadFailed:'danger',downloadIgnored:'warning',1:'success',2:'primary',3:'secondary',4:'danger',6:'warning',7:'danger',8:'success',9:'warning'};
             var html = '<div class="table-responsive" style="max-height:calc(100% - 1rem);overflow-y:auto"><table class="table table-sm table-vcenter table-hover mb-0" style="font-size:.78rem"><thead class="sticky-top" style="background:var(--tblr-bg-surface)"><tr><th>' + esc(SERIES_I18N.d_col_episode) + '</th><th>' + esc(SERIES_I18N.d_col_action) + '</th><th>' + esc(SERIES_I18N.d_col_source) + '</th><th>' + esc(SERIES_I18N.d_col_quality) + '</th><th>' + esc(SERIES_I18N.d_col_date) + '</th></tr></thead><tbody>';
             seasonHist.slice(0, 50).forEach(function(h) {
               var epNum = h.episode ? 'E' + String(h.episode.episodeNumber || 0).padStart(2,'0') : '?';
@@ -3280,6 +3289,14 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         return;
       }
       var eventLabels = {
+        // MT-11 (review 2026-11-06): Sonarr v4 returns string enums; the numeric keys are the legacy v3 form.
+        grabbed: {{ 'media.series_history.event_grabbed'|trans|json_encode|raw }},
+        downloadFolderImported: {{ 'media.series_history.event_imported'|trans|json_encode|raw }},
+        seriesFolderImported: {{ 'media.series_history.event_imported'|trans|json_encode|raw }},
+        episodeFileRenamed: {{ 'media.series_history.event_renamed'|trans|json_encode|raw }},
+        episodeFileDeleted: {{ 'media.series_history.event_deleted'|trans|json_encode|raw }},
+        downloadFailed: {{ 'media.series_history.event_failed'|trans|json_encode|raw }},
+        downloadIgnored: {{ 'media.series_history.event_failed'|trans|json_encode|raw }},
         1: {{ 'media.series_history.event_grabbed'|trans|json_encode|raw }},
         2: {{ 'media.series_history.event_imported'|trans|json_encode|raw }},
         3: {{ 'media.series_history.event_renamed'|trans|json_encode|raw }},
@@ -3289,7 +3306,7 @@ body.density-compact #modal-serie .modal-body .card-header { padding-top: .4rem 
         8: {{ 'media.series_history.event_grabbed'|trans|json_encode|raw }},
         9: {{ 'media.series_history.event_failed'|trans|json_encode|raw }}
       };
-      var eventColors = {1:'success',2:'primary',3:'secondary',4:'danger',6:'warning',7:'danger',8:'success',9:'warning'};
+      var eventColors = {grabbed:'success',downloadFolderImported:'primary',seriesFolderImported:'primary',episodeFileRenamed:'secondary',episodeFileDeleted:'danger',downloadFailed:'danger',downloadIgnored:'warning',1:'success',2:'primary',3:'secondary',4:'danger',6:'warning',7:'danger',8:'success',9:'warning'};
       var html = '<div class="table-responsive" style="max-height:calc(100% - 1rem);overflow-y:auto"><table class="table table-sm table-vcenter table-hover mb-0" style="font-size:.78rem"><thead class="sticky-top" style="background:var(--tblr-bg-surface)"><tr><th>' + esc(SERIES_I18N.d_col_episode) + '</th><th>' + esc(SERIES_I18N.d_col_action) + '</th><th>' + esc(SERIES_I18N.d_col_source) + '</th><th>' + esc(SERIES_I18N.d_col_quality) + '</th><th>' + esc(SERIES_I18N.d_col_date) + '</th></tr></thead><tbody>';
       history.slice(0, 100).forEach(function(h) {
         var epLabel = h.episode ? 'S' + String(h.episode.seasonNumber || 0).padStart(2,'0') + 'E' + String(h.episode.episodeNumber || 0).padStart(2,'0') : '—';
