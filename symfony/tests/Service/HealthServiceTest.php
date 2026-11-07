@@ -430,4 +430,21 @@ class HealthServiceTest extends TestCase
     {
         $this->assertNull(HealthService::urlBlockedReason('https://api.themoviedb.org/3/configuration'));
     }
+
+    // ─── Review 2026-11-06 (S3): host syntax ───
+
+    public function testUrlBlockedReasonRejectsHostsWithCspOrHeaderMetacharacters(): void
+    {
+        self::assertSame('host', HealthService::urlBlockedReason("http://x.lan;script-src * 'unsafe-inline';x/"));
+        self::assertSame('host', HealthService::urlBlockedReason('http://x.lan,evil/'));
+        self::assertSame('host', HealthService::urlBlockedReason('http://x.lan evil/'));
+    }
+
+    public function testUrlBlockedReasonAcceptsDockerNamesUnderscoresAndIpv6Literals(): void
+    {
+        self::assertNull(HealthService::urlBlockedReason('http://host.docker.internal:7878'));
+        self::assertNull(HealthService::urlBlockedReason('http://my_radarr:7878/'));
+        self::assertNull(HealthService::urlBlockedReason('http://[::1]:8080/'));
+        self::assertNull(HealthService::urlBlockedReason('https://tower.local./'));
+    }
 }

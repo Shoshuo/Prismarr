@@ -174,6 +174,10 @@
   var SVG_FAIL = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
   var SEARCH_ICON_SM = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
 
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
   var banner = document.getElementById('page-banner');
   function showBanner(html, type) {
     banner.className = 'alert alert-' + (type || 'info') + ' mb-3';
@@ -239,7 +243,7 @@
               btn.disabled = false;
               setTimeout(function() { btn.innerHTML = SVG_SEARCH; }, 3000);
             } else if (msg) {
-              statusEl.innerHTML = '<span class="text-muted">' + msg + '</span>';
+              statusEl.innerHTML = '<span class="text-muted">' + esc(msg) + '</span>';
             }
           });
         }, 1500);
@@ -318,9 +322,9 @@
               progressText = FM_I18N.search_progress_tpl
                 .replace('__DONE__', filmsDone)
                 .replace('__TOTAL__', ids.length)
-                .replace('__TITLE__', lastFilmSeen);
+                .replace('__TITLE__', esc(lastFilmSeen));
             } else if (msg) {
-              progressText = msg;
+              progressText = esc(msg);
             } else {
               progressText = FM_I18N.search_in_progress_tpl.replace('__SEC__', elapsed);
             }

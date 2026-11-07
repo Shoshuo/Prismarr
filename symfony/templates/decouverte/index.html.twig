@@ -1798,6 +1798,9 @@
   }
 
   function loadDetail(type, id) {
+    // DD-15: the pair also comes from ?detail=<type>/<id> in the URL — never
+    // let it shape the fetched path (`..\../logout` was an authenticated GET).
+    if (!/^(movie|tv)$/.test(String(type)) || !/^\d{1,12}$/.test(String(id))) return;
     openDetailModal();
     fetch(BASE + '/decouverte/detail/' + type + '/' + id, { credentials: 'same-origin' })
       .then(function(r) { return r.json(); })
