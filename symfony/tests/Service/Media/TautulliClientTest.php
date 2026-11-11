@@ -184,6 +184,51 @@ class TautulliClientTest extends TestCase
         self::assertSame(0.0, $out['sessions'][0]['progressPercent']);
     }
 
+    /**
+     * "Ends at" on the session card: seconds left = stream_duration − view_offset,
+     * the same sum Tautulli 2.19's own "Ends At" uses.
+     */
+    public function testRemainingSecondsUsesStreamDurationMinusViewOffset(): void
+    {
+        $data = $this->fixtureData();
+        $data['sessions'][0]['duration']        = '7200000';
+        $data['sessions'][0]['stream_duration'] = '7000000';
+        $data['sessions'][0]['view_offset']     = '1000000';
+        $out = TautulliClient::normalizeActivity($data);
+        self::assertSame(6000, $out['sessions'][0]['remainingSeconds']);
+    }
+
+    public function testRemainingSecondsFallsBackToDuration(): void
+    {
+        $data = $this->fixtureData();
+        $data['sessions'][0]['duration']        = '7200000';
+        $data['sessions'][0]['stream_duration'] = '';
+        $data['sessions'][0]['view_offset']     = '0';
+        $out = TautulliClient::normalizeActivity($data);
+        self::assertSame(7200, $out['sessions'][0]['remainingSeconds']);
+    }
+
+    public function testRemainingSecondsNeverNegative(): void
+    {
+        $data = $this->fixtureData();
+        $data['sessions'][0]['stream_duration'] = '1000';
+        $data['sessions'][0]['view_offset']     = '5000';
+        $out = TautulliClient::normalizeActivity($data);
+        self::assertSame(0, $out['sessions'][0]['remainingSeconds']);
+    }
+
+    public function testRemainingSecondsUnknownWithoutPositionOrForLiveTv(): void
+    {
+        // The base fixture has no view_offset / duration at all.
+        self::assertNull(TautulliClient::normalizeActivity($this->fixtureData())['sessions'][0]['remainingSeconds']);
+
+        $data = $this->fixtureData();
+        $data['sessions'][0]['stream_duration'] = '7000000';
+        $data['sessions'][0]['view_offset']     = '1000000';
+        $data['sessions'][0]['live']            = 1;
+        self::assertNull(TautulliClient::normalizeActivity($data)['sessions'][0]['remainingSeconds']);
+    }
+
     public function testFallsBackToBareTitleWhenFullTitleMissing(): void
     {
         $data = $this->fixtureData();

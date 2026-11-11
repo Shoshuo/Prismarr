@@ -1083,7 +1083,39 @@ class TautulliClient implements ResetInterface
             'bandwidthKbps'    => $bw,
             'bandwidthMbps'    => self::toMbps($bw),
             'progressPercent'  => self::pct($s['progress_percent'] ?? null),
+            // Seconds left, for the card's "Ends at" time (null = unknown).
+            'remainingSeconds' => self::remainingSeconds($s),
         ];
+    }
+
+    /**
+     * Seconds left in a stream: stream_duration − view_offset (both ms), the
+     * same sum Tautulli 2.19's own "Ends At" uses; falls back to the item's
+     * duration when stream_duration is missing. Null when Tautulli reports
+     * no position or no length, and for live TV (no fixed end).
+     *
+     * @param array<string, mixed> $s
+     */
+    private static function remainingSeconds(array $s): ?int
+    {
+        if (!empty($s['live'])) {
+            return null;
+        }
+        $offset = $s['view_offset'] ?? null;
+        if (!is_numeric($offset)) {
+            return null;
+        }
+        $total = 0;
+        foreach (['stream_duration', 'duration'] as $key) {
+            if (is_numeric($s[$key] ?? null) && (int) $s[$key] > 0) {
+                $total = (int) $s[$key];
+                break;
+            }
+        }
+        if ($total <= 0) {
+            return null;
+        }
+        return intdiv(max(0, $total - (int) $offset), 1000);
     }
 
     /**

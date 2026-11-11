@@ -5,6 +5,11 @@ All notable changes to Prismarr are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **"Ends at" on live Plex session cards.** Each now-playing card (dashboard widget, Plex Activity page, Tracearr page) shows when the stream will finish, in your display time zone and clock format, like Tautulli 2.19's "Ends At". Live TV and sessions without a known position show nothing. EN + FR.
+
 ## [1.3.0] - 2026-10-21
 
 ### Security

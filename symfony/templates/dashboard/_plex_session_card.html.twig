@@ -56,5 +56,11 @@
       <div class="progress-bar" style="width: {{ s.progressPercent }}%" role="progressbar"
            aria-valuenow="{{ s.progressPercent }}" aria-valuemin="0" aria-valuemax="100"></div>
     </div>
+    {# Wall-clock finish time (Tautulli 2.19's "Ends At"), in the display
+       zone + clock format. The card re-renders on every poll, so a paused
+       stream's time moves forward the way Tautulli's does. #}
+    {% if s.remainingSeconds is defined and s.remainingSeconds is not null %}
+      <div class="plex-ends-at text-secondary">{{ 'dashboard.plex.ends_at'|trans({time: (date().timestamp + s.remainingSeconds)|prismarr_time}) }}</div>
+    {% endif %}
   </div>
 </div>

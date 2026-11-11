@@ -502,6 +502,10 @@ class TracearrClient implements ResetInterface
             'bandwidthKbps'    => $bitrate,
             'bandwidthMbps'    => $bitrate > 0 ? round($bitrate / 1000, 1) : 0.0,
             'progressPercent'  => $duration > 0 ? max(0.0, min(100.0, round($progress / $duration * 100, 1))) : 0.0,
+            // Seconds left, for the shared card's "Ends at" time (null = unknown).
+            'remainingSeconds' => $duration > 0 && is_numeric($s['progressMs'] ?? null)
+                ? intdiv(max(0, $duration - $progress), 1000)
+                : null,
         ];
     }
 
