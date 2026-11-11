@@ -97,6 +97,8 @@ class TracearrClientTest extends TestCase
         self::assertSame('4K', $s['quality']);
         self::assertSame(8.5, $s['bandwidthMbps']);
         self::assertSame(25.0, $s['progressPercent']);
+        // (3 000 000 − 750 000) ms → the card's "Ends at" time.
+        self::assertSame(2250, $s['remainingSeconds']);
         self::assertSame('/library/metadata/123/thumb/456', $s['posterPath']);
         self::assertSame(self::SERVER, $s['posterServerId']);
         self::assertNull($s['ratingKey']);
