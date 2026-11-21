@@ -70,6 +70,20 @@ class JellyseerrClientWriteContractTest extends TestCase
         $this->assertSame('alice', $body['username']);
     }
 
+    public function testSyncJellyfinLibrariesAsksSeerrToStartAScan(): void
+    {
+        // Seerr's POST /settings/jellyfin/sync only runs the scanner when the
+        // body carries `start` (or `cancel`); any other body just returns the
+        // scanner status with a 200, so an empty body "succeeded" and nothing
+        // was scanned.
+        $client = $this->client([[json_encode(['running' => true]), 200, '', false]]);
+
+        $this->assertTrue($client->syncJellyfinLibraries());
+
+        $this->assertStringEndsWith('/api/v1/settings/jellyfin/sync', $this->calls[0][CURLOPT_URL]);
+        $this->assertSame(['start' => true], json_decode($this->calls[0][CURLOPT_POSTFIELDS], true));
+    }
+
     public function testAnOpenBreakerRecordsAnErrorInsteadOfSilentlyAnsweringEmpty(): void
     {
         // C1: isDown() returned null before recordError(), so every caller

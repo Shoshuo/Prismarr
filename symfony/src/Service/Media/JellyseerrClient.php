@@ -376,7 +376,9 @@ class JellyseerrClient implements ResetInterface
 
     public function syncJellyfinLibraries(): bool
     {
-        return $this->request('POST', '/api/v1/settings/jellyfin/sync', [], []) !== null;
+        // Seerr only runs the scanner when the body carries `start`; any other
+        // body just returns the scanner status with a 200.
+        return $this->request('POST', '/api/v1/settings/jellyfin/sync', [], ['start' => true]) !== null;
     }
 
     public function getRadarrSettings(): array
