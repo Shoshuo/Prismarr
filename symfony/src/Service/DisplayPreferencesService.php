@@ -62,6 +62,13 @@ class DisplayPreferencesService implements ResetInterface
         }
         return date_default_timezone_get();
     }
+
+    /** A zone PHP knows, i.e. one that can be stored and converted to. */
+    public static function isValidTimezone(string $tz): bool
+    {
+        return in_array($tz, \DateTimeZone::listIdentifiers(), true);
+    }
+
     public function getDateFormat(): string         { return $this->get('display_date_format'); }
     public function getTimeFormat(): string         { return $this->get('display_time_format'); }
     public function getThemeColor(): string         { return $this->get('display_theme_color'); }
@@ -118,13 +125,20 @@ class DisplayPreferencesService implements ResetInterface
     /**
      * Formatted date string according to the user's chosen date format.
      * Null input → null output so callers can render a dash.
+     *
+     * $floating skips the user-timezone conversion for values that are
+     * calendar days rather than instants (a Radarr release date, Sonarr's
+     * firstAired, a TMDb air_date): converting "2026-11-09 00:00 UTC" to a
+     * zone west of UTC would show the 8th.
      */
-    public function formatDate(?\DateTimeInterface $dt): ?string
+    public function formatDate(?\DateTimeInterface $dt, bool $floating = false): ?string
     {
         if ($dt === null) {
             return null;
         }
-        $dt = $this->toUserTimezone($dt);
+        if (!$floating) {
+            $dt = $this->toUserTimezone($dt);
+        }
 
         return match ($this->getDateFormat()) {
             'us'  => $dt->format('M j, Y'),

@@ -1149,16 +1149,27 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         if (document.hidden) {
             stopRefresh();
         } else {
-            refreshData();   // rattrape un fetch à l'instant où on revient
+            refreshData(true);   // rattrape un fetch à l'instant où on revient
             startRefresh();
         }
     });
 
     var refreshCtrl = null;
-    function refreshData() {
+    var refreshSeq = 0;
+    var refreshInFlight = false;
+    function refreshData(force) {
+        // DC-3 (review 2026-11-06): a timer tick while the previous fetch is
+        // still in flight is SKIPPED — aborting it every tick meant a backend
+        // slower than the interval never rendered at all. User-driven calls
+        // (force) still cancel the stale one.
+        if (refreshInFlight && !force) return;
         // Annule le fetch précédent s'il est encore en vol (évite empilement)
         if (refreshCtrl) refreshCtrl.abort();
         refreshCtrl = new AbortController();
+        refreshInFlight = true;
+        // Sequence number: a periodic answer for the previous page must not
+        // apply after the click's answer (same pattern as qbittorrent/transmission).
+        var seq = ++refreshSeq;
         var q = new URLSearchParams({
             page: pagState.page,
             perPage: pagState.perPage,
@@ -1171,12 +1182,13 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         fetch(BASE + '/api/torrents?' + q, { signal: refreshCtrl.signal, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(function(r) { return r.json(); })
         .then(function(data) {
+            if (seq !== refreshSeq) return; // a newer request has already been issued
             if (data.error) return;
             updateStats(data.stats);
             updateList(data.torrents);
             updatePagination(data.pagination);
         })
-        .catch(function() {});
+        .catch(function() {}).then(function() { if (seq === refreshSeq) refreshInFlight = false; });
     }
 
     // ── Tracking session ────────────────────────────────────────────────────
@@ -1474,7 +1486,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
         localStorage.setItem('qbt_sort_field', field);
         localStorage.setItem('qbt_sort_desc', desc ? '1' : '0');
         syncSortUI();
-        refreshData();
+        refreshData(true);
     }
 
     bindDoc('click', 'viewSortPag', function(e) {
@@ -1492,7 +1504,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             var li = pg.closest('.page-item');
             if (!li || li.classList.contains('disabled') || li.classList.contains('active')) return;
             var n = parseInt(pg.dataset.page, 10);
-            if (n > 0 && n !== pagState.page) { pagState.page = n; refreshData(); window.scrollTo({top:0, behavior:'smooth'}); }
+            if (n > 0 && n !== pagState.page) { pagState.page = n; refreshData(true); window.scrollTo({top:0, behavior:'smooth'}); }
         }
     });
 
@@ -1513,7 +1525,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             currentFilter = this.dataset.filter;
             pagState.filter = currentFilter;
             pagState.page = 1;
-            refreshData();
+            refreshData(true);
         };
     }
 
@@ -1526,7 +1538,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             searchTimeout = setTimeout(function(){
                 pagState.search = val;
                 pagState.page = 1;
-                refreshData();
+                refreshData(true);
             }, 250);
         };
     }
@@ -1538,11 +1550,11 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
             pagState.perPage = parseInt(e.target.value, 10) || 50;
             pagState.page = 1;
             localStorage.setItem('qbt_per_page', String(pagState.perPage));
-            refreshData();
+            refreshData(true);
         } else if (e.target.id === 'qbt-cat-filter') {
             pagState.category = e.target.value;
             pagState.page = 1;
-            refreshData();
+            refreshData(true);
         }
     });
 
@@ -1675,8 +1687,8 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
                 thtml += '<tr class="qbt-tracker-row">'
                     + '<td class="text-truncate" style="max-width:320px;" title="' + escapeHtml(tr.url) + '">' + escapeHtml(tr.url) + '</td>'
                     + '<td>' + (TRACKER_STATUS[tr.status] || escapeHtml(tr.status)) + '</td>'
-                    + '<td>' + (tr.num_seeds || 0) + '</td>'
-                    + '<td>' + (tr.num_leeches || 0) + '</td>'
+                    + '<td>' + (tr.num_seeds == null ? '—' : tr.num_seeds) + '</td>'
+                    + '<td>' + (tr.num_leeches == null ? '—' : tr.num_leeches) + '</td>'
                     + '</tr>';
             }
             trackersEl.innerHTML = thtml || '<tr><td colspan="4" class="text-center text-muted">' + escapeHtml(QBT_I18N.modal_detail.trackers_empty) + '</td></tr>';
@@ -1812,7 +1824,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
                     var row = document.querySelector('.qbt-torrent[data-hash="' + deleteTarget.hashes[i] + '"]');
                     if (row) row.remove();
                 }
-                refreshData();
+                refreshData(true);
             }, 300);
         });
     };
@@ -1950,7 +1962,7 @@ body[data-bs-theme="dark"] .qbt-torrent-list[data-view="table"] .qbt-cell-progre
     // Aligne l'état avec le filtre actif (.qbt-filter-btn.active)
     var activeFilter = document.querySelector('.qbt-filter-btn.active');
     if (activeFilter) pagState.filter = activeFilter.dataset.filter || 'all';
-    refreshData();    // premier fetch immédiat (applique pagination+tri+filtre serveur)
+    refreshData(true);    // premier fetch immédiat (applique pagination+tri+filtre serveur)
     startRefresh();
     var initDl = {{ (stats.dl_speed ?? 0)|json_encode|raw }};
     var initUp = {{ (stats.up_speed ?? 0)|json_encode|raw }};

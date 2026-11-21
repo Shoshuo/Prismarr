@@ -716,7 +716,16 @@
             btn.disabled = true; btn.textContent = '…';
             fetch(BASE + '/prowlarr/indexer/' + btn.dataset.toggleId + '/toggle', { method: 'POST' })
                 .then(function (r) { return r.json(); })
-                .then(function (d) { btn.disabled = false; if (d.ok) { btn.classList.toggle('is-on', d.enabled); btn.classList.toggle('is-off', !d.enabled); btn.textContent = d.enabled ? 'ON' : 'OFF'; } });
+                .then(function (d) {
+                    btn.disabled = false;
+                    if (d.ok) { btn.classList.toggle('is-on', d.enabled); btn.classList.toggle('is-off', !d.enabled); btn.textContent = d.enabled ? 'ON' : 'OFF'; }
+                    else {
+                        btn.textContent = btn.classList.contains('is-on') ? 'ON' : 'OFF';
+                        // MS-7: say WHY Prowlarr refused instead of silently reverting.
+                        if (d.error && window._prismarrToast) window._prismarrToast(d.error, 'danger');
+                    }
+                })
+                .catch(function () { btn.disabled = false; btn.textContent = btn.classList.contains('is-on') ? 'ON' : 'OFF'; });
         });
     });
 
@@ -777,8 +786,12 @@
         var val = this.value;
         document.querySelectorAll('.pw-indexer-row').forEach(function (row) {
             var show = true;
-            if (val === 'enabled') show = row.querySelector('.is-on') !== null;
-            else if (val === 'disabled') show = row.querySelector('.is-off') !== null;
+            // MS-3: rows render a form-switch checkbox (fork 1064a50); the old
+            // .is-on/.is-off button classes no longer exist, so both filters
+            // hid every row.
+            var sw = row.querySelector('[data-toggle-id]');
+            if (val === 'enabled') show = !!(sw && sw.checked) || row.querySelector('.is-on') !== null;
+            else if (val === 'disabled') show = (sw ? !sw.checked : row.querySelector('.is-off') !== null);
             else if (val === 'torrent') show = row.innerHTML.indexOf('Torrent') !== -1;
             else if (val === 'usenet') show = row.innerHTML.indexOf('Usenet') !== -1;
             row.style.display = show ? '' : 'none';

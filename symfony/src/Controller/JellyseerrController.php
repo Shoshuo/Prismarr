@@ -237,13 +237,20 @@ class JellyseerrController extends AbstractController
     public function createUser(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true) ?? [];
-        $email = $data['email'] ?? '';
-        $password = $data['password'] ?? '';
-        if (!$email || !$password) {
+        $email    = is_string($data['email'] ?? null) ? trim($data['email']) : '';
+        // MS-2 (review 2026-11-06): no password = Seerr generates and e-mails
+        // one (its "auto-generate" option, which always failed here); the
+        // typed username is forwarded instead of dropped.
+        $password = is_string($data['password'] ?? null) && $data['password'] !== '' ? $data['password'] : null;
+        $username = is_string($data['username'] ?? null) && trim($data['username']) !== '' ? trim($data['username']) : null;
+        if ($email === '') {
             return $this->json(['ok' => false, 'error' => $this->translator->trans('jellyseerr.api.email_password_required')]);
         }
-        $result = $this->jellyseerr->createLocalUser($email, $password);
-        return $this->json(['ok' => $result !== null, 'data' => $result]);
+        $result = $this->jellyseerr->createLocalUser($email, $password, $username);
+        if ($result === null) {
+            return $this->jsonClientError('Jellyseerr', $this->jellyseerr, $this->translator->trans('jellyseerr.api.email_password_required'), 502);
+        }
+        return $this->json(['ok' => true, 'data' => $result]);
     }
 
     #[Route('/utilisateurs/import-jellyfin', name: 'user_import_jellyfin', methods: ['POST'])]
@@ -576,7 +583,10 @@ class JellyseerrController extends AbstractController
     #[Route('/parametres/logs', name: 'settings_logs')]
     public function settingsLogs(Request $request): Response
     {
-        $page = max(1, $request->query->getInt('page', 1));
+        // MS-13 (review 2026-11-06): an int-overflowing page turned the offset
+        // into a float and a TypeError 500; 10 000 pages is already far past
+        // anything Seerr keeps.
+        $page = min(10000, max(1, $request->query->getInt('page', 1)));
         $take = 50;
         $skip = ($page - 1) * $take;
         $filter = $request->query->get('filter', '');
@@ -734,7 +744,7 @@ class JellyseerrController extends AbstractController
     }
 
     #[Route('/service/{type}', name: 'service_info', methods: ['GET'], requirements: ['type' => 'radarr|sonarr'])]
-    public function serviceInfo(string $type): JsonResponse
+    public function serviceInfo(string $type, Request $request): JsonResponse
     {
         // Fetch the server list to find the default server ID
         $servers = match ($type) {
@@ -755,6 +765,18 @@ class JellyseerrController extends AbstractController
         }
 
         $serverId = $defaultServer['id'] ?? 0;
+        // MS-8 (review 2026-11-06): the request edit modal must load the
+        // profiles / root folders of the request's OWN server (4K, secondary
+        // instance), not the default one it then saves against.
+        $wanted = $request->query->getInt('serverId', 0);
+        if ($wanted > 0) {
+            foreach ($servers as $srv) {
+                if ((int) ($srv['id'] ?? 0) === $wanted) {
+                    $serverId = $wanted;
+                    break;
+                }
+            }
+        }
         $data = match ($type) {
             'radarr' => $this->jellyseerr->getServiceRadarr($serverId),
             'sonarr' => $this->jellyseerr->getServiceSonarr($serverId),

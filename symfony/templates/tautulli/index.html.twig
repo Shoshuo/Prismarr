@@ -237,7 +237,10 @@
     });
   }
 
+  var historyLoading = false;
   function loadHistory(append) {
+    if (historyLoading) return; // MS-12: a double-click advanced the cursor twice
+    historyLoading = true;
     if (!append) historyStart = 0;
     var url = BASE + '/tautulli/api/history?length=' + HISTORY_PAGE + '&start=' + historyStart + (state.userId ? '&user=' + encodeURIComponent(state.userId) : '');
     fetch(url, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
@@ -248,12 +251,15 @@
         var trimmed = (html || '').trim();
         if (!append) box.innerHTML = trimmed || '';
         else if (trimmed) box.insertAdjacentHTML('beforeend', trimmed);
-        var rowCount = (trimmed.match(/class="[^"]*plex-hist-cell/g) || []).length;
+        // MS-12: count rows only — plex-hist-cell-main/-title/-meta share the prefix.
+        var rowCount = (trimmed.match(/class="plex-hist-cell(?:\s|")/g) || []).length;
         if (!append && !rowCount) box.innerHTML = '<div class="col-12 text-center text-secondary py-4">—</div>';
         historyStart += HISTORY_PAGE;
         if (more) more.style.display = rowCount >= HISTORY_PAGE ? '' : 'none';
+        historyLoading = false;
       })
       .catch(function () {
+        historyLoading = false;
         if (!append) {
           var box = frag('[data-tautulli-history]');
           var more = frag('[data-tautulli-history-more]');

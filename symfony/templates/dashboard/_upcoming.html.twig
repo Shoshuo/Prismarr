@@ -29,7 +29,7 @@
                  data-ql-type="{{ item.type == 'movie' ? 'movie' : 'series' }}"
                  data-ql-slug="{{ item.slug|default('') }}"
                  data-ql-id="{{ item.id|default('') }}"
-                 title="{{ item.title }}{% if item.subtitle %} — {{ item.subtitle }}{% endif %} · {{ item.date|prismarr_time }}{% if item.badge %} · {{ item.badge }}{% endif %}">
+                 title="{{ item.title }}{% if item.subtitle %} — {{ item.subtitle }}{% endif %} · {{ item.allDay|default(false) ? item.date|prismarr_date(true) : item.date|prismarr_time }}{% if item.badge %} · {{ item.badge }}{% endif %}">
                 {% if item.poster %}
                   <div class="mini-cal-item-thumb" style="background-image: url('{{ item.poster }}');"></div>
                 {% else %}
@@ -41,7 +41,7 @@
                   </span>
                   <div class="mini-cal-item-title">{{ item.title }}</div>
                   <div class="mini-cal-item-meta">
-                    {{ item.date|prismarr_time }}
+                    {{ item.allDay|default(false) ? item.date|prismarr_date(true) : item.date|prismarr_time }}
                     {%- if item.subtitle and item.type == 'episode' %} · {{ item.subtitle }}{% endif -%}
                     {%- if item.badge %} · {{ item.badge }}{% endif -%}
                   </div>

@@ -452,4 +452,19 @@ class UsenetControllerTest extends AbstractWebTestCase
     {
         return (array) json_decode((string) $this->client->getResponse()->getContent(), true);
     }
+
+    public function testApiQueueAnswers502WhenTheClientAnswersEmptyWithAnError(): void
+    {
+        // C1 (review 2026-11-06): UsenetQueueSnapshot::empty() on a transport
+        // failure painted "queue empty" and never triggered the poll back-off.
+        $this->mockHealthy();
+        $sab = $this->configureSabnzbd();
+        $sab->method('getQueue')->willReturn(\App\Service\Media\Usenet\UsenetQueueSnapshot::empty());
+        $sab->method('getLastError')->willReturn(['code' => 0, 'method' => 'GET', 'path' => '/api', 'message' => 'Failed to connect']);
+
+        $this->client->request('GET', '/usenet/sabnzbd/api/queue');
+
+        $this->assertSame(502, $this->client->getResponse()->getStatusCode());
+        $this->assertArrayHasKey('error', json_decode((string) $this->client->getResponse()->getContent(), true));
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\Media\MediaLibraryCache;
 use App\Entity\Media\WatchlistItem;
 use App\Entity\ServiceInstance;
 use App\Repository\Media\WatchlistItemRepository;
@@ -38,6 +39,11 @@ class TmdbController extends AbstractController
         // Typo-correction vocabulary; nullable + last so positional test
         // constructions keep working (null = suggestions from TMDb probes only).
         private readonly ?SearchVocabulary $vocabulary = null,
+        // DD-2 (review 2026-11-06): the Discover library index reads the
+        // shared SWR library cache instead of downloading every library per
+        // request (3 passes per page load). Nullable + last for the
+        // positional test constructors.
+        private readonly ?MediaLibraryCache $libraryCache = null,
     ) {}
 
     #[Route('/decouverte', name: 'tmdb_index')]
@@ -242,6 +248,7 @@ class TmdbController extends AbstractController
                 // tracked but not yet downloadable (announced / inCinemas).
                 'lib_status' => $libInfo['status'] ?? null,
                 'lib_id'     => $libInfo['id']     ?? null,
+                'lib_slug'   => $libInfo['slug']   ?? null, // DD-5: the instance that owns it
             ];
         };
 
@@ -595,6 +602,7 @@ class TmdbController extends AbstractController
             'in_library'      => $inLibrary,
             'lib_status'      => $libInfo['status'] ?? null,
             'lib_id'          => $libInfo['id'] ?? null,
+            'lib_slug'        => $libInfo['slug'] ?? null, // DD-5
         ]);
     }
 
@@ -1197,23 +1205,40 @@ class TmdbController extends AbstractController
             return $this->json(['error' => $this->translator->trans('decouverte.error.invalid_params')], 400);
         }
 
+        // DD-7 (review 2026-11-06): the client may state its intent
+        // (`action`: add | remove) so a stale client-side index can never
+        // invert it; without it the legacy flip is kept.
+        $action = is_string($data['action'] ?? null) ? $data['action'] : null;
+
         $existing = $this->watchlistRepo->findByTmdb($tmdbId, $type);
         if ($existing) {
+            if ($action === 'add') {
+                return $this->json(['action' => 'added', 'tmdb_id' => $tmdbId, 'type' => $type, 'id' => $existing->getId()]);
+            }
             $this->em->remove($existing);
             $this->em->flush();
             return $this->json(['action' => 'removed', 'tmdb_id' => $tmdbId, 'type' => $type]);
         }
+        if ($action === 'remove') {
+            return $this->json(['action' => 'removed', 'tmdb_id' => $tmdbId, 'type' => $type]);
+        }
 
+        $title = is_string($data['title'] ?? null) && trim($data['title']) !== '' ? $data['title'] : 'Sans titre';
         $item = new WatchlistItem();
         $item->setTmdbId($tmdbId)
              ->setMediaType($type)
-             ->setTitle($data['title'] ?? 'Sans titre')
-             ->setPosterPath($data['poster_path'] ?? null)
-             ->setVote(isset($data['vote']) ? (float) $data['vote'] : null)
-             ->setYear(isset($data['year']) ? (int) $data['year'] : null);
+             ->setTitle($title)
+             ->setPosterPath(is_string($data['poster_path'] ?? null) ? $data['poster_path'] : null)
+             ->setVote(is_numeric($data['vote'] ?? null) ? (float) $data['vote'] : null)
+             ->setYear(is_numeric($data['year'] ?? null) ? (int) $data['year'] : null);
 
-        $this->em->persist($item);
-        $this->em->flush();
+        try {
+            $this->em->persist($item);
+            $this->em->flush();
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
+            // A double-click raced us: the item is there, report it as such.
+            return $this->json(['action' => 'added', 'tmdb_id' => $tmdbId, 'type' => $type]);
+        }
 
         return $this->json(['action' => 'added', 'tmdb_id' => $tmdbId, 'type' => $type, 'id' => $item->getId()]);
     }
@@ -1228,7 +1253,7 @@ class TmdbController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true) ?? [];
-        $item->setNotes($data['notes'] ?? null);
+        $item->setNotes(is_string($data['notes'] ?? null) ? $data['notes'] : null);
         $this->em->flush();
 
         return $this->json(['ok' => true]);
@@ -1274,7 +1299,10 @@ class TmdbController extends AbstractController
 
         foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
             try {
-                $movies = $this->radarr->withInstance($inst)->getMovies();
+                $bound  = $this->radarr->withInstance($inst);
+                $movies = $this->libraryCache !== null
+                    ? $this->libraryCache->movies($inst->getSlug(), fn() => $bound->getMovies(RadarrClient::LIBRARY_TIMEOUT))
+                    : $bound->getMovies(RadarrClient::LIBRARY_TIMEOUT);
             } catch (\Throwable $e) {
                 $this->logger->warning('TMDb buildLibraryIndex radarr failed', [
                     'instance'  => $inst->getSlug(),
@@ -1312,7 +1340,7 @@ class TmdbController extends AbstractController
 
         foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
             try {
-                $allSeries = $this->sonarr->withInstance($inst)->getRawAllSeries();
+                $allSeries = $this->sonarr->withInstance($inst)->getRawAllSeries(SonarrClient::LIBRARY_TIMEOUT);
             } catch (\Throwable $e) {
                 $this->logger->warning('TMDb buildLibraryIndex sonarr failed', [
                     'instance'  => $inst->getSlug(),
@@ -1407,6 +1435,7 @@ class TmdbController extends AbstractController
                 'in_library'  => $libInfo !== null,
                 'lib_status'  => $libInfo['status'] ?? null,
                 'lib_id'      => $libInfo['id'] ?? null,
+                'lib_slug'    => $libInfo['slug'] ?? null, // DD-5: links must target the owning instance
             ];
         }
         return $out;

@@ -119,6 +119,9 @@
 
 {% block javascripts %}
 <script>
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
 (function(){
 var _I18N = {
   searching: {{ 'media.arr_admin.library_import.searching'|trans|json_encode|raw }},
@@ -197,7 +200,7 @@ document.getElementById('btn-scan').addEventListener('click', function() {
       html += '<div class="import-row d-flex align-items-center gap-2" data-idx="' + i + '">';
       html += '<div style="width:30px;"><input type="checkbox" class="form-check-input import-check" data-idx="' + i + '"></div>';
       html += '<div style="flex:2;overflow:hidden;font-size:.82rem;">';
-      html += '<div class="text-truncate fw-medium" title="' + f.name.replace(/"/g,'&quot;') + '">' + f.name + '</div>';
+      html += '<div class="text-truncate fw-medium" title="' + esc(f.name) + '">' + esc(f.name) + '</div>';
       html += '</div>';
       html += '<div style="flex:2;position:relative;">';
       html += '<input type="text" class="form-control form-control-sm film-search" data-idx="' + i + '" value="" placeholder="' + _I18N.searching + '">';
@@ -276,8 +279,8 @@ function bindEvents() {
           .then(function(movies) {
             if (!movies.length) { sr.style.display = 'none'; return; }
             sr.innerHTML = movies.slice(0, 8).map(function(m) {
-              return '<div class="search-item" data-tmdb="' + (m.tmdbId||0) + '" data-title="' + (m.title||'').replace(/"/g,'&quot;') + '" data-year="' + (m.year||0) + '">' +
-                (m.title||'?') + ' <span class="text-muted">(' + (m.year||'?') + ')</span></div>';
+              return '<div class="search-item" data-tmdb="' + (m.tmdbId||0) + '" data-title="' + esc(m.title||'') + '" data-year="' + (m.year||0) + '">' +
+                esc(m.title||'?') + ' <span class="text-muted">(' + (m.year||'?') + ')</span></div>';
             }).join('');
             sr.style.display = 'block';
             sr.querySelectorAll('.search-item').forEach(function(item) {

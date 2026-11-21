@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\DisplayPreferencesService;
 use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
 use App\Service\Media\RadarrClient;
@@ -227,7 +228,7 @@ class CalendrierController extends AbstractController
             'CALSCALE:GREGORIAN',
             'METHOD:PUBLISH',
             'X-WR-CALNAME:Prismarr',
-            'X-WR-TIMEZONE:Europe/Paris',
+            'X-WR-TIMEZONE:' . $this->displayTimezoneId(), // DD-10: the display zone, not a hard-coded one
         ];
 
         $now = (new \DateTimeImmutable())->format('Ymd\THis\Z');
@@ -297,7 +298,7 @@ class CalendrierController extends AbstractController
         $lines[] = 'END:VCALENDAR';
 
         // CRLF is required per RFC 5545 — plain \n breaks strict parsers.
-        $body = implode("\r\n", $lines) . "\r\n";
+        $body = implode("\r\n", array_map([self::class, 'foldIcal'], $lines)) . "\r\n"; // DD-10: RFC 5545 line folding
 
         return new Response(
             $body,
@@ -349,9 +350,11 @@ class CalendrierController extends AbstractController
     {
         /** @var \DateTimeInterface $at */
         $at       = $episode['airDate'];
-        $runtime  = (int) ($episode['runtime'] ?? 30);
+        // DD-10 (review 2026-11-06): airDate is the broadcast DATE (issue #26),
+        // so the event is all-day — a 00:00Z instant plus a runtime landed
+        // on the previous evening for every subscriber in the Americas.
         $start    = $at instanceof \DateTimeImmutable ? $at : \DateTimeImmutable::createFromInterface($at);
-        $end      = $start->modify("+{$runtime} minutes");
+        $allDay   = $start->format('Ymd');
         // Same stable-UID pattern as Radarr — tvdbId is shared across Sonarr
         // instances, so subscribed apps don't see ghost duplicates when the
         // user switches the series between Sonarr default / Anime / etc.
@@ -376,8 +379,8 @@ class CalendrierController extends AbstractController
             'BEGIN:VEVENT',
             'UID:' . $uid,
             'DTSTAMP:' . $nowUtc,
-            'DTSTART:' . $start->setTimezone(new \DateTimeZone('UTC'))->format('Ymd\THis\Z'),
-            'DTEND:'   . $end->setTimezone(new \DateTimeZone('UTC'))->format('Ymd\THis\Z'),
+            'DTSTART;VALUE=DATE:' . $allDay,
+            'DTEND;VALUE=DATE:' . (new \DateTimeImmutable($allDay))->modify('+1 day')->format('Ymd'),
             'SUMMARY:' . $this->escapeIcal($title),
             'DESCRIPTION:' . $this->escapeIcal($desc),
             'CATEGORIES:Prismarr,' . $this->translator->trans('dashboard.type.series') . ',' . $this->translator->trans('calendar.event.type_episode'),
@@ -390,6 +393,35 @@ class CalendrierController extends AbstractController
      * inside TEXT values so calendar apps render long summaries/descriptions
      * correctly.
      */
+    /**
+     * RFC 5545 §3.1 — content lines longer than 75 octets are folded with
+     * CRLF + one space. UTF-8 safe: a multibyte character is never split.
+     */
+    private static function foldIcal(string $line): string
+    {
+        if (strlen($line) <= 75) {
+            return $line;
+        }
+        $out   = '';
+        $chunk = '';
+        foreach (mb_str_split($line) as $ch) {
+            $limit = $out === '' ? 75 : 74;
+            if (strlen($chunk) + strlen($ch) > $limit) {
+                $out  .= ($out === '' ? '' : "\r\n ") . $chunk;
+                $chunk = '';
+            }
+            $chunk .= $ch;
+        }
+        return $out . ($out === '' ? '' : "\r\n ") . $chunk;
+    }
+
+    /** The display timezone (validated), else the process zone. */
+    private function displayTimezoneId(): string
+    {
+        $tz = (string) ($this->config->get('display_timezone') ?? '');
+        return $tz !== '' && DisplayPreferencesService::isValidTimezone($tz) ? $tz : date_default_timezone_get();
+    }
+
     private function escapeIcal(string $s): string
     {
         $s = str_replace(['\\', "\r\n", "\n", "\r", ',', ';'], ['\\\\', '\\n', '\\n', '\\n', '\\,', '\\;'], $s);

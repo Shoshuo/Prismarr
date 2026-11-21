@@ -12,6 +12,18 @@ services:
     App\:
         resource: '../src/'
 
+    # HC-1 (review 2026-11-06): derived datasets keep their own pool (see
+    # config/packages/cache.yaml); cache.app stays the response cache that
+    # every settings save clears.
+    App\Service\Cache\StaleWhileRevalidateCache:
+        arguments:
+            $cache: '@cache.swr'
+            $cacheApp: '@cache.swr'
+
+    App\Service\AppVersion:
+        arguments:
+            $cacheApp: '@cache.swr'
+
     # Lower the Symfony minimalist logger to WARNING so that $logger->warning()
     # calls (used by our silent-catch handlers in the Media clients and
     # controllers) are actually emitted to stderr. Default is ERROR, which

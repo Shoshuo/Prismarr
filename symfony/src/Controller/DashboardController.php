@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Service\DisplayPreferencesService;
+use App\Util\CalendarDay;
 use App\Entity\ServiceInstance;
 use App\Repository\Media\WatchlistItemRepository;
 use App\Service\ActivitySource;
@@ -91,7 +93,38 @@ class DashboardController extends AbstractController implements ResetInterface
         // Nullable + last: DashboardControllerTest builds this controller
         // positionally, so a new dependency must not shift the signature.
         private readonly ?EmbyClient $emby = null,
+        // C2 (review 2026-11-06): "today" is the display zone's calendar date.
+        private readonly ?DisplayPreferencesService $prefs = null,
     ) {}
+
+    /** True while the closure given to cached() produced a result it knows is incomplete. */
+    private bool $partialResult = false;
+
+    /** Read through a method so the flag set inside the closure is not narrowed away by static analysis. */
+    private function isPartial(): bool
+    {
+        return $this->partialResult;
+    }
+
+    /**
+     * C2 (review 2026-11-06): the DISPLAY zone's calendar date at UTC
+     * midnight — comparable with Radarr's `…T00:00:00Z` dates and Sonarr's
+     * air dates. The process zone dropped today's releases as "past" for
+     * every user west of UTC.
+     */
+    private function today(): \DateTimeImmutable
+    {
+        return CalendarDay::todayIn($this->prefs?->getTimezone() ?? date_default_timezone_get());
+    }
+
+    private function displayTimezone(): \DateTimeZone
+    {
+        try {
+            return new \DateTimeZone($this->prefs?->getTimezone() ?? date_default_timezone_get());
+        } catch (\Throwable) {
+            return new \DateTimeZone(date_default_timezone_get());
+        }
+    }
 
     /**
      * FrankenPHP worker mode — controllers autowired as services are shared
@@ -139,8 +172,10 @@ class DashboardController extends AbstractController implements ResetInterface
     private function cached(string $key, callable $fn): array
     {
         return $this->cache->get('dash.' . $key, function (ItemInterface $item) use ($fn) {
+            $this->partialResult = false;
             $result = $fn();
-            $item->expiresAfter($result === [] ? 0 : self::WIDGET_CACHE_TTL);
+            $item->expiresAfter(($result === [] || $this->isPartial()) ? 0 : self::WIDGET_CACHE_TTL);
+            $this->partialResult = false;
             return $result;
         });
     }
@@ -518,7 +553,7 @@ class DashboardController extends AbstractController implements ResetInterface
         // Compare by calendar day (midnight) so events earlier today —
         // a morning episode, a midnight digital release — are still
         // classified as "today" rather than silently filtered out as past.
-        $today = new \DateTimeImmutable('today');
+        $today = $this->today();
 
         // Phase D — fan out across every enabled Radarr/Sonarr instance and
         // dedupe identical entries. Two Radarr instances both tracking the
@@ -537,10 +572,15 @@ class DashboardController extends AbstractController implements ResetInterface
         $seen = [];
 
         foreach ($this->instances->getEnabled(ServiceInstance::TYPE_RADARR) as $inst) {
+            $bound  = $this->radarr->withInstance($inst);
             $movies = $this->safeFetch(
                 'upcoming.radarr.' . $inst->getSlug(),
-                fn() => $this->radarr->withInstance($inst)->getCalendar(self::UPCOMING_DAYS, 0),
-            ) ?? [];
+                fn() => $bound->getCalendar(self::UPCOMING_DAYS, 0),
+            );
+            if ($movies === null || $bound->getLastError() !== null) {
+                $this->partialResult = true; // DD-3: never cache half a calendar
+            }
+            $movies ??= [];
             foreach ($movies as $m) {
                 $next = $this->pickNextReleaseDate($m, $today);
                 if ($next === null) continue;
@@ -555,15 +595,21 @@ class DashboardController extends AbstractController implements ResetInterface
                     'badge'    => $next['badge'],
                     'poster'   => $m['poster'] ?? null,
                     'date'     => $next['at'],
+                    'allDay'   => true, // DD-11: a release DATE, never a time
                     'slug'     => $inst->getSlug(),
                 ];
             }
         }
         foreach ($this->instances->getEnabled(ServiceInstance::TYPE_SONARR) as $inst) {
+            $bound    = $this->sonarr->withInstance($inst);
             $episodes = $this->safeFetch(
                 'upcoming.sonarr.' . $inst->getSlug(),
-                fn() => $this->sonarr->withInstance($inst)->getCalendar(self::UPCOMING_DAYS, 0),
-            ) ?? [];
+                fn() => $bound->getCalendar(self::UPCOMING_DAYS, 0),
+            );
+            if ($episodes === null || $bound->getLastError() !== null) {
+                $this->partialResult = true; // DD-3
+            }
+            $episodes ??= [];
             foreach ($episodes as $e) {
                 $airDate = $e['airDate'] ?? null;
                 if (!$airDate instanceof \DateTimeImmutable) continue;
@@ -580,6 +626,7 @@ class DashboardController extends AbstractController implements ResetInterface
                     'badge'    => $e['network'] ?? null,
                     'poster'   => $e['poster'] ?? null,
                     'date'     => $airDate,
+                    'allDay'   => true, // DD-11: Sonarr's airDate is the broadcast DATE (issue #26)
                     'slug'     => $inst->getSlug(),
                 ];
             }
@@ -602,7 +649,7 @@ class DashboardController extends AbstractController implements ResetInterface
      */
     private function upcomingByDay(array $items): array
     {
-        $today = (new \DateTimeImmutable('today'));
+        $today = ($this->today());
         $days = [];
 
         for ($d = 0; $d < self::UPCOMING_DAYS; $d++) {
@@ -660,6 +707,7 @@ class DashboardController extends AbstractController implements ResetInterface
             $chips[] = [
                 'kind'     => $d['kind'],
                 'label'    => $this->translator->trans($d['key']),
+                'floating' => true, // Radarr release dates are calendar days
                 'date'     => $d['at'],
                 'upcoming' => $d['at']->setTime(0, 0) >= $today,
             ];
@@ -700,20 +748,26 @@ class DashboardController extends AbstractController implements ResetInterface
     /**
      * Air-date chips for a series quick-look: first-aired (if known), then
      * either the next upcoming episode (continuing) or the last-aired date
-     * (ended). @return list<array{kind:string,label:string,date:\DateTimeImmutable,upcoming:bool}>
+     * (ended). @return list<array{kind:string,label:string,date:\DateTimeImmutable,upcoming:bool,floating:bool}>
+     *
+     * `floating` says how the template renders the date: a calendar day
+     * (TMDb air_date, Sonarr firstAired) floats; an instant (Sonarr's
+     * nextAiring/previousAiring are airDateUtc) is converted to the display
+     * zone, otherwise an evening broadcast west of UTC shows as "tomorrow".
      */
-    private function seriesReleaseChips(?\DateTimeImmutable $firstAired, ?\DateTimeImmutable $nextEpisode, ?\DateTimeImmutable $lastEpisode, bool $ended, \DateTimeImmutable $today): array
+    private function seriesReleaseChips(?\DateTimeImmutable $firstAired, ?\DateTimeImmutable $nextEpisode, ?\DateTimeImmutable $lastEpisode, bool $ended, \DateTimeImmutable $today, bool $episodesAreInstants = false): array
     {
-        $chip = fn(string $kind, string $key, \DateTimeImmutable $d): array => [
+        $chip = fn(string $kind, string $key, \DateTimeImmutable $d, bool $floating): array => [
             'kind' => $kind, 'label' => $this->translator->trans($key),
             'date' => $d, 'upcoming' => $d->setTime(0, 0) >= $today,
+            'floating' => $floating,
         ];
         $chips = [];
-        if ($firstAired) $chips[] = $chip('first_aired', 'dashboard.quicklook.date.first_aired', $firstAired);
+        if ($firstAired) $chips[] = $chip('first_aired', 'dashboard.quicklook.date.first_aired', $firstAired, true);
         if (!$ended && $nextEpisode) {
-            $chips[] = $chip('next_episode', 'dashboard.quicklook.date.next_episode', $nextEpisode);
+            $chips[] = $chip('next_episode', 'dashboard.quicklook.date.next_episode', $nextEpisode, !$episodesAreInstants);
         } elseif ($ended && $lastEpisode) {
-            $chips[] = $chip('ended', 'dashboard.quicklook.date.ended', $lastEpisode);
+            $chips[] = $chip('ended', 'dashboard.quicklook.date.ended', $lastEpisode, !$episodesAreInstants);
         }
         return $chips;
     }
@@ -996,13 +1050,14 @@ class DashboardController extends AbstractController implements ResetInterface
                     $row['nextAiring'] ?? null,
                     $row['previousAiring'] ?? null,
                     $ended,
-                    new \DateTimeImmutable('today'),
+                    $this->today(),
+                    true, // nextAiring/previousAiring are airDateUtc instants
                 )
                 : $this->movieReleaseChips(
                     $row['inCinemasAt'] ?? null,
                     $row['digitalAt'] ?? null,
                     $row['physicalAt'] ?? null,
-                    new \DateTimeImmutable('today'),
+                    $this->today(),
                 ),
         ];
     }
@@ -1103,11 +1158,11 @@ class DashboardController extends AbstractController implements ResetInterface
                     $this->parseDate($data['next_episode_to_air']['air_date'] ?? null),
                     $this->parseDate($data['last_episode_to_air']['air_date'] ?? null),
                     $ended,
-                    new \DateTimeImmutable('today'),
+                    $this->today(),
                 )
                 : $this->tmdbMovieReleaseDates(
                     $data['release_dates']['results'] ?? [],
-                    new \DateTimeImmutable('today'),
+                    $this->today(),
                 ),
         ];
     }

@@ -74,7 +74,11 @@ class BazarrFrameRenderTest extends WebTestCase
         // a stale SWR write from an unrelated test class run in the same
         // process) leaks into this one and a "hard miss → warming" test
         // would silently see "ready" instead.
-        static::getContainer()->get('cache.app')->clear();
+        // HC-1 (review 2026-11-06): the SWR primitive now lives in its own
+        // cache.swr pool, which outlives kernel reboots just the same.
+        foreach (['cache.app', 'cache.swr'] as $pool) {
+            static::getContainer()->get($pool)->clear();
+        }
 
         $em = static::getContainer()->get('doctrine')->getManager();
         $tool = new SchemaTool($em);

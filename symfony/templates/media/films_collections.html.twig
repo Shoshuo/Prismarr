@@ -177,6 +177,9 @@
 
 {% block javascripts %}
 <script>
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
 (function () {
   var BASE = window.BASE_PATH;
 
@@ -237,7 +240,7 @@
     var html = '';
 
     if (overview) {
-      html += '<p class="text-muted small mb-3">' + overview + '</p>';
+      html += '<p class="text-muted small mb-3">' + esc(overview) + '</p>';
     }
 
     // Config selects for adding movies
@@ -265,8 +268,8 @@
       var inLib = m.inLibrary || m.isExisting || false;
 
       html += '<tr>';
-      html += '<td>' + (poster ? '<img src="' + poster + '" style="width:35px;border-radius:3px;" loading="lazy">' : '') + '</td>';
-      html += '<td class="fw-medium">' + (m.title || '—') + '</td>';
+      html += '<td>' + (poster ? '<img src="' + esc(poster) + '" style="width:35px;border-radius:3px;" loading="lazy">' : '') + '</td>';
+      html += '<td class="fw-medium">' + esc(m.title || '—') + '</td>';
       html += '<td class="text-muted">' + (m.year || '—') + '</td>';
       html += '<td class="text-end">';
       if (hasFile) {
@@ -274,7 +277,7 @@
       } else if (inLib) {
         html += '<span class="badge bg-warning-lt">' + COL_I18N.missing + '</span>';
       } else {
-        html += '<button class="btn btn-sm btn-primary btn-add-col-movie" data-tmdb="' + m.tmdbId + '" data-title="' + (m.title || '').replace(/"/g,'&quot;') + '">';
+        html += '<button class="btn btn-sm btn-primary btn-add-col-movie" data-tmdb="' + m.tmdbId + '" data-title="' + esc(m.title || '') + '">';
         html += '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m-7-7h14"/></svg> ' + COL_I18N.add;
         html += '</button>';
       }

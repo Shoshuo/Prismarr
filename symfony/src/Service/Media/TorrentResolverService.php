@@ -2,6 +2,7 @@
 
 namespace App\Service\Media;
 
+use App\Service\Media\RadarrClient;
 use App\Entity\ServiceInstance;
 use App\Service\ServiceInstanceProvider;
 
@@ -62,7 +63,11 @@ class TorrentResolverService
         $reachedAny = false;
         foreach ($enabled as $instance) {
             try {
-                $movies = $this->radarr->withInstance($instance)->getRawMovies();
+                $bound  = $this->radarr->withInstance($instance);
+                $movies = $bound->getRawMovies(RadarrClient::LIBRARY_TIMEOUT);
+                if ($movies === [] && $bound->getLastError() !== null) {
+                    continue; // C1: [] with a recorded error is an outage, not an empty library
+                }
                 $reachedAny = true;
             } catch (\Throwable) {
                 continue; // instance unreachable, skip but keep going
@@ -112,7 +117,11 @@ class TorrentResolverService
         $reachedAny = false;
         foreach ($enabled as $instance) {
             try {
-                $series = $this->sonarr->withInstance($instance)->getRawAllSeries();
+                $bound  = $this->sonarr->withInstance($instance);
+                $series = $bound->getRawAllSeries(SonarrClient::LIBRARY_TIMEOUT);
+                if ($series === [] && $bound->getLastError() !== null) {
+                    continue; // C1
+                }
                 $reachedAny = true;
             } catch (\Throwable) {
                 continue;

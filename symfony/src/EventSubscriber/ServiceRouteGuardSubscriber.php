@@ -48,8 +48,10 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         'app_media_sonarr'  => ['service' => 'Sonarr',      'service_id' => 'sonarr',      'instance_type' => ServiceInstance::TYPE_SONARR,    'index' => 'app_media_series'],
         'prowlarr_'         => ['service' => 'Prowlarr',    'service_id' => 'prowlarr',    'keys' => ['prowlarr_api_key', 'prowlarr_url'],     'index' => 'prowlarr_index'],
         'jellyseerr_'       => ['service' => 'Jellyseerr',  'service_id' => 'jellyseerr',  'keys' => ['jellyseerr_api_key', 'jellyseerr_url'], 'index' => 'jellyseerr_index'],
-        'qbittorrent_'      => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'keys' => ['qbittorrent_url', 'qbittorrent_user'],  'index' => 'app_qbittorrent_index'],
-        'app_qbittorrent'   => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'keys' => ['qbittorrent_url', 'qbittorrent_user'],  'index' => 'app_qbittorrent_index'],
+        // H7 (review 2026-11-06): URL only, like isConfigured()/SERVICE_KEYS/
+        // login() — an auth-injecting reverse proxy (issue #10) has no user.
+        'qbittorrent_'      => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'keys' => ['qbittorrent_url'],                       'index' => 'app_qbittorrent_index'],
+        'app_qbittorrent'   => ['service' => 'qBittorrent', 'service_id' => 'qbittorrent', 'keys' => ['qbittorrent_url'],                       'index' => 'app_qbittorrent_index'],
         'deluge_'           => ['service' => 'Deluge',      'service_id' => 'deluge',      'keys' => ['deluge_url'],                            'index' => 'app_deluge_index'],
         'app_deluge'        => ['service' => 'Deluge',      'service_id' => 'deluge',      'keys' => ['deluge_url'],                            'index' => 'app_deluge_index'],
         'transmission_'     => ['service' => 'Transmission', 'service_id' => 'transmission', 'keys' => ['transmission_url'],                   'index' => 'app_transmission_index'],
@@ -70,9 +72,13 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
 
     public static function getSubscribedEvents(): array
     {
-        // Priority 15: after SetupRedirectSubscriber (prio 20), before the Symfony firewall.
+        // Priority 7: after SetupRedirectSubscriber (prio 20) and after the
+        // Symfony firewall (prio 8), so anonymous requests are sent to /login
+        // before this guard can answer with a state-dependent redirect / 404
+        // (review 2026-11-06, S5: integrations, instance slugs and up/down
+        // status were enumerable without a session).
         return [
-            KernelEvents::REQUEST => ['onKernelRequest', 15],
+            KernelEvents::REQUEST => ['onKernelRequest', 7],
         ];
     }
 
@@ -87,7 +93,7 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $rule = $this->matchRule($route);
+        $rule = self::matchRule($route);
         if ($rule === null) {
             return;
         }
@@ -120,8 +126,8 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         if (!$this->isConfigured($rule)) {
             $this->flash($event, $this->translator->trans('error.service_not_configured.service_unavailable_flash', ['service' => $rule['service']]));
             // app_configure_services sends admins to the Services settings and
-            // everyone else home: this guard runs before the firewall and cannot
-            // check roles itself.
+            // everyone else home (the route checks roles; this guard stays
+            // role-agnostic).
             $event->setResponse(new RedirectResponse($this->urls->generate('app_configure_services')));
             return;
         }
@@ -138,6 +144,13 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
         $slug = is_string($event->getRequest()->attributes->get('slug'))
             ? $event->getRequest()->attributes->get('slug')
             : null;
+        if (isset($rule['instance_type']) && $slug !== null
+            && $this->instances->getBySlug($rule['instance_type'], $slug) === null) {
+            // Unknown slug: MultiInstanceBinderSubscriber answers 404 right
+            // after us. Probing would pool a bogus status for a made-up slug
+            // (one file per slug in cache.app, never pruned).
+            return;
+        }
         if ($route !== $rule['index'] && $this->health->isHealthy($rule['service_id'], $slug) === false) {
             $params = $slug !== null ? ['slug' => $slug] : [];
             $event->setResponse(new RedirectResponse($this->urls->generate($rule['index'], $params)));
@@ -145,9 +158,19 @@ class ServiceRouteGuardSubscriber implements EventSubscriberInterface
     }
 
     /**
+     * The service id a route name is guarded under, or null for routes not
+     * tied to a connected service (review 2026-11-06, AS-5: HomeController's
+     * "last visited" pre-check used its own six-service copy of this list).
+     */
+    public static function serviceIdForRoute(string $route): ?string
+    {
+        return self::matchRule($route)['service_id'] ?? null;
+    }
+
+    /**
      * @return array{service: string, service_id: string, keys?: list<string>, instance_type?: string, exclude_prefix?: string, index: string}|null
      */
-    private function matchRule(string $route): ?array
+    private static function matchRule(string $route): ?array
     {
         foreach (self::RULES as $prefix => $rule) {
             if (!str_starts_with($route, $prefix)) {

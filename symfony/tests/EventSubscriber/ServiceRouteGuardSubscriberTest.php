@@ -256,4 +256,65 @@ class ServiceRouteGuardSubscriberTest extends TestCase
 
         $this->assertFalse($event->hasResponse());
     }
+
+    public function testRunsAfterTheFirewall(): void
+    {
+        // Review 2026-11-06 (S5): anonymous requests used to get
+        // state-dependent answers (302 settings / 302 index / 404 / flash)
+        // before the firewall could send them to /login.
+        $prio = ServiceRouteGuardSubscriber::getSubscribedEvents()[\Symfony\Component\HttpKernel\KernelEvents::REQUEST][1];
+        $this->assertLessThan(8, $prio, 'the Symfony firewall listener runs at priority 8');
+    }
+
+    public function testUnknownInstanceSlugIsNotProbed(): void
+    {
+        // A random slug on a non-index route reached isHealthy() before the
+        // binder's 404 and pooled a bogus {status:null} forever.
+        $config    = $this->createMock(ConfigService::class);
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('hasAnyEnabled')->willReturn(true);
+        $instances->method('getBySlug')->willReturn(null);
+        $health = $this->createMock(HealthService::class);
+        $health->expects($this->never())->method('isHealthy');
+        $urls = $this->createMock(UrlGeneratorInterface::class);
+        $sub = new ServiceRouteGuardSubscriber($config, $instances, $health, $urls, $this->createMock(\Symfony\Contracts\Translation\TranslatorInterface::class));
+
+        $event = $this->event('radarr_files');
+        $event->getRequest()->attributes->set('slug', 'does-not-exist');
+        $sub->onKernelRequest($event);
+
+        $this->assertFalse($event->hasResponse(), 'left to MultiInstanceBinderSubscriber, which answers 404');
+    }
+
+    public function testQbittorrentUrlOnlyCountsAsConfigured(): void
+    {
+        // H7 (issue #10 follow-up): qBittorrent behind an auth-injecting
+        // proxy has a URL and no username. isConfigured()/SERVICE_KEYS/
+        // login() all accept that; the route guard demanded a username and
+        // bounced every /qbittorrent* route to the configure page.
+        $event = $this->event('app_qbittorrent_index');
+        $this->subscriber(configuredKeys: ['qbittorrent_url'], healthy: ['qbittorrent'])->onKernelRequest($event);
+        $this->assertFalse($event->hasResponse());
+
+        $event = $this->event('qbittorrent_api_poll');
+        $this->subscriber(configuredKeys: ['qbittorrent_url'], healthy: ['qbittorrent'])->onKernelRequest($event);
+        $this->assertFalse($event->hasResponse());
+    }
+
+    public function testServiceIdForRouteKnowsEveryGuardedService(): void
+    {
+        // AS-5: the home "last visited" pre-check used its own six-service
+        // list, so a cookie pointing at a Deluge/Tautulli/Bazarr/
+        // Tracearr/Transmission page looped once that service was switched
+        // off. One list: the guard's.
+        $this->assertSame('deluge',       ServiceRouteGuardSubscriber::serviceIdForRoute('app_deluge_index'));
+        $this->assertSame('transmission', ServiceRouteGuardSubscriber::serviceIdForRoute('app_transmission_index'));
+        $this->assertSame('tautulli',     ServiceRouteGuardSubscriber::serviceIdForRoute('app_tautulli_index'));
+        $this->assertSame('bazarr',       ServiceRouteGuardSubscriber::serviceIdForRoute('app_bazarr_index'));
+        $this->assertSame('tracearr',     ServiceRouteGuardSubscriber::serviceIdForRoute('app_tracearr_index'));
+        $this->assertSame('radarr',       ServiceRouteGuardSubscriber::serviceIdForRoute('app_media_films'));
+        $this->assertSame('sonarr',       ServiceRouteGuardSubscriber::serviceIdForRoute('sonarr_calendar'));
+        $this->assertSame('qbittorrent',  ServiceRouteGuardSubscriber::serviceIdForRoute('app_qbittorrent_index'));
+        $this->assertNull(ServiceRouteGuardSubscriber::serviceIdForRoute('app_dashboard'));
+    }
 }

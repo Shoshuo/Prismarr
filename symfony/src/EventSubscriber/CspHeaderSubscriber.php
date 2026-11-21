@@ -4,6 +4,7 @@ namespace App\EventSubscriber;
 
 use App\Entity\ServiceInstance;
 use App\Service\ConfigService;
+use App\Service\HealthService;
 use App\Service\ServiceInstanceProvider;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -142,10 +143,24 @@ final class CspHeaderSubscriber implements EventSubscriberInterface
         if (!is_array($parts) || empty($parts['host'])) {
             return null;
         }
-        $scheme = $parts['scheme'] ?? 'http';
-        $origin = $scheme . '://' . $parts['host'];
+        // Review 2026-11-06 (S3): the origin is spliced into the policy
+        // ahead of script-src, and parse_url() keeps `;` / spaces in the
+        // host — "x.lan;script-src * 'unsafe-inline';x" would have switched
+        // the nonce policy off. Only http(s), a hostname or a bracketed
+        // IPv6 literal, and a numeric port may pass.
+        $scheme = strtolower((string) ($parts['scheme'] ?? 'http'));
+        if ($scheme !== 'http' && $scheme !== 'https') {
+            return null;
+        }
+        // Final review, minor #14: an IDN host enters the policy as punycode,
+        // the serialisation browsers match host-sources against.
+        $host = HealthService::asciiHost((string) $parts['host']);
+        if ($host === null || !preg_match('/^(?:[A-Za-z0-9._\-]+|\[[0-9A-Fa-f:.]+\])$/', $host)) {
+            return null;
+        }
+        $origin = $scheme . '://' . $host;
         if (!empty($parts['port'])) {
-            $origin .= ':' . $parts['port'];
+            $origin .= ':' . (int) $parts['port'];
         }
         return $origin;
     }

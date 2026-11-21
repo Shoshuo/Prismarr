@@ -58,22 +58,39 @@ final class SearchVocabulary
      */
     public function build(): array
     {
-        $lists = [];
+        $fetchers = [];
+        for ($p = 1; $p <= self::MOVIE_PAGES; $p++) {
+            $fetchers[] = fn() => $this->tmdb->getPopularMovies($p);
+        }
+        for ($p = 1; $p <= self::TV_PAGES; $p++) {
+            $fetchers[] = fn() => $this->tmdb->getPopularTv($p);
+        }
+        for ($p = 1; $p <= self::TOP_PAGES; $p++) {
+            $fetchers[] = fn() => $this->tmdb->getTopRatedMovies($p);
+            $fetchers[] = fn() => $this->tmdb->getTopRatedTv($p);
+        }
+        for ($p = 1; $p <= self::PEOPLE_PAGES; $p++) {
+            $fetchers[] = fn() => $this->tmdb->getPopularPeople($p);
+        }
+        $fetchers[] = fn() => $this->tmdb->getTrendingAll('week');
+
+        $lists  = [];
+        $failed = 0;
         try {
-            for ($p = 1; $p <= self::MOVIE_PAGES; $p++) {
-                $lists[] = $this->tmdb->getPopularMovies($p);
+            foreach ($fetchers as $fetch) {
+                $data    = $fetch();
+                $lists[] = $data;
+                // TmdbClient answers [] (not an exception) for a failed call; a
+                // vocabulary missing more than a couple of pages would be cached
+                // for 24 h, so treat it as a failed build and let the refresher
+                // keep the previous value. HC-2 (review 2026-11-06): decide as
+                // soon as the threshold is crossed — an outage used to cost all
+                // 36 calls (≈ 15 s each) and hold the Messenger consumer.
+                if (!is_array($data['results'] ?? null) && ++$failed > self::MAX_FAILED_PAGES) {
+                    $this->logger->warning('Search vocabulary build incomplete', ['failed_pages' => $failed, 'pages' => count($lists)]);
+                    return [];
+                }
             }
-            for ($p = 1; $p <= self::TV_PAGES; $p++) {
-                $lists[] = $this->tmdb->getPopularTv($p);
-            }
-            for ($p = 1; $p <= self::TOP_PAGES; $p++) {
-                $lists[] = $this->tmdb->getTopRatedMovies($p);
-                $lists[] = $this->tmdb->getTopRatedTv($p);
-            }
-            for ($p = 1; $p <= self::PEOPLE_PAGES; $p++) {
-                $lists[] = $this->tmdb->getPopularPeople($p);
-            }
-            $lists[] = $this->tmdb->getTrendingAll('week');
         } catch (\Throwable $e) {
             $this->logger->warning('Search vocabulary build failed', ['exception' => $e::class, 'message' => $e->getMessage()]);
             return [];

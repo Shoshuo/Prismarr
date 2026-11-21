@@ -689,6 +689,7 @@ body[data-bs-theme="dark"] .usenet-view-switcher { background:rgba(255,255,255,.
   // ── Poll ────────────────────────────────────────────────────────────────
   var failCount = 0;
   function poll() {
+    if (!root.isConnected) return; // DC-2: this page instance is gone (Turbo navigated away)
     fetch(QUEUE_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (d) {
@@ -897,11 +898,21 @@ body[data-bs-theme="dark"] .usenet-view-switcher { background:rgba(255,255,255,.
   if (window._usenetTimer) clearTimeout(window._usenetTimer);
   poll();
 
-  if (!window._usenetVisBound) {
-    window._usenetVisBound = true;
-    document.addEventListener('visibilitychange', function () {
-      if (document.hidden) { if (window._usenetTimer) { clearTimeout(window._usenetTimer); window._usenetTimer = null; } }
-      else if (AUTO_REFRESH && document.querySelector('[data-usenet-client]')) poll();
+  // DC-2 (review 2026-11-06): bound per page instance and torn down on Turbo
+  // navigation — the once-only binding captured the FIRST instance's poll /
+  // QUEUE_URL / root, so a later visit's hide/show cycle polled the old URL
+  // (possibly the other client's) into a detached root.
+  var onVis = function () {
+    if (document.hidden) { if (window._usenetTimer) { clearTimeout(window._usenetTimer); window._usenetTimer = null; } }
+    else if (AUTO_REFRESH && root.isConnected) poll();
+  };
+  document.addEventListener('visibilitychange', onVis);
+  if (window.registerPageLifecycle) {
+    window.registerPageLifecycle(function () {
+      return function () {
+        document.removeEventListener('visibilitychange', onVis);
+        if (window._usenetTimer) { clearTimeout(window._usenetTimer); window._usenetTimer = null; }
+      };
     });
   }
 })();

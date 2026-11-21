@@ -172,10 +172,14 @@ class DelugeClient implements ResetInterface
         $trackers = [];
         foreach (($t['trackers'] ?? []) as $tr) {
             $trackers[] = [
-                'url'    => $tr['url'] ?? '',
-                'tier'   => (int) ($tr['tier'] ?? 0),
-                'status' => (string) ($t['tracker_status'] ?? ''),
-                'msg'    => '',
+                'url'         => $tr['url'] ?? '',
+                'tier'        => (int) ($tr['tier'] ?? 0),
+                'status'      => (string) ($t['tracker_status'] ?? ''),
+                'msg'         => '',
+                // DC-11: Deluge reports no per-tracker peer counts; null renders
+                // as "—" instead of a misleading 0 / 0.
+                'num_seeds'   => null,
+                'num_leeches' => null,
             ];
         }
 

@@ -171,6 +171,7 @@
       return BASE + '/tableau-de-bord/quicklook/' + type + '/' + slug + '/' + id;
     }
 
+    var qlSeq = 0; // MT-9: a stale slow failure must not navigate away from the item opened since
     if (!window._qlDelegated) {
       window._qlDelegated = true;
       document.addEventListener('click', function (e) {
@@ -180,15 +181,20 @@
           if (!url) return; // missing data → let the href navigate (fallback)
           e.preventDefault();
           qlOpen();
+          var seq = ++qlSeq;
           fetch(url, { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
             .then(function (r) { return r.ok ? r.text() : ''; })
             .then(function (html) {
+              if (seq !== qlSeq) return;
               var b = qlBody();
               if (!b) return;
               if ((html || '').trim()) { b.innerHTML = html; }
               else { window.location.href = trigger.getAttribute('href'); } // empty → fall back to navigation
             })
-            .catch(function () { window.location.href = trigger.getAttribute('href'); });
+            .catch(function () {
+              if (seq !== qlSeq) return;
+              window.location.href = trigger.getAttribute('href');
+            });
           return;
         }
         // Close on backdrop click or [data-ql-dismiss] (the × in the body).

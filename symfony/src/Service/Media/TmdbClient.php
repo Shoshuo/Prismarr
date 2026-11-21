@@ -2,6 +2,7 @@
 
 namespace App\Service\Media;
 
+use App\Service\Media\ServiceHealthCache;
 use App\Exception\ServiceNotConfiguredException;
 use App\Service\ConfigService;
 use App\Service\DisplayPreferencesService;
@@ -28,7 +29,13 @@ class TmdbClient implements ResetInterface
         private readonly CacheInterface $cache,
         private readonly LoggerInterface $logger,
         private readonly DisplayPreferencesService $prefs,
+        // DD-9 (review 2026-11-06): shared circuit breaker. Nullable + last
+        // for the positional test constructors.
+        private readonly ?ServiceHealthCache $health = null,
     ) {}
+
+    /** Breaker key: TMDb is a flat (single, non-instance) service. */
+    private const HEALTH_KEY = 'tmdb';
 
     private function ensureConfig(): void
     {
@@ -335,6 +342,11 @@ class TmdbClient implements ResetInterface
     protected function request(string $path, array $params = []): ?array
     {
         $this->ensureConfig();
+        if ($this->health?->isDown(self::HEALTH_KEY)) {
+            // DD-9: an unreachable TMDb used to cost every dashboard load the
+            // hero + recommendations + lookups sequentially at 15 s each.
+            return null;
+        }
         $params['api_key']       = $this->apiKey;
         $params['language']      = $params['language']      ?? $this->getLocale();
         $params['include_adult'] = $params['include_adult'] ?? 'false';
@@ -342,7 +354,7 @@ class TmdbClient implements ResetInterface
         $url = self::BASE_URL . $path . '?' . http_build_query($params);
 
         $ch = curl_init();
-        curl_setopt_array($ch, [
+        [$raw, $code, $err, $timedOutAfterConnect] = $this->exec($ch, [
             CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             // Generous timeouts: TMDb is on the open internet and the
@@ -357,18 +369,52 @@ class TmdbClient implements ResetInterface
             CURLOPT_HTTPHEADER     => ['Accept: application/json'],
         ]);
 
-        $raw  = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
-
-        if ($raw === false || $code >= 400) {
+        if ($raw === false || $code === 0) {
+            $this->logger->warning("TMDB {$path} failed (HTTP {$code}) : {$err}");
+            // A read timeout after a successful connect is "slow", not "down".
+            if (!$timedOutAfterConnect) {
+                $this->health?->markDown(self::HEALTH_KEY);
+            }
+            return null;
+        }
+        if ($code === 429 || $code >= 500) {
+            // Rate-limited / upstream error: back off for the breaker window
+            // instead of retrying on every widget of the same page.
+            $this->logger->warning("TMDB {$path} failed (HTTP {$code})");
+            $this->health?->markDown(self::HEALTH_KEY);
+            return null;
+        }
+        if ($code >= 400) {
             $this->logger->warning("TMDB {$path} failed (HTTP {$code}) : {$err}");
             return null;
         }
 
+        $this->health?->clear(self::HEALTH_KEY);
         $data = json_decode($raw, true);
         return is_array($data) ? $data : null;
+    }
+
+    /**
+     * cURL execution seam (review 2026-11-06, TQ-3): applies the options,
+     * performs the transfer and returns the raw facts request() classifies
+     * on, so tests can script transport outcomes.
+     *
+     * @param \CurlHandle       $ch
+     * @param array<int, mixed> $opts
+     * @return array{0: string|false, 1: int, 2: string, 3: bool} [body, http code, curl error, timed out after the connection was established]
+     */
+    protected function exec(\CurlHandle $ch, array $opts): array
+    {
+        curl_setopt_array($ch, $opts);
+        /** @var string|false $body */
+        $body = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        $timedOutAfterConnect = curl_errno($ch) === CURLE_OPERATION_TIMEDOUT
+            && (float) curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
+        curl_close($ch);
+
+        return [$body, $code, $err, $timedOutAfterConnect];
     }
 
 }

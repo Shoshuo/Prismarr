@@ -66,6 +66,40 @@ class MediaLibraryCache
         return $this->fetchCached($this->key('series', $slug), $fetch);
     }
 
+    /**
+     * Non-fetching read of the cached movie list: null on a cold cache, a
+     * stale entry is still served. Never calls the upstream and never
+     * requests a refresh — for callers (admin stats) that must not add load
+     * or latency just to count rows.
+     *
+     * @return array<mixed>|null
+     */
+    public function peekMovies(string $slug): ?array
+    {
+        return $this->peek($this->key('movies', $slug));
+    }
+
+    /**
+     * Series twin of peekMovies().
+     *
+     * @return array<mixed>|null
+     */
+    public function peekSeries(string $slug): ?array
+    {
+        return $this->peek($this->key('series', $slug));
+    }
+
+    /** @return array<mixed>|null */
+    private function peek(string $key): ?array
+    {
+        $hit = $this->swr->read($key, self::TTL);
+        if ($hit === null || !is_array($hit['value'])) {
+            return null;
+        }
+
+        return $hit['value'];
+    }
+
     /** Drop the cached list for an instance after a mutating action. Hard delete: the next read blocks. */
     public function invalidate(string $type, string $slug): void
     {

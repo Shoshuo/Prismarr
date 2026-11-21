@@ -125,9 +125,11 @@ class DisplayPreferencesExtension extends AbstractExtension
         return $this->requestStack->getCurrentRequest()?->getLocale() ?? 'en';
     }
 
-    public function filterDate(mixed $dt): ?string
+    // `{{ d|prismarr_date(true) }}` formats a calendar day (a release date,
+    // a UTC-anchored air date) without the user-timezone conversion.
+    public function filterDate(mixed $dt, bool $floating = false): ?string
     {
-        return $this->prefs->formatDate($this->asDateTime($dt));
+        return $this->prefs->formatDate($this->asDateTime($dt), $floating);
     }
 
     /** `{{ d|prismarr_time }}` → "14:30"; `{{ d|prismarr_time(true) }}` → "14:30:07". */

@@ -510,7 +510,7 @@ body[data-bs-theme="dark"] .trs-torrent-list[data-view="table"] .trs-cell-progre
     <div class="trs-sort" data-sort="progress" style="justify-content:center">{{ 'transmission.table.progress'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
     <div class="trs-sort" data-sort="dlspeed" style="justify-content:flex-end">{{ 'transmission.table.dl_speed'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
     <div class="trs-sort" data-sort="upspeed" style="justify-content:flex-end">{{ 'transmission.table.up_speed'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
-    <div class="trs-sort" data-sort="num_seeds" style="justify-content:flex-end">{{ 'transmission.table.seeds'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
+    <div class="trs-sort" data-sort="seeds" style="justify-content:flex-end">{{ 'transmission.table.seeds'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
     <div class="trs-sort" data-sort="ratio" style="justify-content:flex-end">{{ 'transmission.table.ratio'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
     <div class="trs-sort" data-sort="added" style="justify-content:flex-end">{{ 'transmission.table.added'|trans }} <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg></div>
     <div style="text-align:center">{{ 'transmission.table.actions'|trans }}</div>
@@ -1151,17 +1151,24 @@ body[data-bs-theme="dark"] .trs-torrent-list[data-view="table"] .trs-cell-progre
         if (document.hidden) {
             stopRefresh();
         } else {
-            refreshData();   // rattrape un fetch à l'instant où on revient
+            refreshData(true);   // rattrape un fetch à l'instant où on revient
             startRefresh();
         }
     });
 
     var refreshCtrl = null;
     var refreshSeq = 0;
-    function refreshData() {
+    var refreshInFlight = false;
+    function refreshData(force) {
+        // DC-3 (review 2026-11-06): a timer tick while the previous fetch is
+        // still in flight is SKIPPED — aborting it every tick meant a backend
+        // slower than the interval never rendered at all. User-driven calls
+        // (force) still cancel the stale one.
+        if (refreshInFlight && !force) return;
         // Annule le fetch précédent s'il est encore en vol (évite empilement)
         if (refreshCtrl) refreshCtrl.abort();
         refreshCtrl = new AbortController();
+        refreshInFlight = true;
         // abort() n'a aucun effet si la réponse précédente est déjà arrivée
         // (fréquent en local, où le round-trip peut être plus rapide que le
         // délai clic → exécution JS) : sans ce numéro de séquence, une réponse
@@ -1186,7 +1193,7 @@ body[data-bs-theme="dark"] .trs-torrent-list[data-view="table"] .trs-cell-progre
             updateList(data.torrents);
             updatePagination(data.pagination);
         })
-        .catch(function() {});
+        .catch(function() {}).then(function() { if (seq === refreshSeq) refreshInFlight = false; });
     }
 
     // ── Tracking session ────────────────────────────────────────────────────
@@ -1481,7 +1488,7 @@ body[data-bs-theme="dark"] .trs-torrent-list[data-view="table"] .trs-cell-progre
         localStorage.setItem('trs_sort_field', field);
         localStorage.setItem('trs_sort_desc', desc ? '1' : '0');
         syncSortUI();
-        refreshData();
+        refreshData(true);
     }
 
     bindDoc('click', 'viewSortPag', function(e) {
@@ -1499,7 +1506,7 @@ body[data-bs-theme="dark"] .trs-torrent-list[data-view="table"] .trs-cell-progre
             var li = pg.closest('.page-item');
             if (!li || li.classList.contains('disabled') || li.classList.contains('active')) return;
             var n = parseInt(pg.dataset.page, 10);
-            if (n > 0 && n !== pagState.page) { pagState.page = n; refreshData(); window.scrollTo({top:0, behavior:'smooth'}); }
+            if (n > 0 && n !== pagState.page) { pagState.page = n; refreshData(true); window.scrollTo({top:0, behavior:'smooth'}); }
         }
     });
 
@@ -1520,7 +1527,7 @@ body[data-bs-theme="dark"] .trs-torrent-list[data-view="table"] .trs-cell-progre
             currentFilter = this.dataset.filter;
             pagState.filter = currentFilter;
             pagState.page = 1;
-            refreshData();
+            refreshData(true);
         };
     }
 
@@ -1533,7 +1540,7 @@ body[data-bs-theme="dark"] .trs-torrent-list[data-view="table"] .trs-cell-progre
             searchTimeout = setTimeout(function(){
                 pagState.search = val;
                 pagState.page = 1;
-                refreshData();
+                refreshData(true);
             }, 250);
         };
     }
@@ -1545,11 +1552,11 @@ body[data-bs-theme="dark"] .trs-torrent-list[data-view="table"] .trs-cell-progre
             pagState.perPage = parseInt(e.target.value, 10) || 50;
             pagState.page = 1;
             localStorage.setItem('trs_per_page', String(pagState.perPage));
-            refreshData();
+            refreshData(true);
         } else if (e.target.id === 'trs-cat-filter') {
             pagState.category = e.target.value;
             pagState.page = 1;
-            refreshData();
+            refreshData(true);
         }
     });
 
@@ -1825,7 +1832,7 @@ body[data-bs-theme="dark"] .trs-torrent-list[data-view="table"] .trs-cell-progre
                     var row = document.querySelector('.trs-torrent[data-hash="' + deleteTarget.hashes[i] + '"]');
                     if (row) row.remove();
                 }
-                refreshData();
+                refreshData(true);
             }, 300);
         });
     };
@@ -1961,7 +1968,7 @@ body[data-bs-theme="dark"] .trs-torrent-list[data-view="table"] .trs-cell-progre
     // Aligne l'état avec le filtre actif (.trs-filter-btn.active)
     var activeFilter = document.querySelector('.trs-filter-btn.active');
     if (activeFilter) pagState.filter = activeFilter.dataset.filter || 'all';
-    refreshData();    // premier fetch immédiat (applique pagination+tri+filtre serveur)
+    refreshData(true);    // premier fetch immédiat (applique pagination+tri+filtre serveur)
     startRefresh();
     var initDl = {{ (stats.dl_speed ?? 0)|json_encode|raw }};
     var initUp = {{ (stats.up_speed ?? 0)|json_encode|raw }};

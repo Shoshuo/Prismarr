@@ -115,4 +115,17 @@ final class SearchVocabularyTest extends TestCase
         (new SearchVocabularyRefresher($vocab, $swr))->refresh('tmdb.search_vocab.fr-FR');
         self::assertSame('Kept', $swr->read('tmdb.search_vocab.fr-FR', SearchVocabulary::SOFT_TTL)['value'][0]['label']);
     }
+
+    public function testBuildStopsFetchingOnceTooManyPagesHaveFailed(): void
+    {
+        // HC-2 (review 2026-11-06): a TMDb outage used to cost all 36 calls
+        // (≈ 15 s each) before the failure count was even looked at.
+        $tmdb = $this->createMock(TmdbClient::class);
+        $tmdb->expects(self::atMost(3))->method('getPopularMovies')->willReturn([]);
+        $tmdb->expects(self::never())->method('getPopularTv');
+        $tmdb->expects(self::never())->method('getPopularPeople');
+        $vocab = new SearchVocabulary($this->swr(new ArrayAdapter()), $tmdb, new NullLogger());
+
+        self::assertSame([], $vocab->build());
+    }
 }

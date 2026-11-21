@@ -437,4 +437,34 @@ class TorrentResolverServiceTest extends TestCase
         $this->assertSame(7, $r['id']);
         $this->assertSame('/medias/radarr-up/films?open=7', $r['url']);
     }
+
+    // ── C1 (review 2026-11-06): the clients never throw on transport failure ──
+
+    public function testResolveRadarrEmptyWithAnErrorIsUnavailableNotNoMatch(): void
+    {
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->expects($this->once())->method('getRawMovies')->with(RadarrClient::LIBRARY_TIMEOUT)->willReturn([]);
+        $radarr->method('getLastError')->willReturn(['code' => 0, 'method' => 'GET', 'path' => '/api/v3/movie', 'message' => 'Failed to connect']);
+        $sonarr = $this->createMock(SonarrClient::class);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
+
+        $r = (new TorrentResolverService($radarr, $sonarr, $this->instancesMock()))->resolve('radarr', 'Whatever.2024.1080p');
+
+        $this->assertFalse($r['found']);
+        $this->assertSame('Radarr unavailable', $r['error'], '[] + a recorded error used to read as "No match in library"');
+    }
+
+    public function testResolveSonarrEmptyWithAnErrorIsUnavailableNotNoMatch(): void
+    {
+        $radarr = $this->createMock(RadarrClient::class);
+        $sonarr = $this->createMock(SonarrClient::class);
+        $sonarr->method('getRawAllSeries')->willReturn([]);
+        $sonarr->method('getLastError')->willReturn(['code' => 0, 'method' => 'GET', 'path' => '/api/v3/series', 'message' => 'Failed to connect']);
+        $this->selfBind($radarr); $this->selfBind($sonarr);
+
+        $r = (new TorrentResolverService($radarr, $sonarr, $this->instancesMock()))->resolve('sonarr', 'Whatever.S01E01.720p');
+
+        $this->assertFalse($r['found']);
+        $this->assertSame('Sonarr unavailable', $r['error']);
+    }
 }

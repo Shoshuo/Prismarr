@@ -245,10 +245,11 @@ class ServiceInstanceProvider implements ResetInterface
         }
         // Defense in depth — even though every cURL call is already pinned to
         // CURLPROTO_HTTP|HTTPS, reject obviously invalid URLs at write time
-        // so the row never lands in the DB. Same helper that guards the
-        // settings Test-connection probes; reasons surfaced verbatim
-        // ('scheme', 'host', 'link-local', …) so the admin form can map them.
-        if (($reason = HealthService::urlBlockedReason($url)) !== null) {
+        // so the row never lands in the DB. The shape half of the helper that
+        // guards the settings Test-connection probes (no DNS on a save);
+        // reasons surfaced verbatim ('scheme', 'host', …) so the admin form
+        // can map them.
+        if (($reason = HealthService::urlShapeReason($url)) !== null) {
             throw new \InvalidArgumentException(sprintf('Invalid instance URL (%s).', $reason));
         }
         if (!in_array($type, ServiceInstance::TYPES, true)) {
@@ -314,7 +315,7 @@ class ServiceInstanceProvider implements ResetInterface
         if ($url === '') {
             throw new \InvalidArgumentException('Instance URL cannot be empty.');
         }
-        if (($reason = HealthService::urlBlockedReason($url)) !== null) {
+        if (($reason = HealthService::urlShapeReason($url)) !== null) {
             throw new \InvalidArgumentException(sprintf('Invalid instance URL (%s).', $reason));
         }
 
@@ -360,6 +361,17 @@ class ServiceInstanceProvider implements ResetInterface
         $this->repository->save($instance);
         $this->invalidate();
         return $instance;
+    }
+
+    /**
+     * Forget the stored API key (review 2026-11-06, S2): used when an import
+     * moves the instance to another host, so the key never travels there.
+     */
+    public function clearApiKey(ServiceInstance $instance): void
+    {
+        $instance->setApiKey(null);
+        $this->repository->save($instance);
+        $this->invalidate();
     }
 
     /**

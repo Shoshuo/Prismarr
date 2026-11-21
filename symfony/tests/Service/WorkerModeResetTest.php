@@ -36,15 +36,17 @@ class WorkerModeResetTest extends TestCase
      */
     public static function resettableProvider(): array
     {
-        return [
-            [HealthService::class],
-            [DashboardController::class],
-            // Highest-severity path (audit): clears the per-request Radarr
-            // instance binding so a non-default instance can't leak to the
-            // next request. Already covered behaviourally by ClientResetTest;
-            // re-asserted here as part of the worker-mode contract set.
-            [RadarrClient::class],
-        ];
+        // TQ-8 (review 2026-11-06): every ResetInterface service in src/, found
+        // by scanning (so a new one is covered the day it is written), not a
+        // hand-kept list of five. ResetInterfaceSweepTest builds and resets
+        // each of them from the container.
+        $rows = array_map(static fn(string $class): array => [$class], \App\Tests\Service\ResetInterfaceSweepTest::resettableServices());
+        foreach ([HealthService::class, DashboardController::class, RadarrClient::class] as $must) {
+            if (!in_array([$must], $rows, true)) {
+                $rows[] = [$must];
+            }
+        }
+        return $rows;
     }
 
     /**

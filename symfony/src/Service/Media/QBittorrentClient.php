@@ -361,12 +361,19 @@ class QBittorrentClient implements ResetInterface
     //  Add torrent
     // ══════════════════════════════════════════════════════════════════════════
 
+    /**
+     * "Add paused" for /torrents/add. qBittorrent 5.0 renamed the field
+     * `paused` → `stopped` and 5.x reads only `stopped`; 4.x reads only
+     * `paused`. Sending both works on either.
+     */
+    private const ADD_STOPPED = ['stopped' => 'true', 'paused' => 'true'];
+
     public function addTorrentFromUrl(string $urls, ?string $category = null, ?string $savepath = null, bool $paused = false): bool
     {
         $params = ['urls' => $urls];
         if ($category !== null) $params['category'] = $category;
         if ($savepath !== null) $params['savepath'] = $savepath;
-        if ($paused) $params['paused'] = 'true';
+        if ($paused) $params += self::ADD_STOPPED;
 
         return $this->postAction('/api/v2/torrents/add', $params);
     }
@@ -392,7 +399,7 @@ class QBittorrentClient implements ResetInterface
         $postFields = [];
         if ($category !== null) $postFields['category'] = $category;
         if ($savepath !== null) $postFields['savepath'] = $savepath;
-        if ($paused)            $postFields['paused']   = 'true';
+        if ($paused)            $postFields += self::ADD_STOPPED;
 
         $tmpPaths = [];
         try {
@@ -412,8 +419,8 @@ class QBittorrentClient implements ResetInterface
             }
 
             $this->lastError = null;
-            $ch = curl_init($url);
-            curl_setopt_array($ch, [
+            [$response, $code, $curlErr] = $this->exec(curl_init(), [
+                CURLOPT_URL            => $url,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
                 CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -426,10 +433,6 @@ class QBittorrentClient implements ResetInterface
                 // (proxy injects auth itself); see NO_AUTH_SID docblock.
                 CURLOPT_HTTPHEADER     => $sid !== self::NO_AUTH_SID ? ['Cookie: ' . $sid] : [],
             ]);
-            $response = curl_exec($ch);
-            $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlErr  = curl_error($ch);
-            curl_close($ch);
 
             if ($response === false || !self::isOkStatus((int) $code)) {
                 $this->logger->warning('QBittorrentClient addTorrentFromFiles failed', ['code' => $code]);
@@ -440,8 +443,10 @@ class QBittorrentClient implements ResetInterface
                 }
                 return false;
             }
-            // qBit returns "Ok." with 200, or "Fails." on error
-            $isFail = stripos((string)$response, 'fail') !== false;
+            // ≤ 5.1 answers "Ok." / "200 Fails."; WebAPI 2.14+ (5.2) answers a
+            // JSON summary whose `failure_count` key contains "fail", and an
+            // all-failed add is a 409. Classify like postAction().
+            $isFail = stripos(trim((string) $response), 'fails') === 0;
             if ($isFail) {
                 $this->recordError('POST', '/api/v2/torrents/add', (int) $code, (string) $response, $curlErr);
             } else {
@@ -633,7 +638,9 @@ class QBittorrentClient implements ResetInterface
         $downloading = count(array_filter($torrents, fn($t) => $t['state'] === 'downloading'));
         $seeding     = count(array_filter($torrents, fn($t) => $t['state'] === 'seeding'));
         $paused      = count(array_filter($torrents, fn($t) => $t['state'] === 'paused'));
-        $completed   = count(array_filter($torrents, fn($t) => $t['state'] === 'completed'));
+        // DC-5 (review 2026-11-06): qBit never emits an empty state, so no
+        // torrent ever normalized to 'completed' — "finished" means 100 %.
+        $completed   = count(array_filter($torrents, fn($t) => ($t['progress'] ?? 0) >= 100 && !in_array($t['state'], ['error', 'checking', 'moving'], true)));
         $errored     = count(array_filter($torrents, fn($t) => $t['state'] === 'error'));
         $stalled     = count(array_filter($torrents, fn($t) => $t['state'] === 'stalled'));
 
@@ -861,8 +868,11 @@ class QBittorrentClient implements ResetInterface
         // must NOT be echoed as a real qBit cookie (qBit would reject it).
         if ($sid && $sid !== self::NO_AUTH_SID) $headers[] = 'Cookie: ' . $sid;
 
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        // Final review, minor #11: through the exec() seam like postAction(),
+        // so the read side (TQ-3) is testable without a qBittorrent.
+        $ch = curl_init();
+        [$body, $code, $curlErr] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -872,19 +882,13 @@ class QBittorrentClient implements ResetInterface
             CURLOPT_HTTPHEADER     => $headers,
         ]);
 
-        $body = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErr = curl_error($ch);
-
         if ($body === false) {
             $this->logger->warning('QBittorrentClient GET error', ['path' => $path, 'error' => $curlErr]);
             $this->recordError('GET', $path, (int) $code, '', $curlErr);
-            curl_close($ch);
             $this->serviceUnavailable = true;
             $this->health->markDown(self::SERVICE_KEY);
             return null;
         }
-        curl_close($ch);
 
         if (!self::isOkStatus((int) $code)) {
             // Expired SID → invalidate; the next call will auto re-login
@@ -892,7 +896,7 @@ class QBittorrentClient implements ResetInterface
                 $this->invalidateSession();
             }
             $this->logger->warning('QBittorrentClient GET error', ['path' => $path, 'code' => $code]);
-            $this->recordError('GET', $path, (int) $code, is_string($body) ? $body : '', $curlErr);
+            $this->recordError('GET', $path, (int) $code, $body, $curlErr);
             if ($curlErr !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
                 $this->health->markDown(self::SERVICE_KEY);
@@ -924,7 +928,8 @@ class QBittorrentClient implements ResetInterface
         $headers = $sid !== self::NO_AUTH_SID ? ['Cookie: ' . $sid] : [];
 
         $ch = curl_init($url);
-        curl_setopt_array($ch, [
+        [$body, $code, $curlErr, $timedOutAfterConnect] = $this->exec($ch, [
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
             CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -936,19 +941,15 @@ class QBittorrentClient implements ResetInterface
             CURLOPT_HTTPHEADER     => $headers,
         ]);
 
-        $body = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErr = curl_error($ch);
-
         if ($body === false) {
             $this->logger->warning('QBittorrentClient POST error', ['path' => $path, 'error' => $curlErr]);
             $this->recordError('POST', $path, (int) $code, '', $curlErr);
-            curl_close($ch);
             $this->serviceUnavailable = true;
-            $this->health->markDown(self::SERVICE_KEY);
+            if (!$timedOutAfterConnect) {
+                $this->health->markDown(self::SERVICE_KEY);
+            }
             return false;
         }
-        curl_close($ch);
 
         if (!self::isOkStatus((int) $code)) {
             // Expired SID → invalidate + 1 retry after auto re-login
@@ -957,7 +958,7 @@ class QBittorrentClient implements ResetInterface
                 return $this->postAction($path, $params, true);
             }
             $this->logger->warning('QBittorrentClient POST error', ['path' => $path, 'code' => $code]);
-            $this->recordError('POST', $path, (int) $code, is_string($body) ? $body : '', $curlErr);
+            $this->recordError('POST', $path, (int) $code, $body, $curlErr);
             if ($curlErr !== '' || (int) $code === 0) {
                 $this->serviceUnavailable = true;
                 $this->health->markDown(self::SERVICE_KEY);
@@ -965,7 +966,43 @@ class QBittorrentClient implements ResetInterface
             return false;
         }
 
+        // DC-4 (review 2026-11-06): qBittorrent ≤ 5.1 answers "200 Fails." to
+        // a rejected action (duplicate / invalid add URL, unknown hash);
+        // master returns 409. Only the status was checked, so the UI toasted
+        // "added" for a torrent that never was.
+        if (stripos(trim((string) $body), 'fails') === 0) {
+            $this->logger->warning('QBittorrentClient POST refused', ['path' => $path, 'body' => trim((string) $body)]);
+            $this->recordError('POST', $path, (int) $code, trim((string) $body), '');
+            $this->health->clear(self::SERVICE_KEY);
+            return false;
+        }
+
         $this->health->clear(self::SERVICE_KEY);
         return true;
+    }
+
+    /**
+     * cURL execution seam (review 2026-11-06, TQ-3) for the POST actions:
+     * applies the options, performs the transfer and returns the raw facts
+     * postAction() classifies on, so tests can script qBittorrent's answers.
+     *
+     * @param \CurlHandle       $ch
+     * @param array<int, mixed> $opts
+     * @return array{0: string|false, 1: int, 2: string, 3: bool} [body, http code, curl error, timed out after the connection was established]
+     */
+    protected function exec(\CurlHandle $ch, array $opts): array
+    {
+        curl_setopt_array($ch, $opts);
+        // curl_exec() IS curl_exec() outside a runner-owned fiber;
+        // inside one (the health sweep) the transfer overlaps its siblings.
+        /** @var string|false $body */
+        $body = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        $timedOutAfterConnect = curl_errno($ch) === CURLE_OPERATION_TIMEDOUT
+            && (float) curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0.0;
+        curl_close($ch);
+
+        return [$body, $code, $err, $timedOutAfterConnect];
     }
 }

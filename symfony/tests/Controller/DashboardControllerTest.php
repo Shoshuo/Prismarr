@@ -568,6 +568,7 @@ class DashboardControllerTest extends TestCase
         self::assertSame(['cinema', 'digital'], $kinds); // physical null → skipped, fixed order
         self::assertFalse($vm['releaseDates'][0]['upcoming']); // cinema 2y ago
         self::assertTrue($vm['releaseDates'][1]['upcoming']);  // digital +30d
+        self::assertTrue($vm['releaseDates'][1]['floating'], 'Radarr release dates are calendar days (final review #2)');
     }
 
     public function testQuickLookTmdbMovieParsesReleaseDates(): void
@@ -678,6 +679,13 @@ class DashboardControllerTest extends TestCase
         self::assertContains('first_aired', $kinds);
         self::assertContains('next_episode', $kinds);
         self::assertNotContains('ended', $kinds);
+
+        // Final review, Important #2: firstAired is a calendar day, but
+        // nextAiring/previousAiring come from Sonarr's airDateUtc — instants
+        // that must be converted to the display zone, never floated.
+        $byKind = array_column($vm['releaseDates'], null, 'kind');
+        self::assertTrue($byKind['first_aired']['floating']);
+        self::assertFalse($byKind['next_episode']['floating'], 'an evening broadcast west of UTC is "tomorrow" in UTC');
     }
 
     public function testQuickLookLibrarySeriesEndedShowsEndDate(): void
@@ -753,5 +761,67 @@ class DashboardControllerTest extends TestCase
         $kinds = array_column($vm['releaseDates'], 'kind');
         self::assertContains('first_aired', $kinds);
         self::assertContains('next_episode', $kinds);
+    }
+
+    // ── DD-3 (review 2026-11-06): a partial calendar must not be cached ─────
+
+    public function testAPartialUpcomingCalendarIsNotCached(): void
+    {
+        $radarrInst = $this->instance('radarr-1', 'Radarr');
+        $sonarrInst = new ServiceInstance(ServiceInstance::TYPE_SONARR, 'sonarr-1', 'Sonarr', 'http://s:8989', 'k');
+        $instances = $this->createMock(ServiceInstanceProvider::class);
+        $instances->method('getEnabled')->willReturnCallback(
+            fn(string $type): array => $type === ServiceInstance::TYPE_RADARR ? [$radarrInst] : [$sonarrInst]
+        );
+        $instances->method('getDefault')->willReturn($radarrInst);
+
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('withInstance')->willReturn($radarr);
+        $radarr->method('getCalendar')->willReturn([
+            ['id' => 1, 'title' => 'Movie', 'year' => 2026, 'tmdbId' => 5, 'digitalAt' => new \DateTimeImmutable('tomorrow', new \DateTimeZone('UTC'))],
+        ]);
+        $radarr->method('getLastError')->willReturn(null);
+
+        $sonarr = $this->createMock(SonarrClient::class);
+        $sonarr->method('withInstance')->willReturn($sonarr);
+        $sonarr->method('getCalendar')->willReturn([]); // Sonarr timed out: [] + recorded error
+        $sonarr->method('getLastError')->willReturn(['code' => 0, 'method' => 'GET', 'path' => '/api/v3/calendar', 'message' => 'timed out']);
+
+        $cache = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
+        $controller = $this->makeController(radarr: $radarr, sonarr: $sonarr, instances: $instances, cache: $cache);
+
+        $m = new ReflectionMethod(DashboardController::class, 'upcomingReleases');
+        $m->setAccessible(true);
+        $items = $m->invoke($controller);
+
+        self::assertCount(1, $items, 'the Radarr half still renders');
+        self::assertFalse($cache->hasItem('dash.upcoming'), 'half a calendar must not be served for 5 minutes');
+    }
+
+    public function testACompleteUpcomingCalendarIsCached(): void
+    {
+        $radarr = $this->createMock(RadarrClient::class);
+        $radarr->method('withInstance')->willReturn($radarr);
+        $radarr->method('getCalendar')->willReturn([
+            ['id' => 1, 'title' => 'Movie', 'year' => 2026, 'tmdbId' => 5, 'digitalAt' => new \DateTimeImmutable('tomorrow', new \DateTimeZone('UTC'))],
+        ]);
+        $radarr->method('getLastError')->willReturn(null);
+        $cache = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
+        $controller = $this->makeController(radarr: $radarr, cache: $cache);
+
+        $m = new ReflectionMethod(DashboardController::class, 'upcomingReleases');
+        $m->setAccessible(true);
+        $m->invoke($controller);
+
+        self::assertTrue($cache->hasItem('dash.upcoming'));
+    }
+
+    // ── C2 / DD-4 (review 2026-11-06): "today" is the display zone's date ───
+
+    public function testTodayIsDerivedFromTheDisplayTimezoneNotTheProcessZone(): void
+    {
+        $src = (string) file_get_contents(__DIR__ . '/../../src/Controller/DashboardController.php');
+        self::assertStringNotContainsString("new \\DateTimeImmutable('today')", $src, 'every "today" goes through the display-zone helper');
+        self::assertStringContainsString('CalendarDay::todayIn(', $src);
     }
 }
