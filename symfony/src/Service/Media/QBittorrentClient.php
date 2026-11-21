@@ -361,12 +361,19 @@ class QBittorrentClient implements ResetInterface
     //  Add torrent
     // ══════════════════════════════════════════════════════════════════════════
 
+    /**
+     * "Add paused" for /torrents/add. qBittorrent 5.0 renamed the field
+     * `paused` → `stopped` and 5.x reads only `stopped`; 4.x reads only
+     * `paused`. Sending both works on either.
+     */
+    private const ADD_STOPPED = ['stopped' => 'true', 'paused' => 'true'];
+
     public function addTorrentFromUrl(string $urls, ?string $category = null, ?string $savepath = null, bool $paused = false): bool
     {
         $params = ['urls' => $urls];
         if ($category !== null) $params['category'] = $category;
         if ($savepath !== null) $params['savepath'] = $savepath;
-        if ($paused) $params['paused'] = 'true';
+        if ($paused) $params += self::ADD_STOPPED;
 
         return $this->postAction('/api/v2/torrents/add', $params);
     }
@@ -392,7 +399,7 @@ class QBittorrentClient implements ResetInterface
         $postFields = [];
         if ($category !== null) $postFields['category'] = $category;
         if ($savepath !== null) $postFields['savepath'] = $savepath;
-        if ($paused)            $postFields['paused']   = 'true';
+        if ($paused)            $postFields += self::ADD_STOPPED;
 
         $tmpPaths = [];
         try {
@@ -412,8 +419,8 @@ class QBittorrentClient implements ResetInterface
             }
 
             $this->lastError = null;
-            $ch = curl_init($url);
-            curl_setopt_array($ch, [
+            [$response, $code, $curlErr] = $this->exec(curl_init(), [
+                CURLOPT_URL            => $url,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_PROTOCOLS       => CURLPROTO_HTTP | CURLPROTO_HTTPS, // SSRF guard
                 CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS, // (block file:// gopher:// ...)
@@ -426,10 +433,6 @@ class QBittorrentClient implements ResetInterface
                 // (proxy injects auth itself); see NO_AUTH_SID docblock.
                 CURLOPT_HTTPHEADER     => $sid !== self::NO_AUTH_SID ? ['Cookie: ' . $sid] : [],
             ]);
-            $response = curl_exec($ch);
-            $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlErr  = curl_error($ch);
-            curl_close($ch);
 
             if ($response === false || !self::isOkStatus((int) $code)) {
                 $this->logger->warning('QBittorrentClient addTorrentFromFiles failed', ['code' => $code]);
