@@ -443,8 +443,10 @@ class QBittorrentClient implements ResetInterface
                 }
                 return false;
             }
-            // qBit returns "Ok." with 200, or "Fails." on error
-            $isFail = stripos((string)$response, 'fail') !== false;
+            // ≤ 5.1 answers "Ok." / "200 Fails."; WebAPI 2.14+ (5.2) answers a
+            // JSON summary whose `failure_count` key contains "fail", and an
+            // all-failed add is a 409. Classify like postAction().
+            $isFail = stripos(trim((string) $response), 'fails') === 0;
             if ($isFail) {
                 $this->recordError('POST', '/api/v2/torrents/add', (int) $code, (string) $response, $curlErr);
             } else {
